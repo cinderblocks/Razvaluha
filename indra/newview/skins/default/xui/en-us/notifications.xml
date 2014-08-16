@@ -7802,7 +7802,7 @@ Unable to acquire a new experience:
     icon="notify.tga"
     name="TeleportedHomeExperienceRemoved"
     persist="false"
-    type="notifytip">
+    type="notify">
     You have been teleported from the region [region_name] for removing the experience secondlife:///app/experience/[public_id]/profile and are no longer permitted in the region.
     <form name="form">
       <ignore name="ignore"
@@ -7814,7 +7814,7 @@ Unable to acquire a new experience:
     icon="notify.tga"
     name="TrustedExperienceEntry"
     persist="false"
-    type="notifytip">
+    type="notify">
     You have been allowed into the region [region_name] by participating in the key experience secondlife:///app/experience/[public_id]/profile removing this experience may kick you from the region.
     <form name="form">
       <ignore name="ignore"
@@ -7826,7 +7826,7 @@ Unable to acquire a new experience:
     icon="notify.tga"
     name="TrustedExperiencesAvailable"
     persist="false"
-    type="notifytip">
+    type="notify">
 You do not have access to this destination. You may be allowed into the region by Accepting an experience below:
 
 [EXPERIENCE_LIST]
@@ -7840,8 +7840,8 @@ Other Key Experiences may be available.
     name="ExperienceEvent"
     persist="false"
     type="notifytip">
-    An object was allowed to [EventType] by the [public_name] secondlife:///app/experience/[public_id]/profile experience.
-    Owner: [OwnerName] secondlife:///app/agent/[OwnerID]/inspect
+    An object was allowed to [EventType] by the secondlife:///app/experience/[public_id]/profile experience.
+    Owner: secondlife:///app/agent/[OwnerID]/inspect
     Object Name: [ObjectName]
     Parcel Name: [ParcelName]
   </notification>
@@ -7851,8 +7851,8 @@ Other Key Experiences may be available.
     name="ExperienceEventAttachment"
     persist="false"
     type="notifytip">
-    An attachment was allowed to [EventType] by the [OwnerName] secondlife:///app/experience/[public_id]/profile experience.
-    Owner: [OwnerName] secondlife:///app/agent/[OwnerID]/inspect
+    An attachment was allowed to [EventType] by the secondlife:///app/experience/[public_id]/profile experience.
+    Owner: secondlife:///app/agent/[OwnerID]/inspect
   </notification>
   
   <notification
@@ -7892,10 +7892,6 @@ Is this OK?
        index="1"
        name="No"
        text="No"/>
-      <button
-       index="-1"
-       name="Profile"
-       text="Profile"/>
     </form>
   </notification>
 
@@ -7930,6 +7926,28 @@ Do not allow access if you do not fully understand why it wants access to your a
     <footer>
 [FOOTERTEXT]
     </footer>
+  </notification>
+
+  <notification
+   icon="notify.tga"
+   name="UnknownScriptQuestion"
+   persist="false"
+   type="notify">
+The runtime script permission requested by &apos;[OBJECTNAME]&apos;, an object owned by &apos;[NAME]&apos;, isn&apos;t recognized by the viewer and can&apos;t be granted.
+
+To grant this permission please update your viewer to the latest version.
+     <tag>confirm</tag>
+     <form name="form">
+        <button
+         default="true"
+         index="1"
+         name="Deny"
+         text="Ok"/>
+        <button
+         index="2"
+         name="Mute"
+         text="Block"/>
+     </form>
   </notification>
 
   <notification

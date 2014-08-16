@@ -38,6 +38,7 @@
 #include "lleventcoro.h"
 
 class LLAvatarName;
+class LLDispatcher;
 struct LLEstateAccessChangeInfo;
 class LLLineEditor;
 class LLMessageSystem;
@@ -491,11 +492,7 @@ class LLPanelRegionExperiences : public LLPanelRegionInfo
 	LOG_CLASS(LLPanelEnvironmentInfo);
 
 public:
-	LLPanelRegionExperiences()
-		: mTrusted(nullptr)
-		, mAllowed(nullptr)
-		, mBlocked(nullptr)
-	{}
+	LLPanelRegionExperiences();
 	/*virtual*/ BOOL postBuild() override;
 	BOOL sendUpdate() override;
 	
@@ -511,7 +508,7 @@ private:
 
     static std::string regionCapabilityQuery(LLViewerRegion* region, const std::string &cap);
 
-	LLPanelExperienceListEditor* setupList(const char* control_name, U32 add_id, U32 remove_id);
+	void setupList(LLPanelExperienceListEditor* child, const char* control_name, U32 add_id, U32 remove_id);
 	static LLSD addIds( LLPanelExperienceListEditor* panel );
 
 	void itemChanged(U32 event_type, const LLUUID& id);

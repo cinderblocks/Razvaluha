@@ -70,6 +70,7 @@
 #include "llselectmgr.h"
 #include "llviewerinventory.h"
 #include "llviewermenu.h"
+#include "llviewermenufile.h"
 #include "llviewerobject.h"
 #include "llviewerobjectlist.h"
 #include "llviewerregion.h"
@@ -832,7 +833,7 @@ void LLScriptEdCore::updateDynamicHelp(BOOL immediate)
 		return;
 	}
 
-	const LLTextSegmentPtr segment = NULL;
+	const LLTextSegment* segment = NULL;
 	std::vector<LLTextSegmentPtr> selected_segments;
 	mEditor->getSelectedSegments(selected_segments);
 	LLKeywordToken* token;
@@ -851,7 +852,7 @@ void LLScriptEdCore::updateDynamicHelp(BOOL immediate)
 	// then try previous segment in case we just typed it
 	if (!segment)
 	{
-		const LLTextSegmentPtr test_segment = mEditor->getPreviousSegment();
+		const LLTextSegment* test_segment = mEditor->getPreviousSegment();
 		token = test_segment->getToken();
 		if(token && isKeyword(token))
 		{
@@ -1497,15 +1498,14 @@ void LLScriptEdCore::loadScriptFromFile(const std::vector<std::string>& filename
 	LLScriptEdCore* self = (LLScriptEdCore*)data;
 	if (self && (text.length() > 0))
 	{
-		self->mEditor->selectAll();
 		LLWString script(utf8str_to_wstring(text));
-		self->mEditor->insertText(script);
+		self->mEditor->setWText(script);
 	}
 }
 
 void LLScriptEdCore::onBtnSaveToFile( void* userdata )
 {
-	add(LLStatViewer::LSL_SAVES, 1);
+	//add(LLStatViewer::LSL_SAVES, 1); // Singu TODO: LLStatViewer
 
 	LLScriptEdCore* self = (LLScriptEdCore*) userdata;
 
@@ -1532,28 +1532,33 @@ void LLScriptEdCore::saveScriptToFile(const std::vector<std::string>& filenames,
 bool LLScriptEdCore::canLoadOrSaveToFile( void* userdata )
 {
 	LLScriptEdCore* self = (LLScriptEdCore*) userdata;
-	return self->mEditor->canLoadOrSaveToFile();
+	return !self->mEditor->isReadOnly();
 }
 
 // static
-bool LLScriptEdCore::enableSaveToFileMenu(void* userdata)
+BOOL LLScriptEdCore::enableSaveToFileMenu(void* userdata)
 {
 	LLScriptEdCore* self = (LLScriptEdCore*)userdata;
 	if (!self || !self->mEditor) return FALSE;
-	return self->mEditor->canLoadOrSaveToFile();
+	return !self->mEditor->isReadOnly();
 }
 
 // static 
-bool LLScriptEdCore::enableLoadFromFileMenu(void* userdata)
+BOOL LLScriptEdCore::enableLoadFromFileMenu(void* userdata)
 {
 	LLScriptEdCore* self = (LLScriptEdCore*)userdata;
-	return (self && self->mEditor) ? self->mEditor->canLoadOrSaveToFile() : FALSE;
+	return (self && self->mEditor) ? !self->mEditor->isReadOnly() : FALSE;
 }
 
 // virtual
 void LLScriptEdContainer::saveAs()
 {
-	onBtnSaveToFile(this);
+	mScriptEd->onBtnSaveToFile(mScriptEd);
+}
+
+BOOL LLScriptEdContainer::canSaveAs() const
+{
+	return !mScriptEd->mEditor->isReadOnly();
 }
 
 LLUUID LLScriptEdCore::getAssociatedExperience()const
@@ -2259,7 +2264,7 @@ void LLLiveLSLEditor::loadAsset()
 				mIsModifiable = FALSE;
 			}
 
-			refreshFromItem();
+			refreshFromItem(mItem);
 			// This is commented out, because we don't completely
 			// handle script exports yet.
 			/*

@@ -196,6 +196,7 @@ BOOL LLFloaterExperienceProfile::postBuild()
     getChild<LLTextEditor>(EDIT TF_DESC)->setCommitOnFocusLost(TRUE);
 
 	// <singu> Callbacks for texts that show slurls
+	// Singu Note: We can now changes these to text editors to achieve the same effect
 	if (LLTextBox* text = findChild<LLTextBox>(TF_GROUP))
 		text->setClickedCallback([this] {LLGroupActions::show(mExperienceDetails[LLExperienceCache::GROUP_ID]); });
 
@@ -213,22 +214,22 @@ BOOL LLFloaterExperienceProfile::postBuild()
 
 void LLFloaterExperienceProfile::experienceCallback(LLHandle<LLFloaterExperienceProfile> handle,  const LLSD& experience )
 {
-    LLFloaterExperienceProfile* pllpep = handle.get();
-    if(pllpep)
-    {
-        pllpep->refreshExperience(experience);
-    }
+	LLFloaterExperienceProfile* pllpep = handle.get();
+	if (pllpep)
+	{
+		pllpep->refreshExperience(experience);
+	}
 }
 
 
 bool LLFloaterExperienceProfile::experiencePermission( LLHandle<LLFloaterExperienceProfile> handle, const LLSD& permission )
 {
-    LLFloaterExperienceProfile* pllpep = handle.get();
-    if(pllpep)
-    {
-        pllpep->updatePermission(permission);
-    }
-    return false;
+	LLFloaterExperienceProfile* pllpep = handle.get();
+	if (pllpep)
+	{
+		pllpep->updatePermission(permission);
+	}
+	return false;
 }
 
 
@@ -240,7 +241,7 @@ void LLFloaterExperienceProfile::onClickEdit()
 
 void LLFloaterExperienceProfile::onClickCancel()
 {
-    changeToView();
+	changeToView();
 }
 
 void LLFloaterExperienceProfile::onClickSave()
@@ -359,7 +360,7 @@ void LLFloaterExperienceProfile::refreshExperience( const LLSD& experience )
 
 
 	child = getChild<LLTextBox>(EDIT TF_SLURL);
-    if(has_slurl)
+	if (has_slurl)
 	{
 		child->setText(mLocationSLURL);
 	}

@@ -44,6 +44,8 @@
 #include "llavataractions.h"
 #include "llbutton.h"
 #include "llcheckboxctrl.h"
+#include "llexperiencecache.h"
+#include "llfloaterexperienceprofile.h"
 #include "llgroupactions.h"
 #include "llinventorymodel.h"
 #include "llinventoryobserver.h"
@@ -222,7 +224,7 @@ void LLFloaterProperties::refresh()
 		
 		mDirty = TRUE;
 
-		const char* enableNames[]={
+		static constexpr std::array<const char*, 24> enableNames{{
 			"LabelItemName",
 			"LabelItemDesc",
 			"LabelCreatorName",
@@ -247,21 +249,21 @@ void LLFloaterProperties::refresh()
 			"CheckPurchase",
 			"RadioSaleType",
 			"Edit Cost"
-		};
-		for(size_t t=0; t<LL_ARRAY_SIZE(enableNames); ++t)
+		}};
+		for(const char* name : enableNames)
 		{
-			getChildView(enableNames[t])->setEnabled(false);
+			getChildView(name)->setEnabled(false);
 		}
-		const char* hideNames[]={
+		static constexpr std::array<const char*,5> hideNames{{
 			"BaseMaskDebug",
 			"OwnerMaskDebug",
 			"GroupMaskDebug",
 			"EveryoneMaskDebug",
 			"NextMaskDebug"
-		};
-		for(size_t t=0; t<LL_ARRAY_SIZE(hideNames); ++t)
+		}};
+		for(const char* name : hideNames)
 		{
-			getChildView(hideNames[t])->setVisible(false);
+			getChildView(name)->setVisible(false);
 		}
 	}
 }
@@ -299,12 +301,27 @@ void LLFloaterProperties::refreshFromItem(LLInventoryItem* item)
 
 	// You need permission to modify the object to modify an inventory
 	// item in it.
-	LLViewerObject* object = NULL;
+	LLViewerObject* object = nullptr;
 	if(!mObjectID.isNull()) object = gObjectList.findObject(mObjectID);
 	BOOL is_obj_modify = TRUE;
 	if(object)
 	{
 		is_obj_modify = object->permOwnerModify();
+	}
+
+	if (item->getInventoryType() == LLInventoryType::IT_LSL)
+	{
+		getChildView("LabelItemExperienceTitle")->setVisible(TRUE);
+		LLTextBox* tb = getChild<LLTextBox>("LabelItemExperience");
+		tb->setText(getString("loading_experience"));
+		tb->setVisible(TRUE);
+        std::string url = std::string();
+        if(object && object->getRegion())
+        {
+            url = object->getRegion()->getCapability("GetMetadata");
+        }
+        LLExperienceCache::instance().fetchAssociatedExperience(item->getParentUUID(), item->getUUID(), url,
+                boost::bind(&LLFloaterProperties::setAssociatedExperience, getDerivedHandle<LLFloaterProperties>(), _1));
 	}
 
 	//////////////////////
@@ -468,14 +485,14 @@ void LLFloaterProperties::refreshFromItem(LLInventoryItem* item)
 		perm_string = "B: ";
 		perm_string += mask_to_string(base_mask);
 		if (!supports_export && base_mask & PERM_EXPORT) // Hide Export when not available
-			perm_string.erase(perm_string.find_last_of("E"));
+			perm_string.erase(perm_string.find_last_of("X"));
 		getChild<LLUICtrl>("BaseMaskDebug")->setValue(perm_string);
 		getChildView("BaseMaskDebug")->setVisible(TRUE);
 		
 		perm_string = "O: ";
 		perm_string += mask_to_string(owner_mask);
 		if (!supports_export && owner_mask & PERM_EXPORT) // Hide Export when not available
-			perm_string.erase(perm_string.find_last_of("E"));
+			perm_string.erase(perm_string.find_last_of("X"));
 		getChild<LLUICtrl>("OwnerMaskDebug")->setValue(perm_string);
 		getChildView("OwnerMaskDebug")->setVisible(TRUE);
 		
@@ -489,7 +506,7 @@ void LLFloaterProperties::refreshFromItem(LLInventoryItem* item)
 		perm_string += overwrite_everyone ? "*: " : ": ";
 		perm_string += mask_to_string(everyone_mask);
 		if (!supports_export && everyone_mask & PERM_EXPORT) // Hide Export when not available
-			perm_string.erase(perm_string.find_last_of("E"));
+			perm_string.erase(perm_string.find_last_of("X"));
 		getChild<LLUICtrl>("EveryoneMaskDebug")->setValue(perm_string);
 		getChildView("EveryoneMaskDebug")->setVisible(TRUE);
 			
@@ -555,6 +572,9 @@ void LLFloaterProperties::refreshFromItem(LLInventoryItem* item)
 
 	const LLSaleInfo& sale_info = item->getSaleInfo();
 	BOOL is_for_sale = sale_info.isForSale();
+	LLRadioGroup* radioSaleType = getChild<LLRadioGroup>("RadioSaleType");
+	LLUICtrl* edit_cost = getChild<LLUICtrl>("Edit Cost");
+
 	// Check for ability to change values.
 	if (is_obj_modify && can_agent_sell 
 		&& gAgent.allowOperation(PERM_TRANSFER, perm, GP_OBJECT_MANIPULATE))
@@ -568,9 +588,9 @@ void LLFloaterProperties::refreshFromItem(LLInventoryItem* item)
 		getChildView("CheckNextOwnerCopy")->setEnabled(no_export && (base_mask & PERM_COPY) && !cannot_restrict_permissions);
 		getChildView("CheckNextOwnerTransfer")->setEnabled(no_export && (next_owner_mask & PERM_COPY) && !cannot_restrict_permissions);
 
-		getChildView("RadioSaleType")->setEnabled(is_complete && is_for_sale);
+		radioSaleType->setEnabled(is_complete && is_for_sale);
 		getChildView("TextPrice")->setEnabled(is_complete && is_for_sale);
-		getChildView("Edit Cost")->setEnabled(is_complete && is_for_sale);
+		edit_cost->setEnabled(is_complete && is_for_sale);
 	}
 	else
 	{
@@ -582,30 +602,56 @@ void LLFloaterProperties::refreshFromItem(LLInventoryItem* item)
 		getChildView("CheckNextOwnerCopy")->setEnabled(FALSE);
 		getChildView("CheckNextOwnerTransfer")->setEnabled(FALSE);
 
-		getChildView("RadioSaleType")->setEnabled(FALSE);
+		radioSaleType->setEnabled(FALSE);
 		getChildView("TextPrice")->setEnabled(FALSE);
-		getChildView("Edit Cost")->setEnabled(FALSE);
+		edit_cost->setEnabled(FALSE);
 	}
 
 	// Set values.
 	getChild<LLUICtrl>("CheckPurchase")->setValue(is_for_sale);
-	getChildView("Edit Cost")->setEnabled(is_for_sale);
+	edit_cost->setEnabled(is_for_sale);
 	getChild<LLUICtrl>("CheckNextOwnerModify")->setValue(LLSD(BOOL(next_owner_mask & PERM_MODIFY)));
 	getChild<LLUICtrl>("CheckNextOwnerCopy")->setValue(LLSD(BOOL(next_owner_mask & PERM_COPY)));
 	getChild<LLUICtrl>("CheckNextOwnerTransfer")->setValue(LLSD(BOOL(next_owner_mask & PERM_TRANSFER)));
 
-	LLRadioGroup* radioSaleType = getChild<LLRadioGroup>("RadioSaleType");
 	if (is_for_sale)
 	{
-		radioSaleType->setSelectedIndex((S32)sale_info.getSaleType() - 1);
 		S32 numerical_price;
 		numerical_price = sale_info.getSalePrice();
-		getChild<LLUICtrl>("Edit Cost")->setValue(llformat("%d",numerical_price));
+		edit_cost->setValue(llformat("%d",numerical_price));
+		radioSaleType->setSelectedIndex((S32)sale_info.getSaleType() - 1);
 	}
 	else
 	{
+		edit_cost->setValue("0");
 		radioSaleType->setSelectedIndex(-1);
-		getChild<LLUICtrl>("Edit Cost")->setValue(llformat("%d",0));
+	}
+}
+
+
+void LLFloaterProperties::setAssociatedExperience( LLHandle<LLFloaterProperties> hInfo, const LLSD& experience )
+{
+    LLFloaterProperties* info = hInfo.get();
+    if(info)
+	{
+		LLUUID id;
+		if (experience.has(LLExperienceCache::EXPERIENCE_ID))
+		{
+			id = experience[LLExperienceCache::EXPERIENCE_ID].asUUID();
+		}
+		if (id.notNull())
+		{
+			//info->getChild<LLTextBox>("LabelItemExperience")->setText(LLSLURL("experience", id, "profile").getSLURLString();
+			if (LLTextBox* tb = info->getChild<LLTextBox>("LabelItemExperience"))
+			{
+				tb->setText(experience[LLExperienceCache::NAME].asString());
+				tb->setClickedCallback(boost::bind(LLFloaterExperienceProfile::showInstance, id));
+			}
+		}
+		else
+		{
+			info->getChild<LLTextBox>("LabelItemExperience")->setText(LLTrans::getString("ExperienceNameNull"));
+		}
 	}
 }
 
@@ -754,11 +800,6 @@ void LLFloaterProperties::onCommitPermissions()
 		perm.setEveryoneBits(gAgent.getID(), gAgent.getGroupID(),
 						 CheckEveryoneCopy->get(), PERM_COPY);
 	}
-	LLCheckBoxCtrl* CheckExport = getChild<LLCheckBoxCtrl>("CheckExport");
-	if(CheckExport)
-	{
-		perm.setEveryoneBits(gAgent.getID(), gAgent.getGroupID(), CheckExport->get(), PERM_EXPORT);
-	}
 
 	LLCheckBoxCtrl* CheckNextOwnerModify = getChild<LLCheckBoxCtrl>("CheckNextOwnerModify");
 	if(CheckNextOwnerModify)
@@ -778,6 +819,13 @@ void LLFloaterProperties::onCommitPermissions()
 		perm.setNextOwnerBits(gAgent.getID(), gAgent.getGroupID(),
 							CheckNextOwnerTransfer->get(), PERM_TRANSFER);
 	}
+
+	LLCheckBoxCtrl* CheckExport = getChild<LLCheckBoxCtrl>("CheckExport");
+	if(CheckExport)
+	{
+		perm.setEveryoneBits(gAgent.getID(), gAgent.getGroupID(), CheckExport->get(), PERM_EXPORT);
+	}
+
 	if(perm != item->getPermissions()
 		&& item->isFinished())
 	{
@@ -951,7 +999,7 @@ void LLFloaterProperties::updateSaleInfo()
 
 LLInventoryItem* LLFloaterProperties::findItem() const
 {
-	LLInventoryItem* item = NULL;
+	LLInventoryItem* item = nullptr;
 	if(mObjectID.isNull())
 	{
 		// it is in agent inventory

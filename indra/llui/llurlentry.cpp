@@ -40,6 +40,7 @@
 #include "lltrans.h"
 //#include "lluicolortable.h"
 #include "message.h"
+#include "llexperiencecache.h"
 
 #include <boost/format.hpp> // <alchemy/>
 
@@ -196,31 +197,32 @@ bool LLUrlEntryBase::isWikiLinkCorrect(const std::string& url)
 
 std::string LLUrlEntryBase::urlToLabelWithGreyQuery(const std::string &url) const
 {
-	LLUriParser up(unescapeUrl(url));
+	LLUriParser up(escapeUrl(url));
 	up.normalize();
 
 	std::string label;
 	up.extractParts();
 	up.glueFirst(label);
 
-	return label;
+	return unescapeUrl(label);
 }
 
 std::string LLUrlEntryBase::urlToGreyQuery(const std::string &url) const
 {
-	LLUriParser up(unescapeUrl(url));
+	std::string escaped_url = escapeUrl(url);
+	LLUriParser up(escaped_url);
 
 	std::string label;
 	up.extractParts();
 	up.glueFirst(label, false);
 
-	size_t pos = url.find(label);
+	size_t pos = escaped_url.find(label);
 	if (pos == std::string::npos)
 	{
 		return "";
 	}
 	pos += label.size();
-	return url.substr(pos);
+	return unescapeUrl(escaped_url.substr(pos));
 }
 
 
@@ -229,7 +231,7 @@ static std::string getStringAfterToken(const std::string& str, const std::string
 	size_t pos = str.find(token);
 	if (pos == std::string::npos)
 	{
-		return std::string();
+		return LLStringUtil::null;
 	}
 
 	pos += token.size();
@@ -334,7 +336,7 @@ std::string LLUrlEntryHTTPNoProtocol::getTooltip(const std::string &url) const
 LLUrlEntryInvalidSLURL::LLUrlEntryInvalidSLURL()
 	: LLUrlEntryBase()
 {
-	mPattern = boost::regex("(http://(maps.secondlife.com|slurl.com)/secondlife/|secondlife://(/app/(worldmap|teleport)/)?)[^ /]+(/-?[0-9]+){1,3}(/?(\\?title|\\?img|\\?msg)=\\S*)?/?",
+	mPattern = boost::regex("(https?://(maps.secondlife.com|slurl.com)/secondlife/|secondlife://(/app/(worldmap|teleport)/)?)[^ /]+(/-?[0-9]+){1,3}(/?(\\?title|\\?img|\\?msg)=\\S*)?/?",
 									boost::regex::perl|boost::regex::icase);
 	mMenuName = "menu_url_http.xml";
 	mTooltip = LLTrans::getString("TooltipHttpUrl");
@@ -421,8 +423,9 @@ bool LLUrlEntryInvalidSLURL::isSLURLvalid(const std::string &url) const
 LLUrlEntrySLURL::LLUrlEntrySLURL()
 {
 	// see http://slurl.com/about.php for details on the SLURL format
-	mPattern = boost::regex("http://(maps.secondlife.com|slurl.com)/secondlife/[^ /]+(/\\d+){0,3}(/?(\\?title|\\?img|\\?msg)=\\S*)?/?",
+	mPattern = boost::regex("https?://(maps.secondlife.com|slurl.com)/secondlife/[^ /]+(/\\d+){0,3}(/?(\\?title|\\?img|\\?msg)=\\S*)?/?",
 							boost::regex::perl|boost::regex::icase);
+	mIcon = "Hand";
 	mMenuName = "menu_url_slurl.xml";
 	mTooltip = LLTrans::getString("TooltipSLURL");
 }
@@ -808,7 +811,7 @@ LLUrlEntryAgentCompleteName::LLUrlEntryAgentCompleteName()
 
 std::string LLUrlEntryAgentCompleteName::getName(const LLAvatarName& avatar_name)
 {
-	return avatar_name.getCompleteName();
+	return avatar_name.getCompleteName(false, true, true);
 }
 
 //
@@ -840,7 +843,7 @@ LLUrlEntryAgentDisplayName::LLUrlEntryAgentDisplayName()
 
 std::string LLUrlEntryAgentDisplayName::getName(const LLAvatarName& avatar_name)
 {
-	return avatar_name.getDisplayName();
+	return avatar_name.getDisplayName(true);
 }
 
 //
@@ -1463,6 +1466,58 @@ std::string LLUrlEntryEmail::getUrl(const std::string &string) const
 		return "mailto:" + escapeUrl(string);
 	}
 	return escapeUrl(string);
+}
+
+LLUrlEntryExperienceProfile::LLUrlEntryExperienceProfile()
+{
+	mPattern = boost::regex(APP_HEADER_REGEX "/experience/[\\da-f-]+/\\w+\\S*",
+		boost::regex::perl|boost::regex::icase);
+	mIcon = "Generic_Experience";
+	mMenuName = "menu_url_experience.xml";
+}
+
+std::string LLUrlEntryExperienceProfile::getLabel(const std::string& url, const LLUrlLabelCallback& cb)
+{
+	if (!gCacheName)
+	{
+		// probably at the login screen, use short string for layout
+		return LLTrans::getString("LoadingData");
+	}
+
+	std::string experience_id_string = getIDStringFromUrl(url);
+	if (experience_id_string.empty())
+	{
+		// something went wrong, just give raw url
+		return unescapeUrl(url);
+	}
+
+	LLUUID experience_id(experience_id_string);
+	if (experience_id.isNull())
+	{
+		return LLTrans::getString("ExperienceNameNull");
+	}
+
+    const LLSD& experience_details = LLExperienceCache::instance().get(experience_id);
+	if (!experience_details.isUndefined())
+	{
+		std::string experience_name_string = experience_details[LLExperienceCache::NAME].asString();
+        return experience_name_string.empty() ? LLTrans::getString("ExperienceNameUntitled") : experience_name_string;
+	}
+
+	addObserver(experience_id_string, url, cb);
+    LLExperienceCache::instance().get(experience_id, boost::bind(&LLUrlEntryExperienceProfile::onExperienceDetails, this, _1));
+	return LLTrans::getString("LoadingData");
+
+}
+
+void LLUrlEntryExperienceProfile::onExperienceDetails(const LLSD& experience_details)
+{
+	std::string name = experience_details[LLExperienceCache::NAME].asString();
+	if(name.empty())
+	{
+		name = LLTrans::getString("ExperienceNameUntitled");
+	}
+    callObservers(experience_details[LLExperienceCache::EXPERIENCE_ID].asString(), name, LLStringUtil::null);
 }
 
 // <alchemy>

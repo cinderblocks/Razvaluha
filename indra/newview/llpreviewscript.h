@@ -136,8 +136,8 @@ public:
 	static void		loadScriptFromFile(const std::vector<std::string>& filenames, void* data);
 	static void		saveScriptToFile(const std::vector<std::string>& filenames, void* data);
 
-	static bool		enableSaveToFileMenu(void* userdata);
-	static bool		enableLoadFromFileMenu(void* userdata);
+	static BOOL		enableSaveToFileMenu(void* userdata);
+	static BOOL		enableLoadFromFileMenu(void* userdata);
 
 	bool			hasAccelerators() const override { return true; }
 	LLUUID 			getAssociatedExperience()const;

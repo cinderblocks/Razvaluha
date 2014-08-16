@@ -114,6 +114,7 @@
 #include "llkeythrottle.h"
 #include "llagentui.h"
 #include "llviewerregion.h"
+#include  "llexperiencecache.h"
 
 // [RLVa:KB] - Checked: 2010-03-09 (RLVa-1.2.0a)
 #include "rlvactions.h"
@@ -210,24 +211,24 @@ const std::string SCRIPT_QUESTIONS[SCRIPT_PERMISSION_EOF] =
 	"ScriptReturnObjects"
 };
 
-const BOOL SCRIPT_QUESTION_IS_CAUTION[SCRIPT_PERMISSION_EOF] = 
+constexpr bool SCRIPT_QUESTION_IS_CAUTION[SCRIPT_PERMISSION_EOF] = 
 {
-	TRUE,	// ScriptTakeMoney,
-	FALSE,	// ActOnControlInputs
-	FALSE,	// RemapControlInputs
-	FALSE,	// AnimateYourAvatar
-	FALSE,	// AttachToYourAvatar
-	FALSE,	// ReleaseOwnership,
-	FALSE,	// LinkAndDelink,
-	FALSE,	// AddAndRemoveJoints
-	FALSE,	// ChangePermissions
-	FALSE,	// TrackYourCamera,
-	FALSE,	// ControlYourCamera
-	FALSE,	// TeleportYourAgent
-	FALSE,	// JoinAnExperience
-	FALSE,	// SilentlyManageEstateAccess
-	FALSE,	// OverrideYourAnimations
-	FALSE,	// ScriptReturnObjects
+	true,	// ScriptTakeMoney,
+	false,	// ActOnControlInputs
+	false,	// RemapControlInputs
+	false,	// AnimateYourAvatar
+	false,	// AttachToYourAvatar
+	false,	// ReleaseOwnership,
+	false,	// LinkAndDelink,
+	false,	// AddAndRemoveJoints
+	false,	// ChangePermissions
+	false,	// TrackYourCamera,
+	false,	// ControlYourCamera
+	false,	// TeleportYourAgent
+	false,	// JoinAnExperience
+	false,	// SilentlyManageEstateAccess
+	false,	// OverrideYourAnimations
+	false,	// ScriptReturnObjects
 };
 
 bool friendship_offer_callback(const LLSD& notification, const LLSD& response)
@@ -6364,9 +6365,6 @@ bool handle_trusted_experiences_notification(const LLSD& llsdBlock)
 		LLSD::array_const_iterator it = experiences.beginArray();
 		for(/**/; it != experiences.endArray(); ++it)
 		{
-			// Singu TODO: Make this the experience name, not the slurl?
-			//	Also provide a profile button on the notification?
-			// Singu Note: For now this has been changed to a notifytip which means the user can click these from in chat.
 			str << LLSLURL("experience", it->asUUID(), "profile").getSLURLString() << "\n";
 		}
 		std::string str_list = str.str();
@@ -6488,27 +6486,14 @@ bool handle_teleport_access_blocked(LLSD& llsdBlock, const std::string & notific
 void home_position_set()
 {
 	// save the home location image to disk
-	std::string snap_filename = gDirUtilp->getLindenUserDir();
-	snap_filename += gDirUtilp->getDirDelimiter();
-	snap_filename += SCREEN_HOME_FILENAME;
-	gViewerWindow->saveSnapshot(snap_filename, gViewerWindow->getWindowWidthRaw(), gViewerWindow->getWindowHeightRaw(), FALSE, FALSE);
+	gViewerWindow->saveSnapshot(gDirUtilp->getLindenUserDir() + gDirUtilp->getDirDelimiter() + SCREEN_HOME_FILENAME, gViewerWindow->getWindowWidthRaw(), gViewerWindow->getWindowHeightRaw(), FALSE, FALSE);
 }
-
 void update_region_restart(const LLSD& llsdBlock)
 {
-	U32 seconds;
-	if (llsdBlock.has("MINUTES"))
-	{
-		seconds = 60U * static_cast<U32>(llsdBlock["MINUTES"].asInteger());
-	}
-	else
-	{
-		seconds = static_cast<U32>(llsdBlock["SECONDS"].asInteger());
-	}
-
-	LLFloaterRegionRestarting* restarting_floater = LLFloaterRegionRestarting::findInstance();
-
-	if (restarting_floater)
+	const U32 seconds = llsdBlock.has("MINUTES")
+		? (60U * static_cast<U32>(llsdBlock["MINUTES"].asInteger()))
+		: static_cast<U32>(llsdBlock["SECONDS"].asInteger());
+	if (LLFloaterRegionRestarting* restarting_floater = LLFloaterRegionRestarting::findInstance())
 	{
 		restarting_floater->updateTime(seconds);
 		if (!restarting_floater->isMinimized())
@@ -6550,10 +6535,10 @@ bool attempt_standard_notification(LLMessageSystem* msgsystem)
 				LL_WARNS() << "attempt_standard_notification: Attempted to read notification parameter data into LLSD but failed:" << llsdRaw << LL_ENDL;
 			}
 		}
-		
+
 
 		handle_trusted_experiences_notification(llsdBlock);
-
+		
 		if (
 			(notificationID == "RegionEntryAccessBlocked") ||
 			(notificationID == "LandClaimAccessBlocked") ||
@@ -6630,6 +6615,7 @@ bool attempt_standard_notification(LLMessageSystem* msgsystem)
 		}
 
 		LLNotificationsUtil::add(notificationID, llsdBlock);
+
 		return true;
 	}	
 	return false;
@@ -7195,18 +7181,6 @@ bool script_question_cb(const LLSD& notification, const LLSD& response)
 	return false;
 }
 
-bool script_experience_cb(const LLSD& notification, const LLSD& response)
-{
-	if (LLNotificationsUtil::getSelectedOption(notification, response) == -1) // Experience Profile
-	{
-		LLFloaterExperienceProfile::showInstance(notification["payload"]["experience"].asUUID());
-		LLNotificationsUtil::add(notification["name"], notification["substitutions"], notification["payload"]); //Respawn!
-		return false;
-	}
-
-	return script_question_cb(notification, response);
-}
-
 void script_question_mute(const LLUUID& task_id, const std::string& object_name)
 {
 	LLMuteList::getInstance()->add(LLMute(task_id, object_name, LLMute::OBJECT));
@@ -7240,7 +7214,7 @@ void script_question_mute(const LLUUID& task_id, const std::string& object_name)
 
 static LLNotificationFunctorRegistration script_question_cb_reg_1("ScriptQuestion", script_question_cb);
 static LLNotificationFunctorRegistration script_question_cb_reg_2("ScriptQuestionCaution", script_question_cb);
-static LLNotificationFunctorRegistration script_question_cb_reg_3("ScriptQuestionExperience", script_experience_cb);
+static LLNotificationFunctorRegistration script_question_cb_reg_3("ScriptQuestionExperience", script_question_cb);
 static LLNotificationFunctorRegistration unknown_script_question_cb_reg("UnknownScriptQuestion", unknown_script_question_cb);
 
 void process_script_experience_details(const LLSD& experience_details, LLSD args, LLSD payload)
@@ -7253,9 +7227,7 @@ void process_script_experience_details(const LLSD& experience_details, LLSD args
 	{
 		args["GRID_WIDE"] = LLTrans::getString("Land-Scope");
 	}
-	// Singu Note: This is displayed as the name and has a button to display the profile of the experience, instead.
-	//args["EXPERIENCE"] = LLSLURL("experience", experience_details[LLExperienceCache::EXPERIENCE_ID].asUUID(), "profile").getSLURLString();
-	args["EXPERIENCE"] = experience_details[LLExperienceCache::NAME];
+	args["EXPERIENCE"] = LLSLURL("experience", experience_details[LLExperienceCache::EXPERIENCE_ID].asUUID(), "profile").getSLURLString();
 
 	LLNotificationsUtil::add("ScriptQuestionExperience", args, payload);
 }
@@ -7335,7 +7307,7 @@ void process_script_question(LLMessageSystem *msg, void **user_data)
 	std::string script_question;
 	if (questions)
 	{
-		BOOL caution = false;
+		bool caution = false;
 		S32 count = 0;
 		LLSD args;
 		args["OBJECTNAME"] = object_name;
@@ -7579,14 +7551,10 @@ void process_teleport_failed(LLMessageSystem *msg, void**)
 		// Get the message ID
 		msg->getStringFast(_PREHASH_AlertInfo, _PREHASH_Message, message_id);
 		big_reason = LLAgent::sTeleportErrorMessages[message_id];
-		if ( big_reason.size() > 0 )
-		{	// Substitute verbose reason from the local map
-			args["REASON"] = big_reason;
-		}
-		else
-		{	// Nothing found in the map - use what the server returned in the original message block
+		if ( big_reason.size() <= 0 )
+		{
+			// Nothing found in the map - use what the server returned in the original message block
 			msg->getStringFast(_PREHASH_Info, _PREHASH_Reason, big_reason);
-			args["REASON"] = big_reason;
 		}
 
 		LLSD llsd_block;
@@ -7601,6 +7569,16 @@ void process_teleport_failed(LLMessageSystem *msg, void**)
 			}
 			else
 			{
+				if(llsd_block.has("REGION_NAME"))
+				{
+					std::string region_name = llsd_block["REGION_NAME"].asString();
+					if(!region_name.empty())
+					{
+						LLStringUtil::format_map_t name_args;
+						name_args["[REGION_NAME]"] = region_name;
+						LLStringUtil::format(big_reason, name_args);
+					}
+				}
 				// change notification name in this special case
 				if (handle_teleport_access_blocked(llsd_block, message_id, args["REASON"]))
 				{
@@ -7612,7 +7590,7 @@ void process_teleport_failed(LLMessageSystem *msg, void**)
 				}
 			}
 		}
-
+		args["REASON"] = big_reason;
 	}
 	else
 	{	// Extra message payload not found - use what the simulator sent

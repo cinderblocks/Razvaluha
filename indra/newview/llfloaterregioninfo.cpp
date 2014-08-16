@@ -72,6 +72,7 @@
 #include "llregioninfomodel.h"
 #include "llscrolllistitem.h"
 #include "llsliderctrl.h"
+#include "llslurl.h"
 #include "llspinctrl.h"
 #include "lltabcontainer.h"
 #include "lltextbox.h"
@@ -79,6 +80,8 @@
 #include "lltexturectrl.h"
 #include "lltrans.h"
 #include "llviewercontrol.h"
+#include "llviewerinventory.h"
+#include "llviewertexture.h"
 #include "lluictrlfactory.h"
 #include "llviewertexturelist.h"
 #include "llviewerregion.h"
@@ -280,10 +283,8 @@ BOOL LLFloaterRegionInfo::postBuild()
 	{
 		panel = new LLPanelRegionExperiences;
 		mInfoPanels.push_back(panel);
-		/* Singu TODO: Experiences
 		LLUICtrlFactory::getInstance()->buildPanel(panel, "panel_region_experiences.xml");
 		mTab->addTabPanel(panel, panel->getLabel(), FALSE);
-		*/
 	}
 	
 	gMessageSystem->setHandlerFunc(
@@ -485,9 +486,9 @@ void LLFloaterRegionInfo::processRegionInfo(LLMessageSystem* msg)
 	panel = tab->getChild<LLPanel>("Debug");
 
 	panel->getChild<LLUICtrl>("region_text")->setValue(LLSD(sim_name) );
-	panel->getChild<LLUICtrl>("disable_scripts_check")->setValue(LLSD((BOOL)(region_flags & REGION_FLAGS_SKIP_SCRIPTS)) );
-	panel->getChild<LLUICtrl>("disable_collisions_check")->setValue(LLSD((BOOL)(region_flags & REGION_FLAGS_SKIP_COLLISIONS)) );
-	panel->getChild<LLUICtrl>("disable_physics_check")->setValue(LLSD((BOOL)(region_flags & REGION_FLAGS_SKIP_PHYSICS)) );
+	panel->getChild<LLUICtrl>("disable_scripts_check")->setValue(LLSD((BOOL)((region_flags & REGION_FLAGS_SKIP_SCRIPTS) ? TRUE : FALSE )) );
+	panel->getChild<LLUICtrl>("disable_collisions_check")->setValue(LLSD((BOOL)((region_flags & REGION_FLAGS_SKIP_COLLISIONS) ? TRUE : FALSE )) );
+	panel->getChild<LLUICtrl>("disable_physics_check")->setValue(LLSD((BOOL)((region_flags & REGION_FLAGS_SKIP_PHYSICS) ? TRUE : FALSE )) );
 	panel->setCtrlsEnabled(allow_modify);
 
 	// TERRAIN PANEL
@@ -837,6 +838,7 @@ BOOL LLPanelRegionGeneralInfo::postBuild()
 		fixed_sun->setCommitCallback(boost::bind(on_change_fixed_sun, _2, estate_sun, hour_slider));
 	}
 
+	refresh();
 	return LLPanelRegionInfo::postBuild();
 }
 
@@ -3235,9 +3237,9 @@ BOOL LLPanelEnvironmentInfo::postBuild()
 	mDayCyclePresetCombo->setCommitCallback(boost::bind(&LLPanelEnvironmentInfo::onSelectDayCycle, this));
 
 	getChild<LLButton>("apply_btn")->setCommitCallback(boost::bind(&LLPanelEnvironmentInfo::onBtnApply, this));
-	//getChild<LLButton>("apply_btn")->setRightMouseDownCallback(boost::bind(&LLEnvManagerNew::dumpUserPrefs, LLEnvManagerNew::getInstance()));
+	getChild<LLButton>("apply_btn")->setRightMouseDownCallback(boost::bind(&LLEnvManagerNew::dumpUserPrefs, LLEnvManagerNew::getInstance()));
 	getChild<LLButton>("cancel_btn")->setCommitCallback(boost::bind(&LLPanelEnvironmentInfo::onBtnCancel, this));
-	//getChild<LLButton>("cancel_btn")->setRightMouseDownCallback(boost::bind(&LLEnvManagerNew::dumpPresets, LLEnvManagerNew::getInstance()));
+	getChild<LLButton>("cancel_btn")->setRightMouseDownCallback(boost::bind(&LLEnvManagerNew::dumpPresets, LLEnvManagerNew::getInstance()));
 
 	LLEnvManagerNew::instance().setRegionSettingsChangeCallback(boost::bind(&LLPanelEnvironmentInfo::onRegionSettingschange, this));
 	LLEnvManagerNew::instance().setRegionSettingsAppliedCallback(boost::bind(&LLPanelEnvironmentInfo::onRegionSettingsApplied, this, _1));
@@ -3805,11 +3807,22 @@ void LLPanelEnvironmentInfo::onRegionSettingsApplied(bool ok)
 	}
 }
 
+LLPanelRegionExperiences::LLPanelRegionExperiences()
+: mTrusted(nullptr)
+, mAllowed(nullptr)
+, mBlocked(nullptr)
+{
+	mFactoryMap["panel_trusted"] = LLCallbackMap(create_xp_list_editor, reinterpret_cast<void*>(&mTrusted));
+	mFactoryMap["panel_allowed"] = LLCallbackMap(create_xp_list_editor, reinterpret_cast<void*>(&mAllowed));
+	mFactoryMap["panel_blocked"] = LLCallbackMap(create_xp_list_editor, reinterpret_cast<void*>(&mBlocked));
+	LLUICtrlFactory::getInstance()->buildPanel(this, "panel_region_experiences.xml", &mFactoryMap);
+}
+
 BOOL LLPanelRegionExperiences::postBuild()
 {
-	mAllowed = setupList("panel_allowed", ESTATE_EXPERIENCE_ALLOWED_ADD, ESTATE_EXPERIENCE_ALLOWED_REMOVE);
-	mTrusted = setupList("panel_trusted", ESTATE_EXPERIENCE_TRUSTED_ADD, ESTATE_EXPERIENCE_TRUSTED_REMOVE);
-	mBlocked = setupList("panel_blocked", ESTATE_EXPERIENCE_BLOCKED_ADD, ESTATE_EXPERIENCE_BLOCKED_REMOVE);
+	setupList(mAllowed, "panel_allowed", ESTATE_EXPERIENCE_ALLOWED_ADD, ESTATE_EXPERIENCE_ALLOWED_REMOVE);
+	setupList(mTrusted, "panel_trusted", ESTATE_EXPERIENCE_TRUSTED_ADD, ESTATE_EXPERIENCE_TRUSTED_REMOVE);
+	setupList(mBlocked, "panel_blocked", ESTATE_EXPERIENCE_BLOCKED_ADD, ESTATE_EXPERIENCE_BLOCKED_REMOVE);
 
 	getChild<LLLayoutPanel>("trusted_layout_panel")->setVisible(TRUE);
 	getChild<LLTextBox>("experiences_help_text")->setText(getString("estate_caption"));
@@ -3820,9 +3833,9 @@ BOOL LLPanelRegionExperiences::postBuild()
 	return LLPanelRegionInfo::postBuild();
 }
 
-LLPanelExperienceListEditor* LLPanelRegionExperiences::setupList( const char* control_name, U32 add_id, U32 remove_id )
+void LLPanelRegionExperiences::setupList(LLPanelExperienceListEditor* child, const char* control_name, U32 add_id, U32 remove_id )
 {
-	LLPanelExperienceListEditor* child = findChild<LLPanelExperienceListEditor>(control_name);
+	//LLPanelExperienceListEditor* child = findChild<LLPanelExperienceListEditor>(control_name);
 	if(child)
 	{
 		child->getChild<LLTextBox>("text_name")->setText(child->getString(control_name));
@@ -3831,7 +3844,7 @@ LLPanelExperienceListEditor* LLPanelRegionExperiences::setupList( const char* co
 		child->setRemovedCallback(boost::bind(&LLPanelRegionExperiences::itemChanged, this, remove_id, _1));
 	}
 
-	return child;
+	//return child;
 }
 
 
@@ -3853,7 +3866,7 @@ void LLPanelRegionExperiences::processResponse( const LLSD& content )
 	}
 
 	mTrusted->setExperienceIds(trusted);
-	
+
 	mAllowed->refreshExperienceCounter();
 	mBlocked->refreshExperienceCounter();
 	mTrusted->refreshExperienceCounter();
@@ -3869,7 +3882,7 @@ bool LLPanelRegionExperiences::experienceCoreConfirm(const LLSD& notification, c
 	const U32 originalFlags = (U32)notification["payload"]["operation"].asInteger();
 
 	LLViewerRegion* region = gAgent.getRegion();
-	
+
 	LLSD::array_const_iterator end_it = notification["payload"]["allowed_ids"].endArray();
 
 	for (LLSD::array_const_iterator iter = notification["payload"]["allowed_ids"].beginArray();
@@ -3884,9 +3897,9 @@ bool LLPanelRegionExperiences::experienceCoreConfirm(const LLSD& notification, c
 		switch(option)
 		{
 			case 0:
-			    // This estate
-			    sendEstateExperienceDelta(flags, id);
-			    break;
+				// This estate
+				sendEstateExperienceDelta(flags, id);
+				break;
 			case 1:
 			{
 				// All estates, either than I own or manage for this owner.  
@@ -3907,7 +3920,7 @@ bool LLPanelRegionExperiences::experienceCoreConfirm(const LLSD& notification, c
 			}
 			case 2:
 			default:
-			    break;
+				break;
 		}
 	}
 	return false;
@@ -3931,8 +3944,8 @@ void LLPanelRegionExperiences::sendEstateExperienceDelta(U32 flags, const LLUUID
 
 
 void LLPanelRegionExperiences::infoCallback(LLHandle<LLPanelRegionExperiences> handle, const LLSD& content)
-{	
-	if(handle.isDead())
+{
+	if (handle.isDead())
 		return;
 
 	LLPanelRegionExperiences* floater = handle.get();
@@ -4079,3 +4092,4 @@ void LLFloaterRegionInfo::open()
 	LLFloater::open();
 }
 // [/RLVa:KB]
+

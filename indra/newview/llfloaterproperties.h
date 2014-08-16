@@ -89,6 +89,8 @@ protected:
 	void refreshFromItem(LLInventoryItem* item);
 	virtual void draw();
 
+	static void setAssociatedExperience(LLHandle<LLFloaterProperties> handle, const LLSD& experience);
+
 protected:
 	// The item id of the inventory item in question.
 	LLUUID mItemID;

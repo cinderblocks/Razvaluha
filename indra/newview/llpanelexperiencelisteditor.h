@@ -31,6 +31,7 @@
 #include "lluuid.h"
 #include <set>
 
+class LLNameListCtrl;
 class LLScrollListCtrl;
 class LLButton;
 class LLFloaterExperiencePicker;

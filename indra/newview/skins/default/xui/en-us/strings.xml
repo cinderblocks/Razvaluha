@@ -72,6 +72,81 @@ Make sure you entered the correct Login URI. An example of a Login URI is: \"htt
 
 	<string name="LoginFailed">Login failed.</string>
 	<string name="Quit">Quit</string>
+	<string name="LoginFailedViewerNotPermitted">
+The viewer you are using can no longer access Second Life. Please visit the following page to download a new viewer:
+http://secondlife.com/download
+
+For more information, see our FAQ below:
+http://secondlife.com/viewer-access-faq</string>
+	<string name="LoginIntermediateOptionalUpdateAvailable">Optional viewer update available: [VERSION]</string>
+	<string name="LoginFailedRequiredUpdate">Required viewer update: [VERSION]</string>
+	<string name="LoginFailedAlreadyLoggedIn">This agent is already logged in.
+</string>
+	<string name="LoginFailedAuthenticationFailed">Sorry! We couldn't log you in.
+Please check to make sure you entered the right
+    * Username (like bobsmith12 or steller.sunshine)
+    * Password
+Also, please make sure your Caps Lock key is off.</string>
+	<string name="LoginFailedPasswordChanged">As a security precaution your password has been changed.
+Please go to your account page at http://secondlife.com/password
+and answer the security question to reset your password.
+We are very sorry for the inconvenience.</string>
+	<string name="LoginFailedPasswordReset">We made some changes to our system and you will need to reset your password.
+Please go to your account page at http://secondlife.com/password
+and answer the security question to reset your password.
+We are very sorry for the inconvenience.</string>
+	<string name="LoginFailedEmployeesOnly">Second Life is temporarily closed for maintenance.
+Logins are currently restricted to employees only.
+Check www.secondlife.com/status for updates.</string>
+	<string name="LoginFailedPremiumOnly">Second Life logins are temporarily restricted in order to make sure that those in-world have the best possible experience.
+
+People with free accounts will not be able to access Second Life during this time, to make room for those who have paid for Second Life.</string>
+	<string name="LoginFailedComputerProhibited">Second Life cannot be accessed from this computer.
+If you feel this is an error, please contact
+support@secondlife.com.</string>
+	<string name="LoginFailedAcountSuspended">Your account is not accessible until
+[TIME] Pacific Time.</string>
+	<string name="LoginFailedAccountDisabled">We are unable to complete your request at this time.
+Please contact Second Life support for assistance at http://secondlife.com/support.
+If you are unable to change your password, please call (866) 476-9763.</string>
+	<string name="LoginFailedTransformError">Data inconsistency found during login.
+Please contact support@secondlife.com.</string>
+	<string name="LoginFailedAccountMaintenance">Your account is undergoing minor maintenance.
+Your account is not accessible until
+[TIME] Pacific Time.
+If you feel this is an error, please contact support@secondlife.com.</string>
+	<string name="LoginFailedPendingLogoutFault">Request for logout responded with a fault from simulator.</string>
+	<string name="LoginFailedPendingLogout">The system is logging you out right now.
+Your Account will not be available until
+[TIME] Pacific Time.</string>
+	<string name="LoginFailedUnableToCreateSession">Unable to create valid session.</string>
+	<string name="LoginFailedUnableToConnectToSimulator">Unable to connect to a simulator.</string>
+	<string name="LoginFailedRestrictedHours">Your account can only access Second Life
+between [START] and [END] Pacific Time.
+Please come back during those hours.
+If you feel this is an error, please contact support@secondlife.com.</string>
+	<string name="LoginFailedIncorrectParameters">Incorrect parameters.
+If you feel this is an error, please contact support@secondlife.com.</string>
+	<string name="LoginFailedFirstNameNotAlphanumeric">First name parameter must be alphanumeric.
+If you feel this is an error, please contact support@secondlife.com.</string>
+	<string name="LoginFailedLastNameNotAlphanumeric">Last name parameter must be alphanumeric.
+If you feel this is an error, please contact support@secondlife.com.</string>
+	<string name="LogoutFailedRegionGoingOffline">Region is going offline.
+Please try logging in again in a minute.</string>
+	<string name="LogoutFailedAgentNotInRegion">Agent not in region.
+Please try logging in again in a minute.</string>
+	<string name="LogoutFailedPendingLogin">The region was logging in another session.
+Please try logging in again in a minute.</string>
+	<string name="LogoutFailedLoggingOut">The region was logging out the previous session.
+Please try logging in again in a minute.</string>
+	<string name="LogoutFailedStillLoggingOut">The region is still logging out the previous session.
+Please try logging in again in a minute.</string>
+	<string name="LogoutSucceeded">Region has logged out last session.
+Please try logging in again in a minute.</string>
+	<string name="LogoutFailedLogoutBegun">Region has begun the logout process.
+Please try logging in again in a minute.</string>
+	<string name="LoginFailedLoggingOutSession">The system has begun logging out your last session.
+Please try logging in again in a minute.</string>
 
 	<string name="ViewerDownloadURL">https://www.singularityviewer.org/</string>
 
@@ -3428,10 +3503,9 @@ The
 
 	<!-- compile queue-->
 	<string name="CompileQueueDownloadedCompiling">Downloaded, now compiling</string>
+	<string name="CompileQueueServiceUnavailable">Script compilation service not available</string>
 	<string name="CompileQueueScriptNotFound">Script not found on server.</string>
 	<string name="CompileQueueProblemDownloading">Problem downloading</string>
-  <string name="CompileQueueProblemUploading">Sim lacking UpdateScriptTask capabilities. Unable to request recompile</string>
-  <string name="CompileQueueProblemWriting">Error writing to local file. Is your hard drive full?</string>
 	<string name="CompileQueueInsufficientPermDownload">Insufficient permissions to download a script.</string>
 	<string name="CompileQueueInsufficientPermFor">Insufficient permissions for</string>
 	<string name="CompileQueueUnknownFailure">Unknown failure to download</string>
@@ -3444,12 +3518,16 @@ The
 	<string name="RunQueueStart">set running</string>
 	<string name="NotRunQueueTitle">Set Not Running Progress</string>
 	<string name="NotRunQueueStart">set not running</string>
+	<string name="DeleteQueueTitle">Delete Progress</string>
+	<string name="DeleteQueueStart">deletion</string>
 
 	<!-- compile comment text-->
 	<string name="CompileSuccessful">Compile successful!</string>
 	<string name="CompileSuccessfulSaving">Compile successful, saving...</string>
 	<string name="SaveComplete">Save complete.</string>
+	<string name="UploadFailed">File upload failed: </string>
 	<string name="ObjectOutOfRange">Script (object out of range)</string>
+	<string name="ScriptWasDeleted">Script (deleted from inventory)</string>
 
 	<!-- god tools -->
 	<string name="GodToolsObjectOwnedBy">Object [OBJECT] owned by [OWNER]</string>
@@ -3462,6 +3540,10 @@ The
 	<string name="NextStipendDay"       value="The next stipend day is " />
 	<string name="GroupIndividualShare" value="                      Group       Individual Share" />
 	<string name="GroupColumn"          value="                      Group" />
+	<string name="Balance">Balance</string>
+	<string name="Credits">Credits</string>
+	<string name="Debits">Debits</string>
+	<string name="Total">Total</string>
 	<string name="NoGroupDataFound">No group data found for group </string>
 
 	<!-- floater IM bonus_info: When a Linden with Admin/god status receives a new IM this displays the estate (Mainland vs. teen grid) of the source avatar.

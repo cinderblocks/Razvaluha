@@ -1051,6 +1051,28 @@ run_time_permissions
 	}
 	;
 
+experience_permissions
+	: EXPERIENCE_PERMISSIONS '(' LLKEY IDENTIFIER ')'
+	{
+		LLScriptIdentifier	*id1 = new LLScriptIdentifier(gLine, gColumn, $4);
+		gAllocationManager->addAllocation(id1);
+		$$ = new LLScriptEXPEvent(gLine, gColumn, id1);
+		gAllocationManager->addAllocation($$);
+	}
+	;
+
+experience_permissions_denied
+	: EXPERIENCE_PERMISSIONS_DENIED '(' LLKEY IDENTIFIER ',' INTEGER IDENTIFIER ')'
+	{
+		LLScriptIdentifier	*id1 = new LLScriptIdentifier(gLine, gColumn, $4);
+		gAllocationManager->addAllocation(id1);
+		LLScriptIdentifier	*id2 = new LLScriptIdentifier(gLine, gColumn, $7);
+		gAllocationManager->addAllocation(id2);
+		$$ = new LLScriptEXPDeniedEvent(gLine, gColumn, id1, id2);
+		gAllocationManager->addAllocation($$);
+	}
+	;
+
 inventory
 	: INVENTORY '(' INTEGER IDENTIFIER ')'																	
 	{  

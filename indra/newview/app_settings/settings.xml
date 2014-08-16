@@ -7408,6 +7408,38 @@ This should be as low as possible, but too low may break functionality</string>
         <integer>0</integer>
       </array>
     </map>
+    <key>FloaterExperienceProfileRect</key>
+    <map>
+      <key>Comment</key>
+      <string>Rectangle for experience profile floaters</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Rect</string>
+      <key>Value</key>
+      <array>
+        <integer>16</integer>
+        <integer>650</integer>
+        <integer>600</integer>
+        <integer>128</integer>
+      </array>
+    </map>
+    <key>FloaterExperiencesRect</key>
+    <map>
+      <key>Comment</key>
+      <string>Rectangle for experiences floater</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Rect</string>
+      <key>Value</key>
+      <array>
+        <integer>16</integer>
+        <integer>650</integer>
+        <integer>600</integer>
+        <integer>128</integer>
+      </array>
+    </map>
     <key>FloaterFavoritesRect</key>
     <map>
       <key>Comment</key>
@@ -11603,17 +11635,6 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Value</key>
       <integer>344</integer>
     </map>
-    <key>RevokePermsOnStandUp</key>
-    <map>
-      <key>Comment</key>
-      <string>When enabled, revokes any permission granted to an object you don't own and from which your avatar is standing up</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>Boolean</string>
-      <key>Value</key>
-      <integer>0</integer>
-    </map>
     <key>PickerContextOpacity</key>
     <map>
       <key>Comment</key>
@@ -11624,6 +11645,17 @@ This should be as low as possible, but too low may break functionality</string>
       <string>F32</string>
       <key>Value</key>
       <real>0.34999999404</real>
+    </map>
+    <key>RevokePermsOnStandUp</key>
+    <map>
+      <key>Comment</key>
+      <string>When enabled, revokes any permission granted to an object you don't own and from which your avatar is standing up</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
     </map>
     <key>PicksPerSecondMouseMoving</key>
     <map>
