@@ -27,7 +27,6 @@
 #ifndef LL_LLTEXGLOBALCOLOR_H
 #define LL_LLTEXGLOBALCOLOR_H
 
-#include "lltexlayer.h"
 #include "lltexlayerparams.h"
 
 class LLAvatarAppearance;
@@ -74,7 +73,7 @@ class LLTexParamGlobalColor : public LLTexLayerParamColor
 public:
 	LLTexParamGlobalColor(LLTexGlobalColor *tex_color);
 	virtual ~LLTexParamGlobalColor();
-	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable) const;
+	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable) const override;
 protected:
 	LLTexParamGlobalColor(const LLTexParamGlobalColor& pOther);
 	/*virtual*/ void onGlobalColorChanged(bool upload_bake = false);

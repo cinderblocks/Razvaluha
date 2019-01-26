@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file media_plugin_example.cpp
  * @brief Example plugin for LLMedia API plugin system
@@ -81,6 +83,7 @@ MediaPluginExample::MediaPluginExample( LLPluginInstance::sendMessageFunction ho
     mMouseButtonDown = false;
     mStopAction = false;
     mLastUpdateTime = 0;
+    mBackgroundPixels = NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -363,10 +366,10 @@ void MediaPluginExample::update( F64 milliseconds )
         };
 
         if ( mXpos[ n ] + mXInc[ n ] < 0 || mXpos[ n ] + mXInc[ n ] >= mWidth - mBlockSize[ n ] )
-            mXInc[ n ]= -mXInc[ n ];
+            mXInc[ n ] -= mXInc[ n ];
 
         if ( mYpos[ n ] + mYInc[ n ] < 0 || mYpos[ n ] + mYInc[ n ] >= mHeight - mBlockSize[ n ] )
-            mYInc[ n ]= -mYInc[ n ];
+            mYInc[ n ] -= mYInc[ n ];
 
         mXpos[ n ] += mXInc[ n ];
         mYpos[ n ] += mYInc[ n ];

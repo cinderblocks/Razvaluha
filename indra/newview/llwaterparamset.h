@@ -27,12 +27,10 @@
 #ifndef LL_WATER_PARAM_SET_H
 #define LL_WATER_PARAM_SET_H
 
-#include <string>
-#include <map>
-
 #include "v4math.h"
 #include "v4color.h"
 #include "llviewershadermgr.h"
+#include "llstringtable.h"
 
 class LLWaterParamSet;
 

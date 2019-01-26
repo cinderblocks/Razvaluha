@@ -62,22 +62,22 @@ public:
 	static void initClass();
 	static void cleanupClass();
 
-	LLWorldMapView(const std::string& name, const LLRect& rect );
+	LLWorldMapView(const std::string& name, const LLRect& rect);
 	virtual ~LLWorldMapView();
 
-	virtual void	reshape(S32 width, S32 height, BOOL called_from_parent = TRUE );
-	virtual void	setVisible(BOOL visible);
+	void	reshape(S32 width, S32 height, BOOL called_from_parent = TRUE ) override;
+	void	setVisible(BOOL visible) override;
 
-	virtual BOOL	handleMouseDown(S32 x, S32 y, MASK mask);
-	virtual BOOL	handleMouseUp(S32 x, S32 y, MASK mask);
-	virtual BOOL	handleDoubleClick( S32 x, S32 y, MASK mask );
-	virtual BOOL	handleHover( S32 x, S32 y, MASK mask );
-	virtual BOOL	handleToolTip( S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen );
+	BOOL	handleMouseDown(S32 x, S32 y, MASK mask) override;
+	BOOL	handleMouseUp(S32 x, S32 y, MASK mask) override;
+	BOOL	handleDoubleClick( S32 x, S32 y, MASK mask ) override;
+	BOOL	handleHover( S32 x, S32 y, MASK mask ) override;
+	BOOL	handleToolTip( S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen ) override;
 
 	bool			checkItemHit(S32 x, S32 y, LLItemInfo& item, LLUUID* id, bool track);
 	void			handleClick(S32 x, S32 y, MASK mask, S32* hit_type, LLUUID* id);
 
-	// Scale and pan are shared across all instances.
+	// Scale and pan are shared across all instances! (i.e. Terrain and Objects maps are always registered)
 	static void		setScale( F32 scale );
 	static void		translatePan( S32 delta_x, S32 delta_y );
 	static void		setPan( S32 x, S32 y, BOOL snap = TRUE );
@@ -87,7 +87,7 @@ public:
 	LLVector3		globalPosToView(const LLVector3d& global_pos);
 	LLVector3d		viewPosToGlobal(S32 x,S32 y);
 
-	virtual void	draw();
+	void	draw() override;
 	void			drawLegacyBackgroundLayers(S32 width, S32 height);	//draw legacy background 'layer' tiles. Only available on official grids, I believe.
 	F32				drawLegacySimTile(LLSimInfo& sim_info, S32 left, S32 top, S32 right, S32 bottom);	//draw legacy sim texture (provided in MapBlockReply message).
 	void			drawGenericItems(const LLSimInfo::item_info_list_t& items, LLUIImagePtr image);
@@ -197,6 +197,7 @@ public:
 	static BOOL		sHandledLastClick;
 	S32				mSelectIDStart;
 
+	// Keep the list of regions that are displayed on screen. Avoids iterating through the whole region map after draw().
 	typedef std::vector<U64> handle_list_t;
 	handle_list_t mVisibleRegions; // set every frame
 

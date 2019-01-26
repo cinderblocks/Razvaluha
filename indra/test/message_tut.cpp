@@ -1,43 +1,39 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file lldatapacker_tut.cpp
  * @date 2007-04
  * @brief LLDataPacker test cases.
  *
- * $LicenseInfo:firstyear=2007&license=viewergpl$
- * 
- * Copyright (c) 2007-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2007&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
 #include <tut/tut.hpp>
 #include "linden_common.h"
 #include "lltut.h"
-
+#include "llhttpconstants.h"
+#include "llapr.h"
 #include "llmessageconfig.h"
 #include "llsdserialize.h"
-#include "llversionserver.h"
 #include "message.h"
 #include "message_prehash.h"
 
@@ -51,6 +47,7 @@ namespace
 			mStatus = code;
 		}
 		virtual void extendedResult(S32 code, const std::string& message, const LLSD& headers) { }
+		virtual void extendedResult(S32 code, const LLSD& result, const LLSD& headers) { }
 		S32 mStatus;
 	};
 }
@@ -67,6 +64,7 @@ namespace tut
 			static bool init = false;
 			if(!init)
 			{
+				ll_init_apr();
 				//init_prehash_data();
 				init = true;
 			}
@@ -76,9 +74,9 @@ namespace tut
 
 			// currently test disconnected message system
 			start_messaging_system("notafile", 13035,
-								   LL_VERSION_MAJOR,
-								   LL_VERSION_MINOR,        
-								   LL_VERSION_PATCH,        
+								   1,
+								   0,        
+								   0,        
 								   FALSE,        
 								   "notasharedsecret",
 								   NULL,
@@ -107,7 +105,7 @@ namespace tut
 		~LLMessageSystemTestData()
 		{
 			// not end_messaging_system()
-			delete gMessageSystem;
+			delete static_cast<LLMessageSystem*>(gMessageSystem);
 			gMessageSystem = NULL;
 
 			// rm contents of temp dir
@@ -123,9 +121,8 @@ namespace tut
 
 		void writeConfigFile(const LLSD& config)
 		{
-			std::ostringstream ostr;
-			ostr << mTestConfigDir << mSep << "message.xml";
-			llofstream file(ostr.str());
+			std::string ostr(mTestConfigDir + mSep + "message.xml");
+			llofstream file(ostr.c_str());
 			if (file.is_open())
 			{
 				LLSDSerialize::toPrettyXML(config, file);
@@ -146,7 +143,7 @@ namespace tut
 		const LLSD message;
 		const LLPointer<Response> response = new Response();
 		gMessageSystem->dispatch(name, message, response);
-		ensure_equals(response->mStatus, 404);
+		ensure_equals(response->mStatus, HTTP_NOT_FOUND);
 	}
 }
 

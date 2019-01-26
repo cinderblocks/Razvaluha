@@ -2,31 +2,25 @@
  * @file llfloatertopobjects.h
  * @brief Shows top colliders or top scripts
  *
- * $LicenseInfo:firstyear=2005&license=viewergpl$
- * 
- * Copyright (c) 2005-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2005&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -37,9 +31,25 @@
 
 class LLUICtrl;
 
+// Bits for simulator performance query flags
+enum LAND_STAT_FLAGS
+{
+	STAT_FILTER_BY_PARCEL	= 0x00000001,
+	STAT_FILTER_BY_OWNER	= 0x00000002,
+	STAT_FILTER_BY_OBJECT	= 0x00000004,
+	STAT_FILTER_BY_PARCEL_NAME	= 0x00000008,
+	STAT_REQUEST_LAST_ENTRY	= 0x80000000,
+};
+
+enum LAND_STAT_REPORT_TYPE
+{
+	STAT_REPORT_TOP_SCRIPTS = 0,
+	STAT_REPORT_TOP_COLLIDERS
+};
+
 class LLFloaterTopObjects : public LLFloater, public LLSingleton<LLFloaterTopObjects>
 {
-	friend class LLSingleton<LLFloaterTopObjects>;
+	LLSINGLETON(LLFloaterTopObjects);
 public:
 	// Opens the floater on screen.
 //	static void show();
@@ -51,14 +61,13 @@ public:
 	
 	void clearList();
 	void updateSelectionInfo();
-	virtual BOOL postBuild();
+	BOOL postBuild() override;
 
 	void onRefresh();
 
 	static void setMode(U32 mode);
 
 private:
-	LLFloaterTopObjects();
 	~LLFloaterTopObjects();
 
 	void initColumns(LLCtrlListInterface *list);

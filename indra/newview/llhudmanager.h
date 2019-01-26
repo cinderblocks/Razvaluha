@@ -46,8 +46,8 @@ class LLMessageSystem;
 
 class LLHUDManager : public LLSingleton<LLHUDManager>
 {
+	LLSINGLETON(LLHUDManager);
 public:
-	LLHUDManager();
 	~LLHUDManager();
 
 	LLHUDEffect *createViewerEffect(const U8 type, BOOL send_to_sim = TRUE, BOOL originated_here = TRUE);

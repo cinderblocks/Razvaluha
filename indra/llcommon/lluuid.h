@@ -73,7 +73,7 @@ public:
 	BOOL	set(const std::string& in_string, BOOL emit = TRUE);	// Convert from string, if emit is FALSE, do not emit warnings
 	void	setNull();					// Faster than setting to LLUUID::null.
 
-	S32     cmpTime(uuid_time_t *t1, uuid_time_t *t2);
+    S32     cmpTime(uuid_time_t *t1, uuid_time_t *t2);
 	static void    getSystemTime(uuid_time_t *timestamp);
 	void    getCurrentTime(uuid_time_t *timestamp);
 
@@ -109,7 +109,9 @@ public:
 	friend LL_COMMON_API std::ostream&	 operator<<(std::ostream& s, const LLUUID &uuid);
 	friend LL_COMMON_API std::istream&	 operator>>(std::istream& s, LLUUID &uuid);
 
+	void toString(char *out) const;		// Does not allocate memory, needs 36 characters (including \0)
 	void toString(std::string& out) const;
+	void toCompressedString(char *out) const;	// Does not allocate memory, needs 17 characters (including \0)
 	void toCompressedString(std::string& out) const;
 
 	std::string asString() const;
@@ -307,9 +309,10 @@ struct lluuid_less
 
 typedef std::set<LLUUID, lluuid_less> uuid_list_t;
 
+
 namespace std {
 	template <> struct hash<LLUUID>
-{
+	{
 	public:
 		size_t operator()(const LLUUID & id) const
 		{
@@ -320,13 +323,13 @@ namespace std {
 
 namespace boost {
 	template<> class hash<LLUUID>
-{
+	{
 	public:
 		size_t operator()(const LLUUID& id) const
-	{
+		{
 			return id.hash();
-	}
-};
+		}
+	};
 }
 
 /*

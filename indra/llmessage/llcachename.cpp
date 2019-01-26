@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llcachename.cpp
  * @brief A hierarchical cache of first and last names queried based on UUID.
@@ -38,8 +40,6 @@
 #include "lluuid.h"
 #include "message.h"
 
-#include <boost/regex.hpp>
-
 // llsd serialization constants
 static const std::string AGENTS("agents");
 static const std::string GROUPS("groups");
@@ -52,11 +52,8 @@ static const std::string NAME("name");
 // We won't re-request a name during this time
 const U32 PENDING_TIMEOUT_SECS = 5 * 60;
 
-// File version number
-const S32 CN_FILE_VERSION = 2;
-
 // Globals
-LLCacheName* gCacheName = NULL;
+LLCacheName* gCacheName = nullptr;
 std::map<std::string, std::string> LLCacheName::sCacheName;
 
 /// ---------------------------------------------------------------------------
@@ -263,7 +260,7 @@ LLCacheName::~LLCacheName()
 }
 
 LLCacheName::Impl::Impl(LLMessageSystem* msg)
-	: mMsg(msg), mUpstreamHost()
+	: mMsg(msg), mUpstreamHost(LLHost())
 {
 	mMsg->setHandlerFuncFast(
 		_PREHASH_UUIDNameRequest, handleUUIDNameRequest, (void**)this);
@@ -317,7 +314,7 @@ bool LLCacheName::importFile(std::istream& istr)
 	}
 
 	// We'll expire entries more than a week old
-	U32 now = (U32)time(NULL);
+	U32 now = (U32)time(nullptr);
 	const U32 SECS_PER_DAY = 60 * 60 * 24;
 	U32 delete_before_time = now - (7 * SECS_PER_DAY);
 
@@ -438,7 +435,7 @@ BOOL LLCacheName::Impl::getName(const LLUUID& id, std::string& first, std::strin
 // static
 void LLCacheName::localizeCacheName(std::string key, std::string value)
 {
-	if (key!="" && value!= "" )
+	if (!key.empty() && !value.empty())
 		sCacheName[key]=value;
 	else
 		LL_WARNS()<< " Error localizing cache key " << key << " To "<< value<<LL_ENDL;
@@ -469,7 +466,7 @@ BOOL LLCacheName::getGroupName(const LLUUID& id, std::string& group)
 		// this group name was loaded from a name cache that did not
 		// bother to save the group name ==> we must ask for it
 		LL_DEBUGS() << "LLCacheName queuing HACK group request: " << id << LL_ENDL;
-		entry = NULL;
+		entry = nullptr;
 	}
 
 	if (entry)
@@ -607,7 +604,7 @@ std::string LLCacheName::buildLegacyName(const std::string& complete_name)
 
 // This is a little bit kludgy. LLCacheNameCallback is a slot instead of a function pointer.
 //  The reason it is a slot is so that the legacy get() function below can bind an old callback
-//  and pass it as a slot. The reason it isn't a boost::function is so that trackable behavior
+//  and pass it as a slot. The reason it isn't a std::function is so that trackable behavior
 //  doesn't get lost. As a result, we have to bind the slot to a signal to call it, even when
 //  we call it immediately. -Steve
 // NOTE: Even though passing first and last name is a bit of extra overhead, it eliminates the
@@ -707,7 +704,7 @@ void LLCacheName::processPending()
 
 void LLCacheName::deleteEntriesOlderThan(S32 secs)
 {
-	U32 now = (U32)time(NULL);
+	U32 now = (U32)time(nullptr);
 	U32 expire_time = now - secs;
 	for(Cache::iterator iter = impl.mCache.begin(); iter != impl.mCache.end(); )
 	{
@@ -885,7 +882,7 @@ void LLCacheName::Impl::sendRequest(
 
 bool LLCacheName::Impl::isRequestPending(const LLUUID& id)
 {
-	U32 now = (U32)time(NULL);
+	U32 now = (U32)time(nullptr);
 	U32 expire_time = now - PENDING_TIMEOUT_SECS;
 
 	PendingQueue::iterator iter = mPendingQueue.find(id);
@@ -973,7 +970,7 @@ void LLCacheName::Impl::processUUIDReply(LLMessageSystem* msg, bool isGroup)
 		mPendingQueue.erase(id);
 
 		entry->mIsGroup = isGroup;
-		entry->mCreateTime = (U32)time(NULL);
+		entry->mCreateTime = (U32)time(nullptr);
 		if (!isGroup)
 		{
 			msg->getStringFast(_PREHASH_UUIDNameBlock, _PREHASH_FirstName, entry->mFirstName, i);

@@ -1601,7 +1601,6 @@ BOOL LLView::hasChild(const std::string& childname, BOOL recurse) const
 //-----------------------------------------------------------------------------
 // getChildView()
 //-----------------------------------------------------------------------------
-
 static LLTrace::BlockTimerStatHandle FTM_FIND_VIEWS("Find Widgets");
 
 LLView* LLView::getChildView(const std::string& name, BOOL recurse, BOOL create_if_missing) const
@@ -2115,6 +2114,7 @@ const LLCtrlQuery & LLView::getTabOrderQuery()
 // This class is only used internally by getFocusRootsQuery below. 
 class LLFocusRootsFilter : public LLQueryFilter, public LLSingleton<LLFocusRootsFilter>
 {
+	LLSINGLETON_EMPTY_CTOR(LLFocusRootsFilter);
 	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const 
 	{
 		return filterResult_t(view->isCtrl() && view->isFocusRoot(), !view->isFocusRoot());

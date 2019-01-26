@@ -33,7 +33,7 @@ namespace LLPredicate
 {
 	template<typename ENUM> class Rule;
 
-	extern LL_COMMON_API const U32 cPredicateFlagsFromEnum[5];
+	extern const U32 cPredicateFlagsFromEnum[5];
 
 	template<typename ENUM>
 	class Value

@@ -14,7 +14,7 @@ include(LLAddBuildTest)
 include(Python)
 include(Tut)
 include(Python)
-include(JsonCpp)
+include(Json)
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -25,14 +25,19 @@ include_directories(
     ${LLMESSAGE_INCLUDE_DIRS}
     ${LLVFS_INCLUDE_DIRS}
     ${LLXML_INCLUDE_DIRS}
-    ${JSONCPP_INCLUDE_DIR}
+    ${JSON_INCLUDE_DIR}
+    )
+
+include_directories(
+    SYSTEM
+    ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
     )
 
 set(llmessage_SOURCE_FILES
+    llaescipher.cpp
     llassetstorage.cpp
     llavatarname.cpp
     llavatarnamecache.cpp
-    llblowfishcipher.cpp
     llbuffer.cpp
     llbufferstream.cpp
     llcachename.cpp
@@ -54,7 +59,6 @@ set(llmessage_SOURCE_FILES
     lliopipe.cpp
     lliosocket.cpp
     llioutil.cpp
-    llmail.cpp
     llmessagebuilder.cpp
     llmessageconfig.cpp
     llmessagelog.cpp
@@ -74,6 +78,8 @@ set(llmessage_SOURCE_FILES
     llsdhttpserver.cpp
     llsdmessagebuilder.cpp
     llsdmessagereader.cpp
+    llservicebuilder.cpp
+    llservice.cpp
     llstoredmessage.cpp
     lltemplatemessagebuilder.cpp
     lltemplatemessagedispatcher.cpp
@@ -88,15 +94,16 @@ set(llmessage_SOURCE_FILES
     lluseroperation.cpp
     llxfer.cpp
     llxfer_file.cpp
+    llxfermanager.cpp
     llxfer_mem.cpp
     llxfer_vfile.cpp
-    llxfermanager.cpp
     llxorcipher.cpp
     machine.cpp
     message.cpp
     message_prehash.cpp
     message_string_table.cpp
     net.cpp
+    partsyspacket.cpp
     patch_code.cpp
     patch_dct.cpp
     patch_idct.cpp
@@ -106,10 +113,10 @@ set(llmessage_SOURCE_FILES
 set(llmessage_HEADER_FILES
     CMakeLists.txt
 
+    llaescipher.h
     llassetstorage.h
     llavatarname.h
     llavatarnamecache.h
-    llblowfishcipher.h
     llbuffer.h
     llbufferstream.h
     llcachename.h
@@ -124,6 +131,7 @@ set(llmessage_HEADER_FILES
     lldispatcher.h
     lleventflags.h
     llexperiencecache.h
+    llextendedstatus.h
     llfiltersd2xmlrpc.h
     llfollowcamparams.h
     llhost.h
@@ -138,7 +146,6 @@ set(llmessage_HEADER_FILES
     lliosocket.h
     llioutil.h
     llloginflags.h
-    llmail.h
     llmessagebuilder.h
     llmessageconfig.h
     llmessagelog.h
@@ -153,8 +160,8 @@ set(llmessage_HEADER_FILES
     llpacketbuffer.h
     llpacketring.h
     llpartdata.h
-    llproxy.h
     llpumpio.h
+    llproxy.h
     llqueryflags.h
     llregionflags.h
     llregionhandle.h
@@ -162,6 +169,8 @@ set(llmessage_HEADER_FILES
     llsdhttpserver.h
     llsdmessagebuilder.h
     llsdmessagereader.h
+    llservice.h
+    llservicebuilder.h
     llstoredmessage.h
     lltaskname.h
     llteleportflags.h
@@ -178,16 +187,17 @@ set(llmessage_HEADER_FILES
     lluseroperation.h
     llvehicleparams.h
     llxfer.h
+    llxfermanager.h
     llxfer_file.h
     llxfer_mem.h
     llxfer_vfile.h
-    llxfermanager.h
     llxorcipher.h
     machine.h
     mean_collision_data.h
     message.h
     message_prehash.h
     net.h
+    partsyspacket.h
     patch_code.h
     patch_dct.h
     sound_ids.h
@@ -203,29 +213,33 @@ add_library (llmessage ${llmessage_SOURCE_FILES})
 if (LINUX)
 target_link_libraries(
   llmessage
-  ${CURL_LIBRARIES}
+  ${LLCOREHTTP_LIBRARIES}
   ${LLCOMMON_LIBRARIES}
   ${LLVFS_LIBRARIES}
   ${LLMATH_LIBRARIES}
-  ${JSONCPP_LIBRARIES}
+  ${LLCOMMON_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CRYPTO_LIBRARIES}
   ${XMLRPCEPI_LIBRARIES}
-  ${LLCOREHTTP_LIBRARIES}
+  ${BOOST_COROUTINE_LIBRARY}
+  ${BOOST_CONTEXT_LIBRARY}
+  ${BOOST_SYSTEM_LIBRARY}
   rt
   )
 else (LINUX)
 target_link_libraries(
   llmessage
+  ${LLCOREHTTP_LIBRARIES}
   ${CURL_LIBRARIES}
   ${LLCOMMON_LIBRARIES}
   ${LLVFS_LIBRARIES}
   ${LLMATH_LIBRARIES}
-  ${JSONCPP_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CRYPTO_LIBRARIES}
   ${XMLRPCEPI_LIBRARIES}
-  ${LLCOREHTTP_LIBRARIES}
+  ${BOOST_COROUTINE_LIBRARY}
+  ${BOOST_CONTEXT_LIBRARY}
+  ${BOOST_SYSTEM_LIBRARY}
   )
 endif(LINUX)
 
@@ -250,7 +264,6 @@ if (LINUX)
     ${LLCOMMON_LIBRARIES}
     ${LLMESSAGE_LIBRARIES}
     ${LLCOREHTTP_LIBRARIES}
-    ${JSONCPP_LIBRARIES}
     rt
     ${GOOGLEMOCK_LIBRARIES}
     ${LLXML_LIBRARIES}
@@ -264,7 +277,6 @@ else (LINUX)
     ${LLCOMMON_LIBRARIES}
     ${LLMESSAGE_LIBRARIES}
     ${LLCOREHTTP_LIBRARIES}
-    ${JSONCPP_LIBRARIES}
     ${LLXML_LIBRARIES}
     )
 endif(LINUX)

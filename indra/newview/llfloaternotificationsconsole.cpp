@@ -47,7 +47,7 @@ class LLNotificationChannelPanel : public LLLayoutPanel
 {
 public:
 	LLNotificationChannelPanel(const std::string& channel_name);
-	BOOL postBuild();
+	BOOL postBuild() override;
 
 private:
 	bool update(const LLSD& payload, bool passed_filter);

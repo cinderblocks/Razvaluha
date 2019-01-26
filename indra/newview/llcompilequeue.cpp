@@ -78,13 +78,13 @@ public:
             bool isRunning, std::string scriptName, LLUUID queueId, LLUUID exerienceId, taskUploadFinish_f finish) :
         LLScriptAssetUpload(taskId, itemId, targetType, isRunning, 
             exerienceId, std::string(), finish),
-        mScriptName(scriptName),
-        mQueueId(queueId)
+        mQueueId(queueId),
+        mScriptName(scriptName)
     {
         setAssetId(assetId);
     }
 
-    virtual LLSD prepareUpload()
+	LLSD prepareUpload() override
     {
         /* *NOTE$: The parent class (LLScriptAssetUpload will attempt to save 
          * the script buffer into to the VFS.  Since the resource is already in 
@@ -134,7 +134,7 @@ struct LLScriptQueueData
 ///----------------------------------------------------------------------------
 
 // static
-LLMap<LLUUID, LLFloaterScriptQueue*> LLFloaterScriptQueue::sInstances;
+std::map<LLUUID, LLFloaterScriptQueue*> LLFloaterScriptQueue::sInstances;
 
 
 // Default constructor
@@ -158,13 +158,13 @@ LLFloaterScriptQueue::LLFloaterScriptQueue(const std::string& name,
 	LLRect curRect = getRect();
 	translate(rect.mLeft - curRect.mLeft, rect.mTop - curRect.mTop);
 	mStartString = start_string;
-	sInstances.addData(mID, this);
+	sInstances[mID] = this;
 }
 
 // Destroys the object
 LLFloaterScriptQueue::~LLFloaterScriptQueue()
 {
-	sInstances.removeData(mID);
+	sInstances.erase(mID);
 }
 
 BOOL LLFloaterScriptQueue::postBuild()
@@ -178,7 +178,7 @@ BOOL LLFloaterScriptQueue::postBuild()
 // static
 LLFloaterScriptQueue* LLFloaterScriptQueue::findInstance(const LLUUID& id)
 {
-	return sInstances.checkData(id) ? sInstances.getData(id) : NULL;
+	try { return sInstances.at(id); } catch (...) { return nullptr; }
 }
 
 // This is the callback method for the viewer object currently being
@@ -315,7 +315,6 @@ BOOL LLFloaterScriptQueue::startQueue()
 	return nextObject();
 }
 
-
 ///----------------------------------------------------------------------------
 /// Class LLFloaterCompileQueue
 ///----------------------------------------------------------------------------
@@ -357,6 +356,8 @@ BOOL LLFloaterCompileQueue::hasExperience( const LLUUID& id ) const
 	return mExperienceIds.find(id) != mExperienceIds.end();
 }
 
+// //Attempt to record this asset ID.  If it can not be inserted into the set 
+// //then it has already been processed so return false.
 
 void LLFloaterCompileQueue::handleInventory(LLViewerObject *viewer_object,
 											 LLInventoryObject::object_list_t* inv)
@@ -631,7 +632,7 @@ void LLFloaterResetQueue::handleInventory(LLViewerObject* viewer_obj,
 			{
 				LLInventoryItem* item = (LLInventoryItem*)((LLInventoryObject*)(*it));
 				std::string buffer;
-				buffer = getString("Resetting") + LLTrans::getString(":") + " " + item->getName();
+				buffer = getString("Resetting") + LLTrans::getString(":") + ' ' + item->getName();
 				getChild<LLScrollListCtrl>("queue output")->addSimpleElement(buffer, ADD_BOTTOM);
 				LLMessageSystem* msg = gMessageSystem;
 				msg->newMessageFast(_PREHASH_ScriptReset);

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 * @file llpathfindinglinksetlist.cpp
 * @brief Implementation of llpathfindinglinksetlist
@@ -29,9 +31,6 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llpathfindinglinksetlist.h"
-
-#include <string>
-#include <map>
 
 #include "llpathfindinglinkset.h"
 #include "llpathfindingobject.h"
@@ -204,7 +203,10 @@ void LLPathfindingLinksetList::parseLinksetListData(const LLSD& pLinksetListData
 	{
 		const std::string& uuid(linksetDataIter->first);
 		const LLSD& linksetData = linksetDataIter->second;
-		LLPathfindingObjectPtr linksetPtr(new LLPathfindingLinkset(uuid, linksetData));
-		objectMap.insert(std::pair<std::string, LLPathfindingObjectPtr>(uuid, linksetPtr));
+		if(linksetData.size() != 0)
+		{
+			LLPathfindingObjectPtr linksetPtr(new LLPathfindingLinkset(uuid, linksetData));
+			objectMap.insert(std::pair<std::string, LLPathfindingObjectPtr>(uuid, linksetPtr));
+		}
 	}
 }

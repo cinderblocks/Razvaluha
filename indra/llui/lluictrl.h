@@ -34,6 +34,7 @@
 #ifndef LL_LLUICTRL_H
 #define LL_LLUICTRL_H
 
+//#include "llboost.h"
 #include "llrect.h"
 #include "llsd.h"
 #include "llregistry.h"
@@ -49,7 +50,7 @@
 #include "llviewmodel.h"		// *TODO move dependency to .cpp file
 
 class LLUICtrl
-: public LLView, public boost::signals2::trackable
+	: public LLView, public boost::signals2::trackable
 {
 public:
 	typedef boost::function<void (LLUICtrl* ctrl, const LLSD& param)> commit_callback_t;
@@ -108,14 +109,14 @@ public:
 		Optional<CommitCallbackParam>	init_callback,
 										commit_callback;
 		Optional<EnableCallbackParam>	validate_callback;
-
+		
 		Optional<CommitCallbackParam>	mouseenter_callback,
 										mouseleave_callback;
-
+		
 		Optional<std::string>			control_name;
 		Optional<EnableControls>		enabled_controls;
 		Optional<ControlVisibility>		controls_visibility;
-
+		
 		// font params
 		Optional<const LLFontGL*>		font;
 		Optional<LLFontGL::HAlign>		font_halign;
@@ -133,19 +134,19 @@ public:
 	void initFromParams(const Params& p);
 	static const Params& getDefaultParams();
 	LLUICtrl(const Params& p = getDefaultParams(),
-			 const LLViewModelPtr& viewmodel=LLViewModelPtr(new LLViewModel));
+             const LLViewModelPtr& viewmodel=LLViewModelPtr(new LLViewModel));
 	// Singu Note: This constructor is deprecated:
 	LLUICtrl( const std::string& name, const LLRect rect = LLRect(), BOOL mouse_opaque = TRUE,
 		commit_callback_t commit_callback = NULL,
 		U32 reshape=FOLLOWS_NONE);
-
+	
 	commit_signal_t::slot_type initCommitCallback(const CommitCallbackParam& cb);
 	enable_signal_t::slot_type initEnableCallback(const EnableCallbackParam& cb);
 
 	// We need this virtual so we can override it with derived versions
 	virtual LLViewModel* getViewModel() const;
-	// We shouldn't ever need to set this directly
-	//virtual void    setViewModel(const LLViewModelPtr&);
+    // We shouldn't ever need to set this directly
+    //virtual void    setViewModel(const LLViewModelPtr&);
 
 	virtual BOOL	postBuild();
 
@@ -257,19 +258,26 @@ public:
 
 	class LLTextInputFilter : public LLQueryFilter, public LLSingleton<LLTextInputFilter>
 	{
-		/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const 
+		LLSINGLETON_EMPTY_CTOR(LLTextInputFilter);
+		/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const override
 		{
 			return filterResult_t(view->isCtrl() && static_cast<const LLUICtrl *>(view)->acceptsTextInput(), TRUE);
 		}
 	};
 
 	template <typename F, typename DERIVED> class CallbackRegistry : public LLRegistrySingleton<std::string, F, DERIVED >
-	{};
+	{};	
 
-	class CommitCallbackRegistry : public CallbackRegistry<commit_callback_t, CommitCallbackRegistry>{};
+	class CommitCallbackRegistry : public CallbackRegistry<commit_callback_t, CommitCallbackRegistry>
+	{
+		LLSINGLETON_EMPTY_CTOR(CommitCallbackRegistry);
+	};
 	// the enable callback registry is also used for visiblity callbacks
-	class EnableCallbackRegistry : public CallbackRegistry<enable_callback_t, EnableCallbackRegistry>{};
-
+	class EnableCallbackRegistry : public CallbackRegistry<enable_callback_t, EnableCallbackRegistry>
+	{
+		LLSINGLETON_EMPTY_CTOR(EnableCallbackRegistry);
+	};
+		
 protected:
 
 	static bool controlListener(const LLSD& newvalue, LLHandle<LLUICtrl> handle, std::string type);

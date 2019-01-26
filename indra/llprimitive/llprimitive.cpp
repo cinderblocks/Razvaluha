@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llprimitive.cpp
  * @brief LLPrimitive base class
@@ -38,7 +40,6 @@
 #include "lldatapacker.h"
 #include "llsdutil_math.h"
 #include "llprimtexturelist.h"
-#include "imageids.h"
 #include "llmaterialid.h"
 #include "llvolume.h"
 
@@ -121,7 +122,7 @@ const F32	TEXTURE_ROTATION_PACK_FACTOR = ((F32) 0x08000);
 //static 
 // LEGACY: by default we use the LLVolumeMgr::gVolumeMgr global
 // TODO -- eliminate this global from the codebase!
-LLVolumeMgr* LLPrimitive::sVolumeManager = NULL;
+LLVolumeMgr* LLPrimitive::sVolumeManager = nullptr;
 
 // static
 void LLPrimitive::setVolumeManager( LLVolumeMgr* volume_manager )
@@ -141,7 +142,7 @@ bool LLPrimitive::cleanupVolumeManager()
 	{
 		res = sVolumeManager->cleanup();
 		delete sVolumeManager;
-		sVolumeManager = NULL;
+		sVolumeManager = nullptr;
 	}
 	return res;
 }
@@ -151,12 +152,13 @@ bool LLPrimitive::cleanupVolumeManager()
 LLPrimitive::LLPrimitive()
 :	mTextureList(),
 	mNumTEs(0),
+	mNumBumpmapTEs(0),
 	mMiscFlags(0)
 {
 	mPrimitiveCode = 0;
 
 	mMaterial = LL_MCODE_STONE;
-	mVolumep  = NULL;
+	mVolumep  = nullptr;
 
 	mChanged  = UNCHANGED;
 
@@ -175,11 +177,11 @@ LLPrimitive::~LLPrimitive()
 {
 	clearTextureList();
 	// Cleanup handled by volume manager
-	if (mVolumep)
+	if (mVolumep && sVolumeManager)
 	{
 		sVolumeManager->unrefVolume(mVolumep);
 	}
-	mVolumep = NULL;
+	mVolumep = nullptr;
 }
 
 void LLPrimitive::clearTextureList()
@@ -190,17 +192,17 @@ void LLPrimitive::clearTextureList()
 // static
 LLPrimitive *LLPrimitive::createPrimitive(LLPCode p_code)
 {
-	LLPrimitive *retval = new LLPrimitive();
-	
-	if (retval)
+	LLPrimitive *retval = nullptr;
+	try
 	{
-		retval->init_primitive(p_code);
+		retval = new LLPrimitive();
 	}
-	else
+	catch (const std::bad_alloc& e)
 	{
-		LL_ERRS() << "primitive allocation failed" << LL_ENDL;
+		LL_ERRS() << "Primitive allocation failed with exception: " << e.what() << LL_ENDL;
 	}
 
+	retval->init_primitive(p_code);
 	return retval;
 }
 
@@ -237,7 +239,10 @@ void  LLPrimitive::setAllTETextures(const LLUUID &tex_id)
 //===============================================================
 void LLPrimitive::setTE(const U8 index, const LLTextureEntry& te)
 {
-	mTextureList.copyTexture(index, te);
+	if(mTextureList.copyTexture(index, te) != TEM_CHANGE_NONE && te.getBumpmap() > 0)
+	{
+		mNumBumpmapTEs++;
+	}
 }
 
 S32  LLPrimitive::setTETexture(const U8 index, const LLUUID &id)
@@ -330,6 +335,7 @@ LLMaterialPtr LLPrimitive::getTEMaterialParams(const U8 index)
 //===============================================================
 S32  LLPrimitive::setTEBumpShinyFullbright(const U8 index, const U8 bump)
 {
+	updateNumBumpmap(index, bump);
 	return mTextureList.setBumpShinyFullbright(index, bump);
 }
 
@@ -340,11 +346,13 @@ S32  LLPrimitive::setTEMediaTexGen(const U8 index, const U8 media)
 
 S32  LLPrimitive::setTEBumpmap(const U8 index, const U8 bump)
 {
+	updateNumBumpmap(index, bump);
 	return mTextureList.setBumpMap(index, bump);
 }
 
 S32  LLPrimitive::setTEBumpShiny(const U8 index, const U8 bump_shiny)
 {
+	updateNumBumpmap(index, bump_shiny);
 	return mTextureList.setBumpShiny(index, bump_shiny);
 }
 
@@ -980,7 +988,7 @@ BOOL LLPrimitive::setVolume(const LLVolumeParams &volume_params, const S32 detai
 	return TRUE;
 }
 
-BOOL LLPrimitive::setMaterial(U8 material)
+BOOL LLPrimitive::setMaterial(const U8 material)
 {
 	if (material != mMaterial)
 	{
@@ -1340,12 +1348,12 @@ S32 LLPrimitive::parseTEMessage(LLMessageSystem* mesgsys, char const* block_name
 	
 	retval = 1;
 	return retval;
-}
-
+	}
+	
 S32 LLPrimitive::applyParsedTEMessage(LLTEContents& tec)
 {
 	S32 retval = 0;
-
+	
 	LLColor4 color;
 	LLColor4U coloru;
 	for (U32 i = 0; i < tec.face_count; i++)
@@ -1358,8 +1366,8 @@ S32 LLPrimitive::applyParsedTEMessage(LLTEContents& tec)
 		retval |= setTEBumpShinyFullbright(i, tec.bump[i]);
 		retval |= setTEMediaTexGen(i, tec.media_flags[i]);
 		retval |= setTEGlow(i, (F32)tec.glow[i] / (F32)0xFF);
-                retval |= setTEMaterialID(i, tec.material_ids[i]);
-		
+		retval |= setTEMaterialID(i, tec.material_ids[i]);
+
 		coloru = LLColor4U(tec.colors + 4*i);
 
 		// Note:  This is an optimization to send common colors (1.f, 1.f, 1.f, 1.f)
@@ -1513,6 +1521,26 @@ void LLPrimitive::takeTextureList(LLPrimTextureList& other_list)
 	mTextureList.take(other_list);
 }
 
+void LLPrimitive::updateNumBumpmap(const U8 index, const U8 bump)
+{
+	LLTextureEntry* te = getTE(index);
+	if(!te)
+	{
+		return;
+	}
+
+	U8 old_bump = te->getBumpmap();	
+	if(old_bump > 0)
+	{
+		mNumBumpmapTEs--;
+	}
+	if((bump & TEM_BUMP_MASK) > 0)
+	{
+		mNumBumpmapTEs++;
+	}
+
+	return;
+}
 //============================================================================
 
 // Moved from llselectmgr.cpp

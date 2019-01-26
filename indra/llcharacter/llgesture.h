@@ -28,9 +28,7 @@
 #ifndef LL_LLGESTURE_H
 #define LL_LLGESTURE_H
 
-#include "llanimationstates.h"
 #include "lluuid.h"
-#include "llstring.h"
 
 class LLGesture
 {
@@ -66,12 +64,12 @@ public:
 	static S32 getMaxSerialSize();
 
 protected:
-	KEY					mKey;			// usually a function key
-	MASK				mMask;			// usually MASK_NONE, or MASK_SHIFT
+	KEY				mKey;			// usually a function key
+	MASK			mMask;			// usually MASK_NONE, or MASK_SHIFT
 	std::string		mTrigger;		// string, no whitespace allowed
 	std::string		mTriggerLower;	// lowercase version of mTrigger
-	LLUUID				mSoundItemID;	// ItemID of sound to play, LLUUID::null if none
-	std::string			mAnimation;		// canonical name of animation or face animation
+	LLUUID			mSoundItemID;	// ItemID of sound to play, LLUUID::null if none
+	std::string		mAnimation;		// canonical name of animation or face animation
 	std::string		mOutputString;	// string to say
 
 	static const S32	MAX_SERIAL_SIZE;

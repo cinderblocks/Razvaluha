@@ -4,7 +4,7 @@
  * $LicenseInfo:firstyear=2005&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
@@ -57,13 +57,13 @@ public:
 	virtual bool remove(T* data);
 	virtual void notifyRemoval(T* data);
 	virtual U32 getListenerCount()					{ return mListeners.size(); }
-	virtual LLTreeListener<T>* getListener(U32 index) const
+	virtual LLTreeListener<T>* getListener(U32 index) const 
 	{
 		if(index < mListeners.size())
 		{
-			return mListeners[index];
+			return mListeners[index]; 
 		}
-		return NULL;
+		return nullptr;
 	}
 	virtual void addListener(LLTreeListener<T>* listener) { mListeners.push_back(listener); }
 

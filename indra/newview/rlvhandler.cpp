@@ -1,6 +1,6 @@
 /** 
  *
- * Copyright (c) 2009-2011, Kitty Barnett
+ * Copyright (c) 2009-2016, Kitty Barnett
  * 
  * The source code in this file is provided to you under the terms of the 
  * GNU Lesser General Public License, version 2.1, but WITHOUT ANY WARRANTY;
@@ -14,6 +14,7 @@
  * 
  */
 
+// Generic includes
 #include "llviewerprecompiledheaders.h"
 #include "llagent.h"
 #include "llagentcamera.h"
@@ -34,13 +35,15 @@
 #include "rlvui.h"
 #include "rlvextensions.h"
 
+// Boost includes
 #include <boost/algorithm/string.hpp>
+#include <boost/tokenizer.hpp>
 
 // ============================================================================
 // Static variable initialization
 //
 
-BOOL RlvHandler::m_fEnabled = FALSE;
+bool RlvHandler::m_fEnabled = false;
 
 rlv_handler_t gRlvHandler;
 
@@ -51,8 +54,8 @@ rlv_handler_t gRlvHandler;
 // Checked: 2009-08-04 (RLVa-1.0.1d) | Added: RLVa-1.0.1d
 static bool rlvParseNotifyOption(const std::string& strOption, S32& nChannel, std::string& strFilter)
 {
-	boost_tokenizer tokens(strOption, boost::char_separator<char>(";", "", boost::keep_empty_tokens));
-	boost_tokenizer::const_iterator itTok = tokens.begin();
+	boost::tokenizer<boost::char_separator<char>> tokens(strOption, boost::char_separator<char>(";", "", boost::keep_empty_tokens));
+	auto itTok = tokens.begin();
 
 	// Extract and sanity check the first token (required) which is the channel
 	if ( (itTok == tokens.end()) || (!LLStringUtil::convertToS32(*itTok, nChannel)) || (!RlvUtil::isValidReplyChannel(nChannel)) )
@@ -76,8 +79,8 @@ static bool rlvParseGetStatusOption(const std::string& strOption, std::string& s
 	// * Parameters: first and second parameters are both optional
 	// * Examples : @getstatus=123 ; @getstatus:tp=123 ; @getstatus:tp;|=123 ; @getstatus:;|=123
 
-	boost_tokenizer tokens(strOption, boost::char_separator<char>(";", "", boost::keep_empty_tokens));
-	boost_tokenizer::const_iterator itTok = tokens.begin();
+	boost::tokenizer<boost::char_separator<char>> tokens(strOption, boost::char_separator<char>(";", "", boost::keep_empty_tokens));
+	auto itTok = tokens.begin();
 
 	strSeparator = "/";
 	strFilter.clear();
@@ -106,7 +109,7 @@ RlvHandler::RlvHandler() : m_fCanCancelTp(true), m_posSitSource(), m_pGCTimer(NU
 {
 	gAgent.addListener(this, "new group");
 
-	// Array auto-initialization to 0 is non-standard? (Compiler warning in VC-8.0)
+	// Array auto-initialization to 0 is still not supported in VS2013
 	memset(m_Behaviours, 0, sizeof(S16) * RLV_BHVR_COUNT);
 }
 
@@ -212,14 +215,14 @@ void RlvHandler::removeException(const LLUUID& idObj, ERlvBehaviour eBhvr, const
 //
 
 // Checked: 2010-04-07 (RLVa-1.2.0d) | Modified: RLVa-1.1.0f
-void RlvHandler::addCommandHandler(RlvCommandHandler* pCmdHandler)
+void RlvHandler::addCommandHandler(RlvExtCommandHandler* pCmdHandler)
 {
 	if ( (pCmdHandler) && (std::find(m_CommandHandlers.begin(), m_CommandHandlers.end(), pCmdHandler) == m_CommandHandlers.end()) )
 		m_CommandHandlers.push_back(pCmdHandler);
 }
 
 // Checked: 2010-04-07 (RLVa-1.2.0d) | Modified: RLVa-1.1.0f
-void RlvHandler::removeCommandHandler(RlvCommandHandler* pCmdHandler)
+void RlvHandler::removeCommandHandler(RlvExtCommandHandler* pCmdHandler)
 {
 	if (pCmdHandler)
 		m_CommandHandlers.remove(pCmdHandler);
@@ -228,7 +231,7 @@ void RlvHandler::removeCommandHandler(RlvCommandHandler* pCmdHandler)
 // Checked: 2010-04-07 (RLVa-1.2.0d) | Modified: RLVa-1.1.0a
 void RlvHandler::clearCommandHandlers()
 {
-	std::list<RlvCommandHandler*>::const_iterator itHandler = m_CommandHandlers.begin();
+	std::list<RlvExtCommandHandler*>::const_iterator itHandler = m_CommandHandlers.begin();
 	while (itHandler != m_CommandHandlers.end())
 	{
 		delete *itHandler;
@@ -238,9 +241,9 @@ void RlvHandler::clearCommandHandlers()
 }
 
 // Checked: 2010-04-07 (RLVa-1.2.0d) | Modified: RLVa-1.1.0f
-bool RlvHandler::notifyCommandHandlers(rlvCommandHandler f, const RlvCommand& rlvCmd, ERlvCmdRet& eRet, bool fNotifyAll) const
+bool RlvHandler::notifyCommandHandlers(rlvExtCommandHandler f, const RlvCommand& rlvCmd, ERlvCmdRet& eRet, bool fNotifyAll) const
 {
-	std::list<RlvCommandHandler*>::const_iterator itHandler = m_CommandHandlers.begin(); bool fContinue = true; eRet = RLV_RET_UNKNOWN;
+	std::list<RlvExtCommandHandler*>::const_iterator itHandler = m_CommandHandlers.begin(); bool fContinue = true; eRet = RLV_RET_UNKNOWN;
 	while ( (itHandler != m_CommandHandlers.end()) && ((fContinue) || (fNotifyAll)) )
 	{
 		ERlvCmdRet eCmdRet = RLV_RET_UNKNOWN;
@@ -255,15 +258,11 @@ bool RlvHandler::notifyCommandHandlers(rlvCommandHandler f, const RlvCommand& rl
 // Checked: 2009-11-25 (RLVa-1.1.0f) | Modified: RLVa-1.1.0f
 ERlvCmdRet RlvHandler::processCommand(const RlvCommand& rlvCmd, bool fFromObj)
 {
-	#ifdef RLV_DEBUG
-		RLV_INFOS << "[" << rlvCmd.getObjectID() << "]: " << rlvCmd.asString() << RLV_ENDL;
-	#endif // RLV_DEBUG
+	RLV_DEBUGS << "[" << rlvCmd.getObjectID() << "]: " << rlvCmd.asString() << RLV_ENDL;
 
 	if (!rlvCmd.isValid())
 	{
-		#ifdef RLV_DEBUG
-			RLV_INFOS << "\t-> invalid syntax" << RLV_ENDL;
-		#endif // RLV_DEBUG
+		RLV_DEBUGS << "\t-> invalid syntax" << RLV_ENDL;
 		return RLV_RET_FAILED_SYNTAX;
 	}
 
@@ -282,9 +281,7 @@ ERlvCmdRet RlvHandler::processCommand(const RlvCommand& rlvCmd, bool fFromObj)
 					 ( (RLV_BHVR_SETDEBUG == rlvCmd.getBehaviourType()) || (RLV_BHVR_SETENV == rlvCmd.getBehaviourType()) ) )
 				{
 					// Some restrictions can only be held by one single object to avoid deadlocks
-					#ifdef RLV_DEBUG
-						RLV_INFOS << "\t- " << rlvCmd.getBehaviour() << " is already set by another object => discarding" << RLV_ENDL;
-					#endif // RLV_DEBUG
+					RLV_DEBUGS << "\t- " << rlvCmd.getBehaviour() << " is already set by another object => discarding" << RLV_ENDL;
 					eRet = RLV_RET_FAILED_LOCK;
 					break;
 				}
@@ -302,9 +299,7 @@ ERlvCmdRet RlvHandler::processCommand(const RlvCommand& rlvCmd, bool fFromObj)
 					m_Objects.insert(std::pair<LLUUID, RlvObject>(idCurObj, rlvObj));
 				}
 
-				#ifdef RLV_DEBUG
-					RLV_INFOS << "\t- " << ( (fAdded) ? "adding behaviour" : "skipping duplicate" ) << RLV_ENDL;
-				#endif // RLV_DEBUG
+				RLV_DEBUGS << "\t- " << ( (fAdded) ? "adding behaviour" : "skipping duplicate" ) << RLV_ENDL;
 
 				if (fAdded) {	// If FALSE then this was a duplicate, there's no need to handle those
 					if (!m_pGCTimer)
@@ -325,10 +320,8 @@ ERlvCmdRet RlvHandler::processCommand(const RlvCommand& rlvCmd, bool fFromObj)
 				if (itObj != m_Objects.end())
 					fRemoved = itObj->second.removeCommand(rlvCmd);
 
-				#ifdef RLV_DEBUG
-					RLV_INFOS << "\t- " << ( (fRemoved)	? "removing behaviour"
+				RLV_DEBUGS << "\t- " << ( (fRemoved) ? "removing behaviour"
 														: "skipping remove (unset behaviour or unknown object)") << RLV_ENDL;
-				#endif // RLV_DEBUG
 
 				if (fRemoved) {	// Don't handle non-sensical removes
 					eRet = processAddRemCommand(rlvCmd);
@@ -336,9 +329,7 @@ ERlvCmdRet RlvHandler::processCommand(const RlvCommand& rlvCmd, bool fFromObj)
 
 					if (0 == itObj->second.m_Commands.size())
 					{
-						#ifdef RLV_DEBUG
-							RLV_INFOS << "\t- command list empty => removing " << idCurObj << RLV_ENDL;
-						#endif // RLV_DEBUG
+						RLV_DEBUGS << "\t- command list empty => removing " << idCurObj << RLV_ENDL;
 						m_Objects.erase(itObj);
 					}
 				}
@@ -366,9 +357,7 @@ ERlvCmdRet RlvHandler::processCommand(const RlvCommand& rlvCmd, bool fFromObj)
 
 	m_OnCommand(rlvCmd, eRet, !fFromObj);
 
-	#ifdef RLV_DEBUG
-		RLV_INFOS << "\t--> command " << ((eRet & RLV_RET_SUCCESS) ? "succeeded" : "failed") << RLV_ENDL;
-	#endif // RLV_DEBUG
+	RLV_DEBUGS << "\t--> command " << ((eRet & RLV_RET_SUCCESS) ? "succeeded" : "failed") << RLV_ENDL;
 
 	m_CurCommandStack.pop(); m_CurObjectStack.pop();
 	return eRet;
@@ -427,7 +416,7 @@ ERlvCmdRet RlvHandler::processClearCommand(const RlvCommand& rlvCmd)
 
 	// Let our observers know about clear commands
 	ERlvCmdRet eRet = RLV_RET_SUCCESS;
-	notifyCommandHandlers(&RlvCommandHandler::onClearCommand, rlvCmd, eRet, true);
+	notifyCommandHandlers(&RlvExtCommandHandler::onClearCommand, rlvCmd, eRet, true);
 
 	return RLV_RET_SUCCESS; // Don't fail clear commands even if the object didn't exist since it confuses people
 }
@@ -436,7 +425,6 @@ ERlvCmdRet RlvHandler::processClearCommand(const RlvCommand& rlvCmd)
 // Externally invoked event handlers
 //
 
-// Checked: 2011-05-22 (RLVa-1.4.1a) | Added: RLVa-1.3.1b
 bool RlvHandler::handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& sdUserdata)
 {
 	// If the user managed to change their active group (= newly joined or created group) we need to reactivate the previous one
@@ -462,12 +450,10 @@ bool RlvHandler::handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& 
 // Checked: 2010-08-29 (RLVa-1.2.1c) | Modified: RLVa-1.2.1c
 void RlvHandler::onSitOrStand(bool fSitting)
 {
-	#ifdef RLV_EXTENSION_STARTLOCATION
 	if (rlv_handler_t::isEnabled())
 	{
 		RlvSettings::updateLoginLastLocation();
 	}
-	#endif // RLV_EXTENSION_STARTLOCATION
 
 	if ( (hasBehaviour(RLV_BHVR_STANDTP)) && (!fSitting) && (!m_posSitSource.isExactlyZero()) )
 	{
@@ -637,9 +623,9 @@ void RlvHandler::onIdleStartup(void* pParam)
 		// We don't want to run this *too* often
 		if ( (LLStartUp::getStartupState() >= STATE_MISC) && (pTimer->getElapsedTimeF32() >= 2.0) )
 		{
-			gRlvHandler.processRetainedCommands(RLV_BHVR_VERSION, RLV_TYPE_REPLY);
-			gRlvHandler.processRetainedCommands(RLV_BHVR_VERSIONNEW, RLV_TYPE_REPLY);
-			gRlvHandler.processRetainedCommands(RLV_BHVR_VERSIONNUM, RLV_TYPE_REPLY);
+			RlvHandler::instance().processRetainedCommands(RLV_BHVR_VERSION, RLV_TYPE_REPLY);
+			RlvHandler::instance().processRetainedCommands(RLV_BHVR_VERSIONNEW, RLV_TYPE_REPLY);
+			RlvHandler::instance().processRetainedCommands(RLV_BHVR_VERSIONNUM, RLV_TYPE_REPLY);
 			pTimer->reset();
 		}
 	}
@@ -656,10 +642,7 @@ void RlvHandler::onLoginComplete()
 {
 	RlvInventory::instance().fetchWornItems();
 	RlvInventory::instance().fetchSharedInventory();
-
-	#ifdef RLV_EXTENSION_STARTLOCATION
 	RlvSettings::updateLoginLastLocation();
-	#endif // RLV_EXTENSION_STARTLOCATION
 
 	LLViewerParcelMgr::getInstance()->setTeleportFailedCallback(boost::bind(&RlvHandler::onTeleportFailed, this));
 	LLViewerParcelMgr::getInstance()->setTeleportFinishedCallback(boost::bind(&RlvHandler::onTeleportFinished, this, _1));
@@ -1074,16 +1057,15 @@ LLColor3 RlvHandler::camDrawColor() const
 //
 
 // Checked: 2010-02-27 (RLVa-1.2.0a) | Modified: RLVa-1.2.0a
-BOOL RlvHandler::setEnabled(BOOL fEnable)
+bool RlvHandler::setEnabled(bool fEnable)
 {
-	// TODO-RLVa: [RLVa-1.2.1] Allow toggling at runtime if we haven't seen any llOwnerSay("@....");
 	if (m_fEnabled == fEnable)
 		return fEnable;
 
 	if (fEnable)
 	{
 		RLV_INFOS << "Enabling Restrained Love API support - " << RlvStrings::getVersion() << RLV_ENDL;
-		m_fEnabled = TRUE;
+		m_fEnabled = true;
 
 		// Initialize the command lookup table
 		RlvCommand::initLookupTable();
@@ -1092,13 +1074,13 @@ BOOL RlvHandler::setEnabled(BOOL fEnable)
 		RlvSettings::initClass();
 		RlvStrings::initClass();
 
-		gRlvHandler.addCommandHandler(new RlvExtGetSet());
+		RlvHandler::instance().addCommandHandler(new RlvExtGetSet());
 
 		// Make sure we get notified when login is successful
 		if (LLStartUp::getStartupState() < STATE_STARTED)
 			LLAppViewer::instance()->setOnLoginCompletedCallback(boost::bind(&RlvHandler::onLoginComplete, &gRlvHandler));
 		else
-			gRlvHandler.onLoginComplete();
+			RlvHandler::instance().onLoginComplete();
 
 		// Set up RlvUIEnabler
 		RlvUIEnabler::getInstance();
@@ -1111,11 +1093,6 @@ BOOL RlvHandler::setEnabled(BOOL fEnable)
 	}
 
 	return m_fEnabled;
-}
-
-BOOL RlvHandler::canDisable()
-{
-	return FALSE;
 }
 
 void RlvHandler::clearState()
@@ -1349,8 +1326,8 @@ ERlvCmdRet RlvHandler::processAddRemCommand(const RlvCommand& rlvCmd)
 			LLColor3 color;
 			if (!strOption.empty())
 			{
-				boost_tokenizer tokens(strOption, boost::char_separator<char>(";", "", boost::keep_empty_tokens));
-				boost_tokenizer::const_iterator it = tokens.begin();
+				boost::tokenizer<boost::char_separator<char>> tokens(strOption, boost::char_separator<char>(";", "", boost::keep_empty_tokens));
+				auto it = tokens.begin();
 				for (U8 i = 0; i < LENGTHOFCOLOR3 && it != tokens.end(); ++it, ++i)
 					LLStringUtil::convertToF32(*it, color.mV[i]);
 				color.clamp();
@@ -1465,7 +1442,7 @@ ERlvCmdRet RlvHandler::processAddRemCommand(const RlvCommand& rlvCmd)
 		//
 		case RLV_BHVR_UNKNOWN:
 			// Pass unknown commands on to registered command handlers
-			return (notifyCommandHandlers(&RlvCommandHandler::onAddRemCommand, rlvCmd, eRet, false)) ? eRet : RLV_RET_FAILED_UNKNOWN;
+			return (notifyCommandHandlers(&RlvExtCommandHandler::onAddRemCommand, rlvCmd, eRet, false)) ? eRet : RLV_RET_FAILED_UNKNOWN;
 		default:
 			// Fail with "Invalid param" if none of the above handled it
 			eRet = RLV_RET_FAILED_PARAM;
@@ -1762,7 +1739,7 @@ ERlvCmdRet RlvHandler::processForceCommand(const RlvCommand& rlvCmd) const
 			break;
 		case RLV_BHVR_UNKNOWN:
 			// Pass unknown commands on to registered command handlers
-			return (notifyCommandHandlers(&RlvCommandHandler::onForceCommand, rlvCmd, eRet, false)) ? eRet : RLV_RET_FAILED_UNKNOWN;
+			return (notifyCommandHandlers(&RlvExtCommandHandler::onForceCommand, rlvCmd, eRet, false)) ? eRet : RLV_RET_FAILED_UNKNOWN;
 		default:
 			// Fail with "Invalid param" if none of the above handled it
 			eRet = RLV_RET_FAILED_PARAM;
@@ -2039,7 +2016,7 @@ ERlvCmdRet RlvHandler::processReplyCommand(const RlvCommand& rlvCmd) const
 			break;
 		case RLV_BHVR_UNKNOWN:
 			// Pass unknown commands on to registered command handlers
-			return (notifyCommandHandlers(&RlvCommandHandler::onReplyCommand, rlvCmd, eRet, false)) ? eRet : RLV_RET_FAILED_UNKNOWN;
+			return (notifyCommandHandlers(&RlvExtCommandHandler::onReplyCommand, rlvCmd, eRet, false)) ? eRet : RLV_RET_FAILED_UNKNOWN;
 		default:
 			// Fail with "Invalid param" if none of the above handled it
 			return RLV_RET_FAILED_PARAM;

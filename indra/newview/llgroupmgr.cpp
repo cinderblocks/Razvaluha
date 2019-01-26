@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llgroupmgr.cpp
  * @brief LLGroupMgr class implementation
@@ -33,10 +35,9 @@
 
 #include "llgroupmgr.h"
 
-#include <vector>
 #include <algorithm>
 
-#include "llappviewer.h" //For gFrameCount
+#include "llappviewer.h"
 #include "llagent.h"
 #include "llavatarnamecache.h"
 #include "llui.h"
@@ -45,37 +46,28 @@
 #include "lltransactiontypes.h"
 #include "llstatusbar.h"
 #include "lleconomy.h"
-#include "llviewerregion.h"
 #include "llviewerwindow.h"
 #include "llfloaterdirectory.h"
 #include "llfloatergroupinfo.h"
 #include "llgroupactions.h"
 #include "llnotificationsutil.h"
 #include "lluictrlfactory.h"
-#include "lltrans.h"
-#include <boost/regex.hpp>
-#include "llcorehttputil.h"
 #include "llsdutil.h"
+#include "lltrans.h"
+#include "llviewerregion.h"
 
-#if LL_MSVC
-#pragma warning(push)   
-// disable boost::lexical_cast warning
-#pragma warning (disable:4702)
-#endif
+#include "llcorehttputil.h"
+#include "roles_constants.h"
+#include <boost/format.hpp>
+#include <boost/regex.hpp>
 
-#include <boost/lexical_cast.hpp>
-
-#if LL_MSVC
-#pragma warning(pop)   // Restore all warnings to the previous state
-#endif
-
-const U32 MAX_CACHED_GROUPS = 20;
+constexpr U32 MAX_CACHED_GROUPS = 20;
 
 //
 // LLRoleActionSet
 //
 LLRoleActionSet::LLRoleActionSet()
-: mActionSetData(NULL)
+: mActionSetData(nullptr)
 { }
 
 LLRoleActionSet::~LLRoleActionSet()
@@ -144,7 +136,7 @@ LLGroupRoleData::LLGroupRoleData(const LLUUID& role_id,
 	mRoleData.mRoleTitle = role_title;
 	mRoleData.mRoleDescription = role_desc;
 	mRoleData.mRolePowers = role_powers;
-	mRoleData.mChangeType = RC_UPDATE_NONE;
+	mRoleData.mChangeType = LLRoleChangeType::RC_UPDATE_NONE;
 }
 
 LLGroupRoleData::LLGroupRoleData(const LLUUID& role_id, 
@@ -220,6 +212,19 @@ void LLGroupRoleData::clearMembers()
 	mMemberIDs.clear();
 }
 
+//
+// LLRoleData
+//
+
+LLRoleData::LLRoleData() : mRolePowers(0), mChangeType(LLRoleChangeType::RC_UPDATE_NONE)
+{ }
+
+//
+//
+//
+
+LLRoleMemberChange::LLRoleMemberChange() : mChange(LLRoleMemberChangeType::RMC_NONE)
+{ }
 
 //
 // LLGroupMgrGroupData
@@ -236,14 +241,14 @@ LLGroupMgrGroupData::LLGroupMgrGroupData(const LLUUID& id) :
 	mChanged(FALSE),
 	mMemberCount(0),
 	mRoleCount(0),
+	mPendingBanRequest(false),
 	mReceivedRoleMemberPairs(0),
 	mMemberDataComplete(false),
 	mRoleDataComplete(false),
 	mRoleMemberDataComplete(false),
 	mGroupPropertiesDataComplete(false),
 	mPendingRoleMemberRequest(false),
-	mAccessTime(0.0f),
-	mPendingBanRequest(false)
+	mAccessTime(0.0f)
 {
 	mMemberVersion.generate();
 }
@@ -261,7 +266,7 @@ BOOL LLGroupMgrGroupData::getRoleData(const LLUUID& role_id, LLRoleData& role_da
 	it = mRoleChanges.find(role_id);
 	if (it != mRoleChanges.end()) 
 	{
-		if ((*it).second.mChangeType == RC_DELETE) return FALSE;
+        if ((*it).second.mChangeType == LLRoleChangeType::RC_DELETE) return FALSE;
 
 		role_data = (*it).second;
 		return TRUE;
@@ -283,17 +288,16 @@ BOOL LLGroupMgrGroupData::getRoleData(const LLUUID& role_id, LLRoleData& role_da
 void LLGroupMgrGroupData::setRoleData(const LLUUID& role_id, LLRoleData role_data)
 {
 	// If this is a newly created group, we need to change the data in the created list.
-	role_data_map_t::iterator it;
-	it = mRoleChanges.find(role_id);
+	auto it = mRoleChanges.find(role_id);
 	if (it != mRoleChanges.end())
 	{
-		if ((*it).second.mChangeType == RC_CREATE)
+        if ((*it).second.mChangeType == LLRoleChangeType::RC_CREATE)
 		{
-			role_data.mChangeType = RC_CREATE;
+			role_data.mChangeType = LLRoleChangeType::RC_CREATE;
 			mRoleChanges[role_id] = role_data;
 			return;
 		}
-		else if ((*it).second.mChangeType == RC_DELETE)
+		else if ((*it).second.mChangeType == LLRoleChangeType::RC_DELETE)
 		{
 			// Don't do anything for a role being deleted.
 			return;
@@ -319,15 +323,15 @@ void LLGroupMgrGroupData::setRoleData(const LLUUID& role_id, LLRoleData role_dat
 
 		if (data_change && powers_change)
 		{
-			role_data.mChangeType = RC_UPDATE_ALL;
+			role_data.mChangeType = LLRoleChangeType::RC_UPDATE_ALL;
 		}
 		else if (data_change)
 		{
-			role_data.mChangeType = RC_UPDATE_DATA;
+			role_data.mChangeType = LLRoleChangeType::RC_UPDATE_DATA;
 		}
 		else
 	{
-			role_data.mChangeType = RC_UPDATE_POWERS;
+			role_data.mChangeType = LLRoleChangeType::RC_UPDATE_POWERS;
 		}
 
 		mRoleChanges[role_id] = role_data;
@@ -352,7 +356,7 @@ void LLGroupMgrGroupData::createRole(const LLUUID& role_id, LLRoleData role_data
 	}
 	else
 	{
-		role_data.mChangeType = RC_CREATE;
+        role_data.mChangeType = LLRoleChangeType::RC_CREATE;
 		mRoleChanges[role_id] = role_data;
 	}
 }
@@ -364,14 +368,14 @@ void LLGroupMgrGroupData::deleteRole(const LLUUID& role_id)
 	// If this was a new role, just discard it.
 	it = mRoleChanges.find(role_id);
 	if (it != mRoleChanges.end() 
-		&& (*it).second.mChangeType == RC_CREATE)
+        && (*it).second.mChangeType == LLRoleChangeType::RC_CREATE)
 	{
 		mRoleChanges.erase(it);
 		return;
 	}
 
 	LLRoleData rd;
-	rd.mChangeType = RC_DELETE;
+    rd.mChangeType = LLRoleChangeType::RC_DELETE;
 	mRoleChanges[role_id] = rd;
 }
 
@@ -510,7 +514,7 @@ bool LLGroupMgrGroupData::changeRoleMember(const LLUUID& role_id,
 		return false;
 	}
 
-	if (RMC_ADD == rmc)
+    if (LLRoleMemberChangeType::RMC_ADD == rmc)
 	{
 		LL_INFOS() << " adding member to role." << LL_ENDL;
 		grd->addMember(member_id);
@@ -520,7 +524,7 @@ bool LLGroupMgrGroupData::changeRoleMember(const LLUUID& role_id,
 		//see if they added someone to the owner role and update isOwner
 		gmd->mIsOwner = (role_id == mOwnerRole) ? TRUE : gmd->mIsOwner;
 	}
-	else if (RMC_REMOVE == rmc)
+    else if (LLRoleMemberChangeType::RMC_REMOVE == rmc)
 	{
 		LL_INFOS() << " removing member from role." << LL_ENDL;
 		grd->removeMember(member_id);
@@ -543,13 +547,13 @@ bool LLGroupMgrGroupData::changeRoleMember(const LLUUID& role_id,
 			// Already recorded this change?  Weird.
 			LL_INFOS() << "Received duplicate change for "
 					<< " role: " << role_id << " member " << member_id 
-					<< " change " << (rmc == RMC_ADD ? "ADD" : "REMOVE") << LL_ENDL;
+            << " change " << (rmc == LLRoleMemberChangeType::RMC_ADD ? "ADD" : "REMOVE") << LL_ENDL;
 		}
 		else
 		{
 			// The only two operations (add and remove) currently cancel each other out
 			// If that changes this will need more logic
-			if (rmc == RMC_NONE)
+            if (rmc == LLRoleMemberChangeType::RMC_NONE)
 			{
 				LL_WARNS() << "changeRoleMember: existing entry with 'RMC_NONE' change! This shouldn't happen." << LL_ENDL;
 				LLRoleMemberChange rc(role_id,member_id,rmc);
@@ -761,9 +765,9 @@ void LLGroupMgrGroupData::sendRoleChanges()
 		// Commit to local data set
 		role_it = mRoles.find((*it).first);
 		if ( (mRoles.end() == role_it 
-				&& RC_CREATE != role_data.mChangeType)
+                && LLRoleChangeType::RC_CREATE != role_data.mChangeType)
 			|| (mRoles.end() != role_it
-				&& RC_CREATE == role_data.mChangeType))
+                && LLRoleChangeType::RC_CREATE == role_data.mChangeType))
 		{
 			continue;
 		}
@@ -771,7 +775,7 @@ void LLGroupMgrGroupData::sendRoleChanges()
 		// NOTE: role_it is valid EXCEPT for the RC_CREATE case
 		switch (role_data.mChangeType)
 		{
-			case RC_CREATE:
+            case LLRoleChangeType::RC_CREATE:
 			{
 				// NOTE: role_it is NOT valid in this case
 				grd = new LLGroupRoleData(role_id, role_data, 0);
@@ -779,7 +783,7 @@ void LLGroupMgrGroupData::sendRoleChanges()
 				need_role_data = true;
 				break;
 			}
-			case RC_DELETE:
+            case LLRoleChangeType::RC_DELETE:
 			{
 				LLGroupRoleData* group_role_data = (*role_it).second;
 				delete group_role_data;
@@ -788,12 +792,12 @@ void LLGroupMgrGroupData::sendRoleChanges()
 				need_power_recalc = true;
 				break;
 			}
-			case RC_UPDATE_ALL:
+            case LLRoleChangeType::RC_UPDATE_ALL:
 				// fall through
-			case RC_UPDATE_POWERS:
+            case LLRoleChangeType::RC_UPDATE_POWERS:
 				need_power_recalc = true;
 				// fall through
-			case RC_UPDATE_DATA:
+            case LLRoleChangeType::RC_UPDATE_DATA:
 				// fall through
 			default: 
 			{
@@ -860,7 +864,7 @@ void LLGroupMgrGroupData::banMemberById(const LLUUID& participant_uuid)
 		mPendingBanRequest = true;
 		mPendingBanMemberID = participant_uuid;
 
-		if (!mMemberDataComplete || !mMembers.size())
+		if (!mMemberDataComplete || mMembers.empty())
 		{
 			LLGroupMgr::getInstance()->sendCapGroupMembersRequest(mID);
 		}
@@ -907,9 +911,9 @@ void LLGroupMgrGroupData::banMemberById(const LLUUID& participant_uuid)
 	LLGroupMgr::getInstance()->sendGroupMemberEjects(mID, ids);
 	LLGroupMgr::getInstance()->sendGroupMembersRequest(mID);
 	LLSD args;
-	std::string name;
-	LLAvatarNameCache::getNSName(participant_uuid, name);
-	args["AVATAR_NAME"] = name;
+	LLAvatarName av_name;
+	LLAvatarNameCache::get(participant_uuid, &av_name);
+	args["AVATAR_NAME"] = av_name.getNSName();
 	args["GROUP_NAME"] = mName;
 	LLNotifications::instance().add(LLNotification::Params("EjectAvatarFromGroup").substitutions(args));
 }
@@ -1008,7 +1012,7 @@ LLGroupMgrGroupData* LLGroupMgr::getGroupData(const LLUUID& id)
 	{
 		return gi->second;
 	}
-	return NULL;
+	return nullptr;
 }
 
 // Helper function for LLGroupMgr::processGroupMembersReply
@@ -1024,9 +1028,9 @@ static void formatDateString(std::string &date_string)
 	if (regex_match(date_string.c_str(), result, expression))
 	{
 		// convert matches to integers so that we can pad them with zeroes on Linux
-		S32 year	= boost::lexical_cast<S32>(result[3]);
-		S32 month	= boost::lexical_cast<S32>(result[1]);
-		S32 day		= boost::lexical_cast<S32>(result[2]);
+		S32 year	= std::stoi(result[3]);
+		S32 month	= std::stoi(result[1]);
+		S32 day		= std::stoi(result[2]);
 
 		// ISO 8601 date format
 		date_string = llformat("%04d-%02d-%02dT00:00:00Z", year, month, day);
@@ -1350,8 +1354,8 @@ void LLGroupMgr::processGroupRoleMembersReply(LLMessageSystem* msg, void** data)
 	U32 i;
 	LLUUID member_id;
 	LLUUID role_id;
-	LLGroupRoleData* rd = NULL;
-	LLGroupMemberData* md = NULL;
+	LLGroupRoleData* rd = nullptr;
+	LLGroupMemberData* md = nullptr;
 
 	LLGroupMgrGroupData::role_list_t::iterator ri;
 	LLGroupMgrGroupData::member_list_t::iterator mi;
@@ -1366,14 +1370,14 @@ void LLGroupMgr::processGroupRoleMembersReply(LLMessageSystem* msg, void** data)
 
 			if (role_id.notNull() && member_id.notNull() )
 			{
-				rd = NULL;
+				rd = nullptr;
 				ri = group_datap->mRoles.find(role_id);
 				if (ri != group_datap->mRoles.end())
 				{
 					rd = ri->second;
 				}
 
-				md = NULL;
+				md = nullptr;
 				mi = group_datap->mMembers.find(member_id);
 				if (mi != group_datap->mMembers.end())
 				{
@@ -1581,7 +1585,7 @@ void LLGroupMgr::processCreateGroupReply(LLMessageSystem* msg, void ** data)
 
 LLGroupMgrGroupData* LLGroupMgr::createGroupData(const LLUUID& id)
 {
-	LLGroupMgrGroupData* group_datap = NULL;
+	LLGroupMgrGroupData* group_datap = nullptr;
 
 	group_map_t::iterator existing_group = LLGroupMgr::getInstance()->mGroups.find(id);
 	if (existing_group == LLGroupMgr::getInstance()->mGroups.end())
@@ -2026,7 +2030,7 @@ void LLGroupMgr::sendGroupMemberEjects(const LLUUID& group_id,
 			for (LLGroupMemberData::role_list_t::iterator rit = member_data->roleBegin();
 				 rit != member_data->roleEnd(); ++rit)
 			{
-				if ((*rit).first.notNull() && (*rit).second!=0)
+				if ((*rit).first.notNull() && (*rit).second!=nullptr)
 				{
 					(*rit).second->removeMember(ejected_member_id);
 				}
@@ -2222,7 +2226,7 @@ void LLGroupMgr::groupMembersRequestCoro(std::string url, LLUUID groupId)
     LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t
         httpAdapter(new LLCoreHttpUtil::HttpCoroutineAdapter("groupMembersRequest", httpPolicy));
     LLCore::HttpRequest::ptr_t httpRequest(new LLCore::HttpRequest);
-    LLCore::HttpOptions::ptr_t httpOpts = LLCore::HttpOptions::ptr_t(new LLCore::HttpOptions);
+    LLCore::HttpOptions::ptr_t httpOpts = boost::make_shared<LLCore::HttpOptions>();
 
     mMemberRequestInFlight = true;
 
@@ -2326,12 +2330,23 @@ void LLGroupMgr::processCapGroupMembersRequest(const LLSD& content)
 	std::string online_status;
 	std::string title;
 	S32 contribution;
-	U64 member_powers;
+	U64			member_powers = 0;
+	U64			default_powers = 0;
 	// If this is changed to a bool, make sure to change the LLGroupMemberData constructor
 	BOOL is_owner;
 
 	// Compute this once, rather than every time.
-	U64 default_powers = llstrtou64(defaults["default_powers"].asString().c_str(), NULL, 16);
+	if (defaults.has("default_powers") && !defaults["default_powers"].asString().empty())
+	{
+		try
+		{
+			default_powers = std::stoull(defaults["default_powers"].asString(), nullptr, 16);
+		}
+		catch(const std::invalid_argument& e)
+		{
+			LL_WARNS() << "Group member default powers returned exception: " << e.what() << LL_ENDL;
+		}
+	}
 
 	LLSD::map_const_iterator member_iter_start = member_list.beginMap();
 	LLSD::map_const_iterator member_iter_end = member_list.endMap();
@@ -2362,7 +2377,16 @@ void LLGroupMgr::processCapGroupMembersRequest(const LLSD& content)
 			title = titles[member_info["title"].asInteger()].asString();
 
 		if (member_info.has("powers"))
-			member_powers = llstrtou64(member_info["powers"].asString().c_str(), NULL, 16);
+		{
+			try
+			{
+				member_powers = std::stoull(member_info["powers"].asString(), nullptr, 16);
+			}
+			catch (const std::invalid_argument& e)
+			{
+				LL_WARNS() << "Group member powers returned exception: " << e.what() << LL_ENDL;
+			}
+		}
 
 		if (member_info.has("donated_square_meters"))
 			contribution = member_info["donated_square_meters"];

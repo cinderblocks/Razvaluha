@@ -51,9 +51,9 @@ U32 wpo2(U32 i);
 
 U32 LLImageGL::sUniqueCount				= 0;
 U32 LLImageGL::sBindCount				= 0;
-S32Bytes LLImageGL::sGlobalTextureMemory(0);
-S32Bytes LLImageGL::sBoundTextureMemory(0);
-S32Bytes LLImageGL::sCurBoundTextureMemory(0);
+S64Bytes LLImageGL::sGlobalTextureMemory(0);
+S64Bytes LLImageGL::sBoundTextureMemory(0);
+S64Bytes LLImageGL::sCurBoundTextureMemory(0);
 S32 LLImageGL::sCount					= 0;
 
 BOOL LLImageGL::sGlobalUseAnisotropic	= FALSE;
@@ -79,9 +79,9 @@ S32 LLImageGL::sCurTexPickSize = -1 ;
 LLPointer<LLImageGL> LLImageGL::sHighlightTexturep = NULL;
 S32 LLImageGL::sMaxCategories = 1 ;
 
-std::vector<S32Bytes> LLImageGL::sTextureMemByCategory;
-std::vector<S32Bytes> LLImageGL::sTextureMemByCategoryBound ;
-std::vector<S32Bytes> LLImageGL::sTextureCurMemByCategoryBound ;
+std::vector<S64Bytes> LLImageGL::sTextureMemByCategory;
+std::vector<S64Bytes> LLImageGL::sTextureMemByCategoryBound ;
+std::vector<S64Bytes> LLImageGL::sTextureCurMemByCategoryBound ;
 //------------------------
 // ****************************************************************************************************
 //End for texture auditing use only
@@ -294,7 +294,7 @@ void LLImageGL::updateStats(F32 current_time)
 	LL_RECORD_BLOCK_TIME(FTM_IMAGE_UPDATE_STATS);
 	sLastFrameTime = current_time;
 	sBoundTextureMemory = sCurBoundTextureMemory;
-	sCurBoundTextureMemory = S32Bytes(0);
+	sCurBoundTextureMemory = S64Bytes(0);
 
 	if(gAuditTexture)
 	{
@@ -306,7 +306,7 @@ void LLImageGL::updateStats(F32 current_time)
 		for(U32 i = 0 ; i < sTextureCurMemByCategoryBound.size() ; i++)
 		{
 			sTextureMemByCategoryBound[i] = sTextureCurMemByCategoryBound[i] ;
-			sTextureCurMemByCategoryBound[i] = (S32Bytes)0 ;
+			sTextureCurMemByCategoryBound[i] = (S64Bytes)0 ;
 		}
 	}
 }
@@ -493,6 +493,7 @@ void LLImageGL::init(BOOL usemipmaps)
 
 	mIsMask = FALSE;
 	mMaskRMSE = 1.f ;
+	mMaskMidPercentile = 1.f;
 
 	mNeedsAlphaAndPickMask = FALSE ;
 	mAlphaStride = 0 ;
@@ -2083,6 +2084,9 @@ void LLImageGL::analyzeAlpha(const void* data_in, U32 w, U32 h)
 	U32 sample[16];
 	memset(sample, 0, sizeof(U32)*16);
 
+	U32 min = 0, max = 0;
+	U32 mids = 0;
+
 	// generate histogram of quantized alpha.
 	// also add-in the histogram of a 2x2 box-sampled version.  The idea is
 	// this will mid-skew the data (and thus increase the chances of not
@@ -2114,6 +2118,10 @@ void LLImageGL::analyzeAlpha(const void* data_in, U32 w, U32 h)
 				++sample[s3/16];
 				++sample[s4/16];
 
+				min = std::min(std::min(std::min(std::min(min, s1), s2), s3), s4);
+				max = std::max(std::max(std::max(std::max(max, s1), s2), s3), s4);
+				mids += (s1 > 2 && s1 < 253) + (s2 > 2 && s2 < 253) + (s3 > 2 && s3 < 253) + (s4 > 2 && s4 < 253);
+
 				const U32 asum = (s1+s2+s3+s4);
 				alphatotal += asum;
 				sample[asum/(16*4)] += 4;
@@ -2142,9 +2150,18 @@ void LLImageGL::analyzeAlpha(const void* data_in, U32 w, U32 h)
 			++sample[s1/16];
 			current += mAlphaStride;
 
+			min = std::min(min, s1);
+			max = std::max(max, s1);
+			mids += (s1 > 2 && s1 < 253);
+
 			if(i%2==0)
 			{
-				S32 avg = (s1+current[mAlphaStride])/2;
+				const U32 s2 = *current;
+				min = std::min(min, s2);
+				max = std::max(max, s2);
+				mids += (s2 > 2 && s2 < 253);
+
+				S32 avg = (s1+s2)/2;
 				if(avg >=128)
 					avg-=255;
 				sum+=F64(avg*avg*2)/F64(length);
@@ -2186,7 +2203,8 @@ void LLImageGL::analyzeAlpha(const void* data_in, U32 w, U32 h)
 		mIsMask = TRUE;
 	}
 
-	mMaskRMSE = sqrt(sum)/255.0;
+	mMaskMidPercentile = (F32)mids / (F32)(w * h);
+	mMaskRMSE = ((max-min)%255)==0 ? sqrt(sum)/255.0 : FLT_MAX;
 	
 	/*std::list<std::pair<std::string,std::string> > &data = sTextureMaskMap[getTexName()];
 	data.clear();

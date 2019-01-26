@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltexlayerparams.cpp
  * @brief Texture layer parameters
@@ -104,7 +106,7 @@ void LLTexLayerParamAlpha::getCacheByteCount(S32* gl_bytes)
 	*gl_bytes = 0;
 
 	for (param_alpha_ptr_list_t::iterator iter = sInstances.begin();
-		 iter != sInstances.end(); iter++)
+		 iter != sInstances.end(); ++iter)
 	{
 		LLTexLayerParamAlpha* instance = *iter;
 		LLGLTexture* tex = instance->mCachedProcessedTexture;
@@ -183,7 +185,7 @@ BOOL LLTexLayerParamAlpha::getMultiplyBlend() const
 	return ((LLTexLayerParamAlphaInfo *)getInfo())->mMultiplyBlend; 	
 }
 
-void LLTexLayerParamAlpha::setWeight(F32 weight, bool upload_bake)
+void LLTexLayerParamAlpha::setWeight(F32 weight, BOOL upload_bake)
 {
 	if (mIsAnimating || mTexLayer == NULL)
 	{
@@ -207,7 +209,7 @@ void LLTexLayerParamAlpha::setWeight(F32 weight, bool upload_bake)
 	}
 }
 
-void LLTexLayerParamAlpha::setAnimationTarget(F32 target_value, bool upload_bake)
+void LLTexLayerParamAlpha::setAnimationTarget(F32 target_value, BOOL upload_bake)
 { 
 	// do not animate dummy parameters
 	if (mIsDummy)
@@ -225,11 +227,12 @@ void LLTexLayerParamAlpha::setAnimationTarget(F32 target_value, bool upload_bake
 	}
 }
 
-void LLTexLayerParamAlpha::animate(F32 delta, bool upload_bake)
+void LLTexLayerParamAlpha::animate(F32 delta, BOOL upload_bake)
 {
 	if (mNext)
 	{
 		mNext->animate(delta, upload_bake);
+
 	}
 }
 
@@ -477,7 +480,7 @@ LLColor4 LLTexLayerParamColor::getNetColor() const
 }
 
 
-void LLTexLayerParamColor::setWeight(F32 weight, bool upload_bake)
+void LLTexLayerParamColor::setWeight(F32 weight, BOOL upload_bake)
 {
 	if (mIsAnimating)
 	{
@@ -514,7 +517,7 @@ void LLTexLayerParamColor::setWeight(F32 weight, bool upload_bake)
 	}
 }
 
-void LLTexLayerParamColor::setAnimationTarget(F32 target_value, bool upload_bake)
+void LLTexLayerParamColor::setAnimationTarget(F32 target_value, BOOL upload_bake)
 { 
 	// set value first then set interpolating flag to ignore further updates
 	mTargetWeight = target_value; 
@@ -526,7 +529,7 @@ void LLTexLayerParamColor::setAnimationTarget(F32 target_value, bool upload_bake
 	}
 }
 
-void LLTexLayerParamColor::animate(F32 delta, bool upload_bake)
+void LLTexLayerParamColor::animate(F32 delta, BOOL upload_bake)
 {
 	if (mNext)
 	{

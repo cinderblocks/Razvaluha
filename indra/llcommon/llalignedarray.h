@@ -41,11 +41,11 @@ public:
 	~LLAlignedArray();
 
 	void push_back(const T& elem);
-	void pop_back()				{ if(!!mElementCount) --mElementCount; }
-	bool empty()	const		{ return !mElementCount; }
-	T& front()					{ return operator[](0); }
-	T& back()					{ return operator[](mElementCount-1); }
-	U32 size()		const		{ return mElementCount; }
+	void pop_back() { if (!!mElementCount) --mElementCount; }
+	bool empty() const { return !mElementCount; }
+	T& front() { return operator[](0); }
+	T& back() { return operator[](mElementCount - 1); }
+	U32 size() const { return mElementCount; }
 	void resize(U32 size);
 	T* append(S32 N);
 	T& operator[](int idx);
@@ -73,7 +73,7 @@ LLAlignedArray<T, alignment>::~LLAlignedArray()
 template <class T, U32 alignment>
 void LLAlignedArray<T, alignment>::push_back(const T& elem)
 {
-	T* old_buf = NULL;
+	T* old_buf = nullptr;
 	if (mCapacity <= mElementCount)
 	{
 		mCapacity++;
@@ -120,14 +120,14 @@ void LLAlignedArray<T, alignment>::resize(U32 size)
 template <class T, U32 alignment>
 T& LLAlignedArray<T, alignment>::operator[](int idx)
 {
-	llassert((U32)idx < mElementCount);
+	llassert(idx < mElementCount);
 	return mArray[idx];
 }
 
 template <class T, U32 alignment>
 const T& LLAlignedArray<T, alignment>::operator[](int idx) const
 {
-	llassert((U32)idx < mElementCount);
+	llassert(idx < mElementCount);
 	return mArray[idx];
 }
 

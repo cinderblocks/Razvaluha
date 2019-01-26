@@ -32,6 +32,8 @@
 #include <map>
 #include <set>
 
+#include "llatomic.h"
+
 #include "llthread.h"
 #include "llsimplehash.h"
 
@@ -64,8 +66,7 @@ public:
 	enum flags_t {
 		FLAG_AUTO_COMPLETE = 1,
 		FLAG_AUTO_DELETE = 2, // child-class dependent
-		FLAG_ABORT = 4,
-		FLAG_LOCKED = 8
+		FLAG_ABORT = 4
 	};
 
 	typedef U32 handle_t;
@@ -103,8 +104,6 @@ public:
 				return mPriority > second.mPriority;
 		}
 
-		virtual void deleteRequest(); // Only method to delete a request
-
 	protected:
 		status_t setStatus(status_t newstatus)
 		{
@@ -117,13 +116,10 @@ public:
 			// NOTE: flags are |'d
 			mFlags |= flags;
 		}
-		void resetFlags(U32 flags)
-		{
-			mFlags &= ~flags;
-		}
 		
 		virtual bool processRequest() = 0; // Return true when request has completed
 		virtual void finishRequest(bool completed); // Always called from thread after request has completed or aborted
+		virtual void deleteRequest(); // Only method to delete a request
 
 		void setPriority(U32 pri)
 		{
@@ -154,16 +150,16 @@ public:
 	
 public:
 	LLQueuedThread(const std::string& name, bool threaded = true, bool should_pause = false);
-	virtual ~LLQueuedThread();	
-	virtual void shutdown();
+	virtual ~LLQueuedThread();
+	void shutdown() override;
 	
 private:
 	// No copy constructor or copy assignment
 	LLQueuedThread(const LLQueuedThread&);
 	LLQueuedThread& operator=(const LLQueuedThread&);
 
-	virtual bool runCondition(void);
-	virtual void run(void);
+	bool runCondition(void) override;
+	void run(void) override;
 	virtual void startThread(void);
 	virtual void endThread(void);
 	virtual void threadedUpdate(void);
@@ -200,8 +196,8 @@ public:
 	bool check();
 	
 protected:
-	BOOL mThreaded;  // if false, run on main thread and do updates during update()
-	BOOL mStarted;  // required when mThreaded is false to call startThread() from update()
+	bool mThreaded;  // if false, run on main thread and do updates during update()
+	bool mStarted;  // required when mThreaded is false to call startThread() from update()
 	LLAtomic32<bool> mIdleThread; // request queue is empty (or we are quitting) and the thread is idle
 	
 	typedef std::set<QueuedRequest*, queued_request_less> request_queue_t;

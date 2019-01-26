@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llimagedxt.cpp
  *
@@ -172,7 +174,7 @@ LLImageDXT::~LLImageDXT()
 }
 
 // virtual
-BOOL LLImageDXT::updateData()
+bool LLImageDXT::updateData()
 {
 	resetLastError();
 
@@ -182,7 +184,7 @@ BOOL LLImageDXT::updateData()
 	if (!data || !data_size)
 	{
 		setLastError("LLImageDXT uninitialized");
-		return FALSE;
+		return false;
 	}
 
 	S32 width, height, miplevelmax;
@@ -216,7 +218,7 @@ BOOL LLImageDXT::updateData()
 	discard = llmin(discard, miplevelmax);
 	setDiscardLevel(discard);
 
-	return TRUE;
+	return true;
 }
 
 // discard: 0 = largest (last) mip
@@ -257,7 +259,7 @@ void LLImageDXT::setFormat()
 }
 		
 // virtual
-BOOL LLImageDXT::decode(LLImageRaw* raw_image, F32 time)
+bool LLImageDXT::decode(LLImageRaw* raw_image, F32 time)
 {
 	// *TODO: Test! This has been tweaked since its intial inception,
 	//  but we don't use it any more!
@@ -266,12 +268,12 @@ BOOL LLImageDXT::decode(LLImageRaw* raw_image, F32 time)
 	if (mFileFormat >= FORMAT_DXT1 && mFileFormat <= FORMAT_DXR5)
 	{
 		LL_WARNS() << "Attempt to decode compressed LLImageDXT to Raw (unsupported)" << LL_ENDL;
-		return FALSE;
+		return false;
 	}
 	
 	S32 width = getWidth(), height = getHeight();
 	S32 ncomponents = getComponents();
-	U8* data = NULL;
+	U8* data = nullptr;
 	if (mDiscardLevel >= 0)
 	{
 		data = getData() + getMipOffset(mDiscardLevel);
@@ -286,16 +288,16 @@ BOOL LLImageDXT::decode(LLImageRaw* raw_image, F32 time)
 	if ((!getData()) || (data + image_size > getData() + getDataSize()))
 	{
 		setLastError("LLImageDXT trying to decode an image with not enough data!");
-		return FALSE;
+		return false;
 	}
 
 	raw_image->resize(width, height, ncomponents);
 	memcpy(raw_image->getData(), data, image_size);	/* Flawfinder: ignore */
 
-	return TRUE;
+	return true;
 }
 
-BOOL LLImageDXT::getMipData(LLPointer<LLImageRaw>& raw, S32 discard)
+bool LLImageDXT::getMipData(LLPointer<LLImageRaw>& raw, S32 discard)
 {
 	if (discard < 0)
 	{
@@ -310,10 +312,10 @@ BOOL LLImageDXT::getMipData(LLPointer<LLImageRaw>& raw, S32 discard)
 	S32 height = 0;
 	calcDiscardWidthHeight(discard, mFileFormat, width, height);
 	raw = new LLImageRaw(data, width, height, getComponents());
-	return TRUE;
+	return true;
 }
 
-BOOL LLImageDXT::encodeDXT(const LLImageRaw* raw_image, F32 time, bool explicit_mips)
+bool LLImageDXT::encodeDXT(const LLImageRaw* raw_image, F32 time, bool explicit_mips)
 {
 	llassert_always(raw_image);
 	
@@ -332,7 +334,7 @@ BOOL LLImageDXT::encodeDXT(const LLImageRaw* raw_image, F32 time, bool explicit_
 		break;
 	  default:
 		LL_ERRS() << "LLImageDXT::encode: Unhandled channel number: " << ncomponents << LL_ENDL;
-		return 0;
+		return false;
 	}
 
 	S32 width = raw_image->getWidth();
@@ -371,7 +373,7 @@ BOOL LLImageDXT::encodeDXT(const LLImageRaw* raw_image, F32 time, bool explicit_
 	header->maxwidth = width;
 	header->maxheight = height;
 
-	U8* prev_mipdata = 0;
+	U8* prev_mipdata = nullptr;
 	w = width, h = height;
 	for (S32 mip=0; mip<nmips; mip++)
 	{
@@ -395,11 +397,11 @@ BOOL LLImageDXT::encodeDXT(const LLImageRaw* raw_image, F32 time, bool explicit_
 		prev_mipdata = mipdata;
 	}
 	
-	return TRUE;
+	return true;
 }
 
 // virtual
-BOOL LLImageDXT::encode(const LLImageRaw* raw_image, F32 time)
+bool LLImageDXT::encode(const LLImageRaw* raw_image, F32 time)
 {
 	return encodeDXT(raw_image, time, false);
 }
@@ -430,7 +432,7 @@ bool LLImageDXT::convertToDXR()
 	S32 nmips = calcNumMips(width,height);
 	S32 total_bytes = getDataSize();
 	U8* olddata = getData();
-	U8* newdata = (U8*) ll_aligned_malloc_16(total_bytes);
+	U8* newdata = (U8*)ll_aligned_malloc_16(total_bytes);
 	if (!newdata)
 	{
 		LL_ERRS() << "Out of memory in LLImageDXT::convertToDXR()" << LL_ENDL;

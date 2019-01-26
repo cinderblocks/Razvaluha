@@ -26,7 +26,6 @@
 #ifndef LLREFCOUNT_H
 #define LLREFCOUNT_H
 
-#include <boost/noncopyable.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include "llatomic.h"
 #include "llmutex.h"
@@ -84,8 +83,8 @@ private:
 
 #if LL_REF_COUNT_DEBUG
 	mutable LLMutex  mMutex ;
-	mutable U32  mLockedThreadID ;
-	mutable BOOL mCrashAtUnlock ; 
+	mutable boost::thread::id  mLockedThreadID ;
+	mutable LLAtomic32<bool> mCrashAtUnlock ; 
 #endif
 };
 
@@ -117,13 +116,13 @@ public:
 
 	void ref()
 	{
-		mRef++; 
+		++mRef; 
 	} 
 
 	void unref()
 	{
 		llassert(mRef >= 1);
-		if ((--mRef) == 0)		// See note in llapr.h on atomic decrement operator return value.  
+		if ((--mRef) == 0)		// See note at http://en.cppreference.com/w/cpp/atomic/atomic/operator_arith on atomic decrement operator return value.  
 		{	
 			// If we hit zero, the caller should be the only smart pointer owning the object and we can delete it.
 			// It is technically possible for a vanilla pointer to mess this up, or another thread to
@@ -135,7 +134,7 @@ public:
 
 	S32 getNumRefs() const
 	{
-		const S32 currentVal = mRef;
+		const S32 currentVal = mRef.load();
 		return currentVal;
 	}
 

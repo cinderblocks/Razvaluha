@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llcorehttputil.cpp
  * @date 2014-08-25
@@ -30,24 +32,51 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <json/json.hpp> // JSON
 #include "llcorehttputil.h"
+#include "lleventcoro.h"
 #include "llhttpconstants.h"
 #include "llsd.h"
 #include "llsdjson.h"
 #include "llsdserialize.h"
-#include "jsoncpp/reader.h" // JSON
-#include "jsoncpp/writer.h" // JSON
 #include "llvfile.h"
 
+#include "bufferstream.h"
 #include "message.h" // for getting the port
 
 using namespace LLCore;
-
 
 namespace LLCoreHttpUtil
 {
 
 const F32 HTTP_REQUEST_EXPIRY_SECS = 60.0f;
+
+namespace 
+{
+    const std::string   HTTP_LOGBODY_KEY("HTTPLogBodyOnError");
+
+    BoolSettingQuery_t  mBoolSettingGet;
+    BoolSettingUpdate_t mBoolSettingPut;
+
+    inline bool getBoolSetting(const std::string &keyname)
+    {
+        if (!mBoolSettingGet || mBoolSettingGet.empty())
+            return(false);
+        return mBoolSettingGet(HTTP_LOGBODY_KEY);
+    }
+
+}
+
+void setPropertyMethods(BoolSettingQuery_t queryfn, BoolSettingUpdate_t updatefn)
+{
+    mBoolSettingGet = queryfn;
+    mBoolSettingPut = updatefn;
+
+    if (mBoolSettingPut && !mBoolSettingPut.empty())
+    {
+        mBoolSettingPut(HTTP_LOGBODY_KEY, false, "Log the entire HTTP body in the case of an HTTP error.");
+    }
+}
 
 
 void logMessageSuccess(std::string logAuth, std::string url, std::string message)
@@ -57,7 +86,7 @@ void logMessageSuccess(std::string logAuth, std::string url, std::string message
 
 void logMessageFail(std::string logAuth, std::string url, std::string message)
 {
-    LL_WARNS() << logAuth << " Failure '" << message << "' for " << url << LL_ENDL;
+    LL_INFOS("CoreHTTP") << logAuth << " Possible failure '" << message << "' for " << url << LL_ENDL;
 }
 
 //=========================================================================
@@ -252,11 +281,10 @@ void HttpCoroHandler::onCompleted(LLCore::HttpHandle handle, LLCore::HttpRespons
         result = LLSD::emptyMap();
         LLCore::HttpStatus::type_enum_t errType = status.getType();
 
-        LL_WARNS()
-            << "\n--------------------------------------------------------------------------\n"
-            << " Error[" << status.toTerseString() << "] cannot access url '" << response->getRequestURL()
+        LL_INFOS()
+            << "Possible failure [" << status.toTerseString() << "] cannot "<< response->getRequestMethod() 
+            << " url '" << response->getRequestURL()
             << "' because " << status.toString()
-            << "\n--------------------------------------------------------------------------"
             << LL_ENDL;
         if ((errType >= 400) && (errType < 500))
         {
@@ -272,7 +300,6 @@ void HttpCoroHandler::onCompleted(LLCore::HttpHandle handle, LLCore::HttpRespons
                     result = body;
                 }
             }
-
         }
     }
     else
@@ -293,10 +320,11 @@ void HttpCoroHandler::onCompleted(LLCore::HttpHandle handle, LLCore::HttpRespons
         bas >> std::noskipws;
         bodyData.assign(std::istream_iterator<U8>(bas), std::istream_iterator<U8>());
         httpStatus["error_body"] = LLSD(bodyData);
-#if 1
-        // commenting out, but keeping since this can be useful for debugging
-        LL_WARNS() << "Returned body=" << std::endl << httpStatus["error_body"].asString() << LL_ENDL;
-#endif
+        if (getBoolSetting(HTTP_LOGBODY_KEY))
+        {
+            // commenting out, but keeping since this can be useful for debugging
+            LL_WARNS("CoreHTTP") << "Returned body=" << std::endl << httpStatus["error_body"].asString() << LL_ENDL;
+        }
     }
 
     mReplyPump.post(result);
@@ -362,8 +390,8 @@ public:
     HttpCoroLLSDHandler(LLEventStream &reply);
 
 protected:
-    virtual LLSD handleSuccess(LLCore::HttpResponse * response, LLCore::HttpStatus &status);
-    virtual LLSD parseBody(LLCore::HttpResponse *response, bool &success);
+	LLSD handleSuccess(LLCore::HttpResponse * response, LLCore::HttpStatus &status) override;
+	LLSD parseBody(LLCore::HttpResponse *response, bool &success) override;
 };
 
 //-------------------------------------------------------------------------
@@ -395,7 +423,7 @@ LLSD HttpCoroLLSDHandler::handleSuccess(LLCore::HttpResponse * response, LLCore:
         if (contentType && (HTTP_CONTENT_LLSD_XML == *contentType))
         {
             std::string thebody = LLCoreHttpUtil::responseToString(response);
-            LL_WARNS() << "Failed to deserialize . " << response->getRequestURL() << " [status:" << response->getStatus().toString() << "] "
+            LL_WARNS("CoreHTTP") << "Failed to deserialize . " << response->getRequestURL() << " [status:" << response->getStatus().toString() << "] "
                 << " body: " << thebody << LL_ENDL;
 
             // Replace the status with a new one indicating the failure.
@@ -414,7 +442,7 @@ LLSD HttpCoroLLSDHandler::handleSuccess(LLCore::HttpResponse * response, LLCore:
         if (contentType && (HTTP_CONTENT_LLSD_XML == *contentType))
         {
             std::string thebody = LLCoreHttpUtil::responseToString(response);
-            LL_WARNS() << "Failed to deserialize . " << response->getRequestURL() << " [status:" << response->getStatus().toString() << "] "
+            LL_WARNS("CoreHTTP") << "Failed to deserialize . " << response->getRequestURL() << " [status:" << response->getStatus().toString() << "] "
                 << " body: " << thebody << LL_ENDL;
 
             // Replace the status with a new one indicating the failure.
@@ -469,8 +497,8 @@ class HttpCoroRawHandler : public HttpCoroHandler
 public:
     HttpCoroRawHandler(LLEventStream &reply);
 
-    virtual LLSD handleSuccess(LLCore::HttpResponse * response, LLCore::HttpStatus &status);
-    virtual LLSD parseBody(LLCore::HttpResponse *response, bool &success);
+	LLSD handleSuccess(LLCore::HttpResponse * response, LLCore::HttpStatus &status) override;
+	LLSD parseBody(LLCore::HttpResponse *response, bool &success) override;
 };
 
 //-------------------------------------------------------------------------
@@ -544,8 +572,8 @@ class HttpCoroJSONHandler : public HttpCoroHandler
 public:
     HttpCoroJSONHandler(LLEventStream &reply);
 
-    virtual LLSD handleSuccess(LLCore::HttpResponse * response, LLCore::HttpStatus &status);
-    virtual LLSD parseBody(LLCore::HttpResponse *response, bool &success);
+	LLSD handleSuccess(LLCore::HttpResponse * response, LLCore::HttpStatus &status) override;
+	LLSD parseBody(LLCore::HttpResponse *response, bool &success) override;
 };
 
 //-------------------------------------------------------------------------
@@ -565,13 +593,13 @@ LLSD HttpCoroJSONHandler::handleSuccess(LLCore::HttpResponse * response, LLCore:
     }
 
     LLCore::BufferArrayStream bas(body);
-    Json::Value jsonRoot;
+    nlohmann::json jsonRoot;
 
     try
     {
         bas >> jsonRoot;
     }
-    catch (std::runtime_error e)
+    catch (const std::runtime_error& e)
     {   // deserialization failed.  Record the reason and pass back an empty map for markup.
         status = LLCore::HttpStatus(499, std::string(e.what()));
         return result;
@@ -593,13 +621,13 @@ LLSD HttpCoroJSONHandler::parseBody(LLCore::HttpResponse *response, bool &succes
     }
 
     LLCore::BufferArrayStream bas(body);
-    Json::Value jsonRoot;
+    nlohmann::json jsonRoot;
 
     try
     {
         bas >> jsonRoot;
     }
-    catch (std::runtime_error e)
+    catch (const std::runtime_error&)
     {   
         success = false;
         return LLSD();
@@ -614,7 +642,7 @@ HttpRequestPumper::HttpRequestPumper(const LLCore::HttpRequest::ptr_t &request) 
     mHttpRequest(request)
 {
     mBoundListener = LLEventPumps::instance().obtain("mainloop").
-        listen(LLEventPump::inventName(), boost::bind(&HttpRequestPumper::pollRequest, this, _1));
+        listen(LLEventPump::ANONYMOUS, boost::bind(&HttpRequestPumper::pollRequest, this, _1));
 }
 
 HttpRequestPumper::~HttpRequestPumper()
@@ -648,8 +676,8 @@ const std::string HttpCoroutineAdapter::HTTP_RESULTS_RAW("raw");
 HttpCoroutineAdapter::HttpCoroutineAdapter(const std::string &name,
     LLCore::HttpRequest::policy_t policyId, LLCore::HttpRequest::priority_t priority) :
     mAdapterName(name),
-    mPolicyId(policyId),
     mPriority(priority),
+    mPolicyId(policyId),
     mYieldingHandle(LLCORE_HTTP_HANDLE_INVALID),
     mWeakRequest(),
     mWeakHandler()
@@ -783,12 +811,12 @@ LLSD HttpCoroutineAdapter::postJsonAndSuspend(LLCore::HttpRequest::ptr_t request
 
     {
         LLCore::BufferArrayStream outs(rawbody.get());
-        Json::Value root = LlsdToJson(body);
-        Json::FastWriter writer;
+        nlohmann::json root = LlsdToJson(body);
+        std::string value = root.dump();
 
-        LL_WARNS("Http::post") << "JSON Generates: \"" << writer.write(root) << "\"" << LL_ENDL;
+        LL_WARNS("Http::post") << "JSON Generates: \"" << value << "\"" << LL_ENDL;
 
-        outs << writer.write(root);
+        outs << value;
     }
 
     return postAndSuspend_(request, url, rawbody, options, headers, httpHandler);
@@ -842,11 +870,11 @@ LLSD HttpCoroutineAdapter::putJsonAndSuspend(LLCore::HttpRequest::ptr_t request,
 
     {
         LLCore::BufferArrayStream outs(rawbody.get());
-        Json::Value root = LlsdToJson(body);
-        Json::FastWriter writer;
+        nlohmann::json root = LlsdToJson(body);
+        std::string value = root.dump();
 
-        LL_WARNS("Http::put") << "JSON Generates: \"" << writer.write(root) << "\"" << LL_ENDL;
-        outs << writer.write(root);
+        LL_WARNS("Http::put") << "JSON Generates: \"" << value << "\"" << LL_ENDL;
+        outs << value;
     }
 
     return putAndSuspend_(request, url, rawbody, options, headers, httpHandler);
@@ -1182,7 +1210,7 @@ LLSD HttpCoroutineAdapter::buildImmediateErrorResult(const LLCore::HttpRequest::
     const std::string &url) 
 {
     LLCore::HttpStatus status = request->getStatus();
-    LL_WARNS() << "Error posting to " << url << " Status=" << status.getStatus() <<
+    LL_WARNS("CoreHTTP") << "Error posting to " << url << " Status=" << status.getStatus() <<
         " message = " << status.getMessage() << LL_ENDL;
 
     // Mimic the status results returned from an http error that we had 

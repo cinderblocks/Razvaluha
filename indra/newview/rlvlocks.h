@@ -17,7 +17,6 @@
 #ifndef RLV_LOCKS_H
 #define RLV_LOCKS_H
 
-#include "llagentconstants.h"
 #include "llagentwearables.h"
 #include "lleventtimer.h"
 #include "llvoavatarself.h"
@@ -123,8 +122,7 @@ public:
 	typedef std::multimap<S32, LLUUID> rlv_attachptlock_map_t;
 	// Accessors for RlvFloaterLocks
 	const rlv_attachptlock_map_t& getAttachPtLocks(ERlvLockMask eLock) { return (RLV_LOCK_ADD == eLock) ? m_AttachPtAdd : m_AttachPtRem; }
-	const rlv_attachobjlock_map_t& getAttachObjLocks() const
-	{ return m_AttachObjRem; }
+	const rlv_attachobjlock_map_t& getAttachObjLocks() const { return m_AttachObjRem; }
 private:
 	rlv_attachptlock_map_t	m_AttachPtAdd;		// Map of attachment points that can't be attached to (idxAttachPt -> idObj)
 	rlv_attachptlock_map_t	m_AttachPtRem;		// Map of attachment points whose attachments can't be detached (idxAttachPt -> idObj)
@@ -142,9 +140,8 @@ extern RlvAttachmentLocks gRlvAttachmentLocks;
 // TODO-RLVa: [RLVa-1.2.1] This class really looks rather cluttered so look into cleaning it up/simplifying it a bit
 class RlvAttachmentLockWatchdog : public LLSingleton<RlvAttachmentLockWatchdog>
 {
-	friend class LLSingleton<RlvAttachmentLockWatchdog>;
+	LLSINGLETON(RlvAttachmentLockWatchdog) {};
 protected:
-	RlvAttachmentLockWatchdog() : m_pTimer(NULL) {}
 	~RlvAttachmentLockWatchdog() { delete m_pTimer; }
 
 	/*
@@ -216,7 +213,7 @@ protected:
 		virtual ~RlvAttachmentLockWatchdogTimer() { m_pWatchdog->m_pTimer = NULL; }
 		virtual BOOL tick() { return m_pWatchdog->onTimer(); }
 		RlvAttachmentLockWatchdog* m_pWatchdog;
-	} *m_pTimer;
+	} *m_pTimer = nullptr;
 };
 
 // ============================================================================
@@ -285,8 +282,8 @@ extern RlvWearableLocks gRlvWearableLocks;
 class RlvFolderLocks : public LLSingleton<RlvFolderLocks>
 {
 	friend class RlvLockedDescendentsCollector;
+	LLSINGLETON(RlvFolderLocks);
 public:
-	RlvFolderLocks();
 
 	// Specifies the source of a folder lock
 	enum ELockSourceType
@@ -328,7 +325,7 @@ public:
 	// Returns TRUE if the attachment (specified by item UUID) is non-detachable as a result of a RLV_LOCK_REMOVE folder PERM_DENY lock
 	bool isLockedAttachment(const LLUUID& idItem) const;
 	// Returns TRUE if the folder is locked as a result of a RLV_LOCK_REMOVE folder PERM_DENY lock
-	bool isLockedFolder(LLUUID idFolder, ERlvLockMask eLock, int eSourceTypeMask = ST_MASK_ANY, folderlock_source_t* plockSource = NULL) const;
+	bool isLockedFolder(LLUUID idFolder, ERlvLockMask eLock, int eSourceTypeMask = ST_MASK_ANY, folderlock_source_t* plockSource = nullptr) const;
 	// Returns TRUE if the wearable (specified by item UUID) is non-removable as a result of a RLV_LOCK_REMOVE folder PERM_DENY lock
 	bool isLockedWearable(const LLUUID& idItem) const;
 
@@ -365,13 +362,11 @@ protected:
 public:
 	typedef std::list<const folderlock_descr_t*> folderlock_list_t;
 	// Accessors for RlvFloaterLocks
-	const folderlock_list_t& getFolderLocks() const
-	{ return m_FolderLocks; }
-	const uuid_vec_t& getAttachmentLookups() const
-	{ return m_LockedAttachmentRem; }
-	const uuid_vec_t& getWearableLookups() const
-	{ return m_LockedWearableRem; }
+	const folderlock_list_t& getFolderLocks() const { return m_FolderLocks; }
+	const uuid_vec_t& getAttachmentLookups() const { return m_LockedAttachmentRem; }
+	const uuid_vec_t& getWearableLookups() const { return m_LockedWearableRem; }
 protected:
+
 	// Map of folder locks (idRlvObj -> lockDescr)
 	folderlock_list_t	m_FolderLocks;			// List of add and remove locked folder descriptions
 	S32					m_cntLockAdd;			// Number of RLV_LOCK_ADD locked folders in m_FolderLocks
@@ -651,7 +646,7 @@ inline bool RlvFolderLocks::canMoveItem(const LLUUID& idItem, const LLUUID& idFo
 	int maskSource = ST_MASK_ANY & ~ST_ROOTFOLDER; folderlock_source_t lockSource(ST_NONE, 0), lockSourceDest(ST_NONE, 0);
 	return 
 		(idFolder.notNull()) && 
-		(isLockedFolder(idFolder, RLV_LOCK_ANY, maskSource, &lockSource) == isLockedFolder(idFolderDest, RLV_LOCK_ANY, maskSource, &lockSourceDest)) && 
+		(isLockedFolder(idFolder, RLV_LOCK_ANY, maskSource, &lockSource) == isLockedFolder(idFolderDest, RLV_LOCK_ANY, maskSource, &lockSourceDest)) &&
 		(lockSource == lockSourceDest);
 }
 

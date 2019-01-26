@@ -34,27 +34,10 @@
 
 #include "llhudview.h"
 
-// library includes
-#include "v4color.h"
-#include "llcoord.h"
-
-// viewer includes
-#include "llagent.h"
-#include "llcallingcard.h"
-#include "llcolorscheme.h"
-#include "llviewercontrol.h"
-#include "llfloaterworldmap.h"
-#include "llworldmapview.h"
 #include "lltracker.h"
-#include "llviewercamera.h"
-#include "llui.h"
 #include "lluictrlfactory.h"
 
-LLHUDView *gHUDView = NULL;
-
-const S32 HUD_ARROW_SIZE = 32;
-
-
+LLHUDView *gHUDView = nullptr;
 
 LLHUDView::LLHUDView(const LLRect& r)
 {
@@ -62,36 +45,15 @@ LLHUDView::LLHUDView(const LLRect& r)
 	setShape(r,true);
 }
 
-LLHUDView::~LLHUDView()
-{ }
-
 // virtual
 void LLHUDView::draw()
 {
-	LLTracker::drawHUDArrow();
+	LLTracker::instance().drawHUDArrow();
 	LLView::draw();
 }
-
-
-// public
-const LLColor4& LLHUDView::colorFromType(S32 type)
-{
-	switch (type)
-	{
-	case 0:
-		return LLColor4::green;
-	default:
-		return LLColor4::black;
-	}
-}
-
 
 /*virtual*/
 BOOL LLHUDView::handleMouseDown(S32 x, S32 y, MASK mask)
 {
-	if (LLTracker::handleMouseDown(x, y))
-	{
-		return TRUE;
-	}
-	return LLView::handleMouseDown(x, y, mask);
+	return LLTracker::instance().handleMouseDown(x, y) || LLView::handleMouseDown(x, y, mask);
 }

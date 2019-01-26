@@ -30,7 +30,6 @@
 #include "lltool.h"
 #include "v3math.h"
 #include "llquaternion.h"
-#include "llmemory.h"
 #include "lluuid.h"
 #include "llviewerwindow.h" // for LLPickInfo
 
@@ -45,29 +44,34 @@ void send_ObjectGrab_message(LLViewerObject* object, const LLPickInfo & pick, co
 void send_ObjectDeGrab_message(LLViewerObject* object, const LLPickInfo & pick);
 
 
-
-class LLToolGrab : public LLTool, public LLSingleton<LLToolGrab>
+/**
+ * LLToolGrabBase contains most of the semantics of LLToolGrab. It's just that
+ * LLToolGrab is an LLSingleton, but we also explicitly instantiate
+ * LLToolGrabBase as part of LLToolCompGun. You can't just make an extra
+ * instance of an LLSingleton!
+ */
+class LLToolGrabBase : public LLTool
 {
 public:
-	LLToolGrab( LLToolComposite* composite = NULL );
-	~LLToolGrab();
+	LLToolGrabBase(LLToolComposite* composite= nullptr);
+	~LLToolGrabBase();
 
-	/*virtual*/ BOOL	handleHover(S32 x, S32 y, MASK mask);
-	/*virtual*/ BOOL	handleMouseDown(S32 x, S32 y, MASK mask);
-	/*virtual*/ BOOL	handleMouseUp(S32 x, S32 y, MASK mask);
-	/*virtual*/ BOOL	handleDoubleClick(S32 x, S32 y, MASK mask);
-	/*virtual*/ void	render();		// 3D elements
-	/*virtual*/ void	draw();			// 2D elements
+	/*virtual*/ BOOL	handleHover(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ BOOL	handleMouseDown(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ BOOL	handleMouseUp(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ BOOL	handleDoubleClick(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ void	render() override;		// 3D elements
+	/*virtual*/ void	draw() override;			// 2D elements
 
-	virtual void		handleSelect();
-	virtual void		handleDeselect();
+	void		handleSelect() override;
+	void		handleDeselect() override;
+
+	LLViewerObject*	getEditingObject() override;
+	LLVector3d		getEditingPointGlobal() override;
+	BOOL			isEditing() override;
+	void			stopEditing() override;
 	
-	virtual LLViewerObject*	getEditingObject();
-	virtual LLVector3d		getEditingPointGlobal();
-	virtual BOOL			isEditing();
-	virtual void			stopEditing();
-	
-	virtual void			onMouseCaptureLost();
+	void			onMouseCaptureLost() override;
 
 	BOOL			hasGrabOffset()  { return TRUE; }	// HACK
 	LLVector3		getGrabOffset(S32 x, S32 y);		// HACK
@@ -77,6 +81,8 @@ public:
 
 	// Certain grabs should not highlight the "Build" toolbar button
 	BOOL getHideBuildHighlight() { return mHideBuildHighlight; }
+
+	void setClickedInMouselook(BOOL is_clickedInMouselook) {mClickedInMouselook = is_clickedInMouselook;}
 
 	static void		pickCallback(const LLPickInfo& pick_info);
 private:
@@ -133,6 +139,14 @@ private:
 	LLQuaternion	mSpinRotation;
 
 	BOOL			mHideBuildHighlight;
+
+	BOOL			mClickedInMouselook;
+};
+
+/// This is the LLSingleton instance of LLToolGrab.
+class LLToolGrab : public LLToolGrabBase, public LLSingleton<LLToolGrab>
+{
+	LLSINGLETON_EMPTY_CTOR(LLToolGrab);
 };
 
 extern BOOL gGrabBtnVertical;
@@ -140,5 +154,3 @@ extern BOOL gGrabBtnSpin;
 extern LLTool* gGrabTransientTool;
 
 #endif  // LL_TOOLGRAB_H
-
-

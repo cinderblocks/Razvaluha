@@ -35,6 +35,7 @@
 #include "llviewervisualparam.h"
 #include "llxmltree.h"
 
+#include <boost/container/flat_map.hpp> // <alchemy/>
 class LLTexLayerSet;
 class LLTexGlobalColor;
 class LLTexGlobalColorInfo;
@@ -66,7 +67,8 @@ public:
 	LLAvatarAppearance(LLWearableData* wearable_data);
 	virtual ~LLAvatarAppearance();
 
-	static void			initClass(); // initializes static members
+	static void			initClass(const std::string& avatar_file_name, const std::string& skeleton_file_name); // initializes static members
+	static void			initClass();
 	static void			cleanupClass();	// Cleanup data that's only init'd once per class.
 	virtual void 		initInstance(); // Called after construction to initialize the instance.
 	virtual BOOL		loadSkeletonNode();
@@ -87,15 +89,15 @@ public:
 	// LLCharacter interface and related
 	//--------------------------------------------------------------------
 public:
-	/*virtual*/ LLJoint*		getCharacterJoint(U32 num);
+	/*virtual*/ LLJoint*		getCharacterJoint(U32 num) override;
 
-	/*virtual*/ const char*		getAnimationPrefix() { return "avatar"; }
-	/*virtual*/ LLVector3		getVolumePos(S32 joint_index, LLVector3& volume_offset);
-	/*virtual*/ LLJoint*		findCollisionVolume(U32 volume_id);
-	/*virtual*/ S32				getCollisionVolumeID(std::string &name);
-	/*virtual*/ LLPolyMesh*		getHeadMesh();
-	/*virtual*/ LLPolyMesh*		getUpperBodyMesh();
-	LLPolyMesh*					getMesh( LLPolyMeshSharedData *shared_data );
+	/*virtual*/ const char*		getAnimationPrefix() override { return "avatar"; }
+	/*virtual*/ LLVector3		getVolumePos(S32 joint_index, LLVector3& volume_offset) override;
+	/*virtual*/ LLJoint*		findCollisionVolume(U32 volume_id) override;
+	/*virtual*/ S32				getCollisionVolumeID(std::string &name) override;
+	/*virtual*/ LLPolyMesh*		getHeadMesh() override;
+	/*virtual*/ LLPolyMesh*		getUpperBodyMesh() override;
+	LLPolyMesh*					getMesh(LLPolyMeshSharedData *shared_data);
 
 	typedef std::map<S32, std::string> lod_mesh_map_t;
 	typedef std::map<std::string, lod_mesh_map_t> mesh_info_t;
@@ -118,7 +120,7 @@ public:
 
 	bool isBuilt() const { return mIsBuilt; }
 
-	virtual std::string		getFullname() const = 0;
+	
 /**                    State
  **                                                                            **
  *******************************************************************************/
@@ -130,19 +132,31 @@ public:
 
 protected:
 	virtual LLAvatarJoint*	createAvatarJoint() = 0;
-	virtual LLAvatarJoint*	createAvatarJoint(S32 joint_num) = 0;
+    virtual LLAvatarJoint*  createAvatarJoint(S32 joint_num) = 0;
 	virtual LLAvatarJointMesh*	createAvatarJointMesh() = 0;
+    void makeJointAliases(LLAvatarBoneInfo *bone_info);
 public:
 	F32					getPelvisToFoot() const { return mPelvisToFoot; }
-	/*virtual*/ LLJoint*	getRootJoint() { return mRoot; }
+	/*virtual*/ LLJoint*	getRootJoint() override { return mRoot; }
 
 	LLVector3			mHeadOffset; // current head position
 	LLAvatarJoint		*mRoot;
 
-	typedef std::map<std::string, LLJoint*> joint_map_t;
+	typedef boost::container::flat_map<std::string, LLJoint*> joint_map_t; // <alchemy/> - flat_map
 	joint_map_t			mJointMap;
-	
-	void				computeBodySize();
+
+    typedef std::map<std::string, LLVector3> joint_state_map_t;
+    joint_state_map_t mLastBodySizeState;
+    joint_state_map_t mCurrBodySizeState;
+    void compareJointStateMaps(joint_state_map_t& last_state,
+                               joint_state_map_t& curr_state);
+	void		computeBodySize();
+
+public:
+	typedef std::vector<LLAvatarJoint*> avatar_joint_list_t;
+    const avatar_joint_list_t& getSkeleton() { return mSkeleton; }
+    typedef std::map<std::string, std::string> joint_alias_map_t;
+    const joint_alias_map_t& getJointAliases();
 
 
 protected:
@@ -154,12 +168,13 @@ protected:
 	BOOL				setupBone(const LLAvatarBoneInfo* info, LLJoint* parent, S32 &current_volume_num, S32 &current_joint_num);
 	BOOL				allocateCharacterJoints(U32 num);
 	BOOL				buildSkeleton(const LLAvatarSkeletonInfo *info);
-protected:
+
 	void				clearSkeleton();
 	BOOL				mIsBuilt; // state of deferred character building
-	typedef std::vector<LLAvatarJoint*> avatar_joint_list_t;
+
 	avatar_joint_list_t	mSkeleton;
-	LLPosOverrideMap	mPelvisFixups;
+	LLVector3OverrideMap	mPelvisFixups;
+    joint_alias_map_t   mJointAliasMap;
 
 	//--------------------------------------------------------------------
 	// Pelvis height adjustment members.
@@ -244,13 +259,13 @@ public:
  **/
 
 public:
+	const avatar_joint_list_t& getMeshLOD() const { return mMeshLOD; } // <singu/>
 	virtual void	updateMeshTextures() = 0;
 	virtual void	dirtyMesh() = 0; // Dirty the avatar mesh
 protected:
 	virtual void	dirtyMesh(S32 priority) = 0; // Dirty the avatar mesh, with priority
 
 protected:
-	friend class WavefrontSaver;
 	typedef std::multimap<std::string, LLPolyMesh*> polymesh_map_t;
 	polymesh_map_t 									mPolyMeshes;
 	avatar_joint_list_t								mMeshLOD;
@@ -268,7 +283,7 @@ protected:
 	// Clothing colors (convenience functions to access visual parameters)
 	//--------------------------------------------------------------------
 public:
-	void			setClothesColor(LLAvatarAppearanceDefines::ETextureIndex te, const LLColor4& new_color, bool upload_bake = false);
+	void			setClothesColor(LLAvatarAppearanceDefines::ETextureIndex te, const LLColor4& new_color, BOOL upload_bake);
 	LLColor4		getClothesColor(LLAvatarAppearanceDefines::ETextureIndex te);
 	static BOOL		teToColorParams(LLAvatarAppearanceDefines::ETextureIndex te, U32 *param_name);
 
@@ -277,7 +292,7 @@ public:
 	//--------------------------------------------------------------------
 public:
 	LLColor4		getGlobalColor(const std::string& color_name ) const;
-	virtual void	onGlobalColorChanged(const LLTexGlobalColor* global_color, bool upload_bake = false) = 0;
+	virtual void	onGlobalColorChanged(const LLTexGlobalColor* global_color, BOOL upload_bake) = 0;
 protected:
 	LLTexGlobalColor* mTexSkinColor;
 	LLTexGlobalColor* mTexHairColor;
@@ -343,7 +358,9 @@ protected:
 	// Collision volumes
 	//--------------------------------------------------------------------
 public:
-	std::vector<LLAvatarJointCollisionVolume*> mCollisionVolumes;
+    S32			mNumBones;
+  	S32			mNumCollisionVolumes;
+	LLAvatarJointCollisionVolume* mCollisionVolumes;
 protected:
 	BOOL		allocateCollisionVolumes(U32 num);
 
@@ -377,7 +394,7 @@ protected:
 			~LLAvatarMeshInfo()
 			{
 				morph_info_list_t::iterator iter;
-				for (iter = mPolyMorphTargetInfoList.begin(); iter != mPolyMorphTargetInfoList.end(); iter++)
+				for (iter = mPolyMorphTargetInfoList.begin(); iter != mPolyMorphTargetInfoList.end(); ++iter)
 				{
 					delete iter->first;
 				}

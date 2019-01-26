@@ -43,12 +43,6 @@
 #include "lluuid.h"
 #include "lluictrlfactory.h"
 
-//-----------------------------------------------------------------------------
-// Globals
-//-----------------------------------------------------------------------------
-
-LLMap< const LLUUID, LLFloaterParcelInfo* > gPlaceInfoInstances;
-
 //moved to llpanelplaces.cpp in v2
 class LLParcelHandler : public LLCommandHandler
 {
@@ -96,19 +90,16 @@ void*	LLFloaterParcelInfo::createPanelPlace(void*	data)
 
 LLFloaterParcelInfo::LLFloaterParcelInfo(const std::string& name, const LLUUID &parcel_id)
 :	LLFloater(name),
-	mParcelID( parcel_id )
+	LLInstanceTracker<LLFloaterParcelInfo, LLUUID>(parcel_id)
 {
 	mFactoryMap["place_details_panel"] = LLCallbackMap(LLFloaterParcelInfo::createPanelPlace, this);
 	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_preview_url.xml", &getFactoryMap());
-	gPlaceInfoInstances.addData(parcel_id, this);
 }
 
 // virtual
 LLFloaterParcelInfo::~LLFloaterParcelInfo()
 {
 	// child views automatically deleted
-	gPlaceInfoInstances.removeData(mParcelID);
-
 }
 
 void LLFloaterParcelInfo::displayParcelInfo(const LLUUID& parcel_id)
@@ -119,27 +110,19 @@ void LLFloaterParcelInfo::displayParcelInfo(const LLUUID& parcel_id)
 // static
 LLFloaterParcelInfo* LLFloaterParcelInfo::show(const LLUUID &parcel_id)
 {
-	if (parcel_id.isNull())
-	{
-		return NULL;
-	}
+	if (parcel_id.isNull()) return nullptr;
 
-	LLFloaterParcelInfo *floater;
-	if (gPlaceInfoInstances.checkData(parcel_id))
-	{
-		// ...bring that window to front
-		floater = gPlaceInfoInstances.getData(parcel_id);
-		floater->open();	/*Flawfinder: ignore*/
-		floater->setFrontmost(true);
-	}
-	else
+	LLFloaterParcelInfo* floater = getInstance(parcel_id);
+	if (!floater)
 	{
 		floater =  new LLFloaterParcelInfo("parcelinfo", parcel_id );
 		floater->center();
-		floater->open();	/*Flawfinder: ignore*/
 		floater->displayParcelInfo(parcel_id);
-		floater->setFrontmost(true);
 	}
+	
+	// ...bring that window to front
+	floater->open();	/*Flawfinder: ignore*/
+	floater->setFrontmost(true);
 
 	return floater;
 }

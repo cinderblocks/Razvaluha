@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpluginmessagepipe.cpp
  * @brief Classes that implement connections from the plugin system to pipes/pumps.
@@ -29,14 +31,13 @@
 #include "linden_common.h"
 
 #include "llpluginmessagepipe.h"
-#include "llbufferstream.h"
 
 #include "llapr.h"
 
 static const char MESSAGE_DELIMITER = '\0';
 
 LLPluginMessagePipeOwner::LLPluginMessagePipeOwner() :
-	mMessagePipe(NULL),
+	mMessagePipe(nullptr),
 	mSocketError(APR_SUCCESS)
 {
 }
@@ -63,13 +64,13 @@ void LLPluginMessagePipeOwner::setMessagePipe(LLPluginMessagePipe *read_pipe)
 
 bool LLPluginMessagePipeOwner::canSendMessage(void)
 {
-	return (mMessagePipe != NULL);
+	return (mMessagePipe != nullptr);
 }
 
 bool LLPluginMessagePipeOwner::writeMessageRaw(const std::string &message)
 {
 	bool result = true;
-	if(mMessagePipe != NULL)
+	if(mMessagePipe != nullptr)
 	{
 		result = mMessagePipe->addMessage(message);
 	}
@@ -84,10 +85,10 @@ bool LLPluginMessagePipeOwner::writeMessageRaw(const std::string &message)
 
 void LLPluginMessagePipeOwner::killMessagePipe(void)
 {
-	if(mMessagePipe != NULL)
+	if(mMessagePipe != nullptr)
 	{
 		delete mMessagePipe;
-		mMessagePipe = NULL;
+		mMessagePipe = nullptr;
 	}
 }
 
@@ -103,9 +104,9 @@ LLPluginMessagePipe::LLPluginMessagePipe(LLPluginMessagePipeOwner *owner, LLSock
 
 LLPluginMessagePipe::~LLPluginMessagePipe()
 {
-	if(mOwner != NULL)
+	if(mOwner != nullptr)
 	{
-		mOwner->setMessagePipe(NULL);
+		mOwner->setMessagePipe(nullptr);
 	}
 }
 
@@ -130,7 +131,7 @@ bool LLPluginMessagePipe::addMessage(const std::string &message)
 void LLPluginMessagePipe::clearOwner(void)
 {
 	// The owner is done with this pipe.  The next call to process_impl should send any remaining data and exit.
-	mOwner = NULL;
+	mOwner = nullptr;
 }
 
 void LLPluginMessagePipe::setSocketTimeout(apr_interval_time_t timeout_usec)
@@ -215,7 +216,7 @@ bool LLPluginMessagePipe::pumpOutput()
 			else if(APR_STATUS_IS_EOF(status))
 			{
 				// This is what we normally expect when a plugin exits.
-				LL_INFOS() << "Got EOF from plugin socket. " << LL_ENDL;
+				LL_DEBUGS() << "Got EOF from plugin socket. " << LL_ENDL;
 
 				if(mOwner)
 				{
@@ -283,7 +284,7 @@ bool LLPluginMessagePipe::pumpInput(F64 timeout)
 			// and use the timeout so we'll sleep if no data is available.
 			setSocketTimeout((apr_interval_time_t)(timeout * 1000000));
 
-			while(1)		
+			while(true)		
 			{
 				size = request_size;
 
@@ -329,7 +330,7 @@ bool LLPluginMessagePipe::pumpInput(F64 timeout)
 				else if(APR_STATUS_IS_EOF(status))
 				{
 					// This is what we normally expect when a plugin exits.
-					LL_INFOS("PluginSocket") << "Got EOF from plugin socket. " << LL_ENDL;
+					LL_DEBUGS("PluginSocket") << "Got EOF from plugin socket. " << LL_ENDL;
 
 					if(mOwner)
 					{

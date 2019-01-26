@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llhttpnode.cpp
  * @brief Implementation of classes for generic HTTP/LSL/REST handling.
@@ -31,6 +33,7 @@
 
 #include "llstl.h"
 #include "llhttpconstants.h"
+#include "llexception.h"
 
 const std::string CONTEXT_HEADERS("headers");
 const std::string CONTEXT_PATH("path");
@@ -55,7 +58,7 @@ public:
 	std::string mWildcardKey;
 	LLHTTPNode* mParentNode;
 	
-	Impl() : mWildcardChild(NULL), mParentNode(NULL) { }
+	Impl() : mWildcardChild(nullptr), mParentNode(nullptr) { }
 	
 	LLHTTPNode* findNamedChild(const std::string& name) const;
 };
@@ -92,27 +95,28 @@ LLHTTPNode::~LLHTTPNode()
 
 
 namespace {
-	class NotImplemented
+	struct NotImplemented: public LLException
 	{
+		NotImplemented(): LLException("LLHTTPNode::NotImplemented") {}
 	};
 }
 
 // virtual
 LLSD LLHTTPNode::simpleGet() const
 {
-	throw NotImplemented();
+	LLTHROW(NotImplemented());
 }
 
 // virtual
 LLSD LLHTTPNode::simplePut(const LLSD& input) const
 {
-	throw NotImplemented();
+	LLTHROW(NotImplemented());
 }
 
 // virtual
 LLSD LLHTTPNode::simplePost(const LLSD& input) const
 {
-	throw NotImplemented();
+	LLTHROW(NotImplemented());
 }
 
 
@@ -123,7 +127,7 @@ void LLHTTPNode::get(LLHTTPNode::ResponsePtr response, const LLSD& context) cons
 	{
 		response->result(simpleGet());
 	}
-	catch (NotImplemented)
+	catch (const NotImplemented&)
 	{
 		response->methodNotAllowed();
 	}
@@ -136,7 +140,7 @@ void LLHTTPNode::put(LLHTTPNode::ResponsePtr response, const LLSD& context, cons
 	{
 		response->result(simplePut(input));
 	}
-	catch (NotImplemented)
+	catch (const NotImplemented&)
 	{
 		response->methodNotAllowed();
 	}
@@ -149,7 +153,7 @@ void LLHTTPNode::post(LLHTTPNode::ResponsePtr response, const LLSD& context, con
 	{
 		response->result(simplePost(input));
 	}
-	catch (NotImplemented)
+	catch (const NotImplemented&)
 	{
 		response->methodNotAllowed();
 	}
@@ -162,7 +166,7 @@ void LLHTTPNode::del(LLHTTPNode::ResponsePtr response, const LLSD& context) cons
     {
 	response->result(simpleDel(context));
     }
-    catch (NotImplemented)
+    catch (const NotImplemented&)
     {
 	response->methodNotAllowed();
     }
@@ -172,7 +176,7 @@ void LLHTTPNode::del(LLHTTPNode::ResponsePtr response, const LLSD& context) cons
 // virtual
 LLSD LLHTTPNode::simpleDel(const LLSD&) const
 {
-	throw NotImplemented();
+	LLTHROW(NotImplemented());
 }
 
 // virtual
@@ -215,7 +219,7 @@ LLHTTPNode* LLHTTPNode::getChild(const std::string& name, LLSD& context) const
 		return impl.mWildcardChild;
 	}
 	
-	return NULL;
+	return nullptr;
 }
 
 
@@ -425,7 +429,7 @@ void LLHTTPNode::describe(Description& desc) const
 
 const LLChainIOFactory* LLHTTPNode::getProtocolHandler() const
 {
-	return NULL;
+	return nullptr;
 }
 
 

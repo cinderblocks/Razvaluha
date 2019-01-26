@@ -28,6 +28,8 @@
 #ifndef LLPREPROCESSOR_H
 #define LLPREPROCESSOR_H
 
+#include "llcompilerfeatures.h"
+
 // Figure out endianness of platform
 #ifdef LL_LINUX
 #define __ENABLE_WSTRING
@@ -49,9 +51,7 @@
 #define LL_BIG_ENDIAN 1
 #endif
 
-
 // Per-compiler switches
-
 #ifdef __GNUC__
 #define LL_FORCE_INLINE inline __attribute__((always_inline))
 #else
@@ -74,8 +74,8 @@
 // Figure out differences between compilers
 #if defined(__clang__)
 	#define CLANG_VERSION (__clang_major__ * 10000 \
-						+ __clang_minor__ * 100 \
-						+ __clang_patchlevel__)
+						  + __clang_minor__ * 100 \
+						  + __clang_patchlevel__)
 	#ifndef LL_CLANG
 		#define LL_CLANG 1
 	#endif
@@ -109,16 +109,6 @@
 
 #endif
 
-// Require C++11 support
-#if __cplusplus < 201100L && _MSC_VER < 1800
-#error C++11 support is required to build this project.
-#endif
-
-#if LL_WINDOWS
-# define LL_THREAD_LOCAL __declspec(thread)
-#else
-# define LL_THREAD_LOCAL __thread
-#endif
 
 // Static linking with apr on windows needs to be declared.
 #if LL_WINDOWS && !LL_COMMON_LINK_SHARED
@@ -146,16 +136,15 @@
 //#pragma warning( 3	: 4018 )	// "signed/unsigned mismatch"  Treat this as level 3, not level 4.
 #pragma warning( 3      :  4263 )	// 'function' : member function does not override any base class virtual member function
 #pragma warning( 3      :  4264 )	// "'virtual_function' : no override available for virtual member function from base 'class'; function is hidden"
-#pragma warning( 3       : 4265 )	// "class has virtual functions, but destructor is not virtual"
+//#pragma warning( 3       : 4265 )	// "class has virtual functions, but destructor is not virtual"
 #pragma warning( 3      :  4266 )	// 'function' : no override available for virtual member function from base 'type'; function is hidden
 #pragma warning (disable : 4180)	// qualifier applied to function type has no meaning; ignored
 //#pragma warning( disable : 4284 )	// silly MS warning deep inside their <map> include file
 #pragma warning( disable : 4503 )	// 'decorated name length exceeded, name was truncated'. Does not seem to affect compilation.
 #pragma warning( disable : 4800 )	// 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
-#pragma warning( disable : 4996 )	// warning: deprecated
+//#pragma warning( disable : 4996 )	// warning: deprecated
 
 // Linker optimization with "extern template" generates these warnings
-#pragma warning( disable : 4231 )	// nonstandard extension used : 'extern' before template explicit instantiation
 #pragma warning( disable : 4506 )   // no definition for inline function
 
 // level 4 warnings that we need to disable:
@@ -168,10 +157,10 @@
 
 #pragma warning (disable : 4251) // member needs to have dll-interface to be used by clients of class
 #pragma warning (disable : 4275) // non dll-interface class used as base for dll-interface class
-//#pragma warning (disable : 4018) // '<' : signed/unsigned mismatch
+#pragma warning (disable : 4018) // '<' : signed/unsigned mismatch	
 
 #if _WIN64
-#pragma warning (disable : 4267) // member needs to have dll-interface to be used by clients of class
+#pragma warning (disable : 4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
 #endif
 
 #endif	//	LL_MSVC
@@ -202,16 +191,8 @@
 # define LL_COMMON_API
 #endif // LL_COMMON_LINK_SHARED
 
-// Darwin does not support thread-local data.
-#ifndef LL_DARWIN
-#if LL_WINDOWS
-#define ll_thread_local __declspec(thread)
-#else // Linux
-#define ll_thread_local __thread
-#endif
-#endif
-
-#define LL_TYPEOF(exp) decltype(exp)
+// macro to get the type of an expression.
+#define LL_TYPEOF(expr) decltype(expr)
 
 #define LL_TO_STRING_HELPER(x) #x
 #define LL_TO_STRING(x) LL_TO_STRING_HELPER(x)

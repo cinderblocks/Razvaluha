@@ -27,9 +27,8 @@
 #ifndef LL_LLTHREADSAFEQUEUE_H
 #define LL_LLTHREADSAFEQUEUE_H
 
-
+#include "llexception.h"
 #include <string>
-#include <stdexcept>
 
 
 struct apr_pool_t; // From apr_pools.h
@@ -40,11 +39,11 @@ class LLThreadSafeQueueImplementation; // See below.
 // A general queue exception.
 //
 class LL_COMMON_API LLThreadSafeQueueError:
-public std::runtime_error
+	public LLException
 {
 public:
 	LLThreadSafeQueueError(std::string const & message):
-	std::runtime_error(message)
+		LLException(message)
 	{
 		; // No op.
 	}
@@ -101,7 +100,7 @@ public:
 	
 	// If the pool is set to NULL one will be allocated and managed by this
 	// queue.
-	LLThreadSafeQueue(apr_pool_t * pool = 0, unsigned int capacity = 1024);
+	LLThreadSafeQueue(apr_pool_t * pool = nullptr, unsigned int capacity = 1024);
 	
 	// Add an element to the front of queue (will block if the queue has
 	// reached capacity).
@@ -152,7 +151,7 @@ void LLThreadSafeQueue<ElementT>::pushFront(ElementT const & element)
 	ElementT * elementCopy = new ElementT(element);
 	try {
 		mImplementation.pushFront(elementCopy);
-	} catch (LLThreadSafeQueueInterrupt) {
+	} catch (const LLThreadSafeQueueInterrupt&) {
 		delete elementCopy;
 		throw;
 	}

@@ -44,8 +44,7 @@
 #include "llviewermedia_streamingaudio.h"
 #include "llaudioengine.h"
 
-
-#if LL_FMODSTUDIO
+#ifdef LL_FMODSTUDIO
 # include "llaudioengine_fmodstudio.h"
 #endif
 
@@ -79,7 +78,6 @@
 #include "llsd.h"
 #include "llsdserialize.h"
 #include "llsdutil_math.h"
-#include "llsecondlifeurls.h"
 #include "llstring.h"
 #include "lltexteditor.h"
 #include "llurlentry.h"
@@ -88,7 +86,6 @@
 #include "llviewercontrol.h"
 #include "llvfs.h"
 #include "llxorcipher.h"	// saved password, MAC address
-#include "imageids.h"
 #include "message.h"
 #include "v3math.h"
 
@@ -153,7 +150,6 @@
 #include "llproxy.h"
 #include "llproductinforequest.h"
 #include "llremoteparcelrequest.h"
-#include "llsecondlifeurls.h"
 #include "llselectmgr.h"
 #include "llsky.h"
 #include "llstatview.h"
@@ -222,6 +218,7 @@
 #include "llfloaterblacklist.h"
 #include "scriptcounter.h"
 #include "shfloatermediaticker.h"
+#include "shupdatechecker.h"
 #include "llpacketring.h"
 // </edit>
 
@@ -235,6 +232,9 @@
 
 #include "llevents.h"
 #include "llexperiencelog.h"
+#include "llcleanup.h"
+
+#include "llstacktrace.h"
 
 #if LL_WINDOWS
 #include "llwindebug.h"
@@ -309,10 +309,7 @@ void init_start_screen(S32 location_id);
 void release_start_screen();
 void reset_login();
 void apply_udp_blacklist(const std::string& csv);
-// <FS:CR> Aurora Sim
-//bool process_login_success_response(std::string& password);
 bool process_login_success_response(std::string& password, U32& first_sim_size_x, U32& first_sim_size_y);
-// </FS:CR> Aurora Sim
 void transition_back_to_login_panel(const std::string& emsg);
 
 void callback_cache_name(const LLUUID& id, const std::string& full_name, bool is_group)
@@ -398,77 +395,6 @@ void convert_legacy_settings()
 	}
 }
 
-void init_audio()
-{
-	if (FALSE == gSavedSettings.getBOOL("NoAudio"))
-	{
-		gAudiop = NULL;
-
-#ifdef LL_FMODSTUDIO	
-		if (!gAudiop
-#if !LL_WINDOWS
-			&& NULL == getenv("LL_BAD_FMODSTUDIO_DRIVER")
-#endif // !LL_WINDOWS
-			)
-		{
-			gAudiop = (LLAudioEngine *) new LLAudioEngine_FMODSTUDIO(gSavedSettings.getBOOL("SHEnableFMODExProfiler"), gSavedSettings.getBOOL("SHEnableFMODEXVerboseDebugging"));
-		}
-#endif
-
-#ifdef LL_OPENAL
-		if (!gAudiop
-#if !LL_WINDOWS
-			&& NULL == getenv("LL_BAD_OPENAL_DRIVER")
-#endif // !LL_WINDOWS
-		)
-		{
-			gAudiop = (LLAudioEngine *) new LLAudioEngine_OpenAL();
-		}
-#endif
-
-		if (gAudiop)
-		{
-#if LL_WINDOWS
-			// FMOD on Windows needs the window handle to stop playing audio
-			// when window is minimized. JC
-			void* window_handle = (HWND)gViewerWindow->getPlatformWindow();
-#else
-			void* window_handle = NULL;
-#endif
-			bool init = gAudiop->init(kAUDIO_NUM_SOURCES, window_handle);
-			if(init)
-			{
-				gAudiop->setMuted(TRUE);
-				if(gSavedSettings.getBOOL("AllowLargeSounds"))
-					gAudiop->setAllowLargeSounds(true);
-			}
-			else
-			{
-				LL_WARNS("AppInit") << "Unable to initialize audio engine" << LL_ENDL;
-				delete gAudiop;
-				gAudiop = NULL;
-			}
-
-			if (gAudiop)
-			{
-				// if the audio engine hasn't set up its own preferred handler for streaming audio then set up the generic streaming audio implementation which uses media plugins
-				if (NULL == gAudiop->getStreamingAudioImpl())
-				{
-					LL_INFOS("AppInit") << "Using media plugins to render streaming audio" << LL_ENDL;
-					gAudiop->setStreamingAudioImpl(new LLStreamingAudio_MediaPlugins());
-				}
-				// Unmute audio if desired and setup volumes.
-				// This is a not-uncommon crash site, so surround it with
-				// llinfos output to aid diagnosis.
-				LL_INFOS("AppInit") << "Doing first audio_update_volume..." << LL_ENDL;
-				audio_update_volume(false);
-				LL_INFOS("AppInit") << "Done first audio_update_volume." << LL_ENDL;
-			}
-		}
-	}
-	LL_INFOS("AppInit") << "Audio Engine Initialized." << LL_ENDL;
-}
-
 // Returns false to skip other idle processing. Should only return
 // true when all initialization done.
 bool idle_startup()
@@ -494,10 +420,9 @@ bool idle_startup()
 	static std::vector<const char*> requested_options;
 	static std::string redirect_uri;
 
-// <FS:CR> Aurora Sim
 	static U32 first_sim_size_x = 256;
 	static U32 first_sim_size_y = 256;
-// </FS:CR> Aurora Sim
+
 	static LLVector3 initial_sun_direction(1.f, 0.f, 0.f);
 	static LLVector3 agent_start_position_region(10.f, 10.f, 10.f);		// default for when no space server
 
@@ -505,6 +430,8 @@ bool idle_startup()
 	static S32  agent_location_id = START_LOCATION_ID_LAST;
 
 	static bool show_connect_box = true;
+
+	//static bool stipend_since_login = false;
 
 	// HACK: These are things from the main loop that usually aren't done
 	// until initialization is complete, but need to be done here for things
@@ -553,7 +480,7 @@ bool idle_startup()
 		}
 		else if (!gViewerWindow->getInitAlert().empty())
 		{
-			LLNotifications::instance().add(gViewerWindow->getInitAlert());
+			LLNotificationsUtil::add(gViewerWindow->getInitAlert());
 		}
 		
 		//-------------------------------------------------
@@ -569,7 +496,7 @@ bool idle_startup()
 		std::string xml_file = LLUI::locateSkin("xui_version.xml");
 		LLXMLNodePtr root;
 		bool xml_ok = false;
-		if (LLXMLNode::parseFile(xml_file, root, NULL))
+		if (LLXMLNode::parseFile(xml_file, root, nullptr))
 		{
 			if( (root->hasName("xui_version") ) )
 			{
@@ -611,7 +538,7 @@ bool idle_startup()
 
 		std::string message_template_path = gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS,"message_template.msg");
 
-		LLFILE* found_template = NULL;
+		LLFILE* found_template = nullptr;
 		found_template = LLFile::fopen(message_template_path, "r");		/* Flawfinder: ignore */
 		
 		#if LL_WINDOWS
@@ -652,7 +579,7 @@ bool idle_startup()
 			const F32 circuit_heartbeat_interval = 5;
 			const F32 circuit_timeout = 100;
 
-			const LLUseCircuitCodeResponder* responder = NULL;
+			const LLUseCircuitCodeResponder* responder = nullptr;
 			bool failure_is_fatal = true;
 			
 			if(!start_messaging_system(
@@ -703,10 +630,10 @@ bool idle_startup()
 			LLMessageSystem* msg = gMessageSystem;
 			msg->setExceptionFunc(MX_UNREGISTERED_MESSAGE,
 								  invalid_message_callback,
-								  NULL);
+								  nullptr);
 			msg->setExceptionFunc(MX_PACKET_TOO_SHORT,
 								  invalid_message_callback,
-								  NULL);
+								  nullptr);
 
 			// running off end of a packet is now valid in the case
 			// when a reader has a newer message template than
@@ -716,7 +643,7 @@ bool idle_startup()
 								  NULL);*/
 			msg->setExceptionFunc(MX_WROTE_PAST_BUFFER_SIZE,
 								  invalid_message_callback,
-								  NULL);
+								  nullptr);
 
 			if (gSavedSettings.getBOOL("LogMessages"))
 			{
@@ -760,11 +687,80 @@ bool idle_startup()
 		LL_INFOS("AppInit") << "Message System Initialized." << LL_ENDL;
 		
 		//-------------------------------------------------
-		// Singu TODO: Load file- and dirpicker {context, default path} map.
+		// Init audio, which may be needed for prefs dialog
+		// or audio cues in connection UI.
 		//-------------------------------------------------
 
-		//LLFilePicker::loadFile("filepicker_contexts.xml");
-		
+		if (!gSavedSettings.getBOOL("NoAudio"))
+		{
+			delete gAudiop;
+			gAudiop = nullptr;
+
+#ifdef LL_FMODSTUDIO	
+		if (!gAudiop
+#if !LL_WINDOWS
+			&& NULL == getenv("LL_BAD_FMODSTUDIO_DRIVER")
+#endif // !LL_WINDOWS
+			)
+		{
+			gAudiop = (LLAudioEngine *) new LLAudioEngine_FMODSTUDIO(gSavedSettings.getBOOL("SHEnableFMODExProfiler"), gSavedSettings.getBOOL("SHEnableFMODEXVerboseDebugging"));
+		}
+#endif
+
+#ifdef LL_OPENAL
+		if (!gAudiop
+#if !LL_WINDOWS
+			&& NULL == getenv("LL_BAD_OPENAL_DRIVER")
+#endif // !LL_WINDOWS
+		)
+		{
+			gAudiop = (LLAudioEngine *) new LLAudioEngine_OpenAL();
+		}
+#endif
+
+		if (gAudiop)
+		{
+#if LL_WINDOWS
+				// FMOD Studio on Windows needs the window handle to stop playing audio
+			// when window is minimized. JC
+			void* window_handle = (HWND)gViewerWindow->getPlatformWindow();
+#else
+			void* window_handle = NULL;
+#endif
+			bool init = gAudiop->init(kAUDIO_NUM_SOURCES, window_handle);
+			if(init)
+			{
+				gAudiop->setMuted(TRUE);
+				if(gSavedSettings.getBOOL("AllowLargeSounds"))
+					gAudiop->setAllowLargeSounds(true);
+			}
+			else
+			{
+				LL_WARNS("AppInit") << "Unable to initialize audio engine" << LL_ENDL;
+				delete gAudiop;
+					gAudiop = nullptr;
+			}
+
+			if (gAudiop)
+			{
+				// if the audio engine hasn't set up its own preferred handler for streaming audio then set up the generic streaming audio implementation which uses media plugins
+					if (!gAudiop->getStreamingAudioImpl())
+				{
+					LL_INFOS("AppInit") << "Using media plugins to render streaming audio" << LL_ENDL;
+					gAudiop->setStreamingAudioImpl(new LLStreamingAudio_MediaPlugins());
+				}
+				// Unmute audio if desired and setup volumes.
+				// This is a not-uncommon crash site, so surround it with
+				// llinfos output to aid diagnosis.
+				LL_INFOS("AppInit") << "Doing first audio_update_volume..." << LL_ENDL;
+				audio_update_volume(false);
+				LL_INFOS("AppInit") << "Done first audio_update_volume." << LL_ENDL;
+			}
+		}
+	}
+
+	LL_INFOS("AppInit") << "Audio Engine Initialized." << LL_ENDL;
+
 		if (LLTimer::knownBadTimer())
 		{
 			LL_WARNS("AppInit") << "Unreliable timers detected (may be bad PCI chipset)!!" << LL_ENDL;
@@ -773,11 +769,6 @@ bool idle_startup()
 		//
 		// Log on to system
 		//
-		/*if (!LLStartUp::sSLURLCommand.empty())
-		{
-			// this might be a secondlife:///app/login URL
-			gLoginHandler.parseDirectLogin(LLStartUp::sSLURLCommand);
-		}*/
 		if (!gLoginHandler.getFirstName().empty()
 			|| !gLoginHandler.getLastName().empty()
 			|| !gLoginHandler.getWebLoginKey().isNull() )
@@ -829,6 +820,7 @@ bool idle_startup()
 
 		// Go to the next startup state
 		LLStartUp::setStartupState( STATE_BROWSER_INIT );
+		check_for_updates();
 		return FALSE;
 	}
 
@@ -836,8 +828,8 @@ bool idle_startup()
 	if (STATE_BROWSER_INIT == LLStartUp::getStartupState())
 	{
 		LL_DEBUGS("AppInit") << "STATE_BROWSER_INIT" << LL_ENDL;
-		//std::string msg = LLTrans::getString("LoginInitializingBrowser");
-		//set_startup_status(0.03f, msg.c_str(), gAgent.mMOTD.c_str());
+		std::string msg = LLTrans::getString("LoginInitializingBrowser");
+		set_startup_status(0.03f, msg.c_str(), gAgent.mMOTD.c_str());
 		display_startup();
 		// LLViewerMedia::initBrowser();
 		LLStartUp::setStartupState( STATE_LOGIN_SHOW );
@@ -851,19 +843,11 @@ bool idle_startup()
 		
 		gViewerWindow->getWindow()->setCursor(UI_CURSOR_ARROW);
 
-		// *NOTE: This is where LLViewerParcelMgr::getInstance() used to get allocated before becoming LLViewerParcelMgr::getInstance().
-
-		// *NOTE: This is where gHUDManager used to bet allocated before becoming LLHUDManager::getInstance().
-
-		// *NOTE: This is where gMuteList used to get allocated before becoming LLMuteList::getInstance().
-
 		gGenericHandlers = new GenericHandlers();
 
 		// Initialize UI
-		if (!gNoRender)
 		{
 			// Initialize all our tools.  Must be done after saved settings loaded.
-			// NOTE: This also is where gToolMgr used to be instantiated before being turned into a singleton.
 			display_startup();
 			LLToolMgr::getInstance()->initTools();
 
@@ -881,16 +865,12 @@ bool idle_startup()
 			// show the login view until login_show() is called below.  
 			// LLPanelLogin::getFields(firstname, lastname, password);
 
-			if (gNoRender)
-			{
-				LL_ERRS("AppInit") << "Need to autologin or use command line with norender!" << LL_ENDL;
-			}
 			// Make sure the process dialog doesn't hide things
 			display_startup();
 			gViewerWindow->setShowProgress(FALSE);
 			display_startup();
 			
-			// Show the login dialog.
+			// Show the login dialog
 			login_show();
 			display_startup();
 			static bool sSetFields(LLPanelLogin::getLoginHistory().size() > 0);  // If there were no entries to be loaded, use what's available
@@ -929,7 +909,7 @@ bool idle_startup()
 		// first made visible.
 #ifdef _WIN32
 		MSG msg;
-		while( PeekMessage( &msg, /*All hWnds owned by this thread */ NULL, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE ) )
+		while( PeekMessage( &msg, /*All hWnds owned by this thread */ nullptr, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE ) )
 		{
 			display_startup();
 		}
@@ -1060,18 +1040,10 @@ bool idle_startup()
 		{
 			gDirUtilp->setChatLogsDir(gSavedPerAccountSettings.getString("InstantMessageLogPath"));		
 		}
-
 		//Get these logs out of my newview root directory, PLEASE.
-		if (gHippoGridManager->getCurrentGrid()->isSecondLife())
-		{
-			gDirUtilp->setPerAccountChatLogsDir(LLStringUtil::null, 
-				gSavedSettings.getString("FirstName"), gSavedSettings.getString("LastName") );
-		}
-		else
-		{
-			gDirUtilp->setPerAccountChatLogsDir(gHippoGridManager->getConnectedGrid()->getGridNick(), 
-				gSavedSettings.getString("FirstName"), gSavedSettings.getString("LastName") );
-		}
+		gDirUtilp->setPerAccountChatLogsDir(gHippoGridManager->getCurrentGrid()->isSecondLife() ? LLStringUtil::null : gHippoGridManager->getConnectedGrid()->getGridNick(),
+			gSavedSettings.getString("FirstName"), gSavedSettings.getString("LastName") );
+		
 		LLFile::mkdir(gDirUtilp->getChatLogsDir());
 		LLFile::mkdir(gDirUtilp->getPerAccountChatLogsDir());
 
@@ -1563,7 +1535,7 @@ bool idle_startup()
 					name += " " + lastname;
 				}
 				if (gSavedSettings.getBOOL("LiruGridInTitle")) gWindowTitle += "- " + gHippoGridManager->getCurrentGrid()->getGridName() + " ";
-				gViewerWindow->getWindow()->setTitle(gWindowTitle += "- " + name);
+				gViewerWindow->getWindow()->setWindowTitle(gWindowTitle += "- " + name);
 
 				if (!secondlife)
 				{
@@ -1577,7 +1549,7 @@ bool idle_startup()
 				// create the default proximal channel
 				LLVoiceChannel::initClass();
 				LLStartUp::setStartupState( STATE_WORLD_INIT);
-				LLTrace::get_frame_recording().reset();
+//				LLTrace::get_frame_recording().reset();
 			}
 			else
 			{
@@ -1670,19 +1642,19 @@ bool idle_startup()
 		gAgent.initOriginGlobal(from_region_handle(gFirstSimHandle));
 		display_startup();
 
-// <FS:CR> Aurora Sim
 		LLWorld::getInstance()->setRegionSize(first_sim_size_x, first_sim_size_y);
-// </FS:CR> Aurora Sim
 		LLWorld::getInstance()->addRegion(gFirstSimHandle, gFirstSim);
 		display_startup();
 
 		LLViewerRegion *regionp = LLWorld::getInstance()->getRegionFromHandle(gFirstSimHandle);
 		LL_INFOS("AppInit") << "Adding initial simulator " << regionp->getOriginGlobal() << LL_ENDL;
 		
+		//LLFloaterPermsDefault::setCapsReceivedCallback(regionp);
+		
 		LL_DEBUGS("CrossingCaps") << "Calling setSeedCapability from init_idle(). Seed cap == "
 		<< gFirstSimSeedCap << LL_ENDL;
 		regionp->setSeedCapability(gFirstSimSeedCap);
-		LL_DEBUGS("AppInit") << "Waiting for seed grant ...." << LL_ENDL;
+		LL_DEBUGS("AppInit") << "Waiting for seed grant..." << LL_ENDL;
 		display_startup();
 		// Set agent's initial region to be the one we just created.
 		gAgent.setRegion(regionp);
@@ -1761,7 +1733,7 @@ bool idle_startup()
 		update_texture_fetch();
 		display_startup();
 
-		if ( gViewerWindow != NULL)
+		if ( gViewerWindow != nullptr)
 		{	// This isn't the first logon attempt, so show the UI
 			gViewerWindow->setNormalControlsVisible( TRUE );
 		}	
@@ -1821,8 +1793,8 @@ bool idle_startup()
 		// *Note: this is where gWorldMap used to be initialized.
 
 		// register null callbacks for audio until the audio system is initialized
-		gMessageSystem->setHandlerFuncFast(_PREHASH_SoundTrigger, null_message_callback, NULL);
-		gMessageSystem->setHandlerFuncFast(_PREHASH_AttachedSound, null_message_callback, NULL);
+		gMessageSystem->setHandlerFuncFast(_PREHASH_SoundTrigger, null_message_callback, nullptr);
+		gMessageSystem->setHandlerFuncFast(_PREHASH_AttachedSound, null_message_callback, nullptr);
 		display_startup();
 
 		//reset statistics
@@ -1929,7 +1901,7 @@ bool idle_startup()
 			FALSE,
 			F32Seconds(TIMEOUT_SECONDS),
 			use_circuit_callback,
-			NULL);
+			nullptr);
 
 		timeout.reset();
 		display_startup();
@@ -2290,7 +2262,7 @@ bool idle_startup()
 			{
 				LL_DEBUGS("AppInit") << "Fast network connection, increasing max bandwidth to " 
 					<< FASTER_RATE_BPS/1024.f 
-					<< " kbps" << LL_ENDL;
+					<< " Kbps" << LL_ENDL;
 				gViewerThrottle.setMaxBandwidth(FASTER_RATE_BPS / 1024.f);
 			}
 			else if (rate_bps > FAST_RATE_BPS
@@ -2298,7 +2270,7 @@ bool idle_startup()
 			{
 				LL_DEBUGS("AppInit") << "Fast network connection, increasing max bandwidth to " 
 					<< FAST_RATE_BPS/1024.f 
-					<< " kbps" << LL_ENDL;
+					<< " Kbps" << LL_ENDL;
 				gViewerThrottle.setMaxBandwidth(FAST_RATE_BPS / 1024.f);
 			}
 		}
@@ -2325,7 +2297,7 @@ bool idle_startup()
 		display_startup();
 
 		// JC: Initializing audio requests many sounds for download.
-		init_audio();
+		//init_audio();
 		display_startup();
 
 		// JC: Initialize "active" gestures.  This may also trigger
@@ -2584,17 +2556,15 @@ bool idle_startup()
 			LLStartUp::setStartupState( STATE_CLEANUP );
 			return TRUE;
 		}
-
-		if (gAgent.isFirstLogin())
-		{
 			// wait for avatar to be completely loaded
-			if (isAgentAvatarValid()
+		else if (gAgent.isFirstLogin()
+				&& isAgentAvatarValid()
 				&& gAgentAvatarp->isFullyLoaded())
-			{
-				LL_DEBUGS("Avatar") << "avatar fully loaded" << LL_ENDL;
-				LLStartUp::setStartupState( STATE_CLEANUP );
-				return TRUE;
-			}
+		{
+
+			LL_DEBUGS("Avatar") << "avatar fully loaded" << LL_ENDL;
+			LLStartUp::setStartupState( STATE_CLEANUP );
+			return TRUE;
 		}
 		else
 		{
@@ -2624,7 +2594,7 @@ bool idle_startup()
 		display_startup();
 
 		// Let the map know about the inventory.
-		LLFloaterWorldMap* floater_world_map = gFloaterWorldMap;
+		LLFloaterWorldMap* floater_world_map = LLFloaterWorldMap::getInstance();
 		if(floater_world_map)
 		{
 			floater_world_map->observeInventory(&gInventory);
@@ -2669,6 +2639,8 @@ bool idle_startup()
 		// then the data is cached for the viewer's lifetime)
 		LLProductInfoRequestManager::instance();
 		
+		// *FIX:Mani - What do I do here?
+		// Need we really clear the Auth response data?
 		// Clean up the userauth stuff.
 		LLUserAuth::getInstance()->reset();
 
@@ -2689,7 +2661,7 @@ bool idle_startup()
 		audio_update_listener();	
 
 		// reset keyboard focus to sane state of pointing at world
-		gFocusMgr.setKeyboardFocus(NULL);
+		gFocusMgr.setKeyboardFocus(nullptr);
 
 		LLAppViewer::instance()->handleLoginComplete();
 
@@ -2967,18 +2939,18 @@ void register_viewer_callbacks(LLMessageSystem* msg)
 	msg->setHandlerFunc("RegionInfo", LLViewerRegion::processRegionInfo);
 
 	msg->setHandlerFuncFast(_PREHASH_ChatFromSimulator,		process_chat_from_simulator);
-	msg->setHandlerFuncFast(_PREHASH_KillObject,				process_kill_object,	NULL);
-	msg->setHandlerFuncFast(_PREHASH_SimulatorViewerTimeMessage,	process_time_synch,		NULL);
+	msg->setHandlerFuncFast(_PREHASH_KillObject,				process_kill_object, nullptr);
+	msg->setHandlerFuncFast(_PREHASH_SimulatorViewerTimeMessage,	process_time_synch, nullptr);
 	msg->setHandlerFuncFast(_PREHASH_EnableSimulator,			process_enable_simulator);
 	msg->setHandlerFuncFast(_PREHASH_DisableSimulator,			process_disable_simulator);
-	msg->setHandlerFuncFast(_PREHASH_KickUser,					process_kick_user,		NULL);
+	msg->setHandlerFuncFast(_PREHASH_KickUser,					process_kick_user, nullptr);
 
 	msg->setHandlerFunc("CrossedRegion", process_crossed_region);
 	msg->setHandlerFuncFast(_PREHASH_TeleportFinish, process_teleport_finish);
 
 	msg->setHandlerFuncFast(_PREHASH_AlertMessage,             process_alert_message);
 	msg->setHandlerFunc("AgentAlertMessage", process_agent_alert_message);
-	msg->setHandlerFuncFast(_PREHASH_MeanCollisionAlert,             process_mean_collision_alert_message,  NULL);
+	msg->setHandlerFuncFast(_PREHASH_MeanCollisionAlert,             process_mean_collision_alert_message, nullptr);
 	msg->setHandlerFunc("ViewerFrozenMessage",             process_frozen_message);
 
 	msg->setHandlerFuncFast(_PREHASH_NameValuePair,			process_name_value);
@@ -2994,14 +2966,14 @@ void register_viewer_callbacks(LLMessageSystem* msg)
 
 	msg->setHandlerFuncFast(_PREHASH_ImprovedInstantMessage,	process_improved_im);
 	msg->setHandlerFuncFast(_PREHASH_ScriptQuestion,			process_script_question);
-	msg->setHandlerFuncFast(_PREHASH_ObjectProperties,			LLSelectMgr::processObjectProperties, NULL);
-	msg->setHandlerFuncFast(_PREHASH_ObjectPropertiesFamily,	pass_processObjectPropertiesFamily, NULL);
+	msg->setHandlerFuncFast(_PREHASH_ObjectProperties,			LLSelectMgr::processObjectProperties, nullptr);
+	msg->setHandlerFuncFast(_PREHASH_ObjectPropertiesFamily,	pass_processObjectPropertiesFamily, nullptr);
 	msg->setHandlerFunc("ForceObjectSelect", LLSelectMgr::processForceObjectSelect);
 
-	msg->setHandlerFuncFast(_PREHASH_MoneyBalanceReply,		process_money_balance_reply,	NULL);
-	msg->setHandlerFuncFast(_PREHASH_CoarseLocationUpdate,		LLWorld::processCoarseUpdate, NULL);
-	msg->setHandlerFuncFast(_PREHASH_ReplyTaskInventory, 		LLViewerObject::processTaskInv,	NULL);
-	msg->setHandlerFuncFast(_PREHASH_DerezContainer,			process_derez_container, NULL);
+	msg->setHandlerFuncFast(_PREHASH_MoneyBalanceReply,		process_money_balance_reply, nullptr);
+	msg->setHandlerFuncFast(_PREHASH_CoarseLocationUpdate,		LLWorld::processCoarseUpdate, nullptr);
+	msg->setHandlerFuncFast(_PREHASH_ReplyTaskInventory, 		LLViewerObject::processTaskInv, nullptr);
+	msg->setHandlerFuncFast(_PREHASH_DerezContainer,			process_derez_container, nullptr);
 	msg->setHandlerFuncFast(_PREHASH_ScriptRunningReply,
 						process_script_running_reply);
 
@@ -3077,14 +3049,14 @@ void register_viewer_callbacks(LLMessageSystem* msg)
 	msg->setHandlerFuncFast(_PREHASH_UserInfoReply,
 		process_user_info_reply);
 
-	msg->setHandlerFunc("RegionHandshake", process_region_handshake, NULL);
+	msg->setHandlerFunc("RegionHandshake", process_region_handshake, nullptr);
 
 	msg->setHandlerFunc("TeleportStart", process_teleport_start );
 	msg->setHandlerFunc("TeleportProgress", process_teleport_progress);
-	msg->setHandlerFunc("TeleportFailed", process_teleport_failed, NULL);
-	msg->setHandlerFunc("TeleportLocal", process_teleport_local, NULL);
+	msg->setHandlerFunc("TeleportFailed", process_teleport_failed, nullptr);
+	msg->setHandlerFunc("TeleportLocal", process_teleport_local, nullptr);
 
-	msg->setHandlerFunc("ImageNotInDatabase", LLViewerTextureList::processImageNotInDatabase, NULL);
+	msg->setHandlerFunc("ImageNotInDatabase", LLViewerTextureList::processImageNotInDatabase, nullptr);
 
 	msg->setHandlerFuncFast(_PREHASH_GroupMembersReply,
 						LLGroupMgr::processGroupMembersReply);
@@ -3265,7 +3237,7 @@ void init_start_screen(S32 location_id)
 {
 	if (gStartTexture.notNull())
 	{
-		gStartTexture = NULL;
+		gStartTexture = nullptr;
 		LL_INFOS("AppInit") << "re-initializing start screen" << LL_ENDL;
 	}
 
@@ -3294,7 +3266,7 @@ void init_start_screen(S32 location_id)
 	else if(!start_image_bmp->load(temp_str) )
 	{
 		LL_WARNS("AppInit") << "Bitmap load failed" << LL_ENDL;
-		gStartTexture = NULL;
+		gStartTexture = nullptr;
 	}
 	else
 	{
@@ -3305,7 +3277,7 @@ void init_start_screen(S32 location_id)
 		if (!start_image_bmp->decode(raw, 0.0f))
 		{
 			LL_WARNS("AppInit") << "Bitmap decode failed" << LL_ENDL;
-			gStartTexture = NULL;
+			gStartTexture = nullptr;
 		}
 		else
 		{
@@ -3327,7 +3299,7 @@ void init_start_screen(S32 location_id)
 void release_start_screen()
 {
 	LL_DEBUGS("AppInit") << "Releasing bitmap..." << LL_ENDL;
-	gStartTexture = NULL;
+	gStartTexture = nullptr;
 }
 
 
@@ -3388,7 +3360,9 @@ void LLStartUp::postStartupState()
 	stateInfo["str"] = getStartupStateString();
 	stateInfo["enum"] = gStartupState;
 	sStateWatcher->post(stateInfo);
+	gDebugInfo["StartupState"] = getStartupStateString();
 }
+
 
 void reset_login()
 {
@@ -3480,10 +3454,10 @@ void LLStartUp::initExperiences()
 
 void LLStartUp::cleanupNameCache()
 {
-	LLAvatarNameCache::cleanupClass();
+	SUBSYSTEM_CLEANUP(LLAvatarNameCache);
 
 	delete gCacheName;
-	gCacheName = NULL;
+	gCacheName = nullptr;
 }
 
 bool LLStartUp::dispatchURL()
@@ -3509,7 +3483,7 @@ bool LLStartUp::dispatchURL()
 			|| (dy*dy > SLOP*SLOP) )
 		{
 			LLURLDispatcher::dispatch(getStartSLURL().getSLURLString(), "clicked",
-						  NULL, false);
+						  nullptr, false);
 		}
 		return true;
 	}
@@ -3692,7 +3666,7 @@ bool LLStartUp::startLLProxy()
 		}
 		else
 		{
-			LL_WARNS("Proxy") << "Invalid other HTTP proxy configuration."<< LL_ENDL;
+			LL_WARNS("Proxy") << "Invalid other HTTP proxy configuration: " << httpProxyType << LL_ENDL;
 
 			// Set the missing or wrong configuration back to something valid.
 			gSavedSettings.setString("Socks5HttpProxyType", "None");
@@ -3717,7 +3691,7 @@ void apply_udp_blacklist(const std::string& csv)
 	std::string::size_type comma = 0;
 	do 
 	{
-		comma = csv.find(",", start);
+		comma = csv.find(',', start);
 		if (comma == std::string::npos)
 		{
 			comma = csv.length();
@@ -3842,13 +3816,13 @@ bool process_login_success_response(std::string& password, U32& first_sim_size_x
 	text = response["circuit_code"].asString();
 	if(!text.empty())
 	{
-		gMessageSystem->mOurCircuitCode = strtoul(text.c_str(), NULL, 10);
+		gMessageSystem->mOurCircuitCode = strtoul(text.c_str(), nullptr, 10);
 	}
 	std::string sim_ip_str = response["sim_ip"];
 	std::string sim_port_str = response["sim_port"];
 	if(!sim_ip_str.empty() && !sim_port_str.empty())
 	{
-		U32 sim_port = strtoul(sim_port_str.c_str(), NULL, 10);
+		U32 sim_port = strtoul(sim_port_str.c_str(), nullptr, 10);
 		gFirstSim.set(sim_ip_str, sim_port);
 		if (gFirstSim.isOk())
 		{
@@ -3859,18 +3833,16 @@ bool process_login_success_response(std::string& password, U32& first_sim_size_x
 	std::string region_y_str = response["region_y"];
 	if(!region_x_str.empty() && !region_y_str.empty())
 	{
-		U32 region_x = strtoul(region_x_str.c_str(), NULL, 10);
-		U32 region_y = strtoul(region_y_str.c_str(), NULL, 10);
+		U32 region_x = strtoul(region_x_str.c_str(), nullptr, 10);
+		U32 region_y = strtoul(region_y_str.c_str(), nullptr, 10);
 		gFirstSimHandle = to_region_handle(region_x, region_y);
 	}
 
-// <FS:CR> Aurora Sim
 	text = response["region_size_x"].asString();
 	if (!text.empty()) LLViewerParcelMgr::getInstance()->init(first_sim_size_x = atoi(text.c_str()));
 	// Patrick Sapinski commented here on 2/10/2011 that y is currently unused and major refactor is required - Liru (11/6/2013)
 	text = response["region_size_y"].asString();
 	if (!text.empty()) first_sim_size_y = atoi(text.c_str());
-// </FS:CR> Aurora Sim	
 
 	const std::string look_at_str = response["look_at"];
 	if (!look_at_str.empty())
@@ -3887,10 +3859,10 @@ bool process_login_success_response(std::string& password, U32& first_sim_size_x
 	text = response["seconds_since_epoch"].asString();
 	if(!text.empty())
 	{
-		U32 server_utc_time = strtoul(text.c_str(), NULL, 10);
+		U32 server_utc_time = strtoul(text.c_str(), nullptr, 10);
 		if(server_utc_time)
 		{
-			time_t now = time(NULL);
+			time_t now = time(nullptr);
 			gUTCOffset = (server_utc_time - now);
 		}
 	}
@@ -3967,8 +3939,10 @@ bool process_login_success_response(std::string& password, U32& first_sim_size_x
 	std::string map_server_url = response["map-server-url"];
 	if(!map_server_url.empty())
 	{
+		// We got an answer from the grid -> use that for map for the current session
 		gSavedSettings.setString("MapServerURL", map_server_url);
 		LLWorldMap::gotMapServerURL(true);
+		LL_INFOS("LLStartup") << "map-server-url : we got an answer from the grid : " << map_server_url << LL_ENDL;
 	}
 
 	bool opensim = gHippoGridManager->getConnectedGrid()->isOpenSimulator();

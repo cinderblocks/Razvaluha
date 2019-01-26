@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llheadrotmotion.cpp
  * @brief Implementation of LLHeadRotMotion class.
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -51,7 +47,6 @@ const F32 HEAD_LOOKAT_LAG_HALF_LIFE	= 0.15f;		// half-life of lookat targeting f
 const F32 TORSO_LOOKAT_LAG_HALF_LIFE	= 0.27f;		// half-life of lookat targeting for torso
 const F32 EYE_LOOKAT_LAG_HALF_LIFE = 0.06f;		// half-life of lookat targeting for eye
 const F32 HEAD_ROTATION_CONSTRAINT = F_PI_BY_TWO * 0.8f;	// limit angle for head rotation
-
 const F32 MIN_HEAD_LOOKAT_DISTANCE = 0.3f;	// minimum distance from head before we turn to look at it
 const F32 MAX_TIME_DELTA = 2.f; //max two seconds a frame for calculating interpolation
 const F32 EYE_JITTER_MIN_TIME = 0.3f; // min amount of time between eye "jitter" motions
@@ -76,17 +71,19 @@ const F32 EYE_BLINK_TIME_DELTA = 0.005f; // time between one eye starting a blin
 // LLHeadRotMotion()
 // Class Constructor
 //-----------------------------------------------------------------------------
-LLHeadRotMotion::LLHeadRotMotion(LLUUID const& id, LLMotionController* controller) :
-	AIMaskedMotion(id, controller, ANIM_AGENT_HEAD_ROT),
-	mCharacter(NULL),
-	mTorsoJoint(NULL),
-	mHeadJoint(NULL)
+LLHeadRotMotion::LLHeadRotMotion(const LLUUID &id)
+	: LLMotion(id),
+	  mCharacter(nullptr),
+	  mTorsoJoint(nullptr),
+	  mHeadJoint(nullptr),
+	  mRootJoint(nullptr),
+	  mPelvisJoint(nullptr),
+	  // LLPointer<LLJointState>
+	  mTorsoState(new LLJointState),
+	  mNeckState(new LLJointState),
+	  mHeadState(new LLJointState)
 {
 	mName = "head_rot";
-
-	mTorsoState = new LLJointState;
-	mNeckState = new LLJointState;
-	mHeadState = new LLJointState;
 }
 
 
@@ -104,10 +101,7 @@ LLHeadRotMotion::~LLHeadRotMotion()
 LLMotion::LLMotionInitStatus LLHeadRotMotion::onInitialize(LLCharacter *character)
 {
 	if (!character)
-	{
-		LL_WARNS() << "character is NULL." << LL_ENDL;
 		return STATUS_FAILURE;
-	}
 	mCharacter = character;
 
 	mPelvisJoint = character->getJoint("mPelvis");
@@ -172,6 +166,16 @@ LLMotion::LLMotionInitStatus LLHeadRotMotion::onInitialize(LLCharacter *characte
 	return STATUS_SUCCESS;
 }
 
+
+//-----------------------------------------------------------------------------
+// LLHeadRotMotion::onActivate()
+//-----------------------------------------------------------------------------
+BOOL LLHeadRotMotion::onActivate()
+{
+	return TRUE;
+}
+
+
 //-----------------------------------------------------------------------------
 // LLHeadRotMotion::onUpdate()
 //-----------------------------------------------------------------------------
@@ -181,8 +185,8 @@ BOOL LLHeadRotMotion::onUpdate(F32 time, U8* joint_mask)
 	LLQuaternion	currentRootRotWorld = mRootJoint->getWorldRotation();
 	LLQuaternion	currentInvRootRotWorld = ~currentRootRotWorld;
 
-	F32 head_slerp_amt = LLCriticalDamp::getInterpolant(HEAD_LOOKAT_LAG_HALF_LIFE);
-	F32 torso_slerp_amt = LLCriticalDamp::getInterpolant(TORSO_LOOKAT_LAG_HALF_LIFE);
+	F32 head_slerp_amt = LLSmoothInterpolation::getInterpolant(HEAD_LOOKAT_LAG_HALF_LIFE);
+	F32 torso_slerp_amt = LLSmoothInterpolation::getInterpolant(TORSO_LOOKAT_LAG_HALF_LIFE);
 
 	LLVector3* targetPos = (LLVector3*)mCharacter->getAnimationData("LookAtPoint");
 
@@ -257,12 +261,20 @@ BOOL LLHeadRotMotion::onUpdate(F32 time, U8* joint_mask)
 
 
 //-----------------------------------------------------------------------------
+// LLHeadRotMotion::onDeactivate()
+//-----------------------------------------------------------------------------
+void LLHeadRotMotion::onDeactivate()
+{
+}
+
+
+//-----------------------------------------------------------------------------
 // LLEyeMotion()
 // Class Constructor
 //-----------------------------------------------------------------------------
-LLEyeMotion::LLEyeMotion(LLUUID const& id, LLMotionController* controller) : AIMaskedMotion(id, controller, ANIM_AGENT_EYE)
+LLEyeMotion::LLEyeMotion(const LLUUID &id) : LLMotion(id)
 {
-	mCharacter = NULL;
+	mCharacter = nullptr;
 	mEyeJitterTime = 0.f;
 	mEyeJitterYaw = 0.f;
 	mEyeJitterPitch = 0.f;
@@ -274,12 +286,14 @@ LLEyeMotion::LLEyeMotion(LLUUID const& id, LLMotionController* controller) : AIM
 	mEyeBlinkTime = 0.f;
 	mEyesClosed = FALSE;
 	
-	mHeadJoint = NULL;
+	mHeadJoint = nullptr;
 
 	mName = "eye_rot";
 
 	mLeftEyeState = new LLJointState;
+	mAltLeftEyeState = new LLJointState;
 	mRightEyeState = new LLJointState;
+	mAltRightEyeState = new LLJointState;
 }
 
 
@@ -312,20 +326,136 @@ LLMotion::LLMotionInitStatus LLEyeMotion::onInitialize(LLCharacter *character)
 		return STATUS_FAILURE;
 	}
 
+	mAltLeftEyeState->setJoint( character->getJoint("mFaceEyeAltLeft") );
+	if ( ! mAltLeftEyeState->getJoint() )
+	{
+		LL_INFOS() << getName() << ": Can't get alt left eyeball joint." << LL_ENDL;
+		return STATUS_FAILURE;
+	}
+
 	mRightEyeState->setJoint( character->getJoint("mEyeRight") );
 	if ( ! mRightEyeState->getJoint() )
 	{
-		LL_INFOS() << getName() << ": Can't get Right eyeball joint." << LL_ENDL;
+		LL_INFOS() << getName() << ": Can't get right eyeball joint." << LL_ENDL;
+		return STATUS_FAILURE;
+	}
+
+	mAltRightEyeState->setJoint( character->getJoint("mFaceEyeAltRight") );
+	if ( ! mAltRightEyeState->getJoint() )
+	{
+		LL_INFOS() << getName() << ": Can't get alt right eyeball joint." << LL_ENDL;
 		return STATUS_FAILURE;
 	}
 
 	mLeftEyeState->setUsage(LLJointState::ROT);
+	mAltLeftEyeState->setUsage(LLJointState::ROT);
+
 	mRightEyeState->setUsage(LLJointState::ROT);
+	mAltRightEyeState->setUsage(LLJointState::ROT);
 
 	addJointState( mLeftEyeState );
+	addJointState( mAltLeftEyeState );
+
 	addJointState( mRightEyeState );
+	addJointState( mAltRightEyeState );
 
 	return STATUS_SUCCESS;
+}
+
+
+//-----------------------------------------------------------------------------
+// LLEyeMotion::onActivate()
+//-----------------------------------------------------------------------------
+BOOL LLEyeMotion::onActivate()
+{
+	return TRUE;
+}
+
+//-----------------------------------------------------------------------------
+// LLEyeMotion::adjustEyeTarget()
+//-----------------------------------------------------------------------------
+void LLEyeMotion::adjustEyeTarget(LLVector3* targetPos, LLJointState& left_eye_state, LLJointState& right_eye_state)
+{
+	// Compute eye rotation.
+	BOOL has_eye_target = FALSE;
+	LLQuaternion	target_eye_rot;
+	LLVector3		eye_look_at;
+	F32				vergence;
+
+	if (targetPos)
+	{
+		LLVector3		skyward(0.f, 0.f, 1.f);
+		LLVector3		left;
+		LLVector3		up;
+
+		eye_look_at = *targetPos;
+		has_eye_target = TRUE;
+		F32 lookAtDistance = eye_look_at.normVec();
+
+		left.setVec(skyward % eye_look_at);
+		up.setVec(eye_look_at % left);
+
+		target_eye_rot = LLQuaternion(eye_look_at, left, up);
+		// convert target rotation to head-local coordinates
+		target_eye_rot *= ~mHeadJoint->getWorldRotation();
+		// eliminate any Euler roll - we're lucky that roll is applied last.
+		F32 roll, pitch, yaw;
+		target_eye_rot.getEulerAngles(&roll, &pitch, &yaw);
+		target_eye_rot.setQuat(0.0f, pitch, yaw);
+		// constrain target orientation to be in front of avatar's face
+		target_eye_rot.constrain(EYE_ROT_LIMIT_ANGLE);
+
+		// calculate vergence
+		F32 interocular_dist = (left_eye_state.getJoint()->getWorldPosition() - right_eye_state.getJoint()->getWorldPosition()).magVec();
+		vergence = -atan2((interocular_dist / 2.f), lookAtDistance);
+		vergence = llclamp(vergence, -F_PI_BY_TWO, 0.f);
+	}
+	else
+	{
+		target_eye_rot = LLQuaternion::DEFAULT;
+		vergence = 0.f;
+	}
+
+	//RN: subtract 4 degrees to account for foveal angular offset relative to pupil
+	vergence += 4.f * DEG_TO_RAD;
+
+	// calculate eye jitter
+	LLQuaternion eye_jitter_rot;
+
+	// vergence not too high...
+	if (vergence > -0.05f)
+	{
+		//...go ahead and jitter
+		eye_jitter_rot.setQuat(0.f, mEyeJitterPitch + mEyeLookAwayPitch, mEyeJitterYaw + mEyeLookAwayYaw);
+	}
+	else
+	{
+		//...or don't
+		eye_jitter_rot.loadIdentity();
+	}
+
+	// calculate vergence of eyes as an object gets closer to the avatar's head
+	LLQuaternion vergence_quat;
+		
+	if (has_eye_target)
+	{
+		vergence_quat.setQuat(vergence, LLVector3(0.f, 0.f, 1.f));
+	}
+	else
+	{
+		vergence_quat.loadIdentity();
+	}
+
+	// calculate eye rotations
+	LLQuaternion left_eye_rot = target_eye_rot;
+	left_eye_rot = vergence_quat * eye_jitter_rot * left_eye_rot;
+
+	LLQuaternion right_eye_rot = target_eye_rot;
+	vergence_quat.transQuat();
+	right_eye_rot = vergence_quat * eye_jitter_rot * right_eye_rot;
+
+	left_eye_state.setRotation( left_eye_rot );
+	right_eye_state.setRotation( right_eye_rot );
 }
 
 //-----------------------------------------------------------------------------
@@ -333,11 +463,6 @@ LLMotion::LLMotionInitStatus LLEyeMotion::onInitialize(LLCharacter *character)
 //-----------------------------------------------------------------------------
 BOOL LLEyeMotion::onUpdate(F32 time, U8* joint_mask)
 {
-	// Compute eye rotation.
-	LLQuaternion	target_eye_rot;
-	LLVector3		eye_look_at;
-	F32				vergence;
-
 	//calculate jitter
 	if (mEyeJitterTimer.getElapsedTimeF32() > mEyeJitterTime)
 	{
@@ -410,83 +535,10 @@ BOOL LLEyeMotion::onUpdate(F32 time, U8* joint_mask)
 		}
 	}
 
-	BOOL has_eye_target = FALSE;
 	LLVector3* targetPos = (LLVector3*)mCharacter->getAnimationData("LookAtPoint");
 
-	if (targetPos)
-	{
-		LLVector3		skyward(0.f, 0.f, 1.f);
-		LLVector3		left;
-		LLVector3		up;
-
-		eye_look_at = *targetPos;
-		has_eye_target = TRUE;
-		F32 lookAtDistance = eye_look_at.normVec();
-
-		left.setVec(skyward % eye_look_at);
-		up.setVec(eye_look_at % left);
-
-		target_eye_rot = LLQuaternion(eye_look_at, left, up);
-		// convert target rotation to head-local coordinates
-		target_eye_rot *= ~mHeadJoint->getWorldRotation();
-		// eliminate any Euler roll - we're lucky that roll is applied last.
-		F32 roll, pitch, yaw;
-		target_eye_rot.getEulerAngles(&roll, &pitch, &yaw);
-		target_eye_rot.setQuat(0.0f, pitch, yaw);
-		// constrain target orientation to be in front of avatar's face
-		target_eye_rot.constrain(EYE_ROT_LIMIT_ANGLE);
-
-		// calculate vergence
-		F32 interocular_dist = (mLeftEyeState->getJoint()->getWorldPosition() - mRightEyeState->getJoint()->getWorldPosition()).magVec();
-		vergence = -atan2((interocular_dist / 2.f), lookAtDistance);
-		llclamp(vergence, -F_PI_BY_TWO, 0.f);
-	}
-	else
-	{
-		target_eye_rot = LLQuaternion::DEFAULT;
-		vergence = 0.f;
-	}
-
-	//RN: subtract 4 degrees to account for foveal angular offset relative to pupil
-	vergence += 4.f * DEG_TO_RAD;
-
-	// calculate eye jitter
-	LLQuaternion eye_jitter_rot;
-
-	// vergence not too high...
-	if (vergence > -0.05f)
-	{
-		//...go ahead and jitter
-		eye_jitter_rot.setQuat(0.f, mEyeJitterPitch + mEyeLookAwayPitch, mEyeJitterYaw + mEyeLookAwayYaw);
-	}
-	else
-	{
-		//...or don't
-		eye_jitter_rot.loadIdentity();
-	}
-
-	// calculate vergence of eyes as an object gets closer to the avatar's head
-	LLQuaternion vergence_quat;
-		
-	if (has_eye_target)
-	{
-		vergence_quat.setQuat(vergence, LLVector3(0.f, 0.f, 1.f));
-	}
-	else
-	{
-		vergence_quat.loadIdentity();
-	}
-
-	// calculate eye rotations
-	LLQuaternion left_eye_rot = target_eye_rot;
-	left_eye_rot = vergence_quat * eye_jitter_rot * left_eye_rot;
-
-	LLQuaternion right_eye_rot = target_eye_rot;
-	vergence_quat.transQuat();
-	right_eye_rot = vergence_quat * eye_jitter_rot * right_eye_rot;
-
-	mLeftEyeState->setRotation( left_eye_rot );
-	mRightEyeState->setRotation( right_eye_rot );
+    adjustEyeTarget(targetPos, *mLeftEyeState, *mRightEyeState); 
+    adjustEyeTarget(targetPos, *mAltLeftEyeState, *mAltRightEyeState); 
 
 	return TRUE;
 }
@@ -503,13 +555,23 @@ void LLEyeMotion::onDeactivate()
 		joint->setRotation(LLQuaternion::DEFAULT);
 	}
 
+	joint = mAltLeftEyeState->getJoint();
+	if (joint)
+	{
+		joint->setRotation(LLQuaternion::DEFAULT);
+	}
+
 	joint = mRightEyeState->getJoint();
 	if (joint)
 	{
 		joint->setRotation(LLQuaternion::DEFAULT);
 	}
 
-	AIMaskedMotion::onDeactivate();
+	joint = mAltRightEyeState->getJoint();
+	if (joint)
+	{
+		joint->setRotation(LLQuaternion::DEFAULT);
+	}
 }
 
 // End

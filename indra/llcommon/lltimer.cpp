@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltimer.cpp
  * @brief Cross-platform objects for doing timing 
@@ -42,24 +44,15 @@
 //
 // Locally used constants
 //
-const U32 SEC_PER_DAY = 86400;
-const F64 SEC_TO_MICROSEC = 1000000.0;
 const U64 SEC_TO_MICROSEC_U64 = 1000000;
-const F64 USEC_TO_SEC_F64 = 0.000001;
-
 
 //---------------------------------------------------------------------------
 // Globals and statics
 //---------------------------------------------------------------------------
 
 S32 gUTCOffset = 0; // viewer's offset from server UTC, in seconds
-LLTimer* LLTimer::sTimer = NULL;
+LLTimer* LLTimer::sTimer = nullptr;
 
-F64 gClockFrequency = 0.0;
-F64 gClockFrequencyInv = 0.0;
-F64 gClocksToMicroseconds = 0.0;
-U64 gTotalTimeClockCount = 0;
-U64 gLastTotalTimeClockCount = 0;
 
 //
 // Forward declarations
@@ -100,8 +93,8 @@ static void _sleep_loop(struct timespec& thiswait)
 		if (sleep_more)
 		{
 			if ( nextwait.tv_sec > thiswait.tv_sec ||
-				 (nextwait.tv_sec == thiswait.tv_sec &&
-				  nextwait.tv_nsec >= thiswait.tv_nsec) )
+			     (nextwait.tv_sec == thiswait.tv_sec &&
+			      nextwait.tv_nsec >= thiswait.tv_nsec) )
 			{
 				// if the remaining time isn't actually going
 				// down then we're being shafted by low clock
@@ -127,31 +120,31 @@ static void _sleep_loop(struct timespec& thiswait)
 
 U32 micro_sleep(U64 us, U32 max_yields)
 {
-	U64 start = get_clock_count();
-	// This is kernel dependent.  Currently, our kernel generates software clock
-	// interrupts at 250 Hz (every 4,000 microseconds).
-	const U64 KERNEL_SLEEP_INTERVAL_US = 4000;
+    U64 start = get_clock_count();
+    // This is kernel dependent.  Currently, our kernel generates software clock
+    // interrupts at 250 Hz (every 4,000 microseconds).
+    const U64 KERNEL_SLEEP_INTERVAL_US = 4000;
 
-	S32 num_sleep_intervals = (us - (KERNEL_SLEEP_INTERVAL_US >> 1)) / KERNEL_SLEEP_INTERVAL_US;
-	if (num_sleep_intervals > 0)
-	{
-		U64 sleep_time = (num_sleep_intervals * KERNEL_SLEEP_INTERVAL_US) - (KERNEL_SLEEP_INTERVAL_US >> 1);
-		struct timespec thiswait;
-		thiswait.tv_sec = sleep_time / 1000000;
-		thiswait.tv_nsec = (sleep_time % 1000000) * 1000l;
-		_sleep_loop(thiswait);
-	}
+    S32 num_sleep_intervals = (us - (KERNEL_SLEEP_INTERVAL_US >> 1)) / KERNEL_SLEEP_INTERVAL_US;
+    if (num_sleep_intervals > 0)
+    {
+        U64 sleep_time = (num_sleep_intervals * KERNEL_SLEEP_INTERVAL_US) - (KERNEL_SLEEP_INTERVAL_US >> 1);
+        struct timespec thiswait;
+        thiswait.tv_sec = sleep_time / 1000000;
+        thiswait.tv_nsec = (sleep_time % 1000000) * 1000l;
+        _sleep_loop(thiswait);
+    }
 
-	U64 current_clock = get_clock_count();
-	U32 yields = 0;
-	while (    (yields < max_yields)
-			&& (current_clock - start < us) )
-	{
-		sched_yield();
-		++yields;
-		current_clock = get_clock_count();
-	}
-	return yields;
+    U64 current_clock = get_clock_count();
+    U32 yields = 0;
+    while (    (yields < max_yields)
+            && (current_clock - start < us) )
+    {
+        sched_yield();
+        ++yields;
+        current_clock = get_clock_count();
+    }
+    return yields;
 }
 
 void ms_sleep(U32 ms)
@@ -160,7 +153,7 @@ void ms_sleep(U32 ms)
 	struct timespec thiswait;
 	thiswait.tv_sec = ms / 1000;
 	thiswait.tv_nsec = (mslong % 1000) * 1000000l;
-	_sleep_loop(thiswait);
+    _sleep_loop(thiswait);
 }
 #else
 # error "architecture not supported"
@@ -217,13 +210,15 @@ TimerInfo::TimerInfo()
 :	mClockFrequency(0.0),
 	mTotalTimeClockCount(0),
 	mLastTotalTimeClockCount(0)
-{}
+{
+	mClockFrequency = calc_clock_frequency();
+	mClockFrequencyInv = 1.0 / mClockFrequency;
+	mClocksToMicroseconds = mClockFrequencyInv;
+}
 
 void TimerInfo::update()
 {
-	mClockFrequency = calc_clock_frequency();
-	mClockFrequencyInv = 1.0/mClockFrequency;
-	mClocksToMicroseconds = mClockFrequencyInv;
+
 }
 
 TimerInfo& get_timer_info()
@@ -239,41 +234,42 @@ TimerInfo& get_timer_info()
 U64MicrosecondsImplicit totalTime()
 {
 	U64 current_clock_count = get_clock_count();
-	if (!get_timer_info().mTotalTimeClockCount || get_timer_info().mClocksToMicroseconds.value() == 0)
+	auto& timer_info = get_timer_info();
+	if (!timer_info.mTotalTimeClockCount || timer_info.mClocksToMicroseconds.value() == 0)
 	{
-		get_timer_info().update();
-		get_timer_info().mTotalTimeClockCount = current_clock_count;
+		timer_info.update();
+		timer_info.mTotalTimeClockCount = current_clock_count;
 
 #if LL_WINDOWS
 		// Sync us up with local time (even though we PROBABLY don't need to, this is how it was implemented)
 		// Unix platforms use gettimeofday so they are synced, although this probably isn't a good assumption to
 		// make in the future.
 
-		get_timer_info().mTotalTimeClockCount = (U64)(time(NULL) * get_timer_info().mClockFrequency);
+		timer_info.mTotalTimeClockCount = (U64)(time(nullptr) * timer_info.mClockFrequency);
 #endif
 
 		// Update the last clock count
-		get_timer_info().mLastTotalTimeClockCount = current_clock_count;
+		timer_info.mLastTotalTimeClockCount = current_clock_count;
 	}
 	else
 	{
-		if (current_clock_count >= get_timer_info().mLastTotalTimeClockCount)
+		if (current_clock_count >= timer_info.mLastTotalTimeClockCount)
 		{
 			// No wrapping, we're all okay.
-			get_timer_info().mTotalTimeClockCount += current_clock_count - get_timer_info().mLastTotalTimeClockCount;
+			timer_info.mTotalTimeClockCount += current_clock_count - timer_info.mLastTotalTimeClockCount;
 		}
 		else
 		{
 			// We've wrapped.  Compensate correctly
-			get_timer_info().mTotalTimeClockCount += (0xFFFFFFFFFFFFFFFFULL - get_timer_info().mLastTotalTimeClockCount) + current_clock_count;
+			timer_info.mTotalTimeClockCount += (0xFFFFFFFFFFFFFFFFULL - timer_info.mLastTotalTimeClockCount) + current_clock_count;
 		}
 
 		// Update the last clock count
-		get_timer_info().mLastTotalTimeClockCount = current_clock_count;
+		timer_info.mLastTotalTimeClockCount = current_clock_count;
 	}
 
 	// Return the total clock tick count in microseconds.
-	U64Microseconds time(get_timer_info().mTotalTimeClockCount*get_timer_info().mClocksToMicroseconds);
+	U64Microseconds time(timer_info.mTotalTimeClockCount*timer_info.mClocksToMicroseconds);
 	return time;
 }
 
@@ -303,7 +299,7 @@ void LLTimer::initClass()
 // static
 void LLTimer::cleanupClass()
 {
-	delete sTimer; sTimer = NULL;
+	delete sTimer; sTimer = nullptr;
 }
 
 // static
@@ -432,18 +428,18 @@ BOOL LLTimer::knownBadTimer()
 
 #if LL_WINDOWS
 	WCHAR bad_pci_list[][10] = {L"1039:0530",
-								L"1039:0620",
-								L"10B9:0533",
-								L"10B9:1533",
-								L"1106:0596",
-								L"1106:0686",
-								L"1166:004F",
-								L"1166:0050",
-								L"8086:7110",
-								L"\0"
+						        L"1039:0620",
+							    L"10B9:0533",
+							    L"10B9:1533",
+							    L"1106:0596",
+							    L"1106:0686",
+							    L"1166:004F",
+							    L"1166:0050",
+ 							    L"8086:7110",
+							    L"\0"
 	};
 
-	HKEY hKey = NULL;
+	HKEY hKey = nullptr;
 	LONG nResult = ::RegOpenKeyEx(HKEY_LOCAL_MACHINE,L"SYSTEM\\CurrentControlSet\\Enum\\PCI", 0,
 								  KEY_EXECUTE | KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS, &hKey);
 	
@@ -458,7 +454,7 @@ BOOL LLTimer::knownBadTimer()
 
 	while (nResult == ERROR_SUCCESS)
 	{
-		nResult = ::RegEnumKeyEx(hKey, key_num++, name, &name_len, NULL, NULL, NULL, &scrap);
+		nResult = ::RegEnumKeyEx(hKey, key_num++, name, &name_len, nullptr, nullptr, nullptr, &scrap);
 
 		if (nResult == ERROR_SUCCESS)
 		{
@@ -490,7 +486,7 @@ BOOL LLTimer::knownBadTimer()
 
 time_t time_corrected()
 {
-	return time(NULL) + gUTCOffset;
+	return time(nullptr) + gUTCOffset;
 }
 
 
@@ -498,7 +494,7 @@ time_t time_corrected()
 // observing daylight savings time?
 BOOL is_daylight_savings()
 {
-	time_t now = time(NULL);
+	time_t now = time(nullptr);
 
 	// Internal buffer to local server time
 	struct tm* internal_time = localtime(&now);

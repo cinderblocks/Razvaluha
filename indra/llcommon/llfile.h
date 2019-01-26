@@ -69,17 +69,18 @@ public:
 	// Singu extension: the same as below, but doesn't print a warning as to leave errno alone.
 	static	int		mkdir_nowarn(const std::string& filename, int perms);
 	static	int		rmdir_nowarn(const std::string& filename);
-	static	int		remove_nowarn(const std::string& filename);
+	static	int		remove_nowarn(const std::string& filename, int supress_error = 0);
 	static	int		rename_nowarn(const std::string& filename, const std::string& newname);
 
 	// perms is a permissions mask like 0777 or 0700.  In most cases it will
 	// be overridden by the user's umask.  It is ignored on Windows.
+	// mkdir() considers "directory already exists" to be SUCCESS.
 	static	int		mkdir(const std::string& filename, int perms = 0700);
 
 	static	int		rmdir(const std::string& filename);
-	static	int		remove(const std::string& filename);
+	static	int		remove(const std::string& filename, int supress_error = 0);
 	static	int		rename(const std::string& filename,const std::string&	newname);
-	static  bool	copy(const std::string from, const std::string to);
+	static  bool	copy(const std::string& from, const std::string& to);
 	static  int		size(const std::string& filename);
 
 	static	int		stat(const std::string&	filename,llstat*	file_status);
@@ -100,7 +101,7 @@ public:
 #if LL_WINDOWS
 /**
 *  @brief  Wrapper for UTF16 path compatibility on windows operating systems
- */
+*/
 template< typename BaseType, std::ios_base::openmode DEFAULT_MODE>
 class LL_COMMON_API stream_wrapper : public BaseType {
 public:
@@ -109,21 +110,21 @@ public:
 		: BaseType()
 	{}
 
-	explicit stream_wrapper(char const * _Filename, std::ios_base::open_mode _Mode = DEFAULT_MODE)
+	explicit stream_wrapper(char const * _Filename, std::ios_base::openmode _Mode = DEFAULT_MODE)
 		: BaseType(utf8str_to_utf16str(_Filename).c_str(), _Mode)
-{
+	{
 	}
 
-	explicit stream_wrapper(const std::string& _Filename, std::ios_base::open_mode _Mode = DEFAULT_MODE)
+	explicit stream_wrapper(const std::string& _Filename, std::ios_base::openmode _Mode = DEFAULT_MODE)
 		: BaseType(utf8str_to_utf16str(_Filename), _Mode)
 	{
 	}
 
-	void open(char const* _Filename, std::ios_base::open_mode _Mode = DEFAULT_MODE) {
+	void open(char const* _Filename, std::ios_base::openmode _Mode = DEFAULT_MODE) {
 		BaseType::open(utf8str_to_utf16str(_Filename).c_str(), _Mode);
 	}
 
-	void open(const std::string& _Filename, std::ios_base::open_mode _Mode = DEFAULT_MODE) {
+	void open(const std::string& _Filename, std::ios_base::openmode _Mode = DEFAULT_MODE) {
 		BaseType::open(utf8str_to_utf16str(_Filename), _Mode);
 	}
 };
@@ -151,6 +152,6 @@ typedef std::fstream  llfstream;
 typedef std::ifstream llifstream;
 typedef std::ofstream llofstream;
 
-#endif // LL_WINDOWS or ! LL_WINDOWS
+#endif // LL_WINDOWS or !LL_WINDOWS
 
 #endif // not LL_LLFILE_H

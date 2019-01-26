@@ -6,6 +6,8 @@
 
 include(CMakeCopyIfDifferent)
 include(Linking)
+include(Variables)
+include(LLCommon)
 
 ###################################################################
 # set up platform specific lists of files that need to be copied
@@ -22,10 +24,8 @@ if(WINDOWS)
         SLVoice.exe
         ca-bundle.crt
         libsndfile-1.dll
-        vivoxplatform.dll
         vivoxsdk.dll
         ortp.dll
-        zlib1.dll
         vivoxoal.dll
         )
 
@@ -34,38 +34,73 @@ if(WINDOWS)
 
     set(debug_src_dir "${ARCH_PREBUILT_DIRS_DEBUG}")
     set(debug_files
-        libapr-1.dll
-        libaprutil-1.dll
-        libapriconv-1.dll
-        ssleay32.dll
-        libeay32.dll
+        openjpegd.dll
         glod.dll    
         libhunspell.dll
         )
 
     set(release_src_dir "${ARCH_PREBUILT_DIRS_RELEASE}")
     set(release_files
-        libapr-1.dll
-        libaprutil-1.dll
-        libapriconv-1.dll
-        ssleay32.dll
-        libeay32.dll
+        openjpeg.dll
         glod.dll
         libhunspell.dll
         )
 
-    if(NOT DISABLE_TCMALLOC)
-      set(debug_files ${debug_files} libtcmalloc_minimal-debug.dll)
-      set(release_files ${release_files} libtcmalloc_minimal.dll)
-    endif(NOT DISABLE_TCMALLOC)
+    if(WORD_SIZE STREQUAL 64)
+      list(APPEND debug_files
+           libcrypto-1_1-x64.dll
+           libssl-1_1-x64.dll
+           )
+      list(APPEND release_files
+           libcrypto-1_1-x64.dll
+           libssl-1_1-x64.dll
+           )
+    else(WORD_SIZE STREQUAL 64)
+      list(APPEND debug_files
+           libcrypto-1_1.dll
+           libssl-1_1.dll
+           )
+      list(APPEND release_files
+           libcrypto-1_1.dll
+           libssl-1_1.dll
+           )
+    endif(WORD_SIZE STREQUAL 64)
+		
+    if (LLCOMMON_LINK_SHARED)
+      list(APPEND debug_files 
+        libapr-1.dll
+        libaprutil-1.dll
+        libapriconv-1.dll
+        )
+      list(APPEND release_files 
+        libapr-1.dll
+        libaprutil-1.dll
+        libapriconv-1.dll
+        )
+    endif (LLCOMMON_LINK_SHARED)
+
+    if(USE_TCMALLOC)
+      list(APPEND debug_files libtcmalloc_minimal-debug.dll)
+      list(APPEND release_files libtcmalloc_minimal.dll)
+    endif(USE_TCMALLOC)
+
+    if(USE_TBBMALLOC)
+      list(APPEND debug_files tbbmalloc_debug.dll tbbmalloc_proxy_debug.dll)
+      list(APPEND release_files tbbmalloc.dll tbbmalloc_proxy.dll)
+    endif(USE_TBBMALLOC)
+
+    if(OPENAL)
+      list(APPEND debug_files alut.dll OpenAL32.dll)
+      list(APPEND release_files alut.dll OpenAL32.dll)
+    endif(OPENAL)
 
     if (FMODSTUDIO)
       if(WORD_SIZE STREQUAL 64)
-        set(debug_files ${debug_files} fmodL64.dll)
-        set(release_files ${release_files} fmod64.dll)
+        list(APPEND debug_files fmodL64.dll)
+        list(APPEND release_files fmod64.dll)
       else(WORD_SIZE STREQUAL 64)
-        set(debug_files ${debug_files} fmodL.dll)
-        set(release_files ${release_files} fmod.dll)
+        list(APPEND debug_files fmodL.dll)
+        list(APPEND release_files fmod.dll)
       endif(WORD_SIZE STREQUAL 64)
     endif (FMODSTUDIO)
 elseif(DARWIN)
@@ -93,17 +128,20 @@ elseif(DARWIN)
         libaprutil-1.0.dylib
         libaprutil-1.dylib
         libexception_handler.dylib
-        libexpat.1.5.2.dylib
-        libexpat.dylib
+        libfreetype.6.dylib
         libGLOD.dylib
-        libhunspell-1.3.0.dylib
         libndofdev.dylib
+        libopenjpeg.dylib
        )
 
-    if (FMODSTUDIO)
-      set(debug_files ${debug_files} libfmodL.dylib)
-      set(release_files ${release_files} libfmod.dylib)
-    endif (FMODSTUDIO)
+    if (OPENAL)
+      list(APPEND release_files libopenal.dylib libalut.dylib)
+    endif (OPENAL)
+
+    if (FMODEX)
+      list(APPEND debug_files libfmodexL.dylib)
+      list(APPEND release_files libfmodex.dylib)
+    endif (FMODEX)
 
 elseif(LINUX)
     # linux is weird, multiple side by side configurations aren't supported
@@ -137,25 +175,26 @@ elseif(LINUX)
         libatk-1.0.so
         libexpat.so
         libexpat.so.1
-        libfreetype.so.6.12.3
+        libfreetype.so.6.14.0
         libfreetype.so.6
         libfreetype.so
         libGLOD.so
         libgmodule-2.0.so
         libgobject-2.0.so
         libopenal.so
-        libfontconfig.so.1.8.0
+        libopenjpeg.so
+        libfontconfig.so.1.9.2
         libfontconfig.so.1
         libfontconfig.so
        )
 
     if (USE_TCMALLOC)
-      set(release_files ${release_files} "libtcmalloc_minimal.so")
+      list(APPEND release_files "libtcmalloc_minimal.so")
     endif (USE_TCMALLOC)
 
     if (FMODSTUDIO)
-      set(debug_files ${debug_files} "libfmodL.so")
-      set(release_files ${release_files} "libfmod.so")
+      list(APPEND debug_files "libfmodL.so")
+      list(APPEND release_files "libfmod.so")
     endif (FMODSTUDIO)
 
 else(WINDOWS)

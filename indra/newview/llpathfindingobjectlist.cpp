@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 * @file llpathfindingobjectlist.cpp
 * @brief Implementation of llpathfindingobjectlist
@@ -28,10 +30,6 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llpathfindingobjectlist.h"
-
-#include <string>
-#include <map>
-
 #include "llpathfindingobject.h"
 
 //---------------------------------------------------------------------------
@@ -64,7 +62,7 @@ void LLPathfindingObjectList::clear()
 
 void LLPathfindingObjectList::update(LLPathfindingObjectPtr pUpdateObjectPtr)
 {
-	if (pUpdateObjectPtr != NULL)
+	if (pUpdateObjectPtr != nullptr)
 	{
 		std::string updateObjectId = pUpdateObjectPtr->getUUID().asString();
 
@@ -82,7 +80,7 @@ void LLPathfindingObjectList::update(LLPathfindingObjectPtr pUpdateObjectPtr)
 
 void LLPathfindingObjectList::update(LLPathfindingObjectListPtr pUpdateObjectListPtr)
 {
-	if ((pUpdateObjectListPtr != NULL) && !pUpdateObjectListPtr->isEmpty())
+	if ((pUpdateObjectListPtr != nullptr) && !pUpdateObjectListPtr->isEmpty())
 	{
 		for (LLPathfindingObjectMap::const_iterator updateObjectIter = pUpdateObjectListPtr->begin();
 			updateObjectIter != pUpdateObjectListPtr->end(); ++updateObjectIter)

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lldir.cpp
  * @brief implementation of directory utilities base class
@@ -43,16 +45,7 @@
 #include "lldiriterator.h"
 #include "stringize.h"
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
-#include <boost/range/begin.hpp>
-#include <boost/range/end.hpp>
-#include <boost/assign/list_of.hpp>
-#include <boost/bind.hpp>
-#include <boost/ref.hpp>
 #include <algorithm>
-
-using boost::assign::list_of;
-using boost::assign::map_list_of;
 
 #if LL_WINDOWS
 #include "lldir_win32.h"
@@ -88,9 +81,9 @@ LLDir::LLDir()
 	mOSUserDir(""),
 	mOSUserAppDir(""),
 	mLindenUserDir(""),
-	mOSCacheDir(""),
 	mCAFile(""),
-	mTempDir(""),
+    mTempDir(""),
+    mOSCacheDir(""),
 	mDirDelimiter("/"), // fallback to forward slash if not overridden
 	mLanguage("en"),
 	mUserName("undefined")
@@ -104,12 +97,13 @@ LLDir::~LLDir()
 std::vector<std::string> LLDir::getFilesInDir(const std::string &dirname)
 {
     //Returns a vector of fullpath filenames.
-    
-#if LL_WINDOWS
-    boost::filesystem::path p (utf8str_to_utf16str(dirname).c_str());
+
+#ifdef LL_WINDOWS // or BOOST_WINDOWS_API
+    boost::filesystem::path p(utf8str_to_utf16str(dirname));
 #else
-    boost::filesystem::path p (dirname);
+    boost::filesystem::path p(dirname);
 #endif
+
     std::vector<std::string> v;
     
     if (exists(p))
@@ -147,47 +141,47 @@ S32 LLDir::deleteFilesInDir(const std::string &dirname, const std::string &mask)
 
 	try
 	{
-		LLDirIterator iter(dirname, mask);
-		while (iter.next(filename))
+	LLDirIterator iter(dirname, mask);
+	while (iter.next(filename))
+	{
+		fullpath = add(dirname, filename);
+
+		if(LLFile::isdir(fullpath))
 		{
-			fullpath = add(dirname, filename);
+			// skipping directory traversal filenames
+			count++;
+			continue;
+		}
 
-			if(LLFile::isdir(fullpath))
+		S32 retry_count = 0;
+		while (retry_count < 5)
+		{
+			if (0 != LLFile::remove(fullpath))
 			{
-				// skipping directory traversal filenames
-				count++;
-				continue;
-			}
-
-			S32 retry_count = 0;
-			while (retry_count < 5)
-			{
-				if (0 != LLFile::remove(fullpath))
-				{
-					retry_count++;
-					result = errno;
+				retry_count++;
+				result = errno;
 				LL_WARNS() << "Problem removing " << fullpath << " - errorcode: "
 						<< result << " attempt " << retry_count << LL_ENDL;
 
-					if(retry_count >= 5)
-					{
-					LL_WARNS() << "Failed to remove " << fullpath << LL_ENDL ;
-						return count ;
-					}
-
-					ms_sleep(100);
-				}
-				else
+				if(retry_count >= 5)
 				{
-					if (retry_count)
-					{
-					LL_WARNS() << "Successfully removed " << fullpath << LL_ENDL;
-					}
-					break;
-				}			
+					LL_WARNS() << "Failed to remove " << fullpath << LL_ENDL ;
+					return count ;
+				}
+
+				ms_sleep(100);
 			}
-			count++;
+			else
+			{
+				if (retry_count)
+				{
+					LL_WARNS() << "Successfully removed " << fullpath << LL_ENDL;
+				}
+				break;
+			}			
 		}
+		count++;
+	}
 	}
 	catch(...)
 	{
@@ -205,10 +199,10 @@ U32 LLDir::deleteDirAndContents(const std::string& dir_name)
 
 	try
 	{
-#if LL_WINDOWS
-	   boost::filesystem::path dir_path(utf8str_to_utf16str(dir_name).c_str());
+#ifdef LL_WINDOWS // or BOOST_WINDOWS_API
+		boost::filesystem::path dir_path(utf8str_to_utf16str(dir_name));
 #else
-	   boost::filesystem::path dir_path(dir_name);
+		boost::filesystem::path dir_path(dir_name);
 #endif
 	   if (boost::filesystem::exists (dir_path))
 	   {
@@ -222,9 +216,9 @@ U32 LLDir::deleteDirAndContents(const std::string& dir_name)
 		  }
 	   }
 	}
-	catch (boost::filesystem::filesystem_error &er)
+	catch (const boost::filesystem::filesystem_error &er)
 	{ 
-		LL_WARNS() << "Failed to delete " << dir_name << " with error " << er.code().message() << LL_ENDL;
+		LL_WARNS() << "Failed to delete " << dir_name << " with error " << er.what() << LL_ENDL;
 	} 
 	return num_deleted;
 }
@@ -315,7 +309,7 @@ const std::string &LLDir::getLindenUserDir(bool empty_ok) const
 	return mLindenUserDir;
 }
 
-const std::string &LLDir::getChatLogsDir() const
+const std::string& LLDir::getChatLogsDir() const
 {
 	return mChatLogsDir;
 }
@@ -331,19 +325,19 @@ void LLDir::setDumpDir( const std::string& path )
 
 const std::string &LLDir::getDumpDir() const
 {
-	if (sDumpDir.empty() )
-	{
+    if (sDumpDir.empty() )
+    {
 		/* Singu Note: don't generate a different dump dir each time
-		LLUUID uid;
-		uid.generate();
-
-		sDumpDir = gDirUtilp->getExpandedFilename(LL_PATH_LOGS, "")
-					+ "dump-" + uid.asString();
+        LLUUID uid;
+        uid.generate();
+        
+        sDumpDir = gDirUtilp->getExpandedFilename(LL_PATH_LOGS, "")
+                    + "dump-" + uid.asString();
 		*/
 
 		sDumpDir = getExpandedFilename(LL_PATH_LOGS, "") + "singularity-debug";
-		dir_exists_or_crash(sDumpDir);
-	}
+        dir_exists_or_crash(sDumpDir);  
+    }
 
 	return LLDir::sDumpDir;
 }
@@ -376,12 +370,6 @@ const std::string  LLDir::getCacheDir(bool get_default) const
 	}
 }
 
-#if !defined(LL_DARWIN) && (defined(_WIN64) || defined(__amd64__) || defined(__x86_64__))
-#define OS_CACHE_DIR "SingularityViewer64"
-#else
-#define OS_CACHE_DIR "SingularityViewer"
-#endif
-
 // Return the default cache directory
 std::string LLDir::buildSLOSCacheDir() const
 {
@@ -399,7 +387,11 @@ std::string LLDir::buildSLOSCacheDir() const
 	}
 	else
 	{
-		res = add(getOSCacheDir(), OS_CACHE_DIR);
+#if !defined(LL_DARWIN) && (defined(_WIN64) || defined(__amd64__) || defined(__x86_64__))
+		res = add(getOSCacheDir(), "SingularityViewer64");
+#else
+		res = add(getOSCacheDir(), "SingularityViewer");
+#endif
 	}
 	return res;
 }
@@ -432,16 +424,15 @@ const std::string &LLDir::getSkinDir() const
 	return mSkinDir;
 }
 
-const std::string& LLDir::getUserDefaultSkinDir() const
+const std::string &LLDir::getUserDefaultSkinDir() const
 {
-	return mUserDefaultSkinDir;
+    return mUserDefaultSkinDir;
 }
 
 const std::string &LLDir::getUserSkinDir() const
 {
 	return mUserSkinDir;
 }
-
 
 const std::string LLDir::getSkinBaseDir() const
 {
@@ -461,28 +452,28 @@ const std::string &LLDir::getUserName() const
 static std::string ELLPathToString(ELLPath location)
 {
 	typedef std::map<ELLPath, const char*> ELLPathMap;
-#define ENT(symbol) (symbol, #symbol)
-	static const ELLPathMap sMap = map_list_of
-		ENT(LL_PATH_NONE)
-		ENT(LL_PATH_USER_SETTINGS)
-		ENT(LL_PATH_APP_SETTINGS)
-		ENT(LL_PATH_PER_SL_ACCOUNT) // returns/expands to blank string if we don't know the account name yet
-		ENT(LL_PATH_CACHE)
-		ENT(LL_PATH_CHARACTER)
-		ENT(LL_PATH_HELP)
-		ENT(LL_PATH_LOGS)
-		ENT(LL_PATH_TEMP)
-		ENT(LL_PATH_SKINS)
-		ENT(LL_PATH_TOP_SKIN)
-		ENT(LL_PATH_CHAT_LOGS)
-		ENT(LL_PATH_PER_ACCOUNT_CHAT_LOGS)
-		ENT(LL_PATH_USER_SKIN)
-		ENT(LL_PATH_LOCAL_ASSETS)
-		ENT(LL_PATH_EXECUTABLE)
-		ENT(LL_PATH_DEFAULT_SKIN)
-		ENT(LL_PATH_FONTS)
+#define ENT(symbol) {symbol, #symbol}
+	static const ELLPathMap sMap = {
+		ENT(LL_PATH_NONE),
+		ENT(LL_PATH_USER_SETTINGS),
+		ENT(LL_PATH_APP_SETTINGS),
+		ENT(LL_PATH_PER_SL_ACCOUNT), // returns/expands to blank string if we don't know the account name yet
+		ENT(LL_PATH_CACHE),
+		ENT(LL_PATH_CHARACTER),
+		ENT(LL_PATH_HELP),
+		ENT(LL_PATH_LOGS),
+		ENT(LL_PATH_TEMP),
+		ENT(LL_PATH_SKINS),
+		ENT(LL_PATH_TOP_SKIN),
+		ENT(LL_PATH_CHAT_LOGS),
+		ENT(LL_PATH_PER_ACCOUNT_CHAT_LOGS),
+		ENT(LL_PATH_USER_SKIN),
+		ENT(LL_PATH_LOCAL_ASSETS),
+		ENT(LL_PATH_EXECUTABLE),
+		ENT(LL_PATH_DEFAULT_SKIN),
+		ENT(LL_PATH_FONTS),
 		ENT(LL_PATH_LAST)
-	;
+	};
 #undef ENT
 
 	ELLPathMap::const_iterator found = sMap.find(location);
@@ -557,6 +548,13 @@ std::string LLDir::getExpandedFilename(ELLPath location, const std::string& subd
 		
 	case LL_PATH_PER_ACCOUNT_CHAT_LOGS:
 		prefix = getPerAccountChatLogsDir();
+		if (prefix.empty())
+		{
+			// potentially directory was not set yet
+			// intentionally return a blank string to the caller
+			LL_DEBUGS("LLDir") << "Conversation log directory is not yet set" << LL_ENDL;
+			return std::string();
+		}
 		break;
 
 	case LL_PATH_LOGS:
@@ -697,10 +695,10 @@ void LLDir::walkSearchSkinDirs(const std::string& subdir,
 							   const std::string& filename,
 							   const FUNCTION& function) const
 {
-	BOOST_FOREACH(std::string skindir, mSearchSkinDirs)
+	for (std::string skindir : mSearchSkinDirs)
 	{
 		std::string subdir_path(add(skindir, subdir));
-		BOOST_FOREACH(std::string subsubdir, subsubdirs)
+		for (std::string subsubdir : subsubdirs)
 		{
 			std::string full_path(add(add(subdir_path, subsubdir), filename));
 			if (fileExists(full_path))
@@ -729,15 +727,24 @@ std::vector<std::string> LLDir::findSkinnedFilenames(const std::string& subdir,
 													 ESkinConstraint constraint) const
 {
 	// Recognize subdirs that have no localization.
-	static const std::set<std::string> sUnlocalized = list_of
-		("")                        // top-level directory not localized
-		("textures")                // textures not localized
-	;
+	static const std::set<std::string> sUnlocalized{
+		LLStringUtil::null,                        // top-level directory not localized
+		LLStringExplicit("textures")               // textures not localized
+	};
 
 	LL_DEBUGS("LLDir") << "subdir '" << subdir << "', filename '" << filename
 					   << "', constraint "
 					   << ((constraint == CURRENT_SKIN)? "CURRENT_SKIN" : "ALL_SKINS")
 					   << LL_ENDL;
+
+	// Build results vector.
+	std::vector<std::string> results;
+	// Disallow filenames that may escape subdir
+	if (filename.find("..") != std::string::npos)
+	{
+		LL_WARNS("LLDir") << "Ignoring potentially relative filename '" << filename << "'" << LL_ENDL;
+		return results;
+	}
 
 	// Cache the default language directory for each subdir we've encountered.
 	// A cache entry whose value is the empty string means "not localized,
@@ -803,17 +810,11 @@ std::vector<std::string> LLDir::findSkinnedFilenames(const std::string& subdir,
 		}
 	}
 
-	// Build results vector.
-	std::vector<std::string> results;
 	// The process we use depends on 'constraint'.
 	if (constraint != CURRENT_SKIN) // meaning ALL_SKINS
 	{
-		// ALL_SKINS is simpler: just return every pathname generated by
-		// walkSearchSkinDirs(). Tricky bit: walkSearchSkinDirs() passes its
-		// FUNCTION the subsubdir as well as the full pathname. We just want
-		// the full pathname.
 		walkSearchSkinDirs(subdir, subsubdirs, filename,
-						   boost::bind(push_back, boost::ref(results), _2));
+						   std::bind(push_back, std::ref(results), std::placeholders::_2));
 	}
 	else                            // CURRENT_SKIN
 	{
@@ -837,12 +838,12 @@ std::vector<std::string> LLDir::findSkinnedFilenames(const std::string& subdir,
 		// walkSearchSkinDirs(), update the map entry for its subsubdir.
 		StringMap path_for;
 		walkSearchSkinDirs(subdir, subsubdirs, filename,
-						   boost::bind(store_in_map, boost::ref(path_for), _1, _2));
+						   std::bind(store_in_map, std::ref(path_for), std::placeholders::_1, std::placeholders::_2));
 		// Now that we have a path for each of the default language and the
 		// current language, copy them -- in proper order -- into results.
 		// Don't drive this by walking the map itself: it matters that we
 		// generate results in the same order as subsubdirs.
-		BOOST_FOREACH(std::string subsubdir, subsubdirs)
+		for (std::string subsubdir : subsubdirs)
 		{
 			StringMap::const_iterator found(path_for.find(subsubdir));
 			if (found != path_for.end())
@@ -854,7 +855,7 @@ std::vector<std::string> LLDir::findSkinnedFilenames(const std::string& subdir,
 
 	LL_DEBUGS("LLDir") << empty;
 	const char* comma = "";
-	BOOST_FOREACH(std::string path, results)
+	for (std::string path : results)
 	{
 		LL_CONT << comma << "'" << path << "'";
 		comma = ", ";
@@ -879,7 +880,7 @@ std::string LLDir::getTempFilename() const
 std::string LLDir::getScrubbedFileName(const std::string& uncleanFileName)
 {
 	std::string name(uncleanFileName);
-	std::string illegalChars(getForbiddenFileChars());
+	const std::string illegalChars(getForbiddenFileChars());
 #if LL_LINUX || LL_SOLARIS
 	// Spaces in filenames are REALLY annoying on UNIX.
 	illegalChars += ' ';
@@ -887,8 +888,8 @@ std::string LLDir::getScrubbedFileName(const std::string& uncleanFileName)
 	// replace any illegal file chars with and underscore '_'
 	for( unsigned int i = 0; i < illegalChars.length(); i++ )
 	{
-		size_t j = std::string::npos;
-		while ((j = name.find(illegalChars[i])) != std::string::npos)
+		size_t j;
+		while((j = name.find(illegalChars[i])) != std::string::npos)
 		{
 			name[j] = '_';
 		}
@@ -993,7 +994,7 @@ void LLDir::setPerAccountChatLogsDir(const std::string &grid, const std::string 
 	}
 	else
 	{
-		LL_WARNS() << "Invalid name for LLDir::setPerAccountChatLogsDir" << LL_ENDL;
+		LL_ERRS() << "NULL name for LLDir::setPerAccountChatLogsDir" << LL_ENDL;
 	}
 }
 
@@ -1057,7 +1058,7 @@ bool LLDir::setCacheDir(const std::string &path)
 	if (path.empty() )
 	{
 		// reset to default
-		mCacheDir = "";
+		mCacheDir.clear();
 		return true;
 	}
 	else
@@ -1094,6 +1095,7 @@ void LLDir::dumpCurrentDirectories()
 	LL_DEBUGS("AppInit","Directories") << "  CAFile:				 " << getCAFile() << LL_ENDL;
 	LL_DEBUGS("AppInit","Directories") << "  SkinBaseDir:           " << getSkinBaseDir() << LL_ENDL;
 	LL_DEBUGS("AppInit","Directories") << "  SkinDir:               " << getSkinDir() << LL_ENDL;
+	LL_DEBUGS("AppInit","Directories") << "  UserSkinDir:           " << getUserSkinDir() << LL_ENDL;
 }
 
 std::string LLDir::add(const std::string& path, const std::string& name) const
@@ -1140,7 +1142,7 @@ LLDir::SepOff LLDir::needSep(const std::string& path, const std::string& name) c
 	{
 		// But if BOTH path and name bring a separator, we need not add one.
 		// Moreover, we should actually skip the leading separator of 'name'.
-		return SepOff(false, static_cast<U8>(seplen));
+		return SepOff(false, (unsigned short)seplen);
 	}
 	// Here we know that either path_ends_sep or name_starts_sep is true --
 	// but not both. So don't add a separator, and don't skip any characters:

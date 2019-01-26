@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 * @file llpathfindinglinkset.cpp
 * @brief Definition of a pathfinding linkset that contains various properties required for havok pathfinding.
@@ -27,10 +29,7 @@
 
 
 #include "llviewerprecompiledheaders.h"
-
 #include "llpathfindinglinkset.h"
-
-#include <string>
 
 #include "llpathfindingobject.h"
 #include "llsd.h"

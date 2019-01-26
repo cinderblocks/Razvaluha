@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llplugincookiestore.cpp
  * @brief LLPluginCookieStore provides central storage for http cookies used by plugins
@@ -65,7 +67,7 @@ LLPluginCookieStore::Cookie *LLPluginCookieStore::Cookie::createFromString(const
 	if(!result->parse(host))
 	{
 		delete result;
-		result = NULL;
+		result = nullptr;
 	}
 	
 	return result;
@@ -134,7 +136,7 @@ bool LLPluginCookieStore::Cookie::parse(const std::string &host)
 		}
 		
 		// the name and value are separated by the first equals sign
-		std::string::size_type name_value_sep = mCookie.find_first_of("=", name_start);
+		std::string::size_type name_value_sep = mCookie.find_first_of('=', name_start);
 		if(name_value_sep == std::string::npos || name_value_sep > field_end)
 		{
 			// No separator found, so this is a field without an = 
@@ -199,7 +201,7 @@ bool LLPluginCookieStore::Cookie::parse(const std::string &host)
 				// HACK: LLDate apparently can't PARSE an rfc1123-format date, even though it can GENERATE one.
 				//  The curl function curl_getdate can do this, but I'm hesitant to unilaterally introduce a curl dependency in LLDate.
 #if 1
-				time_t date = curl_getdate(date_string.c_str(), NULL );
+				time_t date = curl_getdate(date_string.c_str(), nullptr );
 				mDate.secondsSinceEpoch((F64)date);
 				LL_DEBUGS("CookieStoreParse") << "        expire date parsed to: " << mDate.asRFC1123() << LL_ENDL;
 #else
@@ -270,7 +272,7 @@ bool LLPluginCookieStore::Cookie::parse(const std::string &host)
 		}
 		
 		// Figure out whether this cookie ended with a ";" or not...
-		std::string::size_type last_char = mCookie.find_last_not_of(" ");
+		std::string::size_type last_char = mCookie.find_last_not_of(' ');
 		if((last_char != std::string::npos) && (mCookie[last_char] != ';'))
 		{
 			mCookie += ";";
@@ -288,7 +290,7 @@ bool LLPluginCookieStore::Cookie::parse(const std::string &host)
 	if(mPathEnd <= mPathStart)
 	{
 		// Figure out whether this cookie ended with a ";" or not...
-		std::string::size_type last_char = mCookie.find_last_not_of(" ");
+		std::string::size_type last_char = mCookie.find_last_not_of(' ');
 		if((last_char != std::string::npos) && (mCookie[last_char] != ';'))
 		{
 			mCookie += ";";
@@ -599,7 +601,7 @@ void LLPluginCookieStore::setOneCookie(const std::string &s, std::string::size_t
 				removeCookie(key);
 
 				delete cookie;
-				cookie = NULL;
+				cookie = nullptr;
 
 				LL_DEBUGS("CookieStoreUpdate") << "    removing" << LL_ENDL;
 			}
@@ -616,7 +618,7 @@ void LLPluginCookieStore::setOneCookie(const std::string &s, std::string::size_t
 					// The new cookie is identical to the old -- don't mark as changed.
 					// Just leave the old one in the map.
 					delete cookie;
-					cookie = NULL;
+					cookie = nullptr;
 
 					LL_DEBUGS("CookieStoreUpdate") << "    unchanged" << LL_ENDL;
 				}

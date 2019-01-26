@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llviewercamera.cpp
  * @brief LLViewerCamera class implementation
@@ -26,7 +28,10 @@
 
 #include "llviewerprecompiledheaders.h"
 
+#define LLVIEWERCAMERA_CPP
 #include "llviewercamera.h"
+
+// Viewer includes
 #include "llagent.h"
 #include "llagentcamera.h"
 
@@ -55,11 +60,14 @@
 
 LLViewerCamera::eCameraID LLViewerCamera::sCurCameraID = LLViewerCamera::CAMERA_WORLD;
 
+// Build time optimization, generate this once in .cpp file
+template class LLViewerCamera* LLSingleton<class LLViewerCamera>::getInstance();
+
 LLViewerCamera::LLViewerCamera() : LLCamera()
 {
 	calcProjection(getFar());
 	mCameraFOVDefault = DEFAULT_FIELD_OF_VIEW;
-	mSavedFOVDefault = DEFAULT_FIELD_OF_VIEW; // <exodus/>
+	mSavedFOVDefault = DEFAULT_FIELD_OF_VIEW;
 	mCosHalfCameraFOV = cosf(mCameraFOVDefault * 0.5f);
 	mPixelMeterRatio = 0.f;
 	mScreenPixelArea = 0;
@@ -88,7 +96,7 @@ void LLViewerCamera::updateCameraLocation(const LLVector3 &center,
 	mLastPointOfInterest = point_of_interest;
 
 	LLViewerRegion * regp = gAgent.getRegion();
-	F32 water_height = (NULL != regp) ? regp->getWaterHeight() : 0.f;
+	F32 water_height = (nullptr != regp) ? regp->getWaterHeight() : 0.f;
 
 	LLVector3 origin = center;
 	if (origin.mV[2] > water_height)
@@ -512,7 +520,6 @@ BOOL LLViewerCamera::projectPosAgentToScreenEdge(const LLVector3 &pos_agent,
 		int_x = lltrunc(center_x);
 		int_y = lltrunc(center_y);
 
-
 		if (0.f == line_x)
 		{
 			// the slope of the line is undefined
@@ -688,7 +695,7 @@ BOOL LLViewerCamera::areVertsVisible(LLViewerObject* volumep, BOOL all_verts)
 	{
 		const LLVolumeFace& face = volume->getVolumeFace(i);
 				
-		for (U32 v = 0; v < (U32)face.mNumVertices; v++)
+		for (U32 v = 0; v < face.mNumVertices; v++)
 		{
 			const LLVector4a& src_vec = face.mPositions[v];
 			LLVector4a vec;
@@ -754,7 +761,6 @@ void LLViewerCamera::setDefaultFOV(F32 vertical_fov_rads)
 	mCosHalfCameraFOV = cosf(mCameraFOVDefault * 0.5f);
 }
 
-// <exodus>
 void LLViewerCamera::loadDefaultFOV()
 {
 	if (mSavedFOVLoaded) return;
@@ -763,7 +769,6 @@ void LLViewerCamera::loadDefaultFOV()
 	mCameraFOVDefault = mSavedFOVDefault;
 	mCosHalfCameraFOV = cosf(mCameraFOVDefault * 0.5f);
 }
-// </exodus>
 
 // static
 void LLViewerCamera::updateCameraAngle( void* user_data, const LLSD& value)
@@ -771,3 +776,4 @@ void LLViewerCamera::updateCameraAngle( void* user_data, const LLSD& value)
 	LLViewerCamera* self=(LLViewerCamera*)user_data;
 	self->setDefaultFOV(value.asReal());	
 }
+

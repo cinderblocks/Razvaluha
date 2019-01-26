@@ -34,6 +34,7 @@
 
 #include "llviewergesture.h"
 
+#include "llanimationstates.h"
 #include "llaudioengine.h"
 #include "lldir.h"
 #include "llviewerinventory.h"

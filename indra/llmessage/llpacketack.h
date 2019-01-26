@@ -55,16 +55,16 @@ public:
 		mRetries = 0;
 		mPingBasedRetry = TRUE;
 		mTimeout = F32Seconds(0.f);
-		mCallback = NULL;
-		mCallbackData = NULL;
-		mMessageName = NULL;
+		mCallback = nullptr;
+		mCallbackData = nullptr;
+		mMessageName = nullptr;
 	};
 
 	void set(
 		const LLHost& host,
 		S32 retries,
 		BOOL ping_based_retry,
-		F32Seconds timeout, 
+		const F32Seconds& timeout, 
 		void (*callback)(void**,S32),
 		void** callback_data, char* name)
 	{
@@ -88,9 +88,9 @@ public:
 		LLReliablePacketParams* params);
 	~LLReliablePacket()
 	{ 
-		mCallback = NULL;
+		mCallback = nullptr;
 		delete [] mBuffer;
-		mBuffer = NULL;
+		mBuffer = nullptr;
 	};
 
 	friend class LLCircuitData;

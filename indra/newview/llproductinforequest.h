@@ -42,8 +42,8 @@
 
 class LLProductInfoRequestManager : public LLSingleton<LLProductInfoRequestManager>
 {
+	LLSINGLETON(LLProductInfoRequestManager);
 public:
-	LLProductInfoRequestManager();
 	std::string getDescriptionForSku(const std::string& sku);
 private:
 	friend class LLSingleton<LLProductInfoRequestManager>;	

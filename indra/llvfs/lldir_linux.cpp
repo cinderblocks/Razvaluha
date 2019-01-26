@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lldir_linux.cpp
  * @brief Implementation of directory utilities for linux
@@ -99,8 +101,8 @@ LLDir_Linux::LLDir_Linux()
 		// ...we're in a dev checkout
 		mSkinBaseDir = mExecutableDir.substr(0, build_dir_pos) + "/indra/newview/skins";
 		if (LLFile::isdir(mSkinBaseDir))
-			LL_INFOS() << "Running in dev checkout with mSkinBaseDir "
-			 << mSkinBaseDir << LL_ENDL;
+		LL_INFOS() << "Running in dev checkout with mSkinBaseDir "
+		 << mSkinBaseDir << LL_ENDL;
 		else
 			mSkinBaseDir = "";
     }
@@ -223,7 +225,7 @@ void LLDir_Linux::initAppDirs(const std::string &app_name,
 		}
 	}
 	
-	mCAFile = getExpandedFilename(LL_PATH_APP_SETTINGS, "CA.pem");
+	mCAFile = getExpandedFilename(LL_PATH_APP_SETTINGS, "ca-bundle.crt");
 }
 
 U32 LLDir_Linux::countFilesInDir(const std::string &dirname, const std::string &mask)
@@ -277,7 +279,7 @@ bool LLDir_Linux::fileExists(const std::string &filename) const
 /*virtual*/ std::string LLDir_Linux::getLLPluginLauncher()
 {
 	return gDirUtilp->getExecutableDir() + gDirUtilp->getDirDelimiter() +
-		"SLPlugin";
+		"AlchemyPlugin";
 }
 
 /*virtual*/ std::string LLDir_Linux::getLLPluginFilename(std::string base_name)

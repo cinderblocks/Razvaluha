@@ -34,25 +34,19 @@
 #define LL_LLHUDVIEW_H
 
 #include "llpanel.h"
-#include "v4color.h"
 
-class LLVector3d;
-
-class LLHUDView
-: public LLPanel
+class LLHUDView : public LLPanel
 {
 public:
 	LLHUDView(const LLRect& rect);
-	virtual ~LLHUDView();
+	virtual ~LLHUDView() {};
 
 	virtual void draw();
-
-	const LLColor4& colorFromType(S32 type);
 
 protected:
 	/*virtual*/ BOOL handleMouseDown(S32 x, S32 y, MASK mask);
 };
 
-extern LLHUDView *gHUDView;
+extern LLHUDView* gHUDView;
 
 #endif

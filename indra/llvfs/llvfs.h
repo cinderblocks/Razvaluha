@@ -57,13 +57,24 @@ enum EVFSLock
 class LLVFSBlock
 {
 public:
-	LLVFSBlock();
-
-	LLVFSBlock(U32 loc, S32 size);
-
+	LLVFSBlock() 
+	{
+		mLocation = 0;
+		mLength = 0;
+	}
+    
+	LLVFSBlock(U32 loc, S32 size)
+	{
+		mLocation = loc;
+		mLength = size;
+	}
+    
 	static bool locationSortPredicate(
 		const LLVFSBlock* lhs,
-		const LLVFSBlock* rhs);
+		const LLVFSBlock* rhs)
+	{
+		return lhs->mLocation < rhs->mLocation;
+	}
 
 public:
 	U32 mLocation;
@@ -168,6 +179,7 @@ public:
 	void dumpStatistics();
 	void listFiles();
 	void dumpFiles();
+	time_t creationTime();
 
 protected:
 	void removeFileBlock(LLVFSFileBlock *fileblock);
@@ -181,11 +193,11 @@ protected:
 	void presizeDataFile(const U32 size);
 
 	static LLFILE *openAndLock(const std::string& filename, const char* mode, BOOL read_lock);
-	static void unlockAndClose(FILE *fp);
+	static void unlockAndClose(LLFILE *fp);
 	
 	// Can initiate LRU-based file removal to make space.
 	// The immune file block will not be removed.
-	LLVFSBlock *findFreeBlock(S32 size, LLVFSFileBlock *immune = NULL);
+	LLVFSBlock *findFreeBlock(S32 size, LLVFSFileBlock *immune = nullptr);
 
 	// lock/unlock data mutex (mDataMutex)
 	void lockData() { mDataMutex->lock(); }
@@ -193,7 +205,7 @@ protected:
 	
 protected:
 	LLMutex* mDataMutex;
-
+	
 //<edit>
 public:
 	typedef std::map<LLVFSFileSpecifier, LLVFSFileBlock*> fileblock_map;

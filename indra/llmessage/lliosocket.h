@@ -38,9 +38,7 @@
  */
 
 #include "lliopipe.h"
-#include "llwin32headerslean.h"
-#include "apr_pools.h"
-#include "apr_network_io.h"
+#include "llapr.h"
 #include "llchainio.h"
 
 extern const std::string CONTEXT_REMOTE_HOST;
@@ -65,7 +63,7 @@ public:
 	/** 
 	 * @brief Reference counted shared pointers to sockets.
 	 */
-	typedef boost::shared_ptr<LLSocket> ptr_t;
+	typedef std::shared_ptr<LLSocket> ptr_t;
 
 	/** 
 	 * @brief Type of socket to create.
@@ -222,12 +220,12 @@ protected:
 	 * @param context A data structure to pass structured data
 	 * @return STATUS_OK unless the preconditions are not met.
 	 */
-	virtual EStatus process_impl(
+	EStatus process_impl(
 		const LLChannelDescriptors& channels,
 		buffer_ptr_t& buffer,
 		bool& eos,
 		LLSD& context,
-		LLPumpIO* pump);
+		LLPumpIO* pump) override;
 	//@}
 
 protected:
@@ -268,12 +266,12 @@ protected:
 	 * @param context A data structure to pass structured data
 	 * @return A return code for the write.
 	 */
-	virtual EStatus process_impl(
+	EStatus process_impl(
 		const LLChannelDescriptors& channels,
 		buffer_ptr_t& buffer,
 		bool& eos,
 		LLSD& context,
-		LLPumpIO* pump);
+		LLPumpIO* pump) override;
 	//@}
 
 protected:
@@ -303,7 +301,7 @@ class LLIOServerSocket : public LLIOPipe
 {
 public:
 	typedef LLSocket::ptr_t socket_t;
-	typedef boost::shared_ptr<LLChainIOFactory> factory_t;
+	typedef std::shared_ptr<LLChainIOFactory> factory_t;
 	LLIOServerSocket(apr_pool_t* pool, socket_t listener, factory_t reactor);
 	virtual ~LLIOServerSocket();
 
@@ -327,12 +325,12 @@ protected:
 	/** 
 	 * @brief Process the data in buffer
 	 */
-	virtual EStatus process_impl(
+	EStatus process_impl(
 		const LLChannelDescriptors& channels,
 		buffer_ptr_t& buffer,
 		bool& eos,
 		LLSD& context,
-		LLPumpIO* pump);
+		LLPumpIO* pump) override;
 	//@}
 
 protected:

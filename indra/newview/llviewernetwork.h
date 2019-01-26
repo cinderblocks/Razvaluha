@@ -42,6 +42,7 @@
  **/
 class LLViewerLogin : public LLSingleton<LLViewerLogin>
 {
+	LLSINGLETON_EMPTY_CTOR(LLViewerLogin);
 public:
 
 	void getLoginURIs(std::vector<std::string>& uris) const;

@@ -146,6 +146,8 @@ public:
 
 	/* virtual */ void updateShaderUniforms(LLGLSLShader * shader); // Virtual
 
+	/* virtual */ bool attachClassSharedShaders(LLGLSLShader& shader, S32 shader_class); // Virtual
+
 private:
 	
 	std::vector<std::string> mShinyUniforms;
@@ -209,7 +211,6 @@ extern LLGLSLShader			gGlowCombineFXAAProgram;
 extern LLGLSLShader			gDebugProgram;
 extern LLGLSLShader			gClipProgram;
 extern LLGLSLShader			gDownsampleDepthProgram;
-extern LLGLSLShader			gDownsampleDepthRectProgram;
 
 //output tex0[tc0] + tex1[tc1]
 extern LLGLSLShader			gTwoTextureAddProgram;

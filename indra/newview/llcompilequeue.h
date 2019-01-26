@@ -36,7 +36,7 @@
 #include "llinventory.h"
 #include "llviewerobject.h"
 #include "llvoinventorylistener.h"
-#include "llmap.h"
+#include <map> // Singu TODO: Make this an instance tracker
 #include "lluuid.h"
 
 #include "llfloater.h"
@@ -65,7 +65,7 @@ public:
 						 const std::string& title, const std::string& start_string);
 	virtual ~LLFloaterScriptQueue();
 
-	/*virtual*/ BOOL postBuild();
+	/*virtual*/ BOOL postBuild() override;
 
 	void setMono(bool mono) { mMono = mono; }
 
@@ -115,7 +115,7 @@ protected:
 	bool mDone;
 
 	LLUUID mID;
-	static LLMap<LLUUID, LLFloaterScriptQueue*> sInstances;
+	static std::map<LLUUID, LLFloaterScriptQueue*> sInstances;
 
 	std::string mStartString;
 	bool mMono;

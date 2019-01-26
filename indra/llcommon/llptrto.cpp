@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file   llptrto.cpp
  * @author Nat Goodspeed
@@ -33,7 +35,6 @@
 // STL headers
 // std headers
 // external library headers
-#include <boost/type_traits/is_same.hpp>
 #include <boost/static_assert.hpp>
 // other Linden headers
 #include "llmemory.h"

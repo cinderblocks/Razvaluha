@@ -717,6 +717,7 @@ private:
 // I'd have defined it local to the one method that uses it but that broke the VS 05 compiler. -MG
 class LLUICtrl::DefaultTabGroupFirstSorter : public LLQuerySorter, public LLSingleton<DefaultTabGroupFirstSorter>
 {
+	LLSINGLETON_EMPTY_CTOR(DefaultTabGroupFirstSorter);
 public:
 	/*virtual*/ void operator() (LLView * parent, viewList_t &children) const
 	{

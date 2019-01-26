@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file bufferstream.cpp
  * @brief Implements the BufferStream adapter class
@@ -36,9 +38,9 @@ BufferArrayStreamBuf::BufferArrayStreamBuf(BufferArray * array)
 	: mBufferArray(array),
 	  mReadCurPos(0),
 	  mReadCurBlock(-1),
-	  mReadBegin(NULL),
-	  mReadCur(NULL),
-	  mReadEnd(NULL),
+	  mReadBegin(nullptr),
+	  mReadCur(nullptr),
+	  mReadEnd(nullptr),
 	  mWriteCurPos(0)
 {
 	if (array)
@@ -54,7 +56,7 @@ BufferArrayStreamBuf::~BufferArrayStreamBuf()
 	if (mBufferArray)
 	{
 		mBufferArray->release();
-		mBufferArray = NULL;
+		mBufferArray = nullptr;
 	}
 }
 
@@ -71,7 +73,7 @@ BufferArrayStreamBuf::int_type BufferArrayStreamBuf::underflow()
 		// Find the next block with actual data or leave
 		// mCurBlock/mCur/mEnd unchanged if we're at the end
 		// of any block chain.
-		const char * new_begin(NULL), * new_end(NULL);
+		const char * new_begin(nullptr), * new_end(nullptr);
 		int new_cur_block(mReadCurBlock + 1);
 
 		while (mBufferArray->getBlockStartEnd(new_cur_block, &new_begin, &new_end))
@@ -121,7 +123,7 @@ BufferArrayStreamBuf::int_type BufferArrayStreamBuf::pbackfail(int_type ch)
 		// Find the previous block with actual data or leave
 		// mCurBlock/mBegin/mCur/mEnd unchanged if we're at the
 		// beginning of any block chain.
-		const char * new_begin(NULL), * new_end(NULL);
+		const char * new_begin(nullptr), * new_end(nullptr);
 		int new_cur_block(mReadCurBlock - 1);
 
 		while (mBufferArray->getBlockStartEnd(new_cur_block, &new_begin, &new_end))
@@ -226,7 +228,7 @@ std::streampos BufferArrayStreamBuf::seekoff(std::streamoff off,
 		int block(mBufferArray->findBlock(pos, &ba_offset));
 		if (block < 0)
 			return ret;
-		const char * start(NULL), * end(NULL);
+		const char * start(nullptr), * end(nullptr);
 		if (! mBufferArray->getBlockStartEnd(block, &start, &end))
 			return ret;
 		mReadCurBlock = block;

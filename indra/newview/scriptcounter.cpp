@@ -38,7 +38,8 @@
 #include "llselectmgr.h"
 #include "lltrans.h"
 #include "llvoavatar.h"
-#include "stringize.h"
+
+#include <boost/lexical_cast.hpp>
 
 void cmdline_printchat(const std::string& message);
 
@@ -194,10 +195,10 @@ void ScriptCounter::summarize()
 	if (!requesting && !inventories && !checking)
 	{
 		LLStringUtil::format_map_t args;
-		args["SCRIPTS"] = stringize(scriptcount);
-		args["OBJECTS"] = stringize(objectCount);
-		args["RUNNING"] = stringize(mRunningCount);
-		args["MONO"] = stringize(mMonoCount);
+		args["SCRIPTS"] = boost::lexical_cast<std::string>(scriptcount);
+		args["OBJECTS"] = boost::lexical_cast<std::string>(objectCount);
+		args["RUNNING"] = boost::lexical_cast<std::string>(mRunningCount);
+		args["MONO"] = boost::lexical_cast<std::string>(mMonoCount);
 		if (foo->isAvatar())
 			LLAvatarNameCache::get(foo->getID(), boost::bind(countedScriptsOnAvatar, args, _2));
 		else

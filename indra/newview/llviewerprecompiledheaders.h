@@ -41,17 +41,6 @@
 
 #include "linden_common.h"
 
-// We may want to take the windows.h include out, but it used to be in 
-// linden_common.h, and hence in all the libraries.  This is better. JC
-#if LL_WINDOWS
-	// Limit Windows API to small and manageable set.
-	// If you get undefined symbols, find the appropriate
-	// Windows header file and include that in your .cpp file.
-#define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
-#include <windows.h>
-#endif
-
 #include <algorithm>
 #include <deque>
 #include <functional>
@@ -63,8 +52,6 @@
 #endif
 
 // Library headers from llcommon project:
-#include "bitpack.h"
-#include "imageids.h"
 #include "indra_constants.h"
 #include "llinitparam.h"
 #include "llapp.h"
@@ -76,8 +63,6 @@
 #include "llerror.h"
 #include "llfasttimer.h"
 #include "llframetimer.h"
-#include "lllocalidhashmap.h"
-#include "llmap.h"
 #include "llmemory.h"
 #include "llnametable.h"
 #include "llpriqueuemap.h"
@@ -89,7 +74,6 @@
 #include "llsys.h"
 #include "llthread.h"
 #include "lltimer.h"
-#include "stdenums.h"
 #include "stdtypes.h"
 #include "u64.h"
 
@@ -158,7 +142,6 @@
 #include "sound_ids.h"
 
 // Library includes from llprimitive
-#include "imageids.h"
 #include "legacy_object_types.h"
 #include "llmaterialtable.h"
 #include "lltextureanim.h"

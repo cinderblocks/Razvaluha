@@ -90,8 +90,8 @@ public:
 	virtual ~HttpRequest();
 
 private:
-	HttpRequest(const HttpRequest &);			// Disallowed
-	void operator=(const HttpRequest &);		// Disallowed		
+	HttpRequest(const HttpRequest &) = delete;			// Disallowed
+	void operator=(const HttpRequest &) = delete;		// Disallowed		
 
 public:
 	typedef unsigned int policy_t;
@@ -238,7 +238,7 @@ public:
 
 	/// Prototype for policy based callbacks.  The callback methods will be executed
 	/// on the worker thread so no modifications should be made to the HttpHandler object.
-    typedef boost::function<HttpStatus(const std::string &, const HttpHandler::ptr_t &, void *)> policyCallback_t;
+    typedef std::function<HttpStatus(const std::string &, const HttpHandler::ptr_t &, void *)> policyCallback_t;
 
 	/// Set a policy option for a global or class parameter at
 	/// startup time (prior to thread start).
@@ -680,7 +680,7 @@ private:
 	/// @}
 	// End Global State
 	// ====================================
-	
+
 };  // end class HttpRequest
 
 

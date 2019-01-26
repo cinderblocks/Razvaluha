@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file   llleaplistener.cpp
  * @author Nat Goodspeed
@@ -13,10 +15,6 @@
 #include "linden_common.h"
 // associated header
 #include "llleaplistener.h"
-// STL headers
-// std headers
-// external library headers
-#include <boost/foreach.hpp>
 // other Linden headers
 #include "lluuid.h"
 #include "llsdutil.h"
@@ -113,7 +111,7 @@ LLLeapListener::~LLLeapListener()
     // value_type, and Bad Things would happen if you copied an
     // LLTempBoundListener. (Destruction of the original would disconnect the
     // listener, invalidating every stored connection.)
-    BOOST_FOREACH(ListenersMap::value_type& pair, mListeners)
+	for (ListenersMap::value_type& pair : mListeners)
     {
         pair.second.disconnect();
     }
@@ -126,7 +124,7 @@ void LLLeapListener::newpump(const LLSD& request)
     std::string name = request["name"];
     LLSD const & type = request["type"];
 
-    LLEventPump * new_pump = NULL;
+    LLEventPump * new_pump = nullptr;
     if (type.asString() == "LLEventQueue")
     {
         new_pump = new LLEventQueue(name, true); // tweak name for uniqueness

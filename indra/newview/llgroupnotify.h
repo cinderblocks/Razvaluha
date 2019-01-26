@@ -34,6 +34,7 @@
 #define LL_LLGROUPNOTIFY_H
 
 #include "llfontgl.h"
+#include "llinitdestroyclass.h"
 #include "llpanel.h"
 #include "lltimer.h"
 #include "llviewermessage.h"

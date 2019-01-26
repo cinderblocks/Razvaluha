@@ -32,6 +32,7 @@
 #ifndef LL_TOOLPIE_H
 #define LL_TOOLPIE_H
 
+#include "llsafehandle.h"
 #include "lltool.h"
 #include "lluuid.h"
 #include "llviewerwindow.h" // for LLPickInfo
@@ -42,8 +43,8 @@ class LLObjectSelection;
 class LLToolPie : public LLTool, public LLSingleton<LLToolPie>
 {
 	LOG_CLASS(LLToolPie);
+	LLSINGLETON(LLToolPie);
 public:
-	LLToolPie( );
 
 	// Virtual functions inherited from LLMouseHandler
 	virtual BOOL		handleAnyMouseClick(S32 x, S32 y, MASK mask, EClickType clicktype, BOOL down);

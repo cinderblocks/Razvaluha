@@ -47,6 +47,7 @@
 #include "llagent.h"
 #include "llviewercontrol.h"
 #include "llviewerregion.h"
+#include "roles_constants.h"
 
 class LLPanelGroupVoting::impl
 {

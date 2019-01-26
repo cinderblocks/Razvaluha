@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llxuiparser.cpp
  * @brief Utility functions for handling XUI structures in XML
@@ -38,8 +40,6 @@
 
 #include <fstream>
 #include <boost/tokenizer.hpp>
-#include <boost/bind.hpp>
-//#include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/classic_core.hpp>
 
 #include "lluicolor.h"
@@ -57,10 +57,6 @@ static 	LLInitParam::Parser::parser_write_func_map_t sSimpleXUIWriteFuncs;
 static 	LLInitParam::Parser::parser_inspect_func_map_t sSimpleXUIInspectFuncs;
 
 const char* NO_VALUE_MARKER = "no_value";
-
-#ifdef LL_WINDOWS
-const S32 LINE_NUMBER_HERE = 0;
-#endif
 
 struct MaxOccursValues : public LLInitParam::TypeValuesHelper<U32, MaxOccursValues>
 {
@@ -251,9 +247,9 @@ struct ComplexType : public LLInitParam::Block<ComplexType, ComplexTypeContents>
 
 	ComplexType()
 	:	name("name"),
+		mixed("mixed"),
 		attribute("xs:attribute"),
-		elements("xs:element"),
-		mixed("mixed")
+		elements("xs:element")
 	{
 	}
 };
@@ -298,11 +294,11 @@ public:
 	void setNameSpace(const std::string& ns) {targetNamespace = ns; xmlns = ns;}
 
 	Schema(const std::string& ns = LLStringUtil::null)
-	:	attributeFormDefault("attributeFormDefault"),
-		elementFormDefault("elementFormDefault"),
-		xs("xmlns:xs"),
-		targetNamespace("targetNamespace"),
+	:	targetNamespace("targetNamespace"),
 		xmlns("xmlns"),
+		xs("xmlns:xs"),
+		attributeFormDefault("attributeFormDefault"),
+		elementFormDefault("elementFormDefault"),
 		root_element("xs:element")
 	{
 		attributeFormDefault = "unqualified";
@@ -679,7 +675,7 @@ LLXUIParser::LLXUIParser()
 	}
 }
 
-LLTrace::BlockTimerStatHandle FTM_PARSE_XUI("XUI Parsing");
+static LLTrace::BlockTimerStatHandle FTM_PARSE_XUI("XUI Parsing");
 const LLXMLNodePtr DUMMY_NODE = new LLXMLNode();
 
 void LLXUIParser::readXUI(LLXMLNodePtr node, LLInitParam::BaseBlock& block, const std::string& filename, bool silent)
@@ -759,7 +755,7 @@ bool LLXUIParser::readXUIImpl(LLXMLNodePtr nodep, LLInitParam::BaseBlock& block)
 		// and if not, treat as a child element of the current node
 		// e.g. <button><rect left="10"/></button> will interpret <rect> as "button.rect"
 		// since there is no widget named "rect"
-		if (child_name.find(".") == std::string::npos) 
+		if (child_name.find('.') == std::string::npos) 
 		{
 			mNameStack.push_back(std::make_pair(child_name, true));
 			num_tokens_pushed++;
@@ -1313,22 +1309,14 @@ bool LLXUIParser::writeSDValue(Parser& parser, const void* val_ptr, name_stack_t
 
 void LLXUIParser::parserWarning(const std::string& message)
 {
-#ifdef LL_WINDOWS
-	// use Visual Studio friendly formatting of output message for easy access to originating xml
-	LL_INFOS() << llformat("%s(%d):\t%s", mCurFileName.c_str(), mCurReadNode->getLineNumber(), message.c_str()) << LL_ENDL;
-#else
-	Parser::parserWarning(message);
-#endif
+	std::string warning_msg = llformat("%s:\t%s(%d)", message.c_str(), mCurFileName.c_str(), mCurReadNode->getLineNumber());
+	Parser::parserWarning(warning_msg);
 }
 
 void LLXUIParser::parserError(const std::string& message)
 {
-#ifdef LL_WINDOWS
-    // use Visual Studio friendly formatting of output message for easy access to originating xml
-	LL_INFOS() << llformat("%s(%d):\t%s", mCurFileName.c_str(), mCurReadNode->getLineNumber(), message.c_str()) << LL_ENDL;
-#else
-	Parser::parserError(message);
-#endif
+	std::string error_msg = llformat("%s:\t%s(%d)", message.c_str(), mCurFileName.c_str(), mCurReadNode->getLineNumber());
+	Parser::parserError(error_msg);
 }
 
 
@@ -1366,7 +1354,9 @@ struct ScopedFile
 };
 LLSimpleXUIParser::LLSimpleXUIParser(LLSimpleXUIParser::element_start_callback_t element_cb)
 :	Parser(sSimpleXUIReadFuncs, sSimpleXUIWriteFuncs, sSimpleXUIInspectFuncs),
+	mParser(nullptr),
 	mCurReadDepth(0),
+	mCurAttributeValueBegin(nullptr),
 	mElementCB(element_cb)
 {
 	if (sSimpleXUIReadFuncs.empty())
@@ -1500,7 +1490,7 @@ void LLSimpleXUIParser::startElement(const char *name, const char **atts)
 	}
 	else
 	{	// compound attribute
-		if (child_name.find(".") == std::string::npos) 
+		if (child_name.find('.') == std::string::npos) 
 		{
 			mNameStack.push_back(std::make_pair(child_name, true));
 			num_tokens_pushed++;
@@ -1641,22 +1631,14 @@ bool LLSimpleXUIParser::processText()
 
 void LLSimpleXUIParser::parserWarning(const std::string& message)
 {
-#ifdef LL_WINDOWS
-	// use Visual Studio friendly formatting of output message for easy access to originating xml
-	LL_INFOS() << llformat("%s(%d):\t%s", mCurFileName.c_str(), LINE_NUMBER_HERE, message.c_str()) << LL_ENDL;
-#else
-	Parser::parserWarning(message);
-#endif
+	std::string warning_msg = llformat("%s:\t%s",  message.c_str(), mCurFileName.c_str());
+	Parser::parserWarning(warning_msg);
 }
 
 void LLSimpleXUIParser::parserError(const std::string& message)
 {
-#ifdef LL_WINDOWS
-        // use Visual Studio friendly formatting of output message for easy access to originating xml
-	LL_INFOS() << llformat("%s(%d):\t%s", mCurFileName.c_str(), LINE_NUMBER_HERE, message.c_str()) << LL_ENDL;
-#else
-	Parser::parserError(message);
-#endif
+	std::string error_msg = llformat("%s:\t%s",  message.c_str(), mCurFileName.c_str());
+	Parser::parserError(error_msg);
 }
 
 bool LLSimpleXUIParser::readFlag(Parser& parser, void* val_ptr)

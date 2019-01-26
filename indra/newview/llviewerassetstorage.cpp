@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llviewerassetstorage.cpp
  * @brief Subclass capable of loading asset data to/from an external source.
@@ -33,9 +35,19 @@
 #include "message.h"
 
 #include "llagent.h"
+#include "llappcorehttp.h"
+#include "llviewernetwork.h"
+#include "llviewerregion.h"
+
 #include "lltransfersourceasset.h"
 #include "lltransfertargetvfile.h"
 #include "llviewerassetstats.h"
+#include "llcoros.h"
+#include "llcoproceduremanager.h"
+#include "lleventcoro.h"
+#include "llsdutil.h"
+#include "llworld.h"
+#include "hippogridmanager.h"
 
 ///----------------------------------------------------------------------------
 /// LLViewerAssetRequest
@@ -51,13 +63,14 @@
 class LLViewerAssetRequest : public LLAssetRequest
 {
 public:
-	LLViewerAssetRequest(const LLUUID &uuid, const LLAssetType::EType type)
+	LLViewerAssetRequest(const LLUUID &uuid, const LLAssetType::EType type, bool with_http)
 		: LLAssetRequest(uuid, type),
-		  mMetricsStartTime(0)
+		  mMetricsStartTime(0),
+		  mWithHTTP(with_http)
 		{
 		}
 	
-	LLViewerAssetRequest & operator=(const LLViewerAssetRequest &);	// Not defined
+    LLViewerAssetRequest & operator=(const LLViewerAssetRequest &) = delete; // Not defined
 	// Default assignment operator valid
 	
 	// virtual
@@ -73,33 +86,48 @@ protected:
 			{
 				// Okay, it appears this request was used for useful things.  Record
 				// the expected dequeue and duration of request processing.
-				LLViewerAssetStatsFF::record_dequeue_main(mType, false, false);
-				LLViewerAssetStatsFF::record_response_main(mType, false, false,
-														   (LLViewerAssetStatsFF::get_timestamp()
-															- mMetricsStartTime));
+            /*LLViewerAssetStatsFF::record_dequeue(mType, mWithHTTP, false);
+            LLViewerAssetStatsFF::record_response(mType, mWithHTTP, false,
+												  (LLViewerAssetStatsFF::get_timestamp()
+                                                   - mMetricsStartTime),
+                                                  mBytesFetched);*/
 				mMetricsStartTime = (U32Seconds)0;
 			}
 		}
 	
 public:
 	LLViewerAssetStats::duration_t		mMetricsStartTime;
+	bool mWithHTTP;
 };
 
 ///----------------------------------------------------------------------------
 /// LLViewerAssetStorage
 ///----------------------------------------------------------------------------
 
+// Unused?
 LLViewerAssetStorage::LLViewerAssetStorage(LLMessageSystem *msg, LLXferManager *xfer,
 										   LLVFS *vfs, LLVFS *static_vfs, 
 										   const LLHost &upstream_host)
-		: LLAssetStorage(msg, xfer, vfs, static_vfs, upstream_host)
+    : LLAssetStorage(msg, xfer, vfs, static_vfs, upstream_host),
+      mAssetCoroCount(0),
+      mCountRequests(0),
+      mCountStarted(0),
+      mCountCompleted(0),
+      mCountSucceeded(0),
+      mTotalBytesFetched(0)
 {
 }
 
 
 LLViewerAssetStorage::LLViewerAssetStorage(LLMessageSystem *msg, LLXferManager *xfer,
 										   LLVFS *vfs, LLVFS *static_vfs)
-		: LLAssetStorage(msg, xfer, vfs, static_vfs)
+    : LLAssetStorage(msg, xfer, vfs, static_vfs),
+      mAssetCoroCount(0),
+      mCountRequests(0),
+      mCountStarted(0),
+      mCountCompleted(0),
+      mCountSucceeded(0),
+      mTotalBytesFetched(0)
 {
 }
 
@@ -138,7 +166,7 @@ void LLViewerAssetStorage::storeAssetData(
 			if (asset_size < 1)
 			{
 				// This can happen if there's a bug in our code or if the VFS has been corrupted.
-				LL_WARNS() << "LLViewerAssetStorage::storeAssetData()  Data _should_ already be in the VFS, but it's not! " << asset_id << LL_ENDL;
+				LL_WARNS("AssetStorage") << "LLViewerAssetStorage::storeAssetData()  Data _should_ already be in the VFS, but it's not! " << asset_id << LL_ENDL;
 				// LLAssetStorage metric: Zero size VFS
 				reportMetric( asset_id, asset_type, LLStringUtil::null, LLUUID::null, 0, MR_ZERO_SIZE, __FILE__, __LINE__, "The file didn't exist or was zero length (VFS - can't tell which)" );
 
@@ -179,7 +207,7 @@ void LLViewerAssetStorage::storeAssetData(
 				}
 				else
 				{
-					LL_WARNS() << "Probable corruption in VFS file, aborting store asset data" << LL_ENDL;
+					LL_WARNS("AssetStorage") << "Probable corruption in VFS file, aborting store asset data" << LL_ENDL;
 
 					// LLAssetStorage metric: VFS corrupt - bogus size
 					reportMetric( asset_id, asset_type, LLStringUtil::null, LLUUID::null, asset_size, MR_VFS_CORRUPTION, __FILE__, __LINE__, "VFS corruption" );
@@ -208,7 +236,7 @@ void LLViewerAssetStorage::storeAssetData(
 		}
 		else
 		{
-			LL_WARNS() << "AssetStorage: attempt to upload non-existent vfile " << asset_id << ":" << LLAssetType::lookup(asset_type) << LL_ENDL;
+			LL_WARNS("AssetStorage") << "AssetStorage: attempt to upload non-existent vfile " << asset_id << ":" << LLAssetType::lookup(asset_type) << LL_ENDL;
 			// LLAssetStorage metric: Zero size VFS
 			reportMetric( asset_id, asset_type, LLStringUtil::null, LLUUID::null, 0, MR_ZERO_SIZE, __FILE__, __LINE__, "The file didn't exist or was zero length (VFS - can't tell which)" );
 			if (callback)
@@ -219,7 +247,7 @@ void LLViewerAssetStorage::storeAssetData(
 	}
 	else
 	{
-		LL_WARNS() << "Attempt to move asset store request upstream w/o valid upstream provider" << LL_ENDL;
+		LL_WARNS("AssetStorage") << "Attempt to move asset store request upstream w/o valid upstream provider" << LL_ENDL;
 		// LLAssetStorage metric: Upstream provider dead
 		reportMetric( asset_id, asset_type, LLStringUtil::null, LLUUID::null, 0, MR_NO_UPSTREAM, __FILE__, __LINE__, "No upstream provider" );
 		if (callback)
@@ -316,7 +344,6 @@ void LLViewerAssetStorage::storeAssetData(
 	}
 }
 
-
 /**
  * @brief Allocate and queue an asset fetch request for the viewer
  *
@@ -343,10 +370,22 @@ void LLViewerAssetStorage::_queueDataRequest(
 	BOOL duplicate,
 	BOOL is_priority)
 {
-	if (mUpstreamHost.isOk())
-	{
-		// stash the callback info so we can find it after we get the response message
-		LLViewerAssetRequest *req = new LLViewerAssetRequest(uuid, atype);
+    mCountRequests++;
+    queueRequestHttp(uuid, atype, callback, user_data, duplicate, is_priority);
+}
+
+void LLViewerAssetStorage::queueRequestHttp(
+	const LLUUID& uuid,
+	LLAssetType::EType atype,
+	LLGetAssetCallback callback,
+	void *user_data,
+	BOOL duplicate,
+	BOOL is_priority)
+{
+    LL_DEBUGS("ViewerAsset") << "Request asset via HTTP " << uuid << " type " << LLAssetType::lookup(atype) << LL_ENDL;
+
+    bool with_http = true;
+		LLViewerAssetRequest *req = new LLViewerAssetRequest(uuid, atype, with_http);
 		req->mDownCallback = callback;
 		req->mUserData = user_data;
 		req->mIsPriority = is_priority;
@@ -356,11 +395,89 @@ void LLViewerAssetStorage::_queueDataRequest(
 			// are piggy-backing and will artificially lower averages.
 			req->mMetricsStartTime = LLViewerAssetStatsFF::get_timestamp();
 		}
-		
 		mPendingDownloads.push_back(req);
 	
+    // This is the same as the current UDP logic - don't re-request a duplicate.
 		if (!duplicate)
 		{
+        LLCoprocedureManager::instance().enqueueCoprocedure("AssetStorage","LLViewerAssetStorage::assetRequestCoro",
+            boost::bind(&LLViewerAssetStorage::assetRequestCoro, this, req, uuid, atype, callback, user_data));
+    }
+}
+
+void LLViewerAssetStorage::capsRecvForRegion(const LLUUID& region_id, std::string pumpname)
+{
+    LLViewerRegion *regionp = LLWorld::instance().getRegionFromID(region_id);
+    if (!regionp)
+    {
+        LL_WARNS("ViewerAsset") << "region not found for region_id " << region_id << LL_ENDL;
+    }
+    else
+    {
+        mViewerAssetUrl = regionp->getViewerAssetUrl();
+    }
+
+    LLEventPumps::instance().obtain(pumpname).post(LLSD());
+}
+
+struct LLScopedIncrement
+{
+    LLScopedIncrement(S32& counter):
+        mCounter(counter)
+    {
+        ++mCounter;
+    }
+    ~LLScopedIncrement()
+    {
+        --mCounter;
+    }
+    S32& mCounter;
+};
+
+void LLViewerAssetStorage::assetRequestCoro(
+    LLViewerAssetRequest *req,
+    const LLUUID uuid,
+    LLAssetType::EType atype,
+    LLGetAssetCallback callback,
+    void *user_data)
+{
+    LLScopedIncrement coro_count_boost(mAssetCoroCount);
+    mCountStarted++;
+    
+    S32 result_code = LL_ERR_NOERR;
+    LLExtStat ext_status = LL_EXSTAT_NONE;
+
+    if (!gAgent.getRegion())
+    {
+        LL_WARNS_ONCE("ViewerAsset") << "Asset request fails: no region set" << LL_ENDL;
+        result_code = LL_ERR_ASSET_REQUEST_FAILED;
+        ext_status = LL_EXSTAT_NONE;
+        removeAndCallbackPendingDownloads(uuid, atype, uuid, atype, result_code, ext_status);
+		return;
+    }
+    else if (!gAgent.getRegion()->capabilitiesReceived())
+    {
+        LL_WARNS_ONCE("ViewerAsset") << "Waiting for capabilities" << LL_ENDL;
+
+        LLEventStream capsRecv("waitForCaps", true);
+
+        gAgent.getRegion()->setCapabilitiesReceivedCallback(
+            boost::bind(&LLViewerAssetStorage::capsRecvForRegion, this, _1, capsRecv.getName()));
+        
+        llcoro::suspendUntilEventOn(capsRecv);
+        LL_WARNS_ONCE("ViewerAsset") << "capsRecv got event" << LL_ENDL;
+        LL_WARNS_ONCE("ViewerAsset") << "region " << gAgent.getRegion() << " mViewerAssetUrl " << mViewerAssetUrl << LL_ENDL;
+    }
+    if (mViewerAssetUrl.empty() && gAgent.getRegion())
+    {
+        mViewerAssetUrl = gAgent.getRegion()->getViewerAssetUrl();
+    }
+	if (mViewerAssetUrl.empty())
+	{
+		if (!gHippoGridManager->getCurrentGrid()->isSecondLife() && isUpstreamOK())
+		{
+			req->mWithHTTP = false;
+
 			// send request message to our upstream data provider
 			// Create a new asset transfer.
 			LLTransferSourceParamsAsset spa;
@@ -373,19 +490,113 @@ void LLViewerAssetStorage::_queueDataRequest(
 
 			LL_DEBUGS("AssetStorage") << "Starting transfer for " << uuid << LL_ENDL;
 			LLTransferTargetChannel *ttcp = gTransferManager.getTargetChannel(mUpstreamHost, LLTCT_ASSET);
-			ttcp->requestTransfer(spa, tpvf, 100.f + (is_priority ? 1.f : 0.f));
+			ttcp->requestTransfer(spa, tpvf, 100.f + (req->mIsPriority ? 1.f : 0.f));
 
-			LLViewerAssetStatsFF::record_enqueue_main(atype, false, false);
+			//LLViewerAssetStatsFF::record_enqueue(atype, req->mWithHTTP, false);
 		}
-	}
-	else
-	{
-		// uh-oh, we shouldn't have gotten here
-		LL_WARNS() << "Attempt to move asset data request upstream w/o valid upstream provider" << LL_ENDL;
-		if (callback)
+		else
 		{
-			callback(mVFS, uuid, atype, user_data, LL_ERR_CIRCUIT_GONE, LL_EXSTAT_NO_UPSTREAM);
+			LL_WARNS_ONCE("ViewerAsset") << "asset request fails: caps received but no viewer asset cap found or upstream circuit died 'circuit_status: " << isUpstreamOK() << "'"<<LL_ENDL;
+			result_code = LL_ERR_ASSET_REQUEST_FAILED;
+			ext_status = LL_EXSTAT_NONE;
+			removeAndCallbackPendingDownloads(uuid, atype, uuid, atype, result_code, ext_status);
+		}
+		return;
+	}
+
+    //LLViewerAssetStatsFF::record_enqueue(atype, req->mWithHTTP, false);
+
+    std::string url = getAssetURL(mViewerAssetUrl, uuid,atype);
+    LL_DEBUGS("ViewerAsset") << "request url: " << url << LL_ENDL;
+
+    LLCore::HttpRequest::policy_t httpPolicy(LLAppCoreHttp::AP_ASSET);
+    LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t
+        httpAdapter(new LLCoreHttpUtil::HttpCoroutineAdapter("assetRequestCoro", httpPolicy));
+    LLCore::HttpRequest::ptr_t httpRequest(new LLCore::HttpRequest);
+    LLCore::HttpOptions::ptr_t httpOpts = boost::make_shared<LLCore::HttpOptions>();
+
+    LLSD result = httpAdapter->getRawAndSuspend(httpRequest, url, httpOpts);
+
+    if (LLApp::isQuitting())
+    {
+        // Bail out if result arrives after shutdown has been started.
+        return;
+    }
+
+    mCountCompleted++;
+    
+    LLSD httpResults = result[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS];
+    LLCore::HttpStatus status = LLCoreHttpUtil::HttpCoroutineAdapter::getStatusFromLLSD(httpResults);
+    if (!status)
+    {
+        LL_DEBUGS("ViewerAsset") << "request failed, status " << status.toTerseString() << LL_ENDL;
+        result_code = LL_ERR_ASSET_REQUEST_FAILED;
+        ext_status = LL_EXSTAT_NONE;
+    }
+    else
+    {
+        LL_DEBUGS("ViewerAsset") << "request succeeded, url " << url << LL_ENDL;
+
+        const LLSD::Binary &raw = result[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS_RAW].asBinary();
+
+        S32 size = raw.size();
+        if (size > 0)
+        {
+            mTotalBytesFetched += size;
+            
+			// This create-then-rename flow is modeled on
+			// LLTransferTargetVFile, which is what was used in the UDP
+			// case.
+            LLUUID temp_id;
+            temp_id.generate();
+            LLVFile vf(gAssetStorage->mVFS, temp_id, atype, LLVFile::WRITE);
+            vf.setMaxSize(size);
+            req->mBytesFetched = size;
+            if (!vf.write(raw.data(),size))
+            {
+                // TODO asset-http: handle error
+                LL_WARNS("ViewerAsset") << "Failure in vf.write()" << LL_ENDL;
+                result_code = LL_ERR_ASSET_REQUEST_FAILED;
+                ext_status = LL_EXSTAT_VFS_CORRUPT;
+			}
+            else if (!vf.rename(uuid, atype))
+            {
+                LL_WARNS("ViewerAsset") << "rename failed" << LL_ENDL;
+                result_code = LL_ERR_ASSET_REQUEST_FAILED;
+                ext_status = LL_EXSTAT_VFS_CORRUPT;
+			}
+			else
+			{
+		        mCountSucceeded++;
+		    }
+        }
+        else
+		{
+            // TODO asset-http: handle invalid size case
+			LL_WARNS("ViewerAsset") << "bad size" << LL_ENDL;
+            result_code = LL_ERR_ASSET_REQUEST_FAILED;
+            ext_status = LL_EXSTAT_NONE;
 		}
 	}
+
+    // Clean up pending downloads and trigger callbacks
+    removeAndCallbackPendingDownloads(uuid, atype, uuid, atype, result_code, ext_status);
 }
 
+std::string LLViewerAssetStorage::getAssetURL(const std::string& cap_url, const LLUUID& uuid, LLAssetType::EType atype)
+{
+    std::string type_name = LLAssetType::lookup(atype);
+    std::string url = cap_url + "/?" + type_name + "_id=" + uuid.asString();
+    return url;
+}
+
+void LLViewerAssetStorage::logAssetStorageInfo()
+{
+    LLMemory::logMemoryInfo(true);
+    LL_INFOS("AssetStorage") << "Active coros " << mAssetCoroCount << LL_ENDL;
+    LL_INFOS("AssetStorage") << "mPendingDownloads size " << mPendingDownloads.size() << LL_ENDL;
+    LL_INFOS("AssetStorage") << "mCountStarted " << mCountStarted << LL_ENDL;
+    LL_INFOS("AssetStorage") << "mCountCompleted " << mCountCompleted << LL_ENDL;
+    LL_INFOS("AssetStorage") << "mCountSucceeded " << mCountSucceeded << LL_ENDL;
+    LL_INFOS("AssetStorage") << "mTotalBytesFetched " << mTotalBytesFetched << LL_ENDL;
+}

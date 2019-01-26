@@ -2,31 +2,25 @@
  * @file llvoicevisualizer.h
  * @brief Draws in-world speaking indicators.
  *
- * $LicenseInfo:firstyear=2000&license=viewergpl$
- * 
- * Copyright (c) 2000-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2000&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -77,7 +71,7 @@ class LLVoiceVisualizer : public LLHUDEffect
 	// public methods 
 	//---------------------------------------------------
 	public:
-		LLVoiceVisualizer ( const U8 type );	//constructor
+		LLVoiceVisualizer( const U8 type );	//constructor
 		~LLVoiceVisualizer();					//destructor
 		
 		friend class LLHUDObject;
@@ -91,13 +85,11 @@ class LLVoiceVisualizer : public LLHUDEffect
 		void					setStopSpeaking();										// tell me when the av stops speaking
 		bool					getCurrentlySpeaking();									// the get for the above set
 		VoiceGesticulationLevel	getCurrentGesticulationLevel();							// based on voice amplitude, I'll give you the current "energy level" of avatar speech
-		static void				setPreferences( );
-		static void				lipStringToF32s ( std::string& in_string, F32*& out_F32s, U32& count_F32s ); // convert a string of digits to an array of floats
 		void					lipSyncOohAah( F32& ooh, F32& aah );
-		void					render();												// inherited from HUD Effect
-		void 					packData(LLMessageSystem *mesgsys);						// inherited from HUD Effect
-		void 					unpackData(LLMessageSystem *mesgsys, S32 blocknum);		// inherited from HUD Effect
-		void					markDead();											// inherited from HUD Effect
+		void					render() override;												// inherited from HUD Effect
+		void 					packData(LLMessageSystem *mesgsys) override;						// inherited from HUD Effect
+		void 					unpackData(LLMessageSystem *mesgsys, S32 blocknum) override;		// inherited from HUD Effect
+		void					markDead() override;											// inherited from HUD Effect
 		
 		//----------------------------------------------------------------------------------------------
 		// "setMaxGesticulationAmplitude" and "setMinGesticulationAmplitude" allow for the tuning of the 
@@ -114,14 +106,17 @@ class LLVoiceVisualizer : public LLHUDEffect
 	// private members 
 	//---------------------------------------------------
 	private:
-	
+		static bool				handleVoiceVisualizerPrefsChanged(const LLSD& newvalue);
+		static void				setPreferences( );
+		static void				lipStringToF32s ( std::string& in_string, F32*& out_F32s, U32& count_F32s ); // convert a string of digits to an array of floats
+
 		struct SoundSymbol
 		{
 			F32						mWaveExpansion			[ NUM_VOICE_SYMBOL_WAVES ];
 			bool					mWaveActive				[ NUM_VOICE_SYMBOL_WAVES ];
 			F64						mWaveFadeOutStartTime	[ NUM_VOICE_SYMBOL_WAVES ];
 			F32						mWaveOpacity			[ NUM_VOICE_SYMBOL_WAVES ];
-			LLPointer<LLViewerTexture>	mTexture				[ NUM_VOICE_SYMBOL_WAVES ];
+			LLPointer<LLViewerFetchedTexture>	mTexture				[ NUM_VOICE_SYMBOL_WAVES ];
 			bool					mActive;
 			LLVector3				mPosition;
 		};

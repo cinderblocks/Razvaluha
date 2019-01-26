@@ -34,6 +34,7 @@
 #include "v3math.h"
 #include "v4math.h"
 #include "m4math.h"
+#include "lltrace.h"
 #include "llvector4a.h"
 #include "llquaternion.h"
 #include "lloctree.h"

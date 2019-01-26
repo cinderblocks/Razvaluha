@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file lldaycyclemanager.cpp
  * @brief Implementation for the LLDayCycleManager class.
@@ -26,10 +28,8 @@
 
 #include "llviewerprecompiledheaders.h"
 
-#include "llweb.h"
-#include "llwlparamset.h"
-#include "llwlparammanager.h"
 #include "lldaycyclemanager.h"
+
 #include "lldiriterator.h"
 
 // [RLVa:KB] - Checked: 2011-09-04 (RLVa-1.4.1a) | Added: RLVa-1.4.1a
@@ -69,11 +69,9 @@ void LLDayCycleManager::getPresetNames(preset_name_list_t& user, preset_name_lis
 // [RLVa:KB] - Checked: 2011-09-04 (RLVa-1.4.1a) | Added: RLVa-1.4.1a
 const std::string& LLDayCycleManager::findPreset(const std::string& strPresetName)
 {
-	for (dc_map_t::const_iterator itCycle = mDayCycleMap.begin(); itCycle != mDayCycleMap.end(); ++itCycle)
-	{
-		if (boost::iequals(itCycle->first, strPresetName))
-			return itCycle->first;
-	}
+	for (auto& cycle : mDayCycleMap)
+		if (boost::iequals(cycle.first, strPresetName))
+			return cycle.first;
 	return LLStringUtil::null;
 }
 // [/RLVa:KB]
@@ -116,7 +114,7 @@ bool LLDayCycleManager::presetExists(const std::string name) const
 
 bool LLDayCycleManager::isSystemPreset(const std::string& name) const
 {
-	return gDirUtilp->fileExists(getSysDir() +  LLWeb::curlEscape(name) + ".xml");
+	return gDirUtilp->fileExists(getSysDir() + LLURI::escape(name) + ".xml");
 }
 
 bool LLDayCycleManager::savePreset(const std::string& name, const LLSD& data)
@@ -124,7 +122,7 @@ bool LLDayCycleManager::savePreset(const std::string& name, const LLSD& data)
 	// Save given preset.
 	LLWLDayCycle day;
 	day.loadDayCycle(data, LLEnvKey::SCOPE_LOCAL);
-	day.save(getUserDir() + LLWeb::curlEscape(name) + ".xml");
+	day.save(getUserDir() + LLURI::escape(name) + ".xml");
 
 	// Add it to our map.
 	addPreset(name, data);
@@ -144,7 +142,7 @@ bool LLDayCycleManager::deletePreset(const std::string& name)
 	mDayCycleMap.erase(it);
 
 	// Remove from the filesystem.
-	std::string filename =  LLWeb::curlEscape(name) + ".xml";
+	std::string filename = LLURI::escape(name) + ".xml";
 	if (gDirUtilp->fileExists(getUserDir() + filename))
 	{
 		gDirUtilp->deleteFilesInDir(getUserDir(), filename);
@@ -198,7 +196,7 @@ void LLDayCycleManager::loadPresets(const std::string& dir)
 {
 	LLDirIterator dir_iter(dir, "*.xml");
 
-	while (1)
+	while (true)
 	{
 		std::string file;
 		if (!dir_iter.next(file)) break; // no more files
@@ -225,7 +223,6 @@ bool LLDayCycleManager::addPreset(const std::string& name, const LLSD& data)
 {
 	if (name.empty())
 	{
-		llassert(name.empty());
 		return false;
 	}
 

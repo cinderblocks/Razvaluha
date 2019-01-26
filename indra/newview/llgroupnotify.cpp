@@ -172,8 +172,8 @@ LLGroupNotifyBox::LLGroupNotifyBox(const std::string& subject,
 		LLFontGL::getFontSansSerif(),
 		FALSE);
 
-	static const LLStyleSP headerstyle(new LLStyle(true,LLColor4::black,"SansSerifBig"));
-	static const LLStyleSP datestyle(new LLStyle(true,LLColor4::black,"serif"));
+	static const LLStyleSP headerstyle(new LLStyle(true,LLColor4::black,"SANSSERIF_BIG"));
+	static const LLStyleSP datestyle(new LLStyle(true,LLColor4::black,"SANSSERIF"));
 
 	text->appendStyledText(subject + "\n",false,false,headerstyle);
 

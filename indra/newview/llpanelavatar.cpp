@@ -34,7 +34,6 @@
 
 #include "llpanelavatar.h"
 
-#include "llavatarconstants.h"
 #include "llavatarnamecache.h"
 #include "llbutton.h"
 #include "llcheckboxctrl.h"
@@ -79,7 +78,7 @@ std::list<LLPanelAvatar*> LLPanelAvatar::sAllPanels;
 BOOL LLPanelAvatar::sAllowFirstLife = FALSE;
 
 BOOL is_agent_mappable(const LLUUID& agent_id);
-
+constexpr S32 MAX_AVATAR_PICKS = 10;
 
 //-----------------------------------------------------------------------------
 // LLPanelAvatarTab()
@@ -1324,6 +1323,7 @@ void LLPanelAvatar::setAvatarID(const LLUUID &avatar_id)
 	view = getChildView("Pay...");
 	view->setVisible(!own_avatar);
 	view->setEnabled(false);
+	getChildView("Log")->setVisible(!own_avatar);
 
 	getChild<LLNameEditor>("avatar_key")->setText(avatar_id.asString());
 

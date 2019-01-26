@@ -126,7 +126,7 @@ LLViewerObject* JCFloaterAreaSearch::getSelectedObject()
 void JCFloaterAreaSearch::onDoubleClick()
 {
 	if (LLViewerObject* objectp = getSelectedObject())
-		LLTracker::trackLocation(objectp->getPositionGlobal(), mCachedObjects[objectp->getID()].name, "", LLTracker::LOCATION_ITEM);
+		LLTracker::instance().trackLocation(objectp->getPositionGlobal(), mCachedObjects[objectp->getID()].name, "", LLTracker::LOCATION_ITEM);
 }
 
 void JCFloaterAreaSearch::teleportToSelected()
@@ -211,8 +211,7 @@ void JCFloaterAreaSearch::results()
 		LLViewerObject *objectp = gObjectList.getObject(i);
 		if (objectp)
 		{
-			if (objectp->getRegion() == our_region && !objectp->isAvatar() && objectp->isRoot() &&
-				!objectp->flagTemporary() && !objectp->flagTemporaryOnRez())
+			if (objectp->getRegion() == our_region && !objectp->isAvatar() && objectp->isRoot() && !objectp->flagTemporaryOnRez())
 			{
 				LLUUID object_id = objectp->getID();
 				if(!requestIfNeeded(object_id))

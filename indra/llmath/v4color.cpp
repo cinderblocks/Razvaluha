@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file v4color.cpp
  * @brief LLColor4 class implementation.
@@ -26,7 +28,7 @@
 
 #include "linden_common.h"
 
-#include "llboost.h"
+#include <boost/tokenizer.hpp>
 
 #include "v4color.h"
 #include "v4coloru.h"
@@ -124,11 +126,7 @@ LLColor4 LLColor4::cyan6(0.2f, 0.6f, 0.6f, 1.0f);
 // conversion
 LLColor4::operator const LLColor4U() const
 {
-	return LLColor4U(
-		(U8)llclampb(ll_round(mV[VRED]*255.f)),
-		(U8)llclampb(ll_round(mV[VGREEN]*255.f)),
-		(U8)llclampb(ll_round(mV[VBLUE]*255.f)),
-		(U8)llclampb(ll_round(mV[VALPHA]*255.f)));
+	return LLColor4U(*this);
 }
 
 LLColor4::LLColor4(const LLColor3 &vec, F32 a)
@@ -387,13 +385,13 @@ void LLColor4::calcHSL(F32* hue, F32* saturation, F32* luminance) const
 // static
 BOOL LLColor4::parseColor(const std::string& buf, LLColor4* color)
 {
-	if( buf.empty() || color == NULL)
+	if( buf.empty() || color == nullptr)
 	{
 		return FALSE;
 	}
 
-	boost_tokenizer tokens(buf, boost::char_separator<char>(", "));
-	boost_tokenizer::iterator token_iter = tokens.begin();
+	boost::tokenizer<boost::char_separator<char> > tokens(buf, boost::char_separator<char>(", "));
+	boost::tokenizer<boost::char_separator<char>>::iterator token_iter = tokens.begin();
 	if (token_iter == tokens.end())
 	{
 		return FALSE;
@@ -700,7 +698,7 @@ BOOL LLColor4::parseColor(const std::string& buf, LLColor4* color)
 		}
 		else if ( "clear" == color_name || "transparent" == color_name )
 		{
-			color->set(LLColor4::transparent);
+			color->set(0.f, 0.f, 0.f, 0.f);
 		}
 		else
 		{
@@ -714,7 +712,7 @@ BOOL LLColor4::parseColor(const std::string& buf, LLColor4* color)
 // static
 BOOL LLColor4::parseColor4(const std::string& buf, LLColor4* value)
 {
-	if( buf.empty() || value == NULL)
+	if( buf.empty() || value == nullptr)
 	{
 		return FALSE;
 	}

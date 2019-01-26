@@ -35,6 +35,7 @@
 #define LL_LLFLOATERTELEHUB_H
 
 #include "llfloater.h"
+#include "llsafehandle.h"
 
 class LLMessageSystem;
 class LLObjectSelection;

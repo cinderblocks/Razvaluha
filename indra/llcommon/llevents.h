@@ -37,23 +37,21 @@
 #include <set>
 #include <vector>
 #include <deque>
-#include <stdexcept>
 
 #include <boost/signals2.hpp>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/utility.hpp>        // noncopyable
 #include <boost/optional/optional.hpp>
 #include <boost/visit_each.hpp>
 #include <boost/ref.hpp>            // reference_wrapper
-#include <boost/type_traits/is_pointer.hpp>
-#include <boost/function.hpp>
 #include <boost/static_assert.hpp>
 #include "llsd.h"
 #include "llsingleton.h"
 #include "lldependencies.h"
 #include "llstl.h"
+#include "llexception.h"
+#include "llhandle.h"
 
 /*==========================================================================*|
 // override this to allow binding free functions with more parameters
@@ -87,12 +85,32 @@ struct LLStopWhenHandled
     result_type operator()(InputIterator first, InputIterator last) const
     {
         for (InputIterator si = first; si != last; ++si)
-		{
-            if (*si)
-			{
-                return true;
-			}
-		}
+        {
+            try
+            {
+                if (*si)
+                {
+                    return true;
+                }
+            }
+            catch (const LLContinueError&)
+            {
+                // We catch LLContinueError here because an LLContinueError-
+                // based exception means the viewer as a whole should carry on
+                // to the best of our ability. Therefore subsequent listeners
+                // on the same LLEventPump should still receive this event.
+
+                // The iterator passed to a boost::signals2 Combiner is very
+                // clever, but provides no contextual information. We would
+                // very much like to be able to log the name of the LLEventPump
+                // plus the name of this particular listener, but alas.
+                LOG_UNHANDLED_EXCEPTION("LLEventPump");
+            }
+            // We do NOT catch (...) here because we might as well let it
+            // propagate out to the generic handler. If we were able to log
+            // context information here, that would be great, but we can't, so
+            // there's no point.
+        }
         return false;
     }
 };
@@ -180,10 +198,10 @@ public:
     bool operator()(const LLSD& event) const;
 
     /// exception if you try to call when empty
-    struct Empty: public std::runtime_error
+    struct Empty: public LLException
     {
         Empty(const std::string& what):
-            std::runtime_error(std::string("LLListenerOrPumpName::Empty: ") + what) {}
+            LLException(std::string("LLListenerOrPumpName::Empty: ") + what) {}
     };
 
 private:
@@ -199,9 +217,17 @@ class LLEventPump;
  * LLEventPumps is a Singleton manager through which one typically accesses
  * this subsystem.
  */
-class LL_COMMON_API LLEventPumps: public LLSingleton<LLEventPumps>
+// LLEventPumps isa LLHandleProvider only for (hopefully rare) long-lived
+// class objects that must refer to this class late in their lifespan, say in
+// the destructor. Specifically, the case that matters is a possible reference
+// after LLEventPumps::deleteSingleton(). (Lingering LLEventPump instances are
+// capable of this.) In that case, instead of calling LLEventPumps::instance()
+// again -- resurrecting the deleted LLSingleton -- store an
+// LLHandle<LLEventPumps> and test it before use.
+class LL_COMMON_API LLEventPumps: public LLSingleton<LLEventPumps>,
+                                  public LLHandleProvider<LLEventPumps>
 {
-    friend class LLSingleton<LLEventPumps>;
+    LLSINGLETON(LLEventPumps);
 public:
     /**
      * Find or create an LLEventPump instance with a specific name. We return
@@ -244,7 +270,6 @@ private:
     void unregister(const LLEventPump&);
 
 private:
-    LLEventPumps();
     ~LLEventPumps();
 
 testable:
@@ -276,7 +301,7 @@ namespace LLEventDetail
     /// Any callable capable of connecting an LLEventListener to an
     /// LLStandardSignal to produce an LLBoundListener can be mapped to this
     /// signature.
-    typedef boost::function<LLBoundListener(const LLEventListener&)> ConnectFunc;
+    typedef std::function<LLBoundListener(const LLEventListener&)> ConnectFunc;
 
     /// overload of visit_and_connect() when we have a string identifier available
     template <typename LISTENER>
@@ -357,16 +382,18 @@ typedef boost::signals2::trackable LLEventTrackable;
 class LL_COMMON_API LLEventPump: public LLEventTrackable
 {
 public:
+    static const std::string ANONYMOUS; // constant for anonymous listeners.
+
     /**
      * Exception thrown by LLEventPump(). You are trying to instantiate an
      * LLEventPump (subclass) using the same name as some other instance, and
      * you didn't pass <tt>tweak=true</tt> to permit it to generate a unique
      * variant.
      */
-    struct DupPumpName: public std::runtime_error
+    struct DupPumpName: public LLException
     {
         DupPumpName(const std::string& what):
-            std::runtime_error(std::string("DupPumpName: ") + what) {}
+            LLException(std::string("DupPumpName: ") + what) {}
     };
 
     /**
@@ -391,9 +418,9 @@ public:
     /// group exceptions thrown by listen(). We use exceptions because these
     /// particular errors are likely to be coding errors, found and fixed by
     /// the developer even before preliminary checkin.
-    struct ListenError: public std::runtime_error
+    struct ListenError: public LLException
     {
-        ListenError(const std::string& what): std::runtime_error(what) {}
+        ListenError(const std::string& what): LLException(what) {}
     };
     /**
      * exception thrown by listen(). You are attempting to register a
@@ -468,6 +495,12 @@ public:
      * instantiate your listener, then passing the same name on each listen()
      * call, allows us to optimize away the second and subsequent dependency
      * sorts.
+     * 
+     * If name is set to LLEventPump::ANONYMOUS listen will bypass the entire 
+     * dependency and ordering calculation. In this case, it is critical that 
+     * the result be assigned to a LLTempBoundListener or the listener is 
+     * manually disconnected when no longer needed since there will be no
+     * way to later find and disconnect this listener manually.
      *
      * If (as is typical) you pass a <tt>boost::bind()</tt> expression as @a
      * listener, listen() will inspect the components of that expression. If a
@@ -555,6 +588,9 @@ private:
         return this->listen_impl(name, listener, after, before);
     }
 
+    // must precede mName; see LLEventPump::LLEventPump()
+    LLHandle<LLEventPumps> mRegistry;
+
     std::string mName;
 
 protected:
@@ -596,7 +632,7 @@ public:
     virtual ~LLEventStream() {}
 
     /// Post an event to all listeners
-    virtual bool post(const LLSD& event);
+	bool post(const LLSD& event) override;
 };
 
 /*****************************************************************************
@@ -608,6 +644,12 @@ public:
  * a queue. Subsequent attaching listeners will receive stored events from the queue 
  * until a listener indicates that the event has been handled.  In order to receive 
  * multiple events from a mail drop the listener must disconnect and reconnect.
+ * 
+ * @NOTE: When using an LLEventMailDrop (or LLEventQueue) with a LLEventTimeout or
+ * LLEventFilter attaching the filter downstream using Timeout's constructor will
+ * cause the MailDrop to discharge any of it's stored events. The timeout should 
+ * instead be connected upstream using its listen() method.  
+ * See llcoro::suspendUntilEventOnWithTimeout() for an example.
  */
 class LL_COMMON_API LLEventMailDrop : public LLEventStream
 {
@@ -616,12 +658,12 @@ public:
     virtual ~LLEventMailDrop() {}
     
     /// Post an event to all listeners
-    virtual bool post(const LLSD& event);
+	bool post(const LLSD& event) override;
     
 protected:
-    virtual LLBoundListener listen_impl(const std::string& name, const LLEventListener&,
+	LLBoundListener listen_impl(const std::string& name, const LLEventListener&,
                                         const NameList& after,
-                                        const NameList& before);
+                                        const NameList& before) override;
 
 private:
     typedef std::list<LLSD> EventList;
@@ -642,11 +684,11 @@ public:
     virtual ~LLEventQueue() {}
 
     /// Post an event to all listeners
-    virtual bool post(const LLSD& event);
+	bool post(const LLSD& event) override;
 
 private:
     /// flush queued events
-    virtual void flush();
+	void flush() override;
 
 private:
     typedef std::deque<LLSD> EventQueue;

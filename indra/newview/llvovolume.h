@@ -2,31 +2,25 @@
  * @file llvovolume.h
  * @brief LLVOVolume class header file
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -37,10 +31,8 @@
 #include "llviewertexture.h"
 #include "llviewermedia.h"
 #include "llframetimer.h"
-#include "llapr.h"
 #include "m3math.h"		// LLMatrix3
 #include "m4math.h"		// LLMatrix4
-#include <map>
 
 class LLViewerTextureAnim;
 class LLDrawPool;
@@ -113,54 +105,45 @@ public:
 							(1 << LLVertexBuffer::TYPE_COLOR)
 	};
 
-	void* operator new(size_t size)
-	{
-		return ll_aligned_malloc_16(size);
-	}
-
-	void operator delete(void* ptr)
-	{
-		ll_aligned_free_16(ptr);
-	}
-
 public:
 						LLVOVolume(const LLUUID &id, const LLPCode pcode, LLViewerRegion *regionp);
-	/*virtual*/ void markDead();		// Override (and call through to parent) to clean up media references
+	/*virtual*/ void markDead() override;		// Override (and call through to parent) to clean up media references
 
-	/*virtual*/ LLDrawable* createDrawable(LLPipeline *pipeline);
+	/*virtual*/ LLDrawable* createDrawable(LLPipeline *pipeline) override;
 
 				void	deleteFaces();
 
 				void	animateTextures();
 	
 	            BOOL    isVisible() const ;
-	/*virtual*/ BOOL	isActive() const;
-	/*virtual*/ BOOL	isAttachment() const;
-	/*virtual*/ BOOL	isRootEdit() const; // overridden for sake of attachments treating themselves as a root object
-	/*virtual*/ BOOL	isHUDAttachment() const;
+	/*virtual*/ BOOL	isActive() const override;
+	/*virtual*/ BOOL	isAttachment() const override;
+	/*virtual*/ BOOL	isRootEdit() const override; // overridden for sake of attachments treating themselves as a root object
+	/*virtual*/ BOOL	isHUDAttachment() const override;
 
 				void	generateSilhouette(LLSelectNode* nodep, const LLVector3& view_point);
-	/*virtual*/	BOOL	setParent(LLViewerObject* parent);
-				S32		getLOD() const							{ return mLOD; }
-	const LLVector3		getPivotPositionAgent() const;
+	/*virtual*/	BOOL	setParent(LLViewerObject* parent) override;
+				S32		getLOD() const override { return mLOD; }
+	const LLVector3		getPivotPositionAgent() const override;
 	const LLMatrix4a&	getRelativeXform() const				{ return mRelativeXform; }
 	const LLMatrix4a&	getRelativeXformInvTrans() const		{ return mRelativeXformInvTrans; }
-	/*virtual*/	const LLMatrix4a&	getRenderMatrix() const;
+	/*virtual*/	const LLMatrix4a&	getRenderMatrix() const override;
 	typedef std::map<LLUUID, S32> texture_cost_t;
 				U32 	getRenderCost(texture_cost_t &textures) const;
-	/*virtual*/	F32		getStreamingCost(S32* bytes = NULL, S32* visible_bytes = NULL, F32* unscaled_value = NULL) const;
+				F32		getStreamingCost(S32* bytes, S32* visible_bytes, F32* unscaled_value) const override;
+	/*virtual*/	F32		getStreamingCost(S32* bytes = nullptr, S32* visible_bytes = nullptr) { return getStreamingCost(bytes, visible_bytes, nullptr); }
 
-	/*virtual*/ U32		getTriangleCount(S32* vcount = NULL) const;
-	/*virtual*/ U32		getHighLODTriangleCount();
+	/*virtual*/ U32		getTriangleCount(S32* vcount = nullptr) const override;
+	/*virtual*/ U32		getHighLODTriangleCount() override;
 	/*virtual*/ BOOL lineSegmentIntersect(const LLVector4a& start, const LLVector4a& end, 
 										  S32 face = -1,                        // which face to check, -1 = ALL_SIDES
 										  BOOL pick_transparent = FALSE,
-										  S32* face_hit = NULL,                 // which face was hit
-										  LLVector4a* intersection = NULL,       // return the intersection point
-										  LLVector2* tex_coord = NULL,          // return the texture coordinates of the intersection point
-										  LLVector4a* normal = NULL,             // return the surface normal at the intersection point
-										  LLVector4a* tangent = NULL           // return the surface tangent at the intersection point
-		);
+										  S32* face_hit = nullptr,                 // which face was hit
+										  LLVector4a* intersection = nullptr,       // return the intersection point
+										  LLVector2* tex_coord = nullptr,          // return the texture coordinates of the intersection point
+										  LLVector4a* normal = nullptr,             // return the surface normal at the intersection point
+										  LLVector4a* tangent = nullptr           // return the surface tangent at the intersection point
+		) override;
 	
 				LLVector3 agentPositionToVolume(const LLVector3& pos) const;
 				LLVector3 agentDirectionToVolume(const LLVector3& dir) const;
@@ -176,48 +159,49 @@ public:
 				void	markForUpdate(BOOL priority)			{ LLViewerObject::markForUpdate(priority); mVolumeChanged = TRUE; }
 				void    faceMappingChanged()                    { mFaceMappingChanged=TRUE; };
 
-	/*virtual*/ void	onShift(const LLVector4a &shift_vector); // Called when the drawable shifts
+	/*virtual*/ void	onShift(const LLVector4a &shift_vector) override; // Called when the drawable shifts
 
-	/*virtual*/ void	parameterChanged(U16 param_type, bool local_origin);
-	/*virtual*/ void	parameterChanged(U16 param_type, LLNetworkData* data, BOOL in_use, bool local_origin);
+	/*virtual*/ void	parameterChanged(U16 param_type, bool local_origin) override;
+	/*virtual*/ void	parameterChanged(U16 param_type, LLNetworkData* data, BOOL in_use, bool local_origin) override;
 
 	/*virtual*/ U32		processUpdateMessage(LLMessageSystem *mesgsys,
 											void **user_data,
-											U32 block_num, const EObjectUpdateType update_type,
-											LLDataPacker *dp);
+											U32 block_num, 
+											const EObjectUpdateType update_type,
+											LLDataPacker *dp) override;
 
-	/*virtual*/ void	setSelected(BOOL sel);
-	/*virtual*/ BOOL	setDrawableParent(LLDrawable* parentp);
+	/*virtual*/ void	setSelected(BOOL sel) override;
+	/*virtual*/ BOOL	setDrawableParent(LLDrawable* parentp) override;
 
-	/*virtual*/ void	setScale(const LLVector3 &scale, BOOL damped);
+	/*virtual*/ void	setScale(const LLVector3 &scale, BOOL damped) override;
 
-	/*virtual*/ void    changeTEImage(S32 index, LLViewerTexture* new_image)  ;
-	/*virtual*/ void	setNumTEs(const U8 num_tes);
-	/*virtual*/ void	setTEImage(const U8 te, LLViewerTexture *imagep);
-	/*virtual*/ S32		setTETexture(const U8 te, const LLUUID &uuid);
-	/*virtual*/ S32		setTEColor(const U8 te, const LLColor3 &color);
-	/*virtual*/ S32		setTEColor(const U8 te, const LLColor4 &color);
-	/*virtual*/ S32		setTEBumpmap(const U8 te, const U8 bump);
-	/*virtual*/ S32		setTEShiny(const U8 te, const U8 shiny);
-	/*virtual*/ S32		setTEFullbright(const U8 te, const U8 fullbright);
-	/*virtual*/ S32		setTEBumpShinyFullbright(const U8 te, const U8 bump);
-	/*virtual*/ S32		setTEMediaFlags(const U8 te, const U8 media_flags);
-	/*virtual*/ S32		setTEGlow(const U8 te, const F32 glow);
-	/*virtual*/ S32		setTEMaterialID(const U8 te, const LLMaterialID& pMaterialID);
+	/*virtual*/ void    changeTEImage(S32 index, LLViewerTexture* new_image) override;
+	/*virtual*/ void	setNumTEs(const U8 num_tes) override;
+	/*virtual*/ void	setTEImage(const U8 te, LLViewerTexture *imagep) override;
+	/*virtual*/ S32		setTETexture(const U8 te, const LLUUID &uuid) override;
+	/*virtual*/ S32		setTEColor(const U8 te, const LLColor3 &color) override;
+	/*virtual*/ S32		setTEColor(const U8 te, const LLColor4 &color) override;
+	/*virtual*/ S32		setTEBumpmap(const U8 te, const U8 bump) override;
+	/*virtual*/ S32		setTEShiny(const U8 te, const U8 shiny) override;
+	/*virtual*/ S32		setTEFullbright(const U8 te, const U8 fullbright) override;
+	/*virtual*/ S32		setTEBumpShinyFullbright(const U8 te, const U8 bump) override;
+	/*virtual*/ S32		setTEMediaFlags(const U8 te, const U8 media_flags) override;
+	/*virtual*/ S32		setTEGlow(const U8 te, const F32 glow) override;
+	/*virtual*/ S32		setTEMaterialID(const U8 te, const LLMaterialID& pMaterialID) override;
 	
 	static void	setTEMaterialParamsCallbackTE(const LLUUID& objectID, const LLMaterialID& pMaterialID, const LLMaterialPtr pMaterialParams, U32 te);
 
-	/*virtual*/ S32		setTEMaterialParams(const U8 te, const LLMaterialPtr pMaterialParams);
-	/*virtual*/ S32		setTEScale(const U8 te, const F32 s, const F32 t);
-	/*virtual*/ S32		setTEScaleS(const U8 te, const F32 s);
-	/*virtual*/ S32		setTEScaleT(const U8 te, const F32 t);
-	/*virtual*/ S32		setTETexGen(const U8 te, const U8 texgen);
-	/*virtual*/ S32		setTEMediaTexGen(const U8 te, const U8 media);
-	/*virtual*/ BOOL 	setMaterial(const U8 material);
+	/*virtual*/ S32		setTEMaterialParams(const U8 te, const LLMaterialPtr pMaterialParams) override;
+	/*virtual*/ S32		setTEScale(const U8 te, const F32 s, const F32 t) override;
+	/*virtual*/ S32		setTEScaleS(const U8 te, const F32 s) override;
+	/*virtual*/ S32		setTEScaleT(const U8 te, const F32 t) override;
+	/*virtual*/ S32		setTETexGen(const U8 te, const U8 texgen) override;
+	/*virtual*/ S32		setTEMediaTexGen(const U8 te, const U8 media) override;
+	/*virtual*/ BOOL 	setMaterial(const U8 material) override;
 
 				void	setTexture(const S32 face);
 				S32     getIndexInTex() const {return mIndexInTex ;}
-	/*virtual*/ BOOL	setVolume(const LLVolumeParams &volume_params, const S32 detail, bool unique_volume = false);
+	/*virtual*/ BOOL	setVolume(const LLVolumeParams &volume_params, const S32 detail, bool unique_volume = false) override;
 				void	updateSculptTexture();
 				void    setIndexInTex(S32 index) { mIndexInTex = index ;}
 				void	sculpt();
@@ -227,21 +211,21 @@ public:
 														  void* user_data, S32 status, LLExtStat ext_status);
 					
 				void	updateRelativeXform(bool force_identity = false);
-	/*virtual*/ BOOL	updateGeometry(LLDrawable *drawable);
-	/*virtual*/ void	updateFaceSize(S32 idx);
-	/*virtual*/ BOOL	updateLOD();
-				void	updateRadius();
-	/*virtual*/ void	updateTextures();
+	/*virtual*/ BOOL	updateGeometry(LLDrawable *drawable) override;
+	/*virtual*/ void	updateFaceSize(S32 idx) override;
+	/*virtual*/ BOOL	updateLOD() override;
+				void	updateRadius() override;
+	/*virtual*/ void	updateTextures() override;
 				void	updateTextureVirtualSize(bool forced = false);
 
 				void	updateFaceFlags();
 				void	regenFaces();
 				BOOL	genBBoxes(BOOL force_global);
 				void	preRebuild();
-	virtual		void	updateSpatialExtents(LLVector4a& min, LLVector4a& max);
-	virtual		F32		getBinRadius();
+	void	updateSpatialExtents(LLVector4a& min, LLVector4a& max) override;
+	F32		getBinRadius() override;
 	
-	virtual U32 getPartitionType() const;
+	U32 getPartitionType() const override;
 
 	// For Lights
 	void setIsLight(BOOL is_light);
@@ -270,15 +254,14 @@ public:
 	
 	// Flexible Objects
 	U32 getVolumeInterfaceID() const;
-	virtual BOOL isFlexible() const;
-	virtual BOOL isSculpted() const;
-	virtual BOOL isMesh() const;
-	virtual BOOL hasLightTexture() const;
+	BOOL isFlexible() const override;
+	BOOL isSculpted() const override;
+	BOOL isMesh() const override;
+	BOOL hasLightTexture() const override;
 
 	BOOL isVolumeGlobal() const;
 	BOOL canBeFlexible() const;
 	BOOL setIsFlexible(BOOL is_flexible);
-
 
     // Functions that deal with media, or media navigation
     
@@ -331,7 +314,7 @@ public:
 	
 
 	//rigged volume update (for raycasting)
-	void updateRiggedVolume();
+	void updateRiggedVolume(bool force_update = false);
 	LLRiggedVolume* getRiggedVolume();
 
 	//returns true if volume should be treated as a rigged volume

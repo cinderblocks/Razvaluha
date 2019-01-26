@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llestateinfomodel.cpp
  * @brief Estate info model
@@ -72,6 +74,7 @@ bool LLEstateInfoModel::getAllowDirectTeleport()	const {	return getFlag(REGION_F
 bool LLEstateInfoModel::getDenyAnonymous()			const {	return getFlag(REGION_FLAGS_DENY_ANONYMOUS); 		}
 bool LLEstateInfoModel::getDenyAgeUnverified()		const {	return getFlag(REGION_FLAGS_DENY_AGEUNVERIFIED);	}
 bool LLEstateInfoModel::getAllowVoiceChat()			const {	return getFlag(REGION_FLAGS_ALLOW_VOICE);			}
+bool LLEstateInfoModel::getAllowAccessOverride()	const { return getFlag(REGION_FLAGS_ALLOW_ACCESS_OVERRIDE); }
 
 void LLEstateInfoModel::setUseFixedSun(bool val)			{ setFlag(REGION_FLAGS_SUN_FIXED, 				val);	}
 void LLEstateInfoModel::setIsExternallyVisible(bool val)	{ setFlag(REGION_FLAGS_EXTERNALLY_VISIBLE,		val);	}
@@ -79,17 +82,18 @@ void LLEstateInfoModel::setAllowDirectTeleport(bool val)	{ setFlag(REGION_FLAGS_
 void LLEstateInfoModel::setDenyAnonymous(bool val)			{ setFlag(REGION_FLAGS_DENY_ANONYMOUS,			val);	}
 void LLEstateInfoModel::setDenyAgeUnverified(bool val)		{ setFlag(REGION_FLAGS_DENY_AGEUNVERIFIED,		val);	}
 void LLEstateInfoModel::setAllowVoiceChat(bool val)			{ setFlag(REGION_FLAGS_ALLOW_VOICE,				val);	}
+void LLEstateInfoModel::setAllowAccessOverride(bool val)    { setFlag(REGION_FLAGS_ALLOW_ACCESS_OVERRIDE,   val);   }
 
 void LLEstateInfoModel::update(const strings_t& strings)
 {
 	// NOTE: LLDispatcher extracts strings with an extra \0 at the
 	// end.  If we pass the std::string direct to the UI/renderer
 	// it draws with a weird character at the end of the string.
-	mName		= strings[0].c_str();
+	mName		= strings[0];
 	mOwnerID	= LLUUID(strings[1].c_str());
-	mID			= strtoul(strings[2].c_str(), NULL, 10);
-	mFlags		= strtoul(strings[3].c_str(), NULL, 10);
-	mSunHour	= ((F32)(strtod(strings[4].c_str(), NULL)))/1024.0f;
+	mID			= strtoul(strings[2].c_str(), nullptr, 10);
+	mFlags		= strtoul(strings[3].c_str(), nullptr, 10);
+	mSunHour	= ((F32)(strtod(strings[4].c_str(), nullptr)))/1024.0f;
 
 	LL_DEBUGS("Windlight Sync") << "Received estate info: "
 		<< "is_sun_fixed = " << getUseFixedSun()
@@ -114,7 +118,7 @@ void LLEstateInfoModel::notifyCommit()
 // tries to send estate info using a cap; returns true if it succeeded
 bool LLEstateInfoModel::commitEstateInfoCaps()
 {
-	std::string url = gAgent.getRegion()->getCapability("EstateChangeInfo");
+	std::string url = gAgent.getRegionCapability("EstateChangeInfo");
 
 	if (url.empty())
 	{
@@ -145,6 +149,7 @@ void LLEstateInfoModel::commitEstateInfoCapsCoro(std::string url)
 	body["deny_anonymous"       ] = getDenyAnonymous();
 	body["deny_age_unverified"  ] = getDenyAgeUnverified();
 	body["allow_voice_chat"     ] = getAllowVoiceChat();
+    body["override_public_access"] = getAllowAccessOverride();
 
 	body["invoice"              ] = LLFloaterRegionInfo::getLastInvoice();
 
@@ -218,6 +223,7 @@ std::string LLEstateInfoModel::getInfoDump()
 	dump["deny_anonymous"       ] = getDenyAnonymous();
 	dump["deny_age_unverified"  ] = getDenyAgeUnverified();
 	dump["allow_voice_chat"     ] = getAllowVoiceChat();
+    dump["override_public_access"] = getAllowAccessOverride();
 
 	std::stringstream dump_str;
 	dump_str << dump;

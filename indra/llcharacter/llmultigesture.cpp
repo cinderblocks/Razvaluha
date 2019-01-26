@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmultigesture.cpp
  * @brief Gestures that are asset-based and can have multiple steps.
@@ -50,8 +52,7 @@ LLMultiGesture::LLMultiGesture()
 	mSteps(),
 	mPlaying(FALSE),
 	mLocal(false),
-	mCurrentStep(0),
-	mDoneCallback(NULL)
+	mCurrentStep(0)
 {
 	reset();
 }
@@ -59,6 +60,7 @@ LLMultiGesture::LLMultiGesture()
 LLMultiGesture::~LLMultiGesture()
 {
 	std::for_each(mSteps.begin(), mSteps.end(), DeletePointer());
+	mSteps.clear();
 }
 
 void LLMultiGesture::reset()
@@ -182,7 +184,11 @@ BOOL LLMultiGesture::deserialize(LLDataPacker& dp)
 			{
 				LLGestureStepAnimation* step = new LLGestureStepAnimation();
 				BOOL ok = step->deserialize(dp);
-				if (!ok) return FALSE;
+				if (!ok)
+				{
+					delete step;
+					return FALSE;
+				}
 				mSteps.push_back(step);
 				break;
 			}
@@ -190,7 +196,11 @@ BOOL LLMultiGesture::deserialize(LLDataPacker& dp)
 			{
 				LLGestureStepSound* step = new LLGestureStepSound();
 				BOOL ok = step->deserialize(dp);
-				if (!ok) return FALSE;
+				if (!ok)
+				{
+					delete step;
+					return FALSE;
+				}
 				mSteps.push_back(step);
 				break;
 			}
@@ -198,7 +208,11 @@ BOOL LLMultiGesture::deserialize(LLDataPacker& dp)
 			{
 				LLGestureStepChat* step = new LLGestureStepChat();
 				BOOL ok = step->deserialize(dp);
-				if (!ok) return FALSE;
+				if (!ok)
+				{
+					delete step;
+					return FALSE;
+				}
 				mSteps.push_back(step);
 				break;
 			}
@@ -206,7 +220,11 @@ BOOL LLMultiGesture::deserialize(LLDataPacker& dp)
 			{
 				LLGestureStepWait* step = new LLGestureStepWait();
 				BOOL ok = step->deserialize(dp);
-				if (!ok) return FALSE;
+				if (!ok)
+				{
+					delete step;
+					return FALSE;
+				}
 				mSteps.push_back(step);
 				break;
 			}

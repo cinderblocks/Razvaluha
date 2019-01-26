@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llinitparam.cpp
  * @brief parameter block abstraction for creating complex objects and 
@@ -45,8 +47,8 @@ namespace LLInitParam
 	Param::Param(BaseBlock* enclosing_block)
 	:	mIsProvided(false)
 	{
-		const U8* my_addr = reinterpret_cast<const U8*>(this);
-		const U8* block_addr = reinterpret_cast<const U8*>(enclosing_block);
+		const uintptr_t my_addr = reinterpret_cast<uintptr_t>(this);
+		const uintptr_t block_addr = reinterpret_cast<uintptr_t>(enclosing_block);
 		U32 enclosing_block_offset = 0x7FFFffff & (U32)(my_addr - block_addr);
 		mEnclosingBlockOffsetLow = enclosing_block_offset & 0x0000ffff;
 		mEnclosingBlockOffsetHigh = (enclosing_block_offset & 0x007f0000) >> 16;
@@ -67,23 +69,23 @@ namespace LLInitParam
 		mMergeFunc(merge_func),
 		mDeserializeFunc(deserialize_func),
 		mSerializeFunc(serialize_func),
+        mInspectFunc(inspect_func),
 		mValidationFunc(validation_func),
-		mInspectFunc(inspect_func),
 		mMinCount(min_count),
 		mMaxCount(max_count),
-		mUserData(NULL)
+		mUserData(nullptr)
 	{}
 
 	ParamDescriptor::ParamDescriptor()
 	:	mParamHandle(0),
-		mMergeFunc(NULL),
-		mDeserializeFunc(NULL),
-		mSerializeFunc(NULL),
-		mValidationFunc(NULL),
-		mInspectFunc(NULL),
+		mMergeFunc(nullptr),
+		mDeserializeFunc(nullptr),
+		mSerializeFunc(nullptr),
+        mInspectFunc(nullptr),
+		mValidationFunc(nullptr),
 		mMinCount(0),
 		mMaxCount(0),
-		mUserData(NULL)
+		mUserData(nullptr)
 	{}
 
 	ParamDescriptor::~ParamDescriptor()
@@ -153,7 +155,7 @@ namespace LLInitParam
 	BlockDescriptor::BlockDescriptor()
 	:	mMaxParamOffset(0),
 		mInitializationState(UNINITIALIZED),
-		mCurrentBlockPtr(NULL)
+		mCurrentBlockPtr(nullptr)
 	{}
 
 	// called by each derived class in least to most derived order
@@ -181,8 +183,8 @@ namespace LLInitParam
 
 	param_handle_t BaseBlock::getHandleFromParam(const Param* param) const
 	{
-		const U8* param_address = reinterpret_cast<const U8*>(param);
-		const U8* baseblock_address = reinterpret_cast<const U8*>(this);
+		const uintptr_t param_address = reinterpret_cast<uintptr_t>(param);
+		const uintptr_t baseblock_address = reinterpret_cast<uintptr_t>(this);
 		return (param_address - baseblock_address);
 	}
 

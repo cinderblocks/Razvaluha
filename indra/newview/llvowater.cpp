@@ -34,7 +34,6 @@
 
 #include "llvowater.h"
 
-#include "imageids.h"
 #include "llviewercontrol.h"
 
 #include "lldrawable.h"

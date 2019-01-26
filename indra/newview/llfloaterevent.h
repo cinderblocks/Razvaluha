@@ -36,10 +36,11 @@
 #define LL_LLFLOATEREVENT_H
 
 #include "llfloater.h"
+#include "llinstancetracker.h"
 
 class LLPanelEvent;
 
-class LLFloaterEventInfo : public LLFloater
+class LLFloaterEventInfo : public LLFloater, public LLInstanceTracker<LLFloaterEventInfo, U32>
 {
 public:
 	LLFloaterEventInfo(const std::string& name, const U32 event_id );
@@ -52,7 +53,6 @@ public:
 	static void* createEventDetail(void* userdata);
 
 private:
-	U32				mEventID;			// for which event is this window?
 	LLPanelEvent*	mPanelEventp;
 
 };

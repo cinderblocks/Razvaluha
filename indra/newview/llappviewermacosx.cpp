@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llappviewermacosx.cpp
  * @brief The LLAppViewerMacOSX class definitions
  *
- * $LicenseInfo:firstyear=2007&license=viewergpl$
- * 
- * Copyright (c) 2007-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2007&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */ 
 
@@ -36,19 +32,32 @@
 	#error "Use only with Mac OS X"
 #endif
 
+#define LL_CARBON_CRASH_HANDLER 1
+
+#include "llwindowmacosx.h"
+#include "llappviewermacosx-objc.h"
+
 #include "llappviewermacosx.h"
+#include "llwindowmacosx-objc.h"
 #include "llcommandlineparser.h"
 
-#include "lldiriterator.h"
 #include "llviewernetwork.h"
 #include "llviewercontrol.h"
 #include "llmd5.h"
 #include "llfloaterworldmap.h"
 #include "llurldispatcher.h"
+#include <ApplicationServices/ApplicationServices.h>
+#ifdef LL_CARBON_CRASH_HANDLER
 #include <Carbon/Carbon.h>
+#endif
+#include <vector>
+#include <exception>
+
+#include "llsys_objc.h"
 #include "lldir.h"
 #include <signal.h>
-class LLWebBrowserCtrl;		// for LLURLDispatcher
+#include <CoreAudio/CoreAudio.h>	// for systemwide mute
+class LLMediaCtrl;		// for LLURLDispatcher
 
 namespace 
 {
@@ -56,23 +65,27 @@ namespace
 	// They are not used immediately by the app.
 	int gArgC;
 	char** gArgV;
-	
-	OSErr AEQuitHandler(const AppleEvent *messagein, AppleEvent *reply, long refIn)
-	{
-		OSErr result = noErr;
-		
-		LLAppViewer::instance()->userQuit();
-		
-		return(result);
-	}
+	LLAppViewerMacOSX* gViewerAppPtr = NULL;
+
+    void (*gOldTerminateHandler)() = NULL;
+    std::string gHandleSLURL;
 }
 
-int main( int argc, char **argv ) 
+static void exceptionTerminateHandler()
 {
-#if LL_SOLARIS && defined(__sparc)
-	asm ("ta\t6");		 // NOTE:  Make sure memory alignment is enforced on SPARC
-#endif
+	// reinstall default terminate() handler in case we re-terminate.
+	if (gOldTerminateHandler) std::set_terminate(gOldTerminateHandler);
+	// treat this like a regular viewer crash, with nice stacktrace etc.
+    long *null_ptr;
+    null_ptr = 0;
+    *null_ptr = 0xDEADBEEF; //Force an exception that will trigger breakpad.
+	//LLAppViewer::handleViewerCrash();
+	// we've probably been killed-off before now, but...
+	gOldTerminateHandler(); // call old terminate() handler
+}
 
+bool initViewer()
+{
 	// Set the working dir to <bundle>/Contents/Resources
 	if (chdir(gDirUtilp->getAppRODataDir().c_str()) == -1)
 	{
@@ -81,40 +94,68 @@ int main( int argc, char **argv )
 				<< LL_ENDL;
 	}
 
-	LLAppViewerMacOSX* viewer_app_ptr = new LLAppViewerMacOSX();
+	gViewerAppPtr = new LLAppViewerMacOSX();
 
-	viewer_app_ptr->setErrorHandler(LLAppViewer::handleViewerCrash);
+    // install unexpected exception handler
+	gOldTerminateHandler = std::set_terminate(exceptionTerminateHandler);
 
-	// Store off the command line args for use later.
-	gArgC = argc;
-	gArgV = argv;
+	gViewerAppPtr->setErrorHandler(LLAppViewer::handleViewerCrash);
+
 	
-	bool ok = viewer_app_ptr->init();
+	bool ok = gViewerAppPtr->init();
 	if(!ok)
 	{
 		LL_WARNS() << "Application init failed." << LL_ENDL;
-		return -1;
 	}
+    else if (!gHandleSLURL.empty())
+    {
+        dispatchUrl(gHandleSLURL);
+        gHandleSLURL = "";
+    }
+	return ok;
+}
 
-		// Run the application main loop
-	if(!LLApp::isQuitting()) 
+void handleQuit()
+{
+	LLAppViewer::instance()->userQuit();
+}
+
+// This function is called pumpMainLoop() rather than runMainLoop() because
+// it passes control to the viewer's main-loop logic for a single frame. Like
+// LLAppViewer::frame(), it returns 'true' when it's done. Until then, it
+// expects to be called again by the timer in LLAppDelegate
+// (llappdelegate-objc.mm).
+bool pumpMainLoop()
+{
+	bool ret = LLApp::isQuitting();
+	if (!ret && gViewerAppPtr != NULL)
 	{
-		viewer_app_ptr->mainLoop();
+		ret = gViewerAppPtr->frame();
+	} else {
+		ret = true;
 	}
+	
+	return ret;
+}
 
-	if (!LLApp::isError())
+void cleanupViewer()
+{
+	if(!LLApp::isError())
 	{
-		//
-		// We don't want to do cleanup here if the error handler got called -
-		// the assumption is that the error handler is responsible for doing
-		// app cleanup if there was a problem.
-		//
-		viewer_app_ptr->cleanup();
+        if (gViewerAppPtr)
+            gViewerAppPtr->cleanup();
 	}
-	delete viewer_app_ptr;
-	viewer_app_ptr = NULL;
+	
+	delete gViewerAppPtr;
+	gViewerAppPtr = NULL;
+}
 
-	return 0;
+int main( int argc, char **argv ) 
+{
+	// Store off the command line args for use later.
+	gArgC = argc;
+	gArgV = argv;
+	return createNSApp(argc, (const char**)argv);
 }
 
 LLAppViewerMacOSX::LLAppViewerMacOSX()
@@ -127,7 +168,17 @@ LLAppViewerMacOSX::~LLAppViewerMacOSX()
 
 bool LLAppViewerMacOSX::init()
 {
-	return LLAppViewer::init();
+	bool success = LLAppViewer::init();
+    
+#if LL_SEND_CRASH_REPORTS
+    if (success)
+    {
+        LLAppViewer* pApp = LLAppViewer::instance();
+        pApp->initCrashReporting();
+    }
+#endif
+    
+    return success;
 }
 
 // MacOSX may add and addition command line arguement for the process serial number.
@@ -153,52 +204,19 @@ bool LLAppViewerMacOSX::initParseCommandLine(LLCommandLineParser& clp)
 	// The next two lines add the support for parsing the mac -psn_XXX arg.
 	clp.addOptionDesc("psn", NULL, 1, "MacOSX process serial number");
 	clp.setCustomParser(parse_psn);
-	
-	// First parse the command line, not often used on the mac.
+
+	// parse the user's command line
 	if(clp.parseCommandLine(gArgC, gArgV) == false)
 	{
 		return false;
 	}
-    
-    // Now read in the args from arguments txt.
-    // Succesive calls to clp.parse... will NOT override earlier 
-    // options. 
-    const char* filename = "arguments.txt";
-	llifstream ifs(filename, llifstream::binary);
-	if (!ifs.is_open())
+
+	std::string lang(LLSysDarwin::getPreferredLanguage());
+	LLControlVariable* c = gSavedSettings.getControl("SystemLanguage");
+	if(c)
 	{
-		LL_WARNS() << "Unable to open file" << filename << LL_ENDL;
-		return false;
+		c->setValue(lang, false);
 	}
-	
-	if(clp.parseCommandLineFile(ifs) == false)
-	{
-		return false;
-	}
-	
-	// Get the user's preferred language string based on the Mac OS localization mechanism.
-	// To add a new localization:
-		// go to the "Resources" section of the project
-		// get info on "language.txt"
-		// in the "General" tab, click the "Add Localization" button
-		// create a new localization for the language you're adding
-		// set the contents of the new localization of the file to the string corresponding to our localization
-		//   (i.e. "en-us", "ja", etc.  Use the existing ones as a guide.)
-	CFURLRef url = CFBundleCopyResourceURL(CFBundleGetMainBundle(), CFSTR("language"), CFSTR("txt"), NULL);
-	char path[MAX_PATH];
-	if(CFURLGetFileSystemRepresentation(url, false, (UInt8 *)path, sizeof(path)))
-	{
-		std::string lang;
-		if(_read_file_into_string(lang, path))		/* Flawfinder: ignore*/
-		{
-            LLControlVariable* c = gSavedSettings.getControl("SystemLanguage");
-            if(c)
-            {
-                c->setValue(lang, false);
-            }
-		}
-	}
-	CFRelease(url);
 	
     return true;
 }
@@ -228,7 +246,7 @@ bool LLAppViewerMacOSX::restoreErrorTrap()
 	unsigned int reset_count = 0;
 	
 #define SET_SIG(S) 	sigaction(SIGABRT, &act, &old_act); \
-					if((unsigned int)act.sa_sigaction != (unsigned int) old_act.sa_sigaction) \
+					if(act.sa_sigaction != old_act.sa_sigaction) \
 						++reset_count;
 	// Synchronous signals
 	SET_SIG(SIGABRT)
@@ -262,8 +280,17 @@ bool LLAppViewerMacOSX::restoreErrorTrap()
 
 void LLAppViewerMacOSX::initCrashReporting(bool reportFreeze)
 {
-	// Singu Note: this is where original code forks crash logger process.
-	// Singularity doesn't need it
+	std::string command_str = "mac-crash-logger.app";
+    
+    std::stringstream pid_str;
+    pid_str <<  LLApp::getPid();
+    std::string logdir = gDirUtilp->getExpandedFilename(LL_PATH_DUMP, "");
+    std::string appname = gDirUtilp->getExecutableFilename();
+    std::string str[] = { "-pid", pid_str.str(), "-dumpdir", logdir, "-procname", appname.c_str() };
+    std::vector< std::string > args( str, str + ( sizeof ( str ) /  sizeof ( std::string ) ) );
+    LL_WARNS() << "about to launch mac-crash-logger" << pid_str.str()
+               << " " << logdir << " " << appname << LL_ENDL;
+    launchApplication(&command_str, &args);
 }
 
 std::string LLAppViewerMacOSX::generateSerialNumber()
@@ -296,111 +323,95 @@ std::string LLAppViewerMacOSX::generateSerialNumber()
 	return serial_md5;
 }
 
-OSErr AEGURLHandler(const AppleEvent *messagein, AppleEvent *reply, long refIn)
+static AudioDeviceID get_default_audio_output_device(void)
 {
-	OSErr result = noErr;
-	DescType actualType;
-	char buffer[1024];		// Flawfinder: ignore
-	Size size;
-	
-	result = AEGetParamPtr (
-		messagein,
-		keyDirectObject,
-		typeCString,
-		&actualType,
-		(Ptr)buffer,
-		sizeof(buffer),
-		&size);	
-	
-	if(result == noErr)
+	AudioDeviceID device = 0;
+	UInt32 size = sizeof(device);
+	AudioObjectPropertyAddress device_address = { kAudioHardwarePropertyDefaultOutputDevice,
+												  kAudioObjectPropertyScopeGlobal,
+												  kAudioObjectPropertyElementMaster };
+
+	OSStatus err = AudioObjectGetPropertyData(kAudioObjectSystemObject, &device_address, 0, NULL, &size, &device);
+	if(err != noErr)
 	{
-		std::string url = buffer;
-		
-		// Safari 3.2 silently mangles secondlife:///app/ URLs into
-		// secondlife:/app/ (only one leading slash).
-		// Fix them up to meet the URL specification. JC
-		const std::string prefix = "secondlife:/app/";
-		std::string test_prefix = url.substr(0, prefix.length());
-		LLStringUtil::toLower(test_prefix);
-		if (test_prefix == prefix)
-		{
-			url.replace(0, prefix.length(), "secondlife:///app/");
-		}
-		
-		LLMediaCtrl* web = NULL;
-		const bool trusted_browser = false;
-		LLURLDispatcher::dispatch(url, "", web, trusted_browser);
+		LL_DEBUGS("SystemMute") << "Couldn't get default audio output device (0x" << std::hex << err << ")" << LL_ENDL;
 	}
-	
-	return(result);
+
+	return device;
 }
 
-OSStatus simpleDialogHandler(EventHandlerCallRef handler, EventRef event, void *userdata)
+//virtual
+void LLAppViewerMacOSX::setMasterSystemAudioMute(bool new_mute)
 {
-	OSStatus result = eventNotHandledErr;
-	OSStatus err;
-	UInt32 evtClass = GetEventClass(event);
-	UInt32 evtKind = GetEventKind(event);
-	WindowRef window = (WindowRef)userdata;
-	
-	if((evtClass == kEventClassCommand) && (evtKind == kEventCommandProcess))
+	AudioDeviceID device = get_default_audio_output_device();
+
+	if(device != 0)
 	{
-		HICommand cmd;
-		err = GetEventParameter(event, kEventParamDirectObject, typeHICommand, NULL, sizeof(cmd), NULL, &cmd);
-		
-		if(err == noErr)
+		UInt32 mute = new_mute;
+		AudioObjectPropertyAddress device_address = { kAudioDevicePropertyMute,
+													  kAudioDevicePropertyScopeOutput,
+													  kAudioObjectPropertyElementMaster };
+
+		OSStatus err = AudioObjectSetPropertyData(device, &device_address, 0, NULL, sizeof(mute), &mute);
+		if(err != noErr)
 		{
-			switch(cmd.commandID)
-			{
-				case kHICommandOK:
-					QuitAppModalLoopForWindow(window);
-					result = noErr;
-				break;
-				
-				case kHICommandCancel:
-					QuitAppModalLoopForWindow(window);
-					result = userCanceledErr;
-				break;
-			}
+			LL_INFOS("SystemMute") << "Couldn't set audio mute property (0x" << std::hex << err << ")" << LL_ENDL;
 		}
 	}
-	
-	return(result);
 }
 
-void init_apple_menu(const char* product)
+//virtual
+bool LLAppViewerMacOSX::getMasterSystemAudioMute()
 {
-	// Load up a proper menu bar.
-	{
-		OSStatus err;
-		IBNibRef nib = NULL;
-		// NOTE: DO NOT translate or brand this string.  It's an internal name in the .nib file, and MUST match exactly.
-		err = CreateNibReference(CFSTR("SecondLife"), &nib);
-		
-		if(err == noErr)
-		{
-			// NOTE: DO NOT translate or brand this string.  It's an internal name in the .nib file, and MUST match exactly.
-			SetMenuBarFromNib(nib, CFSTR("MenuBar"));
-		}
+	// Assume the system isn't muted 
+	UInt32 mute = 0;
 
-		if(nib != NULL)
+	AudioDeviceID device = get_default_audio_output_device();
+
+	if(device != 0)
+	{
+		UInt32 size = sizeof(mute);
+		AudioObjectPropertyAddress device_address = { kAudioDevicePropertyMute,
+													  kAudioDevicePropertyScopeOutput,
+													  kAudioObjectPropertyElementMaster };
+
+		OSStatus err = AudioObjectGetPropertyData(device, &device_address, 0, NULL, &size, &mute);
+		if(err != noErr)
 		{
-			DisposeNibReference(nib);
+			LL_DEBUGS("SystemMute") << "Couldn't get audio mute property (0x" << std::hex << err << ")" << LL_ENDL;
 		}
 	}
 	
-	// Install a handler for 'gurl' AppleEvents.  This is how secondlife:// URLs get passed to the viewer.
-	
-	if(AEInstallEventHandler('GURL', 'GURL', NewAEEventHandlerUPP(AEGURLHandler),0, false) != noErr)
-	{
-		// Couldn't install AppleEvent handler.  This error shouldn't be fatal.
-		LL_INFOS() << "Couldn't install 'GURL' AppleEvent handler.  Continuing..." << LL_ENDL;
-	}
+	return (mute != 0);
+}
 
-	// Install a handler for 'quit' AppleEvents.  This makes quitting the application from the dock work.
-	if(AEInstallEventHandler(kCoreEventClass, kAEQuitApplication, NewAEEventHandlerUPP(AEQuitHandler),0, false) != noErr)
-	{
-		// Couldn't install AppleEvent handler.  This error shouldn't be fatal.
-		LL_INFOS() << "Couldn't install Quit AppleEvent handler.  Continuing..." << LL_ENDL;
-	}
+void handleUrl(const char* url_utf8)
+{
+    if (url_utf8 && gViewerAppPtr)
+    {
+        gHandleSLURL = "";
+        dispatchUrl(url_utf8);
+    }
+    else if (url_utf8)
+    {
+        gHandleSLURL = url_utf8;
+    }
+}
+
+void dispatchUrl(std::string url)
+{
+    // Safari 3.2 silently mangles secondlife:///app/ URLs into
+    // secondlife:/app/ (only one leading slash).
+    // Fix them up to meet the URL specification. JC
+    const std::string prefix = "secondlife:/app/";
+    std::string test_prefix = url.substr(0, prefix.length());
+    LLStringUtil::toLower(test_prefix);
+    if (test_prefix == prefix)
+    {
+        url.replace(0, prefix.length(), "secondlife:///app/");
+    }
+    
+    LLMediaCtrl* web = NULL;
+    const bool trusted_browser = false;
+    LLURLDispatcher::dispatch(url, "", web, trusted_browser);
 }

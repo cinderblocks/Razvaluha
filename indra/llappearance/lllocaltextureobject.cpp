@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lllocaltextureobject.cpp
  *
@@ -39,7 +41,7 @@ LLLocalTextureObject::LLLocalTextureObject() :
 	mIsBakedReady(FALSE),
 	mDiscard(MAX_DISCARD_LEVEL+1)
 {
-	mImage = NULL;
+	mImage = nullptr;
 }
 
 LLLocalTextureObject::LLLocalTextureObject(LLGLTexture* image, const LLUUID& id) :
@@ -76,6 +78,7 @@ LLLocalTextureObject::LLLocalTextureObject(const LLLocalTextureObject& lto) :
 
 LLLocalTextureObject::~LLLocalTextureObject()
 {
+	delete_and_clear(mTexLayers);
 }
 
 LLGLTexture* LLLocalTextureObject::getImage() const
@@ -87,7 +90,7 @@ LLTexLayer* LLLocalTextureObject::getTexLayer(U32 index) const
 {
 	if (index >= getNumTexLayers())
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return mTexLayers[index];
@@ -95,7 +98,7 @@ LLTexLayer* LLLocalTextureObject::getTexLayer(U32 index) const
 
 LLTexLayer* LLLocalTextureObject::getTexLayer(const std::string &name)
 {
-	for( tex_layer_vec_t::iterator iter = mTexLayers.begin(); iter != mTexLayers.end(); iter++)
+	for( tex_layer_vec_t::iterator iter = mTexLayers.begin(); iter != mTexLayers.end(); ++iter)
 	{
 		LLTexLayer *layer = *iter;
 		if (layer->getName().compare(name) == 0)
@@ -104,7 +107,7 @@ LLTexLayer* LLLocalTextureObject::getTexLayer(const std::string &name)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 U32 LLLocalTextureObject::getNumTexLayers() const
@@ -139,7 +142,7 @@ BOOL LLLocalTextureObject::setTexLayer(LLTexLayer *new_tex_layer, U32 index)
 		return FALSE;
 	}
 
-	if (new_tex_layer == NULL)
+	if (new_tex_layer == nullptr)
 	{
 		return removeTexLayer(index);
 	}
@@ -158,7 +161,7 @@ BOOL LLLocalTextureObject::setTexLayer(LLTexLayer *new_tex_layer, U32 index)
 
 BOOL LLLocalTextureObject::addTexLayer(LLTexLayer *new_tex_layer, LLWearable *wearable)
 {
-	if (new_tex_layer == NULL)
+	if (new_tex_layer == nullptr)
 	{
 		return FALSE;
 	}
@@ -171,7 +174,7 @@ BOOL LLLocalTextureObject::addTexLayer(LLTexLayer *new_tex_layer, LLWearable *we
 
 BOOL LLLocalTextureObject::addTexLayer(LLTexLayerTemplate *new_tex_layer, LLWearable *wearable)
 {
-	if (new_tex_layer == NULL)
+	if (new_tex_layer == nullptr)
 	{
 		return FALSE;
 	}
@@ -196,7 +199,7 @@ BOOL LLLocalTextureObject::removeTexLayer(U32 index)
 	return TRUE;
 }
 
-void LLLocalTextureObject::setID(LLUUID new_id)
+void LLLocalTextureObject::setID(const LLUUID& new_id)
 {
 	mID = new_id;
 }

@@ -105,7 +105,6 @@ extern LLTrace::BlockTimerStatHandle FTM_PIPELINE;
 extern LLTrace::BlockTimerStatHandle FTM_CLIENT_COPY;
 
 
-
 LL_ALIGN_PREFIX(16)
 class LLPipeline
 {
@@ -287,10 +286,10 @@ public:
 	void renderGeomDeferred(LLCamera& camera);
 	void renderGeomPostDeferred(LLCamera& camera, bool do_occlusion=true);
 	void renderGeomShadow(LLCamera& camera);
-	void bindDeferredShader(LLGLSLShader& shader, U32 light_index = 0, U32 noise_map = 0xFFFFFFFF);
+	void bindDeferredShader(LLGLSLShader& shader, LLRenderTarget* diffuse_source = NULL, LLRenderTarget* light_source = NULL);
 	void setupSpotLight(LLGLSLShader& shader, LLDrawable* drawablep);
 
-	void unbindDeferredShader(LLGLSLShader& shader);
+	void unbindDeferredShader(LLGLSLShader& shader, LLRenderTarget* diffuse_source = NULL, LLRenderTarget* light_source = NULL);
 	void renderDeferredLighting();
 	void renderDeferredLightingToRT(LLRenderTarget* target);
 	
@@ -428,7 +427,7 @@ private:
 	void hideDrawable( LLDrawable *pDrawable );
 	void unhideDrawable( LLDrawable *pDrawable );
 
-	void drawFullScreenRect( U32 data_mask );
+	void drawFullScreenRect();
 public:
 	enum {GPU_CLASS_MAX = 3 };
 
@@ -587,6 +586,7 @@ public:
 public:
 	//screen texture
 	LLRenderTarget			mScreen;
+	LLRenderTarget			mFinalScreen;
 	LLRenderTarget			mDeferredScreen;
 private:
 	LLRenderTarget			mFXAABuffer;
@@ -594,7 +594,6 @@ public:
 	LLRenderTarget			mDeferredDepth;
 private:
 	LLRenderTarget			mDeferredDownsampledDepth;
-	LLRenderTarget			mOcclusionDepth;
 	LLRenderTarget			mDeferredLight;
 public:
 	LLMultisampleBuffer		mSampleBuffer;
@@ -611,7 +610,6 @@ public:
 private:
 	//sun shadow map
 	LLRenderTarget			mShadow[6];
-	LLRenderTarget			mShadowOcclusion[6];
 	std::vector<LLVector3>	mShadowFrustPoints[4];
 public:
 	LLCamera				mShadowCamera[8];
@@ -639,7 +637,6 @@ private:
 
 	//noise map
 	U32					mNoiseMap;
-	U32					mTrueNoiseMap;
 	U32					mLightFunc;
 
 	LLColor4				mSunDiffuse;

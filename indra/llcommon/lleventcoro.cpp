@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file   lleventcoro.cpp
  * @author Nat Goodspeed
@@ -39,6 +41,7 @@
 #include "llerror.h"
 #include "llcoros.h"
 #include "llmake.h"
+#include "llexception.h"
 
 #include "lleventfilter.h"
 
@@ -229,6 +232,28 @@ LLSD llcoro::postAndSuspend(const LLSD& event, const LLEventPumpOrPumpName& requ
     return value;
 }
 
+LLSD llcoro::suspendUntilEventOnWithTimeout(const LLEventPumpOrPumpName& suspendPumpOrName, 
+        F32 timeoutin, const LLSD &timeoutResult)
+{
+    /**
+     * The timeout pump is attached upstream of of the waiting pump and will 
+     * pass the timeout event through it.  We CAN NOT attach downstream since
+     * doing so will cause the suspendPump to fire any waiting events immediately 
+     * and they will be lost.  This becomes especially problematic with the 
+     * LLEventTimeout(pump) constructor which will also attempt to fire those
+     * events using the virtual listen_impl method in the not yet fully constructed
+     * timeoutPump.
+     */
+    LLEventTimeout timeoutPump;
+    LLEventPump &suspendPump = suspendPumpOrName.getPump();
+
+    LLTempBoundListener timeoutListener(timeoutPump.listen(suspendPump.getName(), 
+            boost::bind(&LLEventPump::post, &suspendPump, _1)));
+
+    timeoutPump.eventAfter(timeoutin, timeoutResult);
+    return llcoro::suspendUntilEventOn(suspendPump);
+}
+
 namespace
 {
 
@@ -329,7 +354,7 @@ LLSD errorException(const LLEventWithID& result, const std::string& desc)
     // returning it, deliver it via exception.
     if (result.second)
     {
-        throw LLErrorEvent(desc, result.first);
+        LLTHROW(LLErrorEvent(desc, result.first));
     }
     // That way, our caller knows a simple return must be from the reply
     // pump (pump 0).

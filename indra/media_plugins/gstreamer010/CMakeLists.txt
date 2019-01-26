@@ -12,7 +12,8 @@ include(LLWindow)
 include(Linking)
 include(PluginAPI)
 include(MediaPluginBase)
-include(FindOpenGL)
+include(OpenGL)
+include(Boost)
 
 include(GStreamer010Plugin)
 
@@ -24,20 +25,14 @@ include_directories(
     ${LLIMAGE_INCLUDE_DIRS}
     ${LLRENDER_INCLUDE_DIRS}
     ${LLWINDOW_INCLUDE_DIRS}
-    ${GSTREAMER010_INCLUDE_DIRS}
-    ${GSTREAMER010_PLUGINS_BASE_INCLUDE_DIRS}
 )
 include_directories(SYSTEM
     ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
+    ${GSTREAMER010_INCLUDE_DIRS}
+    ${GSTREAMER010_PLUGINS_BASE_INCLUDE_DIRS}
     )
 
 ### media_plugin_gstreamer010
-
-if(NOT WORD_SIZE EQUAL 32)
-  if(NOT WINDOWS)
-    add_definitions(-fPIC)
-  endif(NOT WINDOWS)
-endif(NOT WORD_SIZE EQUAL 32)
 
 set(media_plugin_gstreamer010_SOURCE_FILES
     media_plugin_gstreamer010.cpp
@@ -56,17 +51,13 @@ add_library(media_plugin_gstreamer010
     ${media_plugin_gstreamer010_SOURCE_FILES}
 )
 
+set_target_properties(media_plugin_gstreamer010 PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
 target_link_libraries(media_plugin_gstreamer010
   ${LLPLUGIN_LIBRARIES}
   ${MEDIA_PLUGIN_BASE_LIBRARIES}
   ${LLCOMMON_LIBRARIES}
   ${PLUGIN_API_WINDOWS_LIBRARIES}
   ${GSTREAMER010_LIBRARIES}
-)
-
-add_dependencies(media_plugin_gstreamer010
-  ${LLPLUGIN_LIBRARIES}
-  ${MEDIA_PLUGIN_BASE_LIBRARIES}
-  ${LLCOMMON_LIBRARIES}
 )
 

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpluginprocessparent.cpp
  * @brief LLPluginProcessParent handles the parent side of the external-process plugin API.
@@ -35,6 +37,7 @@
 #include "stringize.h"
 
 #include "llapr.h"
+#include <boost/lexical_cast.hpp>
 
 //virtual 
 LLPluginProcessParentOwner::~LLPluginProcessParentOwner()
@@ -43,23 +46,23 @@ LLPluginProcessParentOwner::~LLPluginProcessParentOwner()
 }
 
 bool LLPluginProcessParent::sUseReadThread = false;
-apr_pollset_t *LLPluginProcessParent::sPollSet = NULL;
+apr_pollset_t *LLPluginProcessParent::sPollSet = nullptr;
 bool LLPluginProcessParent::sPollsetNeedsRebuild = false;
 LLMutex *LLPluginProcessParent::sInstancesMutex;
 LLPluginProcessParent::mapInstances_t LLPluginProcessParent::sInstances;
-LLThread *LLPluginProcessParent::sReadThread = NULL;
+LLThread *LLPluginProcessParent::sReadThread = nullptr;
 
 
 class LLPluginProcessParentPollThread: public LLThread
 {
 public:
 	LLPluginProcessParentPollThread() :
-		LLThread("LLPluginProcessParentPollThread")
+		LLThread("LLPluginProcessParentPollThread", gAPRPoolp)
 	{
 	}
 protected:
 	// Inherited from LLThread
-	/*virtual*/ void run(void)
+	/*virtual*/ void run(void) override
 	{
 		while(!isQuitting() && LLPluginProcessParent::getUseReadThread())
 		{
@@ -72,7 +75,7 @@ protected:
 	} 
 
 	// Inherited from LLThread
-	/*virtual*/ bool runCondition(void)
+	/*virtual*/ bool runCondition(void) override
 	{
 		return(LLPluginProcessParent::canPollThreadRun());
 	}
@@ -96,7 +99,7 @@ LLPluginProcessParent::LLPluginProcessParent(LLPluginProcessParentOwner *owner):
 	mDebug = false;
 	mBlocked = false;
 	mPolledInput = false;
-	mPollFD.client_data = NULL;
+	mPollFD.client_data = nullptr;
 
 	mPluginLaunchTimeout = 60.0f;
 	mPluginLockupTimeout = 15.0f;
@@ -117,7 +120,7 @@ LLPluginProcessParent::~LLPluginProcessParent()
 		// destroy the shared memory region
 		iter->second->destroy();
 		delete iter->second;
-		iter->second = NULL;
+		iter->second = nullptr;
 		
 		// and remove it from our map
 		mSharedMemoryRegions.erase(iter);
@@ -162,7 +165,7 @@ void LLPluginProcessParent::shutdown()
 void LLPluginProcessParent::requestShutdown()
 {
     setState(STATE_GOODBYE);
-    mOwner = NULL;
+    mOwner = nullptr;
 
     if (LLApp::isQuitting())
     {   // if we're quitting, run the idle once more
@@ -262,7 +265,7 @@ bool LLPluginProcessParent::accept()
 	bool result = false;
 	
 	apr_status_t status = APR_EGENERAL;
-	apr_socket_t *new_socket = NULL;
+	apr_socket_t *new_socket = nullptr;
 	
 	status = apr_socket_accept(
 		&new_socket,
@@ -276,7 +279,7 @@ bool LLPluginProcessParent::accept()
 		// Success.  Create a message pipe on the new socket
 
 		// we MUST create a new pool for the LLSocket, since it will take ownership of it and delete it in its destructor!
-		apr_pool_t* new_pool = NULL;
+		apr_pool_t* new_pool = nullptr;
 		status = apr_pool_create(&new_pool, gAPRPoolp);
 
 		mSocket = LLSocket::create(new_socket, new_pool);
@@ -365,7 +368,7 @@ void LLPluginProcessParent::idle(void)
 			{
 	
 				apr_status_t status = APR_SUCCESS;
-				apr_sockaddr_t* addr = NULL;
+				apr_sockaddr_t* addr = nullptr;
 				mListenSocket = LLSocket::create(gAPRPoolp, LLSocket::STREAM_TCP);
 				mBoundPort = 0;
 				
@@ -399,7 +402,7 @@ void LLPluginProcessParent::idle(void)
 
 				// Get the actual port the socket was bound to
 				{
-					apr_sockaddr_t* bound_addr = NULL;
+					apr_sockaddr_t* bound_addr = nullptr;
 					if(ll_apr_warn_status(apr_socket_addr_get(&bound_addr, APR_LOCAL, mListenSocket->getSocket())))
 					{
 						killSockets();
@@ -460,7 +463,7 @@ void LLPluginProcessParent::idle(void)
 				    // Launch the plugin process.
 				
 				    // Only argument to the launcher is the port number we're listening on
-				    mProcessParams.args.add(stringize(mBoundPort));
+					mProcessParams.args.add(boost::lexical_cast<std::string>(mBoundPort));
 				    if (! (mProcess = LLProcess::create(mProcessParams)))
 				    {
 					    errorState();
@@ -576,7 +579,7 @@ void LLPluginProcessParent::idle(void)
     			break;
 
 			case STATE_LAUNCH_FAILURE:
-				if(mOwner != NULL)
+				if(mOwner != nullptr)
 				{
 					mOwner->pluginLaunchFailed();
 				}
@@ -584,7 +587,7 @@ void LLPluginProcessParent::idle(void)
     			break;
 
 			case STATE_ERROR:
-				if(mOwner != NULL)
+				if(mOwner != nullptr)
 				{
 					mOwner->pluginDied();
 				}
@@ -686,12 +689,12 @@ void LLPluginProcessParent::setMessagePipe(LLPluginMessagePipe *message_pipe)
 	if(mMessagePipe)
 	{
 		// Unsetting an existing message pipe -- remove from the pollset		
-		mPollFD.client_data = NULL;
+		mPollFD.client_data = nullptr;
 
 		// pollset needs an update
 		update_pollset = true;
 	}
-	if(message_pipe != NULL)
+	if(message_pipe != nullptr)
 	{
 		// Set up the apr_pollfd_t
 		mPollFD.p = gAPRPoolp;
@@ -740,7 +743,7 @@ void LLPluginProcessParent::updatePollset()
 		LL_DEBUGS("PluginPoll") << "destroying pollset " << sPollSet << LL_ENDL;
 		// delete the existing pollset.
 		apr_pollset_destroy(sPollSet);
-		sPollSet = NULL;
+		sPollSet = nullptr;
 	}
 	
     mapInstances_t::iterator iter;
@@ -768,7 +771,7 @@ void LLPluginProcessParent::updatePollset()
 			{
 #endif // APR_POLLSET_NOCOPY
 				LL_WARNS("PluginPoll") << "Couldn't create pollset.  Falling back to non-pollset mode." << LL_ENDL;
-				sPollSet = NULL;
+				sPollSet = nullptr;
 #ifdef APR_POLLSET_NOCOPY
 			}
 			else
@@ -824,7 +827,7 @@ void LLPluginProcessParent::setUseReadThread(bool use_read_thread)
 				// shut down the read thread
 				LL_INFOS("PluginPoll") << "destroying read thread " << LL_ENDL;
 				delete sReadThread;
-				sReadThread = NULL;
+				sReadThread = nullptr;
 			}
 		}
 
@@ -914,7 +917,7 @@ void LLPluginProcessParent::servicePoll()
 		apr_pollset_remove(sPollSet, &mPollFD);
 
 		// and tell the code not to re-add it
-		mPollFD.client_data = NULL;
+		mPollFD.client_data = nullptr;
 	}
 }
 
@@ -958,7 +961,7 @@ void LLPluginProcessParent::receiveMessageEarly(const LLPluginMessage &message)
 	{
 		// Call out to the owner and see if they to reply
 		// TODO: Should this only happen when blocked?
-		if(mOwner != NULL)
+		if(mOwner != nullptr)
 		{
 			handled = mOwner->receivePluginMessageEarly(message);
 		}
@@ -1047,7 +1050,7 @@ void LLPluginProcessParent::receiveMessage(const LLPluginMessage &message)
 				// destroy the shared memory region
 				iter->second->destroy();
 				delete iter->second;
-				iter->second = NULL;
+				iter->second = nullptr;
 				
 				// and remove it from our map
 				mSharedMemoryRegions.erase(iter);
@@ -1060,7 +1063,7 @@ void LLPluginProcessParent::receiveMessage(const LLPluginMessage &message)
 	}
 	else
 	{
-		if(mOwner != NULL)
+		if(mOwner != nullptr)
 		{
 			mOwner->receivePluginMessage(message);
 		}
@@ -1126,7 +1129,7 @@ size_t LLPluginProcessParent::getSharedMemorySize(const std::string &name)
 }
 void *LLPluginProcessParent::getSharedMemoryAddress(const std::string &name)
 {
-	void *result = NULL;
+	void *result = nullptr;
 	
 	sharedMemoryRegionsType::iterator iter = mSharedMemoryRegions.find(name);
 	if(iter != mSharedMemoryRegions.end())

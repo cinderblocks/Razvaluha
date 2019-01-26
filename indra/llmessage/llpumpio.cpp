@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpumpio.cpp
  * @author Phoenix
@@ -29,15 +31,9 @@
 #include "linden_common.h"
 #include "llpumpio.h"
 
-#include <map>
-#include <set>
-#include "apr_poll.h"
-
 #include "llapr.h"
 #include "llfasttimer.h"
 #include "llstl.h"
-#include "llstat.h"
-#include "llthread.h"
 
 // These should not be enabled in production, but they can be
 // intensely useful during development for finding certain kinds of
@@ -56,7 +52,7 @@
 
 // constants for poll timeout. if we are threading, we want to have a
 // longer poll timeout.
-#if LL_THREADS_APR
+#if LL_THREADS_PUMPIO
 static const S32 DEFAULT_POLL_TIMEOUT = 1000;
 #else
 static const S32 DEFAULT_POLL_TIMEOUT = 0;
@@ -132,8 +128,8 @@ public:
 	{
 		return LLRunner::run_ptr_t(new LLChainSleeper(pump, key));
 	}
-	
-	virtual void run(LLRunner* runner, S64 handle)
+
+	void run(LLRunner* runner, S64 handle) override
 	{
 		mPump->clearLock(mKey);
 	}
@@ -165,15 +161,17 @@ struct ll_delete_apr_pollset_fd_client_data
 LLPumpIO::LLPumpIO(apr_pool_t* pool) :
 	mState(LLPumpIO::NORMAL),
 	mRebuildPollset(false),
-	mPollset(NULL),
+	mPollset(nullptr),
 	mPollsetClientID(0),
 	mNextLock(0),
-	mPool(NULL),
-	mCurrentPool(NULL),
-	mCurrentPoolReallocCount(0),
+	mCurrentChain(mRunningChains.end()),
+	mPool(nullptr),
+	mCurrentPool(nullptr),
+	mCurrentPoolReallocCount(0)
+#if LL_THREADS_PUMPIO
 	mChainsMutex(NULL),
-	mCallbackMutex(NULL),
-	mCurrentChain(mRunningChains.end())
+	mCallbackMutex(NULL)
+#endif
 {
 	mCurrentChain = mRunningChains.end();
 
@@ -189,20 +187,20 @@ bool LLPumpIO::prime(apr_pool_t* pool)
 {
 	cleanup();
 	initialize(pool);
-	return ((pool == NULL) ? false : true);
+	return ((pool == nullptr) ? false : true);
 }
 
 bool LLPumpIO::addChain(const chain_t& chain, F32 timeout, bool has_curl_request)
 {
 	if(chain.empty()) return false;
 
-#if LL_THREADS_APR
-	LLScopedLock lock(mChainsMutex);
+#if LL_THREADS_PUMPIO
+	LLMutexLock lock(mChainsMutex);
 #endif
 	LLChainInfo info;
 	info.mHasCurlRequest = has_curl_request;
 	info.setTimeoutSeconds(timeout);
-	info.mData = LLIOPipe::buffer_ptr_t(new LLBufferArray);
+	info.mData = std::make_shared<LLBufferArray>();
 	info.mData->setThreaded(has_curl_request);
 	LLLinkInfo link;
 #if LL_DEBUG_PIPE_TYPE_IN_PUMP
@@ -235,8 +233,8 @@ bool LLPumpIO::addChain(
 	if(!data) return false;
 	if(links.empty()) return false;
 
-#if LL_THREADS_APR
-	LLScopedLock lock(mChainsMutex);
+#if LL_THREADS_PUMPIO
+	LLMutexLock lock(mChainsMutex);
 #endif
 #if LL_DEBUG_PIPE_TYPE_IN_PUMP
 	LL_DEBUGS() << "LLPumpIO::addChain() " << links[0].mPipe << " '"
@@ -392,8 +390,8 @@ void LLPumpIO::clearLock(S32 key)
 	// therefore won't be treading into deleted memory. I think we can
 	// also clear the lock on the chain safely since the pump only
 	// reads that value.
-#if LL_THREADS_APR
-	LLScopedLock lock(mChainsMutex);
+#if LL_THREADS_PUMPIO
+	LLMutexLock lock(mChainsMutex);
 #endif
 	mClearLocks.insert(key);
 }
@@ -458,8 +456,8 @@ void LLPumpIO::pump(const S32& poll_timeout)
 	PUMP_DEBUG;
 	if(true)
 	{
-#if LL_THREADS_APR
-		LLScopedLock lock(mChainsMutex);
+#if LL_THREADS_PUMPIO
+		LLMutexLock lock(mChainsMutex);
 #endif
 		// bail if this pump is paused.
 		if(PAUSING == mState)
@@ -520,7 +518,7 @@ void LLPumpIO::pump(const S32& poll_timeout)
 	PUMP_DEBUG;
 	typedef std::map<S32, S32> signal_client_t;
 	signal_client_t signalled_client;
-	const apr_pollfd_t* poll_fd = NULL;
+	const apr_pollfd_t* poll_fd = nullptr;
 	if(mPollset)
 	{
 		PUMP_DEBUG;
@@ -727,8 +725,8 @@ void LLPumpIO::pump(const S32& poll_timeout)
 
 //bool LLPumpIO::respond(const chain_t& pipes)
 //{
-//#if LL_THREADS_APR
-//	LLScopedLock lock(mCallbackMutex);
+//#if LL_THREADS_PUMPIO
+//	LLMutexLock lock(mCallbackMutex);
 //#endif
 //	LLChainInfo info;
 //	links_t links;
@@ -739,10 +737,10 @@ void LLPumpIO::pump(const S32& poll_timeout)
 
 bool LLPumpIO::respond(LLIOPipe* pipe)
 {
-	if(NULL == pipe) return false;
+	if(nullptr == pipe) return false;
 
-#if LL_THREADS_APR
-	LLScopedLock lock(mCallbackMutex);
+#if LL_THREADS_PUMPIO
+	LLMutexLock lock(mCallbackMutex);
 #endif
 	LLChainInfo info;
 	LLLinkInfo link;
@@ -762,8 +760,8 @@ bool LLPumpIO::respond(
 	if(!data) return false;
 	if(links.empty()) return false;
 
-#if LL_THREADS_APR
-	LLScopedLock lock(mCallbackMutex);
+#if LL_THREADS_PUMPIO
+	LLMutexLock lock(mCallbackMutex);
 #endif
 
 	// Add the callback response
@@ -782,8 +780,8 @@ void LLPumpIO::callback()
 	//LL_INFOS() << "LLPumpIO::callback()" << LL_ENDL;
 	if(true)
 	{
-#if LL_THREADS_APR
-		LLScopedLock lock(mCallbackMutex);
+#if LL_THREADS_PUMPIO
+		LLMutexLock lock(mCallbackMutex);
 #endif
 		std::copy(
 			mPendingCallbacks.begin(),
@@ -810,8 +808,8 @@ void LLPumpIO::callback()
 
 void LLPumpIO::control(LLPumpIO::EControl op)
 {
-#if LL_THREADS_APR
-	LLScopedLock lock(mChainsMutex);
+#if LL_THREADS_PUMPIO
+	LLMutexLock lock(mChainsMutex);
 #endif
 	switch(op)
 	{
@@ -830,34 +828,31 @@ void LLPumpIO::control(LLPumpIO::EControl op)
 void LLPumpIO::initialize(apr_pool_t* pool)
 {
 	if(!pool) return;
-#if LL_THREADS_APR
-	// SJB: Windows defaults to NESTED and OSX defaults to UNNESTED, so use UNNESTED explicitly.
-	apr_thread_mutex_create(&mChainsMutex, APR_THREAD_MUTEX_UNNESTED, pool);
-	apr_thread_mutex_create(&mCallbackMutex, APR_THREAD_MUTEX_UNNESTED, pool);
+#if LL_THREADS_PUMPIO
+	mChainsMutex = new LLMutex(pool);
+	mCallbackMutex = new LLMutex(pool);
 #endif
 	mPool = pool;
 }
 
 void LLPumpIO::cleanup()
 {
-#if LL_THREADS_APR
-	if(mChainsMutex) apr_thread_mutex_destroy(mChainsMutex);
-	if(mCallbackMutex) apr_thread_mutex_destroy(mCallbackMutex);
+#if LL_THREADS_PUMPIO
+	delete_and_clear(mChainsMutex);
+	delete_and_clear(mCallbackMutex);
 #endif
-	mChainsMutex = NULL;
-	mCallbackMutex = NULL;
 	if(mPollset)
 	{
 //		LL_DEBUGS() << "cleaning up pollset" << LL_ENDL;
 		apr_pollset_destroy(mPollset);
-		mPollset = NULL;
+		mPollset = nullptr;
 	}
 	if(mCurrentPool)
 	{
 		apr_pool_destroy(mCurrentPool);
-		mCurrentPool = NULL;
+		mCurrentPool = nullptr;
 	}
-	mPool = NULL;
+	mPool = nullptr;
 }
 
 void LLPumpIO::rebuildPollset()
@@ -867,7 +862,7 @@ void LLPumpIO::rebuildPollset()
 	{
 		//LL_DEBUGS() << "destroying pollset" << LL_ENDL;
 		apr_pollset_destroy(mPollset);
-		mPollset = NULL;
+		mPollset = nullptr;
 	}
 	U32 size = 0;
 	running_chains_t::iterator run_it = mRunningChains.begin();
@@ -885,7 +880,7 @@ void LLPumpIO::rebuildPollset()
 		   && (0 == (++mCurrentPoolReallocCount % POLLSET_POOL_RECYCLE_COUNT)))
 		{
 			apr_pool_destroy(mCurrentPool);
-			mCurrentPool = NULL;
+			mCurrentPool = nullptr;
 			mCurrentPoolReallocCount = 0;
 		}
 		if(!mCurrentPool)
@@ -1175,9 +1170,9 @@ bool LLPumpIO::handleChainError(
 
 LLPumpIO::LLChainInfo::LLChainInfo() :
 	mInit(false),
-	mLock(0),
 	mEOS(false),
-	mHasCurlRequest(false)
+	mHasCurlRequest(false),
+	mLock(0)
 {
 	mTimer.setTimerExpirySec(DEFAULT_CHAIN_EXPIRY_SECS);
 }

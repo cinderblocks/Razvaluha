@@ -51,6 +51,7 @@ public:
 
 class LLGestureMgr : public LLSingleton<LLGestureMgr>, public LLInventoryFetchItemsObserver
 {
+	LLSINGLETON(LLGestureMgr);
 public:
 
 	typedef boost::function<void (LLMultiGesture* loaded_gesture)> gesture_loaded_callback_t;
@@ -58,7 +59,6 @@ public:
 	typedef std::map<LLUUID, LLMultiGesture*> item_map_t;
 	typedef std::map<LLUUID, gesture_loaded_callback_t> callback_map_t;
 
-	LLGestureMgr();
 	~LLGestureMgr();
 
 	void init();

@@ -38,7 +38,6 @@
 #include "llqueryflags.h"
 #include "message.h"
 #include "llui.h"
-#include "llsecondlifeurls.h"
 #include "llfloater.h"
 
 #include "llagent.h"
@@ -407,7 +406,7 @@ bool LLPanelPlace::callbackAuctionWebPage(const LLSD& notification, const LLSD& 
 	{
 		std::string url;
 		S32 auction_id = notification["payload"]["auction_id"].asInteger();
-		url = AUCTION_URL + llformat("%010d", auction_id );
+		url = llformat("http://secondlife.com/auctions/auction-detail.php?id=%010d", auction_id );
 
 		LL_INFOS() << "Loading auction page " << url << LL_ENDL;
 

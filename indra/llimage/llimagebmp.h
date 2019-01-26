@@ -39,16 +39,16 @@ protected:
 public:
 	LLImageBMP();
 
-	/*virtual*/ std::string getExtension() { return std::string("bmp"); }
-	/*virtual*/ BOOL updateData();
-	/*virtual*/ BOOL decode(LLImageRaw* raw_image, F32 decode_time);
-	/*virtual*/ BOOL encode(const LLImageRaw* raw_image, F32 encode_time);
+	/*virtual*/ std::string getExtension() override { return std::string("bmp"); }
+	/*virtual*/ bool updateData() override;
+	/*virtual*/ bool decode(LLImageRaw* raw_image, F32 decode_time) override;
+	/*virtual*/ bool encode(const LLImageRaw* raw_image, F32 encode_time) override;
 
 protected:
-	BOOL		decodeColorTable8( U8* dst, U8* src );
-	BOOL		decodeColorMask16( U8* dst, U8* src );
-	BOOL		decodeTruecolor24( U8* dst, U8* src );
-	BOOL		decodeColorMask32( U8* dst, U8* src );
+	bool		decodeColorTable8( U8* dst, U8* src );
+	bool		decodeColorMask16( U8* dst, U8* src );
+	bool		decodeTruecolor24( U8* dst, U8* src );
+	bool		decodeColorMask32( U8* dst, U8* src );
 
 	U32			countTrailingZeros( U32 m );
 
@@ -58,7 +58,7 @@ protected:
 	S32			mBitmapOffset;
 	S32			mBitsPerPixel;
 	U32			mBitfieldMask[4]; // rgba
-	BOOL		mOriginAtTop;
+	bool		mOriginAtTop;
 };
 
 #endif

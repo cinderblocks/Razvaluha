@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llxfer_file.cpp
  * @brief implementation of LLXfer_File class for a single xfer (file)
@@ -70,7 +72,7 @@ LLXfer_File::~LLXfer_File ()
 void LLXfer_File::init (const std::string& local_filename, BOOL delete_local_on_completion, S32 chunk_size)
 {
 
-	mFp = NULL;
+	mFp = nullptr;
 	mLocalFilename.clear();
 	mRemoteFilename.clear();
 	mRemotePath = LL_PATH_NONE;
@@ -95,15 +97,15 @@ void LLXfer_File::cleanup ()
 	if (mFp)
 	{
 		fclose(mFp);
-		mFp = NULL;
+		mFp = nullptr;
 	}
 
-	LLFile::remove(mTempFilename);
+	LLFile::remove(mTempFilename, ENOENT);
 
 	if (mDeleteLocalOnCompletion)
 	{
 		LL_DEBUGS() << "Removing file: " << mLocalFilename << LL_ENDL;
-		LLFile::remove(mLocalFilename);
+		LLFile::remove(mLocalFilename, ENOENT);
 	}
 	else
 	{
@@ -144,7 +146,7 @@ S32 LLXfer_File::initializeRequest(U64 xfer_id,
 	if (mBuffer)
 	{
 		delete(mBuffer);
-		mBuffer = NULL;
+		mBuffer = nullptr;
 	}
 
 	mBuffer = new char[LL_MAX_XFER_FILE_BUFFER];
@@ -165,7 +167,7 @@ S32 LLXfer_File::startDownload()
 	if (mFp)
 	{
 		fclose(mFp);
-		mFp = NULL;
+		mFp = nullptr;
 
 		gMessageSystem->newMessageFast(_PREHASH_RequestXfer);
 		gMessageSystem->nextBlockFast(_PREHASH_XferID);
@@ -292,7 +294,7 @@ S32 LLXfer_File::flush()
 			
 //			LL_INFOS() << "******* wrote " << mBufferLength << " bytes of file xfer" << LL_ENDL;
 			fclose(mFp);
-			mFp = NULL;
+			mFp = nullptr;
 			
 			mBufferLength = 0;
 		}
@@ -321,7 +323,7 @@ S32 LLXfer_File::processEOF()
 		mCallbackResult = flushval;
 	}
 
-	LLFile::remove(mLocalFilename);
+	LLFile::remove(mLocalFilename, ENOENT);
 
 	if (!mCallbackResult)
 	{
@@ -367,7 +369,7 @@ S32 LLXfer_File::processEOF()
 	if (mFp)
 	{
 		fclose(mFp);
-		mFp = NULL;
+		mFp = nullptr;
 	}
 
 	retval = LLXfer::processEOF();

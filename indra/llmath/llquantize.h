@@ -6,7 +6,7 @@
  * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
@@ -130,7 +130,7 @@ inline U8 F32_TO_STRING(F32 val, F32 lower, F32 upper)
 	val -= lower;					//[0, upper-lower]
 	val /= (upper - lower);			//[0,1]
 	val = val * MAXSTRINGVAL;		//[0, MAXSTRINGVAL]
-	val = floor(val + 0.5f);		//[0, MAXSTRINGVAL]
+	val = floorf(val + 0.5f);		//[0, MAXSTRINGVAL]
 
 	U8 stringVal = (U8)(val) + FIRSTVALIDCHAR;			//[FIRSTVALIDCHAR, MAXSTRINGVAL + FIRSTVALIDCHAR]
 	return stringVal;

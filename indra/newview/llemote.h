@@ -55,7 +55,7 @@ class LLEmote :
 {
 public:
 	// Constructor
-	LLEmote(LLUUID const& id, LLMotionController* controller);
+	LLEmote(LLUUID const& id);
 
 	// Destructor
 	virtual ~LLEmote();
@@ -67,7 +67,7 @@ public:
 
 	// static constructor
 	// all subclasses must implement such a function and register it
-	static LLMotion* create(LLUUID const& id, LLMotionController* controller) { return new LLEmote(id, controller); }
+	static LLMotion* create(LLUUID const& id) { return new LLEmote(id); }
 
 public:
 	//-------------------------------------------------------------------------

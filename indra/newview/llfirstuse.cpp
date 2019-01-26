@@ -171,7 +171,7 @@ void LLFirstUse::useTeleport()
 {
 	if (gSavedSettings.getWarning("FirstTeleport"))
 	{
-		LLVector3d teleportDestination = LLTracker::getTrackedPositionGlobal();
+		LLVector3d teleportDestination = LLTracker::instance().getTrackedPositionGlobal();
 		if(teleportDestination != LLVector3d::zero)
 		{
 			gSavedSettings.setWarning("FirstTeleport", FALSE);
@@ -245,6 +245,10 @@ void LLFirstUse::useSandbox()
 		gSavedSettings.setWarning("FirstSandbox", FALSE);
 
 		LLSD args;
+		// first clean starts at 3 AM
+		const S32 SANDBOX_FIRST_CLEAN_HOUR = 3;
+		// clean every <n> hours
+		const S32 SANDBOX_CLEAN_FREQ = 12;
 		args["HOURS"] = llformat("%d",SANDBOX_CLEAN_FREQ);
 		args["TIME"] = llformat("%d",SANDBOX_FIRST_CLEAN_HOUR);
 		LLNotificationsUtil::add("FirstSandbox", args);

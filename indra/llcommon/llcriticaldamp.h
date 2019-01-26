@@ -52,7 +52,7 @@ public:
 				+ (b * interpolant));
 	}
 
-protected:	
+protected:
 	static F32 calcInterpolant(F32 time_constant);
 
 	struct CompareTimeConstants;

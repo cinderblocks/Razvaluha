@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llvolumemgr.cpp
  *
@@ -44,11 +46,11 @@ F32 LLVolumeLODGroup::mDetailScales[NUM_LODS] = {1.f, 1.5f, 2.5f, 4.f};
 //============================================================================
 
 LLVolumeMgr::LLVolumeMgr()
-:	mDataMutex(NULL)
+:	mDataMutex(nullptr)
 {
 	// the LLMutex magic interferes with easy unit testing,
 	// so you now must manually call useMutex() to use it
-	//mDataMutex = new LLMutex;
+	//mDataMutex = new LLMutex(gAPRPoolp);
 }
 
 LLVolumeMgr::~LLVolumeMgr()
@@ -56,7 +58,7 @@ LLVolumeMgr::~LLVolumeMgr()
 	cleanup();
 
 	delete mDataMutex;
-	mDataMutex = NULL;
+	mDataMutex = nullptr;
 }
 
 BOOL LLVolumeMgr::cleanup()
@@ -115,7 +117,7 @@ LLVolume* LLVolumeMgr::refVolume(const LLVolumeParams &volume_params, const S32 
 // virtual
 LLVolumeLODGroup* LLVolumeMgr::getGroup( const LLVolumeParams& volume_params ) const
 {
-	LLVolumeLODGroup* volgroupp = NULL;
+	LLVolumeLODGroup* volgroupp = nullptr;
 	if (mDataMutex)
 	{
 		mDataMutex->lock();
@@ -278,7 +280,7 @@ bool LLVolumeLODGroup::cleanupRefs()
 			{
 				LL_WARNS() << " LOD " << i << " refs = " << mLODRefs[i] << LL_ENDL;
 				mLODRefs[i] = 0;
-				mVolumeLODs[i] = NULL;
+				mVolumeLODs[i] = nullptr;
 			}
 		}
 		LL_WARNS() << *getVolumeParams() << LL_ENDL;

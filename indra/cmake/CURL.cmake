@@ -1,7 +1,7 @@
 # -*- cmake -*-
 include(Prebuilt)
 
-set(CURL_FIND_QUIETLY OFF)
+set(CURL_FIND_QUIETLY ON)
 set(CURL_FIND_REQUIRED ON)
 
 if (STANDALONE)
@@ -10,11 +10,12 @@ else (STANDALONE)
   use_prebuilt_binary(curl)
   if (WINDOWS)
     set(CURL_LIBRARIES 
-    debug libcurld
-    optimized libcurl)
-  else (WINDOWS)
-    use_prebuilt_binary(libidn)
-    set(CURL_LIBRARIES curl idn)
-  endif (WINDOWS)
+    debug libcurl_a_debug.lib
+    optimized libcurl_a.lib)
+  elseif (LINUX)
+    set(CURL_LIBRARIES curl)
+  else (DARWIN)
+    set(CURL_LIBRARIES curl iconv)
+  endif ()
   set(CURL_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include)
 endif (STANDALONE)

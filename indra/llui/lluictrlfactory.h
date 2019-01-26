@@ -57,21 +57,20 @@ extern template class LLUICtrlFactory* LLSingleton<class LLUICtrlFactory>::getIn
 class LLUICtrlFactory : public LLSingleton<LLUICtrlFactory>
 {
 private:
-	friend class LLSingleton<LLUICtrlFactory>;
-	LLUICtrlFactory();
+	LLSINGLETON(LLUICtrlFactory);
 	~LLUICtrlFactory();
 
 	// only partial specialization allowed in inner classes, so use extra dummy parameter
 	template <typename PARAM_BLOCK, int DUMMY>
 	class ParamDefaults : public LLSingleton<ParamDefaults<PARAM_BLOCK, DUMMY> > 
 	{
-	public:
-		ParamDefaults()
+		LLSINGLETON(ParamDefaults)
 		{
 			// recursively fill from base class param block
 			((typename PARAM_BLOCK::base_block_t&)mPrototype).fillFrom(ParamDefaults<typename PARAM_BLOCK::base_block_t, DUMMY>::instance().get());
 		}
 
+	public:
 		const PARAM_BLOCK& get() { return mPrototype; }
 
 	private:
@@ -82,6 +81,7 @@ private:
 	template<int DUMMY>
 	class ParamDefaults<LLInitParam::BaseBlock, DUMMY> : public LLSingleton<ParamDefaults<LLInitParam::BaseBlock, DUMMY> >
 	{
+		LLSINGLETON_EMPTY_CTOR(ParamDefaults)
 	public:
 		const LLInitParam::BaseBlock& get() { return mBaseBlock; }
 	private:

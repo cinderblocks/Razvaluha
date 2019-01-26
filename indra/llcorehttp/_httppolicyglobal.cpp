@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file _httppolicyglobal.cpp
  * @brief Definitions for internal class defining global policy option.
@@ -88,15 +90,18 @@ HttpStatus HttpPolicyGlobal::set(HttpRequest::EPolicyOption opt, const std::stri
 	switch (opt)
 	{
 	case HttpRequest::PO_CA_PATH:
+        LL_DEBUGS("CoreHttp") << "Setting global CA Path to " << value << LL_ENDL;
 		mCAPath = value;
 		break;
 
 	case HttpRequest::PO_CA_FILE:
+        LL_DEBUGS("CoreHttp") << "Setting global CA File to " << value << LL_ENDL;
 		mCAFile = value;
 		break;
 
 	case HttpRequest::PO_HTTP_PROXY:
-		mCAFile = value;
+        LL_DEBUGS("CoreHttp") << "Setting global Proxy to " << value << LL_ENDL;
+		mHttpProxy = value;
 		break;
 
 	default:

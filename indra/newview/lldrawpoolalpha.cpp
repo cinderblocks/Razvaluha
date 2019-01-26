@@ -125,6 +125,7 @@ void LLDrawPoolAlpha::beginPostDeferredPass(S32 pass)
 
 		//prime simple shader (loads shadow relevant uniforms)
 		gPipeline.bindDeferredShader(*simple_shader);
+		gPipeline.unbindDeferredShader(*simple_shader);
 
 		//simple_shader->uniform1f(LLShaderMgr::DISPLAY_GAMMA, (gamma > 0.1f) ? 1.0f / gamma : (1.0f/2.2f));
 	}
@@ -154,7 +155,11 @@ void LLDrawPoolAlpha::beginPostDeferredPass(S32 pass)
 }
 
 void LLDrawPoolAlpha::endPostDeferredPass(S32 pass) 
-{ 
+{
+	if (current_shader)
+	{
+		gPipeline.unbindDeferredShader(*current_shader);
+	}
 	if (pass == 1 && !LLPipeline::sImpostorRender)
 	{
 		gPipeline.mDeferredDepth.flush();
@@ -440,6 +445,8 @@ void LLDrawPoolAlpha::renderAlpha(U32 mask, S32 pass)
 						// (this way we won't rebind shaders unnecessarily).
 						if (current_shader != target_shader)
 						{
+							if(current_shader)
+								gPipeline.unbindDeferredShader(*current_shader);
 							gPipeline.bindDeferredShader(*target_shader);
 						}
 					}
@@ -451,6 +458,8 @@ void LLDrawPoolAlpha::renderAlpha(U32 mask, S32 pass)
 						// (this way we won't rebind shaders unnecessarily).
 						if(current_shader != target_shader)
 						{
+							if(current_shader)
+								gPipeline.unbindDeferredShader(*current_shader);
 							target_shader->bind();
 						}
 					}
@@ -528,6 +537,7 @@ void LLDrawPoolAlpha::renderAlpha(U32 mask, S32 pass)
 
 				{
 					LL_RECORD_BLOCK_TIME(FTM_RENDER_ALPHA_PUSH);
+
 					gGL.blendFunc((LLRender::eBlendFactor) params.mBlendFuncSrc, (LLRender::eBlendFactor) params.mBlendFuncDst, mAlphaSFactor, mAlphaDFactor);
 					// Singu Note: If using shaders, pull the attribute mask from it, else used passed base mask.
 					params.mVertexBuffer->setBuffer(current_shader ? current_shader->mAttributeMask : mask);
@@ -546,20 +556,21 @@ void LLDrawPoolAlpha::renderAlpha(U32 mask, S32 pass)
 					gGL.blendFunc(LLRender::BF_ZERO, LLRender::BF_ONE, // don't touch color
 						      LLRender::BF_ONE, LLRender::BF_ONE); // add to alpha (glow)
 
-					emissive_shader->bind();
-					
+					//emissive_shader->bind();
+
 					// glow doesn't use vertex colors from the mesh data
 					// Singu Note: Pull attribs from shader, since we always have one here.
-					params.mVertexBuffer->setBuffer(emissive_shader->mAttributeMask);
-					
+					// Singu Note: To avoid ridiculous shader bind cost, simply re-use prior shader, but let llvertexbuffer replace the color attrib ptr with the emissive one.
+					params.mVertexBuffer->setBuffer(current_shader->mAttributeMask | LLVertexBuffer::MAP_EMISSIVE);
+
 					// do the actual drawing, again
 					params.mVertexBuffer->drawRange(params.mDrawMode, params.mStart, params.mEnd, params.mCount, params.mOffset);
 					gPipeline.addTrianglesDrawn(params.mCount, params.mDrawMode);
 
+					//current_shader->bind();
+
 					// restore our alpha blend mode
 					gGL.blendFunc(mColorSFactor, mColorDFactor, mAlphaSFactor, mAlphaDFactor);
-
-					current_shader->bind();
 				}
 			
 				if (tex_setup)

@@ -36,6 +36,7 @@
 #include "lluuid.h"
 #include "llfloater.h"
 #include "lllslconstants.h"
+#include "llsafehandle.h"
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Class LLFloaterPay
@@ -48,6 +49,8 @@ class LLButton;
 class LLObjectSelection;
 
 typedef void (*money_callback)(const LLUUID&, LLViewerRegion*,S32,BOOL,S32,const std::string&);
+
+constexpr S32 MAX_PAY_BUTTONS = 4;
 
 class LLFloaterPay : public LLFloater
 {

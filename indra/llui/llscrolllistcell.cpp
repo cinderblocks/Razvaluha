@@ -189,7 +189,7 @@ LLScrollListText::LLScrollListText(const LLScrollListCell::Params& p)
 
 	if (p.font.isProvided())
 	{
-		if (const LLFontGL* font = LLResMgr::getInstance()->getRes(p.font)) // Common CAPITALIZED font name?
+		if (const LLFontGL* font = LLFontGL::getFontByName(p.font)) // Common CAPITALIZED font name?
 			mFont = font;
 		else // Less common camelCase font?
 		{

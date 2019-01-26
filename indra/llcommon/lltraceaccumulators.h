@@ -36,11 +36,13 @@
 #include "llrefcount.h"
 #include "llthreadlocalstorage.h"
 #include "llmemory.h"
+#include "llfasttimer.h"
 #include <limits>
 
 namespace LLTrace
 {
-	const F64 NaN	= std::numeric_limits<double>::quiet_NaN();
+	constexpr F64 NaN = std::numeric_limits<F64>::quiet_NaN();
+	constexpr F32 NaN32 = std::numeric_limits<F32>::quiet_NaN();
 
 	enum EBufferAppendType
 	{
@@ -57,14 +59,14 @@ namespace LLTrace
 		struct StaticAllocationMarker { };
 
 		AccumulatorBuffer(StaticAllocationMarker m)
-		:	mStorageSize(0),
-			mStorage(NULL)
+		:	mStorage(nullptr),
+			mStorageSize(0)
 		{}
 
 	public:
 		AccumulatorBuffer()
-			: mStorageSize(0),
-			mStorage(NULL)
+			: mStorage(nullptr),
+              mStorageSize(0)
 		{
 			const AccumulatorBuffer& other = *getDefaultBuffer();
 			resize(sNextStorageSlot);
@@ -95,8 +97,8 @@ namespace LLTrace
 
 
 		AccumulatorBuffer(const AccumulatorBuffer& other)
-			: mStorageSize(0),
-			mStorage(NULL)
+			: mStorage(nullptr),
+              mStorageSize(0)
 		{
 			resize(sNextStorageSlot);
 			for (S32 i = 0; i < sNextStorageSlot; i++)
@@ -123,7 +125,7 @@ namespace LLTrace
 			}
 		}
 
-		void reset(const AccumulatorBuffer<ACCUMULATOR>* other = NULL)
+		void reset(const AccumulatorBuffer<ACCUMULATOR>* other = nullptr)
 		{
 			llassert(mStorageSize >= sNextStorageSlot);
 			for (size_t i = 0; i < sNextStorageSlot; i++)
@@ -232,22 +234,22 @@ namespace LLTrace
 	};
 
 	template<typename ACCUMULATOR> size_t AccumulatorBuffer<ACCUMULATOR>::sNextStorageSlot = 0;
-	template<typename ACCUMULATOR> AccumulatorBuffer<ACCUMULATOR>* AccumulatorBuffer<ACCUMULATOR>::sDefaultBuffer = NULL;
+	template<typename ACCUMULATOR> AccumulatorBuffer<ACCUMULATOR>* AccumulatorBuffer<ACCUMULATOR>::sDefaultBuffer = nullptr;
 
 	class EventAccumulator
 	{
 	public:
 		typedef F64 value_t;
-		static F64 getDefaultValue() { return NaN; }
+		static constexpr F64 getDefaultValue() { return NaN; }
 
 		EventAccumulator()
 		:	mSum(0),
-			mMin(NaN),
-			mMax(NaN),
+			mLastValue(NaN),
 			mMean(NaN),
 			mSumOfSquares(0),
-			mNumSamples(0),
-			mLastValue(NaN)
+			mMin(NaN32),
+			mMax(NaN32),
+			mNumSamples(0)
 		{}
 
 		void record(F64 value)
@@ -309,18 +311,18 @@ namespace LLTrace
 	{
 	public:
 		typedef F64 value_t;
-		static F64 getDefaultValue() { return NaN; }
+		static constexpr F64 getDefaultValue() { return NaN; }
 
 		SampleAccumulator()
 		:	mSum(0),
-			mMin(NaN),
-			mMax(NaN),
+			mLastValue(NaN),
 			mMean(NaN),
 			mSumOfSquares(0),
 			mLastSampleTimeStamp(0),
 			mTotalSamplingTime(0),
+			mMin(NaN32),
+			mMax(NaN32),
 			mNumSamples(0),
-			mLastValue(NaN),
 			mHasValue(false)
 		{}
 
@@ -483,25 +485,23 @@ namespace LLTrace
 		//
 		// members
 		//
+		BlockTimerStatHandle*	mParent;		// last acknowledged parent of this time block
+		BlockTimerStatHandle*	mLastCaller;	// used to bootstrap tree construction
 		U64							mTotalTimeCounter,
 									mSelfTimeCounter;
 		S32							mCalls;
-		class BlockTimerStatHandle*	mParent;		// last acknowledged parent of this time block
-		class BlockTimerStatHandle*	mLastCaller;	// used to bootstrap tree construction
 		U16							mActiveCount;	// number of timers with this ID active on stack
 		bool						mMoveUpTree;	// needs to be moved up the tree of timers at the end of frame
 
 	};
-
-	class BlockTimerStatHandle;
 
 	class TimeBlockTreeNode
 	{
 	public:
 		TimeBlockTreeNode();
 
-		void setParent(BlockTimerStatHandle* parent);
-		BlockTimerStatHandle* getParent() { return mParent; }
+		//void setParent(BlockTimerStatHandle* parent);
+		//BlockTimerStatHandle* getParent() { return mParent; }
 
 		BlockTimerStatHandle*					mBlock;
 		BlockTimerStatHandle*					mParent;	
@@ -512,8 +512,8 @@ namespace LLTrace
 	
 	struct BlockTimerStackRecord
 	{
-		class BlockTimer*	mActiveTimer;
-		class BlockTimerStatHandle*	mTimeBlock;
+		BlockTimer*	mActiveTimer;
+		BlockTimerStatHandle*	mTimeBlock;
 		U64					mChildTime;
 	};
 
@@ -587,7 +587,7 @@ namespace LLTrace
 
 		void append(const AccumulatorBufferGroup& other);
 		void merge(const AccumulatorBufferGroup& other);
-		void reset(AccumulatorBufferGroup* other = NULL);
+		void reset(AccumulatorBufferGroup* other = nullptr);
 		void sync();
 
 		AccumulatorBuffer<CountAccumulator>	 	mCounts;

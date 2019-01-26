@@ -1954,7 +1954,10 @@ LLViewerObject *LLViewerObjectList::createObjectViewer(const LLPCode pcode, LLVi
 	return objectp;
 }
 
+
+
 static LLTrace::BlockTimerStatHandle FTM_CREATE_OBJECT("Create Object");
+
 LLViewerObject *LLViewerObjectList::createObject(const LLPCode pcode, LLViewerRegion *regionp,
 												 const LLUUID &uuid, const U32 local_id, const LLHost &sender)
 {

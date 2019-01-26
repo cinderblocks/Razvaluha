@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
 * @file llpanelgroupbulk.cpp
 * @brief Implementation of llpanelgroupbulk
@@ -54,15 +56,15 @@
 //////////////////////////////////////////////////////////////////////////
 LLPanelGroupBulkImpl::LLPanelGroupBulkImpl(const LLUUID& group_id) :
 	mGroupID(group_id),
-	mBulkAgentList(NULL),
-	mOKButton(NULL),
-	mRemoveButton(NULL),
-	mGroupName(NULL),
+	mBulkAgentList(nullptr),
+	mOKButton(nullptr),
+	mRemoveButton(nullptr),
+	mGroupName(nullptr),
 	mLoadingText(),
 	mTooManySelected(),
-	mCloseCallback(NULL),
-	mCloseCallbackUserData(NULL),
-	mRoleNames(NULL),
+	mCloseCallback(nullptr),
+	mCloseCallbackUserData(nullptr),
+	mRoleNames(nullptr),
 	mOwnerWarning(),
 	mAlreadyInGroup(),
 	mConfirmedOwnerInvite(false),

@@ -31,12 +31,7 @@
 #include "llregistry.h"
 #include "llxmlnode.h"
 
-#ifndef BOOST_FUNCTION_HPP_INCLUDED
-#include <boost/function.hpp>
-#define BOOST_FUNCTION_HPP_INCLUDED
-#endif
 #include <iosfwd>
-#include <stack>
 #include <set>
 
 class LLView;
@@ -44,7 +39,9 @@ class LLView;
 // lookup widget type by name
 class LLWidgetTypeRegistry
 :	public LLRegistrySingleton<std::string, const std::type_info*, LLWidgetTypeRegistry>
-{};
+{
+	LLSINGLETON_EMPTY_CTOR(LLWidgetTypeRegistry);
+};
 
 
 // global static instance for registering all widget types
@@ -54,7 +51,9 @@ typedef LLRegistry<std::string, LLWidgetCreatorFunc> widget_registry_t;
 
 class LLChildRegistryRegistry
 : public LLRegistrySingleton<const std::type_info*, widget_registry_t, LLChildRegistryRegistry>
-{};
+{
+	LLSINGLETON_EMPTY_CTOR(LLChildRegistryRegistry);
+};
 
 class LLXSDWriter : public LLInitParam::Parser
 {
@@ -62,8 +61,8 @@ class LLXSDWriter : public LLInitParam::Parser
 public:
 	void writeXSD(const std::string& name, LLXMLNodePtr node, const LLInitParam::BaseBlock& block, const std::string& xml_namespace);
 
-	/*virtual*/ std::string getCurrentElementName() { return LLStringUtil::null; }
-
+	/*virtual*/ std::string getCurrentElementName() override { return LLStringUtil::null; }
+	/*virtual*/ std::string getCurrentFileName() override { return LLStringUtil::null; }
 	LLXSDWriter();
 	~LLXSDWriter();
 
@@ -100,16 +99,17 @@ public:
 	LLXUIParser();
 	typedef LLInitParam::Parser::name_stack_t name_stack_t;
 
-	/*virtual*/ std::string getCurrentElementName();
-	/*virtual*/ void parserWarning(const std::string& message);
-	/*virtual*/ void parserError(const std::string& message);
+	/*virtual*/ std::string getCurrentElementName() override;
+	/*virtual*/ std::string getCurrentFileName() override { return mCurFileName; }
+	/*virtual*/ void parserWarning(const std::string& message) override;
+	/*virtual*/ void parserError(const std::string& message) override;
 
 	void readXUI(LLXMLNodePtr node, LLInitParam::BaseBlock& block, const std::string& filename = LLStringUtil::null, bool silent=false);
 	template<typename BLOCK>
 	void writeXUI(LLXMLNodePtr node, 
 				const BLOCK& block, 
 				const LLInitParam::predicate_rule_t rules = LLInitParam::default_parse_rules(),
-				const LLInitParam::BaseBlock* diff_block = NULL)
+				const LLInitParam::BaseBlock* diff_block = nullptr)
 	{
 		if (!diff_block 
 			&& !rules.isAmbivalent(LLInitParam::HAS_DEFAULT_VALUE))
@@ -199,12 +199,13 @@ public:
 	typedef LLInitParam::Parser::name_stack_t name_stack_t;
 	typedef LLInitParam::BaseBlock* (*element_start_callback_t)(LLSimpleXUIParser&, const char* block_name);
 
-	LLSimpleXUIParser(element_start_callback_t element_cb = NULL);
+	LLSimpleXUIParser(element_start_callback_t element_cb = nullptr);
 	virtual ~LLSimpleXUIParser();
 
-	/*virtual*/ std::string getCurrentElementName();
-	/*virtual*/ void parserWarning(const std::string& message);
-	/*virtual*/ void parserError(const std::string& message);
+	/*virtual*/ std::string getCurrentElementName() override;
+	/*virtual*/ std::string getCurrentFileName() override { return mCurFileName; }
+	/*virtual*/ void parserWarning(const std::string& message) override;
+	/*virtual*/ void parserError(const std::string& message) override;
 
 	bool readXUI(const std::string& filename, LLInitParam::BaseBlock& block, bool silent=false);
 

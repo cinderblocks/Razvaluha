@@ -35,12 +35,22 @@
 #include "llvlmanager.h"
 
 #include "indra_constants.h"
-#include "bitpack.h"
 #include "patch_code.h"
 #include "patch_dct.h"
 #include "llviewerregion.h"
 #include "llframetimer.h"
 #include "llsurface.h"
+#include "llbitpack.h"
+
+const	char	LAND_LAYER_CODE					= 'L';
+const	char	WATER_LAYER_CODE				= 'W';
+const	char	WIND_LAYER_CODE					= '7';
+const	char	CLOUD_LAYER_CODE				= '8';
+
+const	char	AURORA_LAND_LAYER_CODE			= 'M';
+const	char	AURORA_WATER_LAYER_CODE			= 'X';
+const	char	AURORA_WIND_LAYER_CODE			= '9';
+const	char	AURORA_CLOUD_LAYER_CODE			= ':';
 
 LLVLManager gVLManager;
 
@@ -56,33 +66,22 @@ LLVLManager::~LLVLManager()
 
 void LLVLManager::addLayerData(LLVLData *vl_datap, const S32 mesg_size)
 {
-// <FS:CR> Aurora Sim
-	//if (LAND_LAYER_CODE == vl_datap->mType)
 	if (LAND_LAYER_CODE == vl_datap->mType || AURORA_LAND_LAYER_CODE == vl_datap->mType)
-// </FS:CR> Aurora Sim
 	{
 		mLandBits += mesg_size * 8;
 	}
-// <FS:CR> Aurora Sim
-	//else if (WIND_LAYER_CODE == vl_datap->mType)
-	else if (WIND_LAYER_CODE == vl_datap->mType || AURORA_WIND_LAYER_CODE == vl_datap->mType)
-// </FS:CR> Aurora Sim
-	{
-		mWindBits += mesg_size * 8;
-	}
-// <FS:CR> Aurora Sim
-	//else if (CLOUD_LAYER_CODE == vl_datap->mType)
-	else if (CLOUD_LAYER_CODE == vl_datap->mType || AURORA_CLOUD_LAYER_CODE == vl_datap->mType)
-// </FS:CR> Aurora Sim
-	{
-		mCloudBits += mesg_size * 8;
-	}
-// <FS:CR> Aurora Sim
-	else if (WATER_LAYER_CODE == vl_datap->mType || AURORA_CLOUD_LAYER_CODE == vl_datap->mType)
+	else if (WATER_LAYER_CODE == vl_datap->mType || AURORA_WATER_LAYER_CODE == vl_datap->mType)
 	{
 		mWaterBits += mesg_size * 8;
 	}
-// </FS:CR> Aurora Sim
+	else if (WIND_LAYER_CODE == vl_datap->mType || AURORA_WIND_LAYER_CODE == vl_datap->mType)
+	{
+		mWindBits += mesg_size * 8;
+	}
+	else if (CLOUD_LAYER_CODE == vl_datap->mType || AURORA_CLOUD_LAYER_CODE == vl_datap->mType)
+	{
+		mWaterBits += mesg_size * 8;
+	}
 	else
 	{
 		LL_ERRS() << "Unknown layer type!" << (S32)vl_datap->mType << LL_ENDL;
@@ -95,7 +94,7 @@ void LLVLManager::unpackData(const S32 num_packets)
 {
 	static LLFrameTimer decode_timer;
 	
-	U32 i;
+	S32 i;
 	for (i = 0; i < mPacketData.size(); i++)
 	{
 		LLVLData *datap = mPacketData[i];
@@ -108,14 +107,12 @@ void LLVLManager::unpackData(const S32 num_packets)
 		{
 			datap->mRegionp->getLand().decompressDCTPatch(bit_pack, &goph, FALSE);
 		}
-// <FS:CR> Aurora Sim
 		else if (AURORA_LAND_LAYER_CODE == datap->mType)
 		{
 			datap->mRegionp->getLand().decompressDCTPatch(bit_pack, &goph, TRUE);
 		}
-		//else if (WIND_LAYER_CODE == datap->mType)
 		else if (WIND_LAYER_CODE == datap->mType || AURORA_WIND_LAYER_CODE == datap->mType)
-// </FS:CR> Aurora Sim
+
 		{
 			datap->mRegionp->mWind.decompress(bit_pack, &goph);
 
@@ -125,6 +122,10 @@ void LLVLManager::unpackData(const S32 num_packets)
 #if ENABLE_CLASSIC_CLOUDS
 			datap->mRegionp->mCloudLayer.decompress(bit_pack, &goph);
 #endif
+		}
+		else if (WATER_LAYER_CODE == datap->mType || AURORA_WATER_LAYER_CODE == datap->mType)
+		{
+
 		}
 	}
 
@@ -189,6 +190,6 @@ LLVLData::LLVLData(LLViewerRegion *regionp, const S8 type, U8 *data, const S32 s
 LLVLData::~LLVLData()
 {
 	delete [] mData;
-	mData = NULL;
-	mRegionp = NULL;
+	mData = nullptr;
+	mRegionp = nullptr;
 }

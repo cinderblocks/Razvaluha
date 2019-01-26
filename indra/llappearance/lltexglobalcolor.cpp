@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltexlayerglobalcolor.cpp
  * @brief Color for texture layers.
@@ -38,7 +40,7 @@ class LLWearable;
 LLTexGlobalColor::LLTexGlobalColor(LLAvatarAppearance* appearance)
 	:
 	mAvatarAppearance(appearance),
-	mInfo(NULL)
+	mInfo(nullptr)
 {
 }
 
@@ -57,12 +59,12 @@ BOOL LLTexGlobalColor::setInfo(LLTexGlobalColorInfo *info)
 	mParamGlobalColorList.reserve(mInfo->mParamColorInfoList.size());
 	for (param_color_info_list_t::iterator iter = mInfo->mParamColorInfoList.begin(); 
 		 iter != mInfo->mParamColorInfoList.end(); 
-		 iter++)
+		 ++iter)
 	{
 		LLTexParamGlobalColor* param_color = new LLTexParamGlobalColor(this);
 		if (!param_color->setInfo(*iter, TRUE))
 		{
-			mInfo = NULL;
+			mInfo = nullptr;
 			return FALSE;
 		}
 		mParamGlobalColorList.push_back(param_color);
@@ -119,8 +121,7 @@ LLTexParamGlobalColor::~LLTexParamGlobalColor()
 
 void LLTexParamGlobalColor::onGlobalColorChanged(bool upload_bake)
 {
-	if (mAvatarAppearance)
-		mAvatarAppearance->onGlobalColorChanged(mTexGlobalColor, upload_bake);
+	mAvatarAppearance->onGlobalColorChanged(mTexGlobalColor, upload_bake);
 }
 
 //-----------------------------------------------------------------------------

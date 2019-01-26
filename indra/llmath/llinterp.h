@@ -14,7 +14,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -48,7 +48,7 @@ template <typename Type>
 class LLInterp
 {
 public:
-	LLInterp();
+        LLInterp();
 	virtual ~LLInterp() {}
 
 	virtual void start();
@@ -88,7 +88,7 @@ template <typename Type>
 class LLInterpLinear : public LLInterp<Type>
 {
 public:
-	/*virtual*/ void start();
+	/*virtual*/ void start() override;
 	void update(const F32 time);
 	F32 getCurFrac() const;
 protected:
@@ -108,7 +108,7 @@ class LLInterpAttractor : public LLInterp<Type>
 {
 public:
 	LLInterpAttractor();
-	/*virtual*/ void start();
+	/*virtual*/ void start() override;
 	void setStartVel(const Type &vel);
 	void setForce(const F32 force);
 	void update(const F32 time);
@@ -363,7 +363,7 @@ template <class Type>
 LLInterpFunc<Type>::LLInterpFunc() : LLInterp<Type>()
 {
 	mFunc = NULL;
-	mData = NULL;
+	mData = nullptr;
 }
 
 template <class Type>

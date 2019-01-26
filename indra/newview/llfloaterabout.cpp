@@ -53,7 +53,6 @@
 #include "lluictrlfactory.h"
 #include "lluri.h"
 #include "llweb.h"
-#include "llsecondlifeurls.h"
 #include "lltrans.h"
 #include "llappviewer.h" 
 #include "llglheaders.h"
@@ -70,7 +69,10 @@
 #include "lldxhardware.h"
 #endif
 
-#include "cef/llceflib.h"
+#include "cef/dullahan.h"
+#if VLCPLUGIN
+#include "vlc/libvlc_version.h"
+#endif // LL_WINDOWS
 
 extern LLMemoryInfo gSysMemory;
 extern U32 gPacketsIn;
@@ -146,24 +148,25 @@ LLFloaterAbout::LLFloaterAbout()
 	support_widget->appendColoredText(version, FALSE, FALSE, gColors.getColor("TextFgReadOnlyColor"));
 	support_widget->appendStyledText(LLTrans::getString("ReleaseNotes"), false, false, viewer_link_style);
 
-	std::string support;
-	support.append("\n\n");
-	support.append("Grid: " + gHippoGridManager->getConnectedGrid()->getGridName() + "\n\n");
+	std::stringstream support;
+	support << "\n\n"
+			<< "Grid: " << gHippoGridManager->getConnectedGrid()->getGridName()
+			<< "\n\n";
 
 #if LL_MSVC
-    support.append(llformat("Built with MSVC version %d\n\n", _MSC_VER));
+    support << llformat("Built with MSVC version %d\n\n", _MSC_VER);
 #endif
 
 #if LL_CLANG
-    support.append(llformat("Built with Clang version %d\n\n", CLANG_VERSION));
+    support << llformat("Built with Clang version %d\n\n", CLANG_VERSION);
 #endif
 
 #if LL_INTELC
-    support.append(llformat("Built with ICC version %d\n\n", __ICC));
+    support << llformat("Built with ICC version %d\n\n", __ICC);
 #endif
 
 #if LL_GNUC
-    support.append(llformat("Built with GCC version %d\n\n", GCC_VERSION));
+    support << llformat("Built with GCC version %d\n\n", GCC_VERSION);
 #endif
 
 	// Position
@@ -177,32 +180,25 @@ LLFloaterAbout::LLFloaterAbout()
 		LLUIString pos_text = getString("you_are_at");
 		pos_text.setArg("[POSITION]",
 						llformat("%.1f, %.1f, %.1f ", pos.mdV[VX], pos.mdV[VY], pos.mdV[VZ]));
-		support.append(pos_text);
+		support << pos_text.getString();
 
 		if (const LLViewerRegion* region = gAgent.getRegion())
 		{
 			const LLVector3d& coords(region->getOriginGlobal());
-			std::string region_text = llformat("in %s (%.0f, %.0f) located at ", region->getName().c_str(), coords.mdV[VX]/REGION_WIDTH_METERS, coords.mdV[VY]/REGION_WIDTH_METERS);
-			support.append(region_text);
-
-			std::string buffer;
-			buffer = region->getHost().getHostName();
-			support.append(buffer);
-			support.append(" (");
-			buffer = region->getHost().getString();
-			support.append(buffer);
-			support.append(")");
+			support << llformat("in %s (%.0f, %.0f) located at ", region->getName().c_str(), coords.mdV[VX]/REGION_WIDTH_METERS, coords.mdV[VY]/REGION_WIDTH_METERS)
+					<< region->getHost().getHostName()
+					<< " (" << region->getHost().getString() << ")";
 		}
 		}
 		else
-			support.append(RlvStrings::getString(RLV_STRING_HIDDEN_REGION));
+			support << RlvStrings::getString(RLV_STRING_HIDDEN_REGION);
 // [/RLVa:KN]
-		support += '\n';
+		support << '\n';
 
-		support.append(gLastVersionChannel);
-		support += '\n';
+		support << gLastVersionChannel
+				<< '\n';
 
-		support_widget->appendColoredText(support, FALSE, FALSE, gColors.getColor("TextFgReadOnlyColor"));
+		support_widget->appendColoredText(support.str(), FALSE, FALSE, gColors.getColor("TextFgReadOnlyColor"));
 
 		const std::string url(region->getCapability("ServerReleaseNotes"));
 		if (!url.empty())
@@ -212,7 +208,7 @@ LLFloaterAbout::LLFloaterAbout()
 			support_widget->appendStyledText(LLTrans::getString("ReleaseNotes"), false, false, server_link_style);
 		}
 
-		support = "\n\n";
+		support.str("\n\n");
 	}
 
 	// *NOTE: Do not translate text like GPU, Graphics Card, etc -
@@ -220,87 +216,94 @@ LLFloaterAbout::LLFloaterAbout()
 	//  and this info sometimes gets sent to support
 	
 	// CPU
-	support.append("CPU: ");
-	support.append( gSysCPU.getCPUString() );
-	support += '\n';
-
-	/* This is confusing and WRONG.
-	support.append("SSE Support:");
-	if(gSysCPU.hasSSE())
-		support.append(" SSE2\n");
-	else if(gSysCPU.hasSSE())
-		support.append(" SSE\n");
-	else
-		support.append(" None\n"); */
+	support << "CPU: "
+			<< gSysCPU.getCPUString()
+			<< '\n';
 
 	U32Megabytes memory = gSysMemory.getPhysicalMemoryKB();
 	// Moved hack adjustment to Windows memory size into llsys.cpp
 
-	std::string mem_text = llformat("Memory: %u MB\n", memory );
-	support.append(mem_text);
+	support << llformat("Memory: %u MB\n", memory)
 
-	support.append("OS Version: ");
-	support.append( LLAppViewer::instance()->getOSInfo().getOSString() );
-	support += '\n';
+			<< ("OS Version: ")
+			<< LLAppViewer::instance()->getOSInfo().getOSString()
+			<< '\n'
 
-	support.append("Graphics Card Vendor: ");
-	support.append( (const char*) glGetString(GL_VENDOR) );
-	support += '\n';
+			<< "Graphics Card Vendor: "
+			<< (const char*) glGetString(GL_VENDOR)
+			<< '\n'
 
-	support.append("Graphics Card: ");
-	support.append( (const char*) glGetString(GL_RENDERER) );
-	support += '\n';
+			<< "Graphics Card: "
+			<< (const char*) glGetString(GL_RENDERER)
+			<< '\n';
 
 #if LL_WINDOWS
     getWindow()->incBusyCount();
     getWindow()->setCursor(UI_CURSOR_ARROW);
-    support.append("Windows Graphics Driver Version: ");
+	support << "Windows Graphics Driver Version: ";
     LLSD driver_info = gDXHardware.getDisplayInfo();
     if (driver_info.has("DriverVersion"))
     {
-        support.append(driver_info["DriverVersion"]);
+        support << driver_info["DriverVersion"];
     }
-    support += '\n';
+    support << '\n';
     getWindow()->decBusyCount();
     getWindow()->setCursor(UI_CURSOR_ARROW);
 #endif
 
-	support.append("OpenGL Version: ");
-	support.append( (const char*) glGetString(GL_VERSION) );
+	support << "OpenGL Version: "
+			<< (const char*)glGetString(GL_VERSION);
 // [RLVa:KB] - Checked: 2010-04-18 (RLVa-1.2.0)
-	support += '\n';
-	support.append("RLV Version: " + (RlvActions::isRlvEnabled() ? RlvStrings::getVersionAbout() : "(disabled)"));
+	if (RlvActions::isRlvEnabled())
+		support << "\nRLV Version: " << RlvStrings::getVersionAbout();
 // [/RLVa:KB]
-	support.append("\n\n");
+	support << "\n\n"
 
-	support.append("libcurl Version: ");
-	support.append(LLCore::LLHttp::getCURLVersion());
-	support += '\n';
+			<< "libcurl Version: "
+			<< LLCore::LLHttp::getCURLVersion()
+			<< '\n'
 
-	support.append("J2C Decoder Version: ");
-	support.append( LLImageJ2C::getEngineInfo() );
-	support += '\n';
+			<< "J2C Decoder Version: "
+			<< LLImageJ2C::getEngineInfo()
+			<< '\n'
 
-	support.append("Audio Driver Version: ");
-	bool want_fullname = true;
-	support.append( gAudiop ? gAudiop->getDriverName(want_fullname) : "(none)" );
-	support += '\n';
+			<< "Audio Driver Version: "
+			<< (gAudiop ? gAudiop->getDriverName(/*want_fullname = */true) : "(none)")
+			<< '\n';
 
-	support.append("LLCEFLib/CEF Version: ");
-	support.append(LLCEFLIB_VERSION);
-	support += '\n';
+	support << "Dullahan: "
+			<< DULLAHAN_VERSION_MAJOR
+			<< '.'
+			<< DULLAHAN_VERSION_MINOR
+			<< '.'
+			<< DULLAHAN_VERSION_BUILD
+
+			<< " / CEF: " << CEF_VERSION
+			<< " / Chrome: " << CHROME_VERSION_MAJOR
+			<< '\n';
+
+#if VLCPLUGIN
+	support << "LibVLC: ";
+	support << LIBVLC_VERSION_MAJOR;
+	support << '.';
+	support << LIBVLC_VERSION_MINOR;
+	support << '.';
+	support << LIBVLC_VERSION_REVISION;
+	support << '\n';
+#endif
+
 
 	if (gPacketsIn > 0)
 	{
-		std::string packet_loss = llformat("Packets Lost: %.0f/%.0f (%.1f%%)", 
-			LLViewerStats::getInstance()->mPacketsLostStat.getCurrent(),
+		const auto current = LLViewerStats::getInstance()->mPacketsLostStat.getCurrent();
+		support << llformat("Packets Lost: %.0f/%.0f (%.1f%%)", 
+			current,
 			F32(gPacketsIn),
-			100.f*LLViewerStats::getInstance()->mPacketsLostStat.getCurrent() / F32(gPacketsIn) );
-		support.append(packet_loss);
-		support += '\n';
+			100.f*current / F32(gPacketsIn) )
+				<< '\n';
 	}
 
-	support_widget->appendColoredText(support, FALSE, FALSE, gColors.getColor("TextFgReadOnlyColor"));
+	support_widget->appendColoredText(support.str(), FALSE, FALSE, gColors.getColor("TextFgReadOnlyColor"));
 
 	// Fix views
 	support_widget->setCursorPos(0);
@@ -345,7 +348,7 @@ LLFloaterAbout::LLFloaterAbout()
 // Destroys the object
 LLFloaterAbout::~LLFloaterAbout()
 {
-	sInstance = NULL;
+	sInstance = nullptr;
 }
 
 // static
@@ -362,7 +365,7 @@ void LLFloaterAbout::show(void*)
 
 static std::string get_viewer_release_notes_url()
 {
-	return "http://www.singularityviewer.org";
+	return LLTrans::getString("APP_SITE");
 	/*std::ostringstream version;
 	version <<  gVersionMajor
 		<< "." << gVersionMinor

@@ -76,6 +76,9 @@ protected:
 	bool onClearListEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
 	//bool onModeratorUpdateEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
 	bool onSpeakerMuteEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+	void onSpeakerBatchBeginEvent();
+	void onSpeakerBatchEndEvent();
+	void onSpeakerSortingUpdateEvent();
 
 	/**
 	 * List of listeners implementing LLOldEvents::LLSimpleListener.
@@ -94,21 +97,21 @@ protected:
 	{
 	public:
 		SpeakerAddListener(LLParticipantList& parent) : BaseSpeakerListener(parent) {}
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
 	class SpeakerRemoveListener : public BaseSpeakerListener
 	{
 	public:
 		SpeakerRemoveListener(LLParticipantList& parent) : BaseSpeakerListener(parent) {}
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
 	class SpeakerClearListener : public BaseSpeakerListener
 	{
 	public:
 		SpeakerClearListener(LLParticipantList& parent) : BaseSpeakerListener(parent) {}
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
 	/*class SpeakerModeratorUpdateListener : public BaseSpeakerListener
@@ -123,7 +126,28 @@ protected:
 	public:
 		SpeakerMuteListener(LLParticipantList& parent) : BaseSpeakerListener(parent) {}
 
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
+	};
+
+	class SpeakerBatchBeginListener : public BaseSpeakerListener
+	{
+	public:
+		SpeakerBatchBeginListener(LLParticipantList& parent) : BaseSpeakerListener(parent) {}
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
+	};
+
+	class SpeakerBatchEndListener : public BaseSpeakerListener
+	{
+	public:
+		SpeakerBatchEndListener(LLParticipantList& parent) : BaseSpeakerListener(parent) {}
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
+	};
+
+	class SpeakerSortingUpdateListener : public BaseSpeakerListener
+	{
+	public:
+		SpeakerSortingUpdateListener(LLParticipantList& parent) : BaseSpeakerListener(parent) {}
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
 	/**
@@ -196,15 +220,18 @@ private:
 	LLSpeakerMgr*		mSpeakerMgr;
 	LLScrollListCtrl*	mAvatarList;
 	bool				mShowTextChatters;
+	LLFrameTimer		mUpdateTimer;
 
 	LLPointer<SpeakerAddListener>				mSpeakerAddListener;
 	LLPointer<SpeakerRemoveListener>			mSpeakerRemoveListener;
 	LLPointer<SpeakerClearListener>				mSpeakerClearListener;
 	//LLPointer<SpeakerModeratorUpdateListener>	mSpeakerModeratorListener;
 	LLPointer<SpeakerMuteListener>				mSpeakerMuteListener;
+	LLPointer<SpeakerBatchBeginListener>		mSpeakerBatchBeginListener;
+	LLPointer<SpeakerBatchEndListener>			mSpeakerBatchEndListener;
+	LLPointer<SpeakerSortingUpdateListener>		mSpeakerSortingUpdateListener;
 
 	validate_speaker_callback_t mValidateSpeakerCallback;
 };
 
 #endif // LL_PARTICIPANTLIST_H
-

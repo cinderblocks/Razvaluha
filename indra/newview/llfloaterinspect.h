@@ -37,6 +37,7 @@
 
 #include "llavatarname.h"
 #include "llfloater.h"
+#include "llsafehandle.h"
 #include "llvoinventorylistener.h"
 
 //class LLTool;

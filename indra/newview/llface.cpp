@@ -607,7 +607,7 @@ void LLFace::renderSelected(LLViewerTexture *imagep, const LLColor4& color)
 
 					gGL.diffuseColor4fv(color.mV);
 
-					LLVertexBuffer::drawElements(LLRender::TRIANGLES, vol_face.mPositions, vol_face.mTexCoords, vol_face.mNumIndices, vol_face.mIndices);
+					LLVertexBuffer::drawElements(LLRender::TRIANGLES, vol_face.mNumVertices, vol_face.mPositions, vol_face.mTexCoords, vol_face.mNumIndices, vol_face.mIndices);
 					
 					if(prev_shader)
 					{
@@ -1126,9 +1126,10 @@ bool LLFace::canRenderAsMask()
 
 	static const LLCachedControl<bool> use_rmse_auto_mask("SHUseRMSEAutoMask",false);
 	static const LLCachedControl<F32> auto_mask_max_rmse("SHAutoMaskMaxRMSE",.09f);
+	static const LLCachedControl<F32> auto_mask_max_mid("SHAutoMaskMaxMid", .25f);
 	if ((te->getColor().mV[3] == 1.0f) && // can't treat as mask if we have face alpha
 		(te->getGlow() == 0.f) && // glowing masks are hard to implement - don't mask
-		(getTexture()->getIsAlphaMask((!getViewerObject()->isAttachment() && use_rmse_auto_mask) ? auto_mask_max_rmse : -1.f))) // texture actually qualifies for masking (lazily recalculated but expensive)
+		(getTexture()->getIsAlphaMask((!getViewerObject()->isAttachment() && use_rmse_auto_mask) ? auto_mask_max_rmse : -1.f, auto_mask_max_mid))) // texture actually qualifies for masking (lazily recalculated but expensive)
 	{
 		if (LLPipeline::sRenderDeferred)
 		{
@@ -1327,6 +1328,13 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 	const LLTextureEntry *tep = mVObjp->getTE(f);
 	const U8 bump_code = tep ? tep->getBumpmap() : 0;
 
+	if ( bump_code && rebuild_tcoord && mVertexBuffer->hasDataType(LLVertexBuffer::TYPE_TANGENT) )
+	{
+		LLMaterial* mat = tep->getMaterialParams().get();
+		if( !mat || mat->getNormalID().isNull() )
+			rebuild_tangent = true;
+	}
+
 	BOOL is_static = mDrawablep->isStatic();
 	BOOL is_global = is_static;
 
@@ -1432,153 +1440,6 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 	}
 	
 	static LLCachedControl<bool> use_transform_feedback("RenderUseTransformFeedback", false);
-
-#ifdef GL_TRANSFORM_FEEDBACK_BUFFER
-	if (use_transform_feedback &&
-		gTransformPositionProgram.mProgramObject && //transform shaders are loaded
-		mVertexBuffer->useVBOs() && //target buffer is in VRAM
-		!rebuild_weights && //TODO: add support for weights
-		!volume.isUnique()) //source volume is NOT flexi
-	{ //use transform feedback to pack vertex buffer
-		//gGLDebugLoggingEnabled = TRUE;
-		LL_RECORD_BLOCK_TIME(FTM_FACE_GEOM_FEEDBACK);
-		LLGLEnable discard(GL_RASTERIZER_DISCARD);
-		LLVertexBuffer* buff = (LLVertexBuffer*) vf.mVertexBuffer.get();
-
-		if (vf.mVertexBuffer.isNull() || buff->getNumVerts() != vf.mNumVertices)
-		{
-			mVObjp->getVolume()->genTangents(f);
-			LLFace::cacheFaceInVRAM(vf);
-			buff = (LLVertexBuffer*) vf.mVertexBuffer.get();
-		}		
-
-		LLGLSLShader* cur_shader = LLGLSLShader::sCurBoundShaderPtr;
-		
-		gGL.pushMatrix();
-		gGL.loadMatrix(mat_vert_in);
-
-		if (rebuild_pos)
-		{
-			LL_RECORD_BLOCK_TIME(FTM_FACE_GEOM_FEEDBACK_POSITION);
-			gTransformPositionProgram.bind();
-
-			mVertexBuffer->bindForFeedback(0, LLVertexBuffer::TYPE_VERTEX, mGeomIndex, mGeomCount);
-
-			U8 index = mTextureIndex < 255 ? mTextureIndex : 0;
-
-			S32 val = 0;
-			U8* vp = (U8*) &val;
-			vp[0] = index;
-			vp[1] = 0;
-			vp[2] = 0;
-			vp[3] = 0;
-			
-			gTransformPositionProgram.uniform1i(sTextureIndexIn, val);
-			glBeginTransformFeedback(GL_POINTS);
-			buff->setBuffer(LLVertexBuffer::MAP_VERTEX);
-
-			push_for_transform(buff, vf.mNumVertices, mGeomCount);
-
-			glEndTransformFeedback();
-		}
-
-		if (rebuild_color)
-		{
-			LL_RECORD_BLOCK_TIME(FTM_FACE_GEOM_FEEDBACK_COLOR);
-			gTransformColorProgram.bind();
-			
-			mVertexBuffer->bindForFeedback(0, LLVertexBuffer::TYPE_COLOR, mGeomIndex, mGeomCount);
-
-			S32 val = *((S32*) color.mV);
-
-			gTransformColorProgram.uniform1i(sColorIn, val);
-			glBeginTransformFeedback(GL_POINTS);
-			buff->setBuffer(LLVertexBuffer::MAP_VERTEX);
-			push_for_transform(buff, vf.mNumVertices, mGeomCount);
-			glEndTransformFeedback();
-		}
-
-		if (rebuild_emissive)
-		{
-			LL_RECORD_BLOCK_TIME(FTM_FACE_GEOM_FEEDBACK_EMISSIVE);
-			gTransformColorProgram.bind();
-			
-			mVertexBuffer->bindForFeedback(0, LLVertexBuffer::TYPE_EMISSIVE, mGeomIndex, mGeomCount);
-
-			U8 glow = (U8) llclamp((S32) (getTextureEntry()->getGlow()*255), 0, 255);
-
-			S32 glow32 = glow |
-						 (glow << 8) |
-						 (glow << 16) |
-						 (glow << 24);
-
-			gTransformColorProgram.uniform1i(sColorIn, glow32);
-			glBeginTransformFeedback(GL_POINTS);
-			buff->setBuffer(LLVertexBuffer::MAP_VERTEX);
-			push_for_transform(buff, vf.mNumVertices, mGeomCount);
-			glEndTransformFeedback();
-		}
-
-		if (rebuild_normal)
-		{
-			LL_RECORD_BLOCK_TIME(FTM_FACE_GEOM_FEEDBACK_NORMAL);
-			gTransformNormalProgram.bind();
-			
-			mVertexBuffer->bindForFeedback(0, LLVertexBuffer::TYPE_NORMAL, mGeomIndex, mGeomCount);
-						
-			glBeginTransformFeedback(GL_POINTS);
-			buff->setBuffer(LLVertexBuffer::MAP_NORMAL);
-			push_for_transform(buff, vf.mNumVertices, mGeomCount);
-			glEndTransformFeedback();
-		}
-
-		if (rebuild_tangent)
-		{
-			LL_RECORD_BLOCK_TIME(FTM_FACE_GEOM_TANGENT);
-			gTransformTangentProgram.bind();
-			
-			mVertexBuffer->bindForFeedback(0, LLVertexBuffer::TYPE_TANGENT, mGeomIndex, mGeomCount);
-						
-			glBeginTransformFeedback(GL_POINTS);
-			buff->setBuffer(LLVertexBuffer::MAP_TANGENT);
-			push_for_transform(buff, vf.mNumVertices, mGeomCount);
-			glEndTransformFeedback();
-		}
-
-		if (rebuild_tcoord)
-		{
-			LL_RECORD_BLOCK_TIME(FTM_FACE_GEOM_FEEDBACK_TEXTURE);
-			gTransformTexCoordProgram.bind();
-			
-			mVertexBuffer->bindForFeedback(0, LLVertexBuffer::TYPE_TEXCOORD0, mGeomIndex, mGeomCount);
-						
-			glBeginTransformFeedback(GL_POINTS);
-			buff->setBuffer(LLVertexBuffer::MAP_TEXCOORD0);
-			push_for_transform(buff, vf.mNumVertices, mGeomCount);
-			glEndTransformFeedback();
-
-			bool do_bump = bump_code && mVertexBuffer->hasDataType(LLVertexBuffer::TYPE_TEXCOORD1);
-
-			if (do_bump)
-			{
-				mVertexBuffer->bindForFeedback(0, LLVertexBuffer::TYPE_TEXCOORD1, mGeomIndex, mGeomCount);
-				glBeginTransformFeedback(GL_POINTS);
-				buff->setBuffer(LLVertexBuffer::MAP_TEXCOORD0);
-				push_for_transform(buff, vf.mNumVertices, mGeomCount);
-				glEndTransformFeedback();
-			}				
-		}
-
-		glBindBufferARB(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
-		gGL.popMatrix();
-
-		if (cur_shader)
-		{
-			cur_shader->bind();
-		}
-	}
-	else
-#endif
 	{
 		//if it's not fullbright and has no normals, bake sunlight based on face normal
 		//bool bake_sunlight = !getTextureEntry()->getFullbright() &&
@@ -1594,57 +1455,61 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 			LLVector4a bump_t_primary_light_ray(0.f, 0.f, 0.f);
 
 			LLQuaternion bump_quat;
-			if (mDrawablep->isActive())
+
+			if (!LLPipeline::sRenderDeferred)
 			{
-				bump_quat = LLQuaternion(LLMatrix4(mDrawablep->getRenderMatrix().getF32ptr()));
-			}
-		
-			if (bump_code)
-			{
-				mVObjp->getVolume()->genTangents(f);
-				F32 offset_multiple; 
-				switch( bump_code )
+				if (mDrawablep->isActive())
 				{
+					bump_quat = LLQuaternion(LLMatrix4(mDrawablep->getRenderMatrix().getF32ptr()));
+				}
+
+				if (bump_code)
+				{
+					mVObjp->getVolume()->genTangents(f);
+					F32 offset_multiple;
+					switch (bump_code)
+					{
 					case BE_NO_BUMP:
-					offset_multiple = 0.f;
-					break;
+						offset_multiple = 0.f;
+						break;
 					case BE_BRIGHTNESS:
 					case BE_DARKNESS:
-					if( mTexture[LLRender::DIFFUSE_MAP].notNull() && mTexture[LLRender::DIFFUSE_MAP]->hasGLTexture())
-					{
-						// Offset by approximately one texel
-						S32 cur_discard = mTexture[LLRender::DIFFUSE_MAP]->getDiscardLevel();
-						S32 max_size = llmax( mTexture[LLRender::DIFFUSE_MAP]->getWidth(), mTexture[LLRender::DIFFUSE_MAP]->getHeight() );
-						max_size <<= cur_discard;
-						const F32 ARTIFICIAL_OFFSET = 2.f;
-						offset_multiple = ARTIFICIAL_OFFSET / (F32)max_size;
-					}
-					else
-					{
-						offset_multiple = 1.f/256;
-					}
-					break;
+						if (mTexture[LLRender::DIFFUSE_MAP].notNull() && mTexture[LLRender::DIFFUSE_MAP]->hasGLTexture())
+						{
+							// Offset by approximately one texel
+							S32 cur_discard = mTexture[LLRender::DIFFUSE_MAP]->getDiscardLevel();
+							S32 max_size = llmax(mTexture[LLRender::DIFFUSE_MAP]->getWidth(), mTexture[LLRender::DIFFUSE_MAP]->getHeight());
+							max_size <<= cur_discard;
+							const F32 ARTIFICIAL_OFFSET = 2.f;
+							offset_multiple = ARTIFICIAL_OFFSET / (F32)max_size;
+						}
+						else
+						{
+							offset_multiple = 1.f / 256;
+						}
+						break;
 
 					default:  // Standard bumpmap textures.  Assumed to be 256x256
-					offset_multiple = 1.f / 256;
-					break;
-				}
+						offset_multiple = 1.f / 256;
+						break;
+					}
 
-				F32 s_scale = 1.f;
-				F32 t_scale = 1.f;
-				if( tep )
-				{
-					tep->getScale( &s_scale, &t_scale );
-				}
-				// Use the nudged south when coming from above sun angle, such
-				// that emboss mapping always shows up on the upward faces of cubes when 
-				// it's noon (since a lot of builders build with the sun forced to noon).
-				LLVector3   sun_ray  = gSky.mVOSkyp->mBumpSunDir;
-				LLVector3   moon_ray = gSky.getMoonDirection();
-				LLVector3& primary_light_ray = (sun_ray.mV[VZ] > 0) ? sun_ray : moon_ray;
+					F32 s_scale = 1.f;
+					F32 t_scale = 1.f;
+					if (tep)
+					{
+						tep->getScale(&s_scale, &t_scale);
+					}
+					// Use the nudged south when coming from above sun angle, such
+					// that emboss mapping always shows up on the upward faces of cubes when 
+					// it's noon (since a lot of builders build with the sun forced to noon).
+					LLVector3   sun_ray = gSky.mVOSkyp->mBumpSunDir;
+					LLVector3   moon_ray = gSky.getMoonDirection();
+					LLVector3& primary_light_ray = (sun_ray.mV[VZ] > 0) ? sun_ray : moon_ray;
 
-				bump_s_primary_light_ray.load3((offset_multiple * s_scale * primary_light_ray).mV);
-				bump_t_primary_light_ray.load3((offset_multiple * t_scale * primary_light_ray).mV);
+					bump_s_primary_light_ray.load3((offset_multiple * s_scale * primary_light_ray).mV);
+					bump_t_primary_light_ray.load3((offset_multiple * t_scale * primary_light_ray).mV);
+				}
 			}
 
 			U8 texgen = getTextureEntry()->getTexGen();
@@ -1915,7 +1780,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 					mVertexBuffer->flush();
 				}
 
-				if (!mat && do_bump)
+				if ( !LLPipeline::sRenderDeferred && do_bump )
 				{
 					mVertexBuffer->getTexCoord1Strider(tex_coords1, mGeomIndex, mGeomCount, map_range);
 		
@@ -1968,7 +1833,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 			LLVector4a* end = src+num_vertices;
 			//LLVector4a* end_64 = end-4;
 
-			//LL_RECORD_TIME_BLOCK(FTM_FACE_GEOM_POSITION);
+			//LL_RECORD_BLOCK_TIME(FTM_FACE_GEOM_POSITION);
 			llassert(num_vertices > 0);
 		
 			mVertexBuffer->getVertexStrider(vert, mGeomIndex, mGeomCount, map_range);
@@ -2005,7 +1870,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 			LLVector4a tmp;
 
 			{
-				//LL_RECORD_TIME_BLOCK(FTM_FACE_POSITION_STORE);
+				//LL_RECORD_BLOCK_TIME(FTM_FACE_POSITION_STORE);
 
 				/*if (num_vertices > 4)
 				{ //more than 64 bytes
@@ -2045,7 +1910,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 			}
 
 			{
-				//LL_RECORD_TIME_BLOCK(FTM_FACE_POSITION_PAD);
+				//LL_RECORD_BLOCK_TIME(FTM_FACE_POSITION_PAD);
 				while (dst < end_f32)
 				{
 					res0.store4a((F32*) dst);
@@ -2062,7 +1927,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 		
 		if (rebuild_normal)
 		{
-			//LL_RECORD_TIME_BLOCK(FTM_FACE_GEOM_NORMAL);
+			//LL_RECORD_BLOCK_TIME(FTM_FACE_GEOM_NORMAL);
 			mVertexBuffer->getNormalStrider(norm, mGeomIndex, mGeomCount, map_range);
 			F32* normals = (F32*) norm.get();
 			LLVector4a* src = vf.mNormals;
@@ -2092,11 +1957,21 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 			
 			LLVector4a* src = vf.mTangents;
 			LLVector4a* end = vf.mTangents+num_vertices;
+			LLVector4a* src2 = vf.mNormals;
+			LLVector4a* end2 = vf.mNormals+num_vertices;
+
+			LLMaterial* mat = tep->getMaterialParams().get();
+			F32 rot = RAD_TO_DEG * ( (mat && mat->getNormalID().notNull()) ? mat->getNormalRotation() : r);
+			bool rotate_tangent = src2 && !is_approx_equal(rot, 360.f) && !is_approx_zero(rot);
 
 			while (src < end)
 			{
-				LLVector4a tangent_out;
-				mat_normal.rotate(*src, tangent_out);
+				LLVector4a tangent_out = *src;
+				if (rotate_tangent && src2 < end2)
+				{
+					gGL.genRot(rot, *src2++).rotate(tangent_out, tangent_out);
+				}
+				mat_normal.rotate(tangent_out, tangent_out);
 				tangent_out.normalize3fast();
 				tangent_out.copyComponent<3>(*src);
 				tangent_out.store4a(tangents);

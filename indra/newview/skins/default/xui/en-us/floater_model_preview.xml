@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-<floater name="Model Preview" title="Upload Model"
- can_close="true" can_resize="false" can_minimize="true" can_drag_on_left="false"
- min_width="940" min_height="480" width="940" height="480"
+<floater
+ can_close="true"
+ can_drag_on_left="false"
+ can_minimize="true"
+ can_resize="false"
+ height="480"
+ min_height="480"
+ width="980"
+ min_width="980"
+ name="Model Preview"
+ title="Upload Model"
  rect_control="FloaterModelUploadRect">
 
   <string name="status_idle"></string>
@@ -25,102 +33,161 @@
   <string name="mesh_status_too_many_vertices">Level of detail has too many vertices.</string>
   <string name="mesh_status_missing_lod">Missing required level of detail.</string>
   <string name="mesh_status_invalid_material_list">LOD materials are not a subset of reference model.</string>
+  <string name="phys_status_vertex_limit_exceeded">Some physical hulls exceed vertex limitations.</string>
   <string name="layer_all">All</string> <!-- Text to display in physics layer combo box for "all layers" -->
   <string name="decomposing">Analyzing...</string>
   <string name="simplifying">Simplifying...</string>
   <string name="tbd">TBD</string>
 
-	<panel name="left_panel" follows="top|left"
-	 width="630" height="455" left="3" bottom_delta="-475">
-		<panel name="model_name_representation_panel" follows="top|left|bottom|right"
-		 width="525" height="50" left="3">
-			<text name="name_label" follows="top|left"
-			 left="15" bottom_delta="-15" width="290" height="15">
+  <panel
+    follows="top|left"
+    height="455"
+    left="3"
+    name="left_panel"
+    bottom_delta="-475"
+    width="630">
+      <panel
+        follows="all"
+        height="50"
+        left="3"
+        name="model_name_representation_panel"
+        width="525">
+          <text
+            follows="top|left"
+            height="15"
+            left="15"
+            name="name_label"
+            bottom_delta="-15"
+            width="290">
 				Model name:
-			</text>
-			<text name="model_category_label" follows="left|top"
-			 left_delta="300" bottom_delta="0" width="200" height="15">
+          </text>
+          <text
+            name="model_category_label"
+            follows="left|top"
+            left_delta="300"
+            bottom_delta="0"
+            width="200"
+            height="15">
 				This model represents...
 			</text>
-	        <line_editor name="description_form" max_length="64" follows="top|left"
-			 prevalidate_callback="ascii"
-			 left="15" top_delta="-15" width="290" height="20"/>
-			<combo_box name="model_category_combo" follows="left|top"
-			 left_delta="300"  bottom_delta="0" width="200" height="20">
-				<combo_item name="Choose one" value="MUT_Unspecified">
-					 Choose One...
-				</combo_item>
-				<combo_item name="Avatar shape" value="MUT_AvatarShape">
-					Avatar shape
-				</combo_item>
-				<combo_item name="Avatar attachment" value="MUT_AvatarAttachment">
-					Avatar attachment
-				</combo_item>
-				<combo_item name="Moving object (vehicle, animal)" value="MUT_MovingObject">
-					Moving object (vehicle, animal)
-				</combo_item>
-				<combo_item name="Building Component" value="MUT_BuildingComponent">
-					Building Component
-				</combo_item>
-				<combo_item name="Large, non moving etc" value="MUT_LargeStationary">
-					Large, non moving etc
-				</combo_item>
-				<combo_item name="Smaller, non-moving etc" value="MUT_SmallStationary">
-					Smaller, non-moving etc
-				</combo_item>
-				<combo_item name="Not really any of these" value="MUT_Other">
-					Not really any of these
-				</combo_item>
-			</combo_box>
-		</panel>
-		<tab_container name="import_tab" tab_position="top" follows="top|left"
-		 left="0" bottom_delta="-270" width="625" height="270">
-
-			<!-- LOD PANEL -->
-			<panel name="lod_panel" label="Level of Detail" title="Level of Detail">
-				<view_border name="lod_tab_border" bevel_style="none" follows="top|left"
-				 left="3" bottom_delta="-270" width="619" height="270"/>
-				<text name="source" follows="left|top" text_color="orange"
-				 left="75" bottom_delta="240" width="335" height="18">
-					Source
-				</text>
-				<text name="triangles" halign="right" follows="left|top" text_color="orange"
-				 left_delta="335" bottom_delta="0" width="65" height="18">
-					Triangles
-				</text>
-				<text name="vertices" halign="right" follows="left|top" text_color="orange"
-				 left_delta="65" bottom_delta="0" width="65" height="18">
-					Vertices
-				</text>
-
-				<text name="high_label" follows="left|top"
-				 left="10" bottom_delta="-24" width="65" height="18">
-					High
-				</text>
+	        <line_editor
+              name="description_form"
+              max_length="64"
+              follows="top|left"
+              prevalidate_callback="ascii"
+              left="15"
+              top_delta="-15"
+              width="290"
+              height="20"/>
+			<combo_box
+              name="model_category_combo"
+              follows="left|top"
+              left_delta="300"
+              bottom_delta="0"
+              width="200"
+              height="20">
+          <combo_item name="Choose one" label="Choose One..." value="MUT_Unspecified"/>
+          <combo_item name="Avatar shape" label="Avatar shape" value="MUT_AvatarShape"/>
+          <combo_item name="Avatar attachment" label="Avatar attachment" value="MUT_AvatarAttachment"/>
+          <combo_item name="Moving object (vehicle, animal)" label="Moving object (vehicle, animal)" value="MUT_MovingObject"/>
+          <combo_item name="Building Component" label="Building Component" value="MUT_BuildingComponent"/>
+          <combo_item name="Large, non moving etc" label="Large, non moving etc" value="MUT_LargeStationary"/>
+          <combo_item name="Smaller, non-moving etc" label="Smaller, non-moving etc" value="MUT_SmallStationary"/>
+          <combo_item name="Not really any of these" label="Not really any of these" value="MUT_Other"/>
+         </combo_box>
+    </panel>
+    <tab_container
+      follows="top|left"
+      bottom_delta="-270"
+      left="0"
+      height="270"
+      width="635"
+      name="import_tab"
+      tab_position="top">
+      <!-- LOD PANEL -->
+        <panel
+         label="Level of Detail"
+         name="lod_panel"
+         title="Level of Detail">
+            <view_border
+             bevel_style="none"
+             follows="top|left"
+             height="270"
+             left="3"
+             name="lod_tab_border"
+             bottom_delta="-270"
+             width="629"/>
+          <text
+           name="source"
+           follows="left|top"
+           height="18"
+           left="75"
+           text_color="orange"
+           bottom_delta="240"
+           value="Source"
+           width="335"/>
+            <text
+             follows="left|top"
+             halign="right"
+             name="triangles"
+             text_color="orange"
+             left_delta="335"
+             bottom_delta="0"
+             height="18"
+             value="Triangles"
+             width="65"/>
+            <text
+             follows="left|top"
+             halign="right"
+             height="18"
+             left_delta="65"
+             name="vertices"
+             text_color="orange"
+             bottom_delta="0"
+             value="Vertices"
+             width="65"/>
+            <text
+             name="high_label"
+             follows="left|top"
+             left="10"
+             bottom_delta="-24"
+             width="65"
+             height="18"
+             value="High"/>
 				<combo_box name="lod_source_high" follows="top|left"
 				 left_delta="65" bottom_delta="0" width="135" height="20">
-					<combo_item name="Load from file" value="Load from file">
-						Load from file
-					</combo_item>
-					<combo_item name="Generate" value="Generate">
-						Generate
-					</combo_item>
+                <item
+                 name="Load from file"
+                 label="Load from file"
+                 value="Load from file" />
+                <item
+                 name="Generate"
+                 label="Generate"
+                 value="Generate" />
 				</combo_box>
-				<line_editor name="lod_file_high" initial_value="" value=""
-				 follows="left|top"
-				 left_delta="140" bottom_delta="0" width="120" height="20"/>
+				<line_editor
+             follows="left|top"
+             height="20"
+             initial_value=""
+             left_delta="140"
+             name="lod_file_high"
+             bottom_delta="0"
+             value=""
+             width="120"/>
 				<button name="lod_browse_high" label="Browse..."
 				 follows="left|top"
 				 left_delta="125" bottom_delta="0" width="70" height="20"/>
 				<combo_box name="lod_mode_high" follows="top|left" visible="false"
 				 left="215" bottom_delta="0" width="135" height="20">
-					<combo_item name="Triangle Limit" value="Triangle Limit">
-						Triangle Limit
-					</combo_item>
-					<combo_item name="Error Threshold" value="Error Threshold">
-						Error Threshold
-					</combo_item>
-				</combo_box>
+                <item
+                 name="Triangle Limit"
+                 label="Triangle Limit"
+                 value="Triangle Limit" />
+                <item
+                 name="Error Threshold"
+                 label="Error Threshold"
+                 value="Error Threshold" />
+            </combo_box>
 				<spinner name="lod_triangle_limit_high" follows="top|left"
 				 decimal_digits="0" increment="10" visible="false"
 				 left_delta="140" bottom_delta="-1" width="55" height="20"/>
@@ -146,15 +213,18 @@
 				</text>
 				<combo_box name="lod_source_medium" follows="top|left"
 				 left_delta="65" bottom_delta="0" width="135" height="20">
-					<combo_item name="Load from file" value="Load from file">
-						Load from file
-					</combo_item>
-					<combo_item name="Generate" value="Generate">
-						Generate
-					</combo_item>
-					<combo_item name="Use LoD above" value="Use LoD above">
-						Use LoD above
-					</combo_item>
+                <item
+                 name="Load from file"
+                 label="Load from file"
+                 value="Load from file" />
+                <item
+                 name="Generate"
+                 label="Generate"
+                 value="Generate" />
+                <item
+                 name="Use LoD above"
+                 label="Use LoD above"
+                 value="Use LoD above" />
 				</combo_box>
 				<line_editor name="lod_file_medium" initial_value="" value=""
 				 follows="left|top" visible="false"
@@ -194,17 +264,25 @@
 				 left="10" bottom_delta="-32" width="65" height="18">
 					Low
 				</text>
-				<combo_box name="lod_source_low" follows="top|left"
-				 left_delta="65" bottom_delta="0" width="135" height="20">
-					<combo_item name="Load from file" value="Load from file">
-						Load from file
-					</combo_item>
-					<combo_item name="Generate" value="Generate">
-						Generate
-					</combo_item>
-					<combo_item name="Use LoD above" value="Use LoD above">
-						Use LoD above
-					</combo_item>
+				<combo_box
+              follows="top|left"
+              height="20"
+              left_delta="65"
+              name="lod_source_low"
+              bottom_delta="0"
+              width="135">
+                <item
+                 name="Load from file"
+                 label="Load from file"
+                 value="Load from file" />
+                <item
+                 name="Generate"
+                 label="Generate"
+                 value="Generate" />
+                <item
+                 name="Use LoD above"
+                 label="Use LoD above"
+                 value="Use LoD above" />
 				</combo_box>
 				<line_editor name="lod_file_low" initial_value="" value=""
 				 follows="left|top" visible="false"
@@ -246,15 +324,18 @@
 				</text>
 				<combo_box name="lod_source_lowest" follows="top|left"
 				 left_delta="65" bottom_delta="0" width="135" height="20">
-					<combo_item name="Load from file" value="Load from file">
-						Load from file
-					</combo_item>
-					<combo_item name="Generate" value="Generate">
-						Generate
-					</combo_item>
-					<combo_item name="Use LoD above" value="Use LoD above">
-						Use LoD above
-					</combo_item>
+                <item
+                 name="Load from file"
+                 label="Load from file"
+                 value="Load from file" />
+                <item
+                 name="Generate"
+                 label="Generate"
+                 value="Generate" />
+                <item
+                 name="Use LoD above"
+                 label="Use LoD above"
+                 value="Use LoD above" />
 				</combo_box>
 				<line_editor name="lod_file_lowest" initial_value="" value=""
 				 follows="left|top" visible="false"
@@ -264,12 +345,14 @@
 				 left_delta="125" bottom_delta="0" width="70" height="20"/>
 				<combo_box name="lod_mode_lowest" follows="top|left"
 				 left="215" bottom_delta="0" width="135" height="20">
-					<combo_item name="Triangle Limit" value="Triangle Limit">
-						Triangle Limit
-					</combo_item>
-					<combo_item name="Error Threshold" value="Error Threshold">
-						Error Threshold
-					</combo_item>
+                <item
+                 name="Triangle Limit"
+                 label="Triangle Limit"
+                 value="Triangle Limit" />
+                <item
+                 name="Error Threshold"
+                 label="Error Threshold"
+                 value="Error Threshold" />
 				</combo_box>
 				<spinner name="lod_triangle_limit_lowest" follows="top|left"
 				 decimal_digits="0" increment="10"
@@ -308,8 +391,7 @@
 				 initial_value="75" max_val="180" value="75"
 				 left_delta="105" bottom_delta="0" width="60" height="16"/>
 			</panel>
-
-			<!-- PHYSICS PANEL -->
+			<!-- PHYSYCS PANEL -->
 			<panel name="physics_panel" label="Physics" title="Physics">
 				<view_border name="physics_tab_border" bevel_style="none" follows="top|left"
 				 left="3" bottom_delta="-270" width="619" height="270"/>
@@ -440,7 +522,6 @@
 					</text>
 				</panel>
 			</panel>
-
 			<!-- MODIFIERS PANEL -->
 			<panel name="modifiers_panel" label="Upload options" title="Upload options">
 				<view_border name="modifiers_tab_border" bevel_style="none" follows="top|left"
@@ -480,6 +561,12 @@
 				 left_delta="180" bottom_delta="2" width="60" height="16"/>
 				<check_box name="upload_joints" label="Include joint positions" follows="top|left"
 				 left="20" bottom_delta="-26" width="140" height="16"/>
+           <check_box
+             follows="top|left"
+             height="16"
+             label="Lock scale if joint position defined"
+             name="lock_scale_if_joint_position"
+             bottom_delta="-24"/>
 <!-- Mesh Deformer bits
 				<check_box name="deform" label="Deform to avatar shape:" follows="top|left"
 				 left="20" bottom_delta="-24" width="140" height="16"/>

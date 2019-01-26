@@ -20,6 +20,12 @@ include_directories(
     ${LLCOREHTTP_INCLUDE_DIRS}
     )
 
+include_directories(
+    SYSTEM
+    ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
+    ${LLCOREHTTP_SYSTEM_INCLUDE_DIRS}
+    )
+
 set(llcorehttp_SOURCE_FILES
     bufferarray.cpp
     bufferstream.cpp
@@ -29,6 +35,7 @@ set(llcorehttp_SOURCE_FILES
     httpoptions.cpp
     httprequest.cpp
     httpresponse.cpp
+    httpstats.cpp
     _httplibcurl.cpp
     _httpopcancel.cpp
     _httpoperation.cpp
@@ -56,6 +63,7 @@ set(llcorehttp_HEADER_FILES
     httpoptions.h
     httprequest.h
     httpresponse.h
+    httpstats.h
     _httpinternal.h
     _httplibcurl.h
     _httpopcancel.h
@@ -77,11 +85,6 @@ set(llcorehttp_HEADER_FILES
 
 set_source_files_properties(${llcorehttp_HEADER_FILES}
                             PROPERTIES HEADER_FILE_ONLY TRUE)
-if (DARWIN OR LINUX)
-  # Boost headers define unused members in condition_variable so...
-  set_source_files_properties(${llcorehttp_SOURCE_FILES}
-                              PROPERTIES COMPILE_FLAGS -Wno-unused-variable)
-endif (DARWIN OR LINUX)
 
 list(APPEND llcorehttp_SOURCE_FILES ${llcorehttp_HEADER_FILES})
 
@@ -91,7 +94,10 @@ target_link_libraries(
   ${CURL_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CRYPTO_LIBRARIES}
+  ${BOOST_THREAD_LIBRARY}
   ${BOOST_CHRONO_LIBRARY}
+  ${BOOST_SYSTEM_LIBRARY}
+  ${PTHREAD_LIBRARY}
   )
 
 # tests
@@ -127,7 +133,9 @@ if (LL_TESTS)
       ${CURL_LIBRARIES}
       ${OPENSSL_LIBRARIES}
       ${CRYPTO_LIBRARIES}
+      ${BOOST_THREAD_LIBRARY}
       ${BOOST_CHRONO_LIBRARY}
+      ${BOOST_SYSTEM_LIBRARY}
       )
 
   # If http_proxy is in the current environment (e.g. to fetch s3-proxy
@@ -140,6 +148,49 @@ if (LL_TESTS)
                           ${PYTHON_EXECUTABLE}
                           "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_llcorehttp_peer.py"
                           )
+
+if (DARWIN)
+  # Path inside the app bundle where we'll need to copy libraries
+  set(LL_TEST_DESTINATION_DIR
+    ${CMAKE_BINARY_DIR}/sharedlibs/Resources
+  )
+
+  # Create the Contents/Resources directory
+  add_custom_command(
+    TARGET INTEGRATION_TEST_llcorehttp PRE_BUILD
+    COMMAND ${CMAKE_COMMAND}
+    ARGS
+      -E
+      make_directory
+      ${LL_TEST_DESTINATION_DIR}
+    COMMENT "Creating Resources directory in app bundle."
+  )
+  
+  # Copy the required libraries to the package app
+  add_custom_command(TARGET INTEGRATION_TEST_llcorehttp PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${AUTOBUILD_INSTALL_DIR}/lib/release/libapr-1.0.dylib ${LL_TEST_DESTINATION_DIR}
+    DEPENDS ${AUTOBUILD_INSTALL_DIR}/lib/release/libapr-1.0.dylib
+  )
+  add_custom_command(TARGET INTEGRATION_TEST_llcorehttp PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${AUTOBUILD_INSTALL_DIR}/lib/release/libaprutil-1.0.dylib ${LL_TEST_DESTINATION_DIR}
+    DEPENDS ${AUTOBUILD_INSTALL_DIR}/lib/release/libaprutil-1.0.dylib
+  )
+  add_custom_command(TARGET INTEGRATION_TEST_llcorehttp PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${AUTOBUILD_INSTALL_DIR}/lib/release/libexception_handler.dylib ${LL_TEST_DESTINATION_DIR}
+    DEPENDS ${AUTOBUILD_INSTALL_DIR}/lib/release/libexception_handler.dylib
+  )
+  add_custom_command(TARGET INTEGRATION_TEST_llcorehttp PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${AUTOBUILD_INSTALL_DIR}/lib/release/libnghttp2*.dylib ${LL_TEST_DESTINATION_DIR}
+    DEPENDS ${AUTOBUILD_INSTALL_DIR}/lib/release/libnghttp2.dylib
+  )
+  foreach(expat ${EXPAT_COPY})
+    add_custom_command(TARGET INTEGRATION_TEST_llcorehttp PRE_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy ${AUTOBUILD_INSTALL_DIR}/lib/release/${expat} ${LL_TEST_DESTINATION_DIR}
+      DEPENDS ${AUTOBUILD_INSTALL_DIR}/lib/release/${expat}
+    )
+  endforeach(expat)
+
+endif (DARWIN)
 
   #
   # Example Programs
@@ -156,7 +207,9 @@ if (LL_TESTS)
       ${CURL_LIBRARIES}
       ${OPENSSL_LIBRARIES}
       ${CRYPTO_LIBRARIES}
+      ${BOOST_THREAD_LIBRARY}
       ${BOOST_CHRONO_LIBRARY}
+      ${BOOST_SYSTEM_LIBRARY}
       )
 
   add_executable(http_texture_load

@@ -63,20 +63,20 @@ public:
 	/*virtual*/ ~LLTabContainer();
 
 	// from LLView
-	/*virtual*/ void setValue(const LLSD& value);
+	/*virtual*/ void setValue(const LLSD& value) override;
 
-	/*virtual*/ void reshape(S32 width, S32 height, BOOL called_from_parent = TRUE);
-	/*virtual*/ void draw();
-	/*virtual*/ BOOL handleMouseDown( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL handleHover( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL handleMouseUp( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL handleToolTip(S32 x, S32 y, std::string& msg, LLRect* sticky_rect );
-	/*virtual*/ BOOL handleKeyHere(KEY key, MASK mask);
+	/*virtual*/ void reshape(S32 width, S32 height, BOOL called_from_parent = TRUE) override;
+	/*virtual*/ void draw() override;
+	/*virtual*/ BOOL handleMouseDown( S32 x, S32 y, MASK mask ) override;
+	/*virtual*/ BOOL handleHover( S32 x, S32 y, MASK mask ) override;
+	/*virtual*/ BOOL handleMouseUp( S32 x, S32 y, MASK mask ) override;
+	/*virtual*/ BOOL handleToolTip(S32 x, S32 y, std::string& msg, LLRect* sticky_rect ) override;
+	/*virtual*/ BOOL handleKeyHere(KEY key, MASK mask) override;
 	/*virtual*/ BOOL handleDragAndDrop(S32 x, S32 y, MASK mask,	BOOL drop,
 									   EDragAndDropType type, void* cargo_data,
-									   EAcceptance* accept, std::string& tooltip);
-	/*virtual*/ LLXMLNodePtr getXML(bool save_children = true) const;
-	/*virtual*/ LLView* getChildView(const std::string& name, BOOL recurse = TRUE, BOOL create_if_missing = TRUE) const;
+									   EAcceptance* accept, std::string& tooltip) override;
+	/*virtual*/ LLXMLNodePtr getXML(bool save_children = true) const override;
+	/*virtual*/ LLView* getChildView(const std::string& name, BOOL recurse = TRUE, BOOL create_if_missing = TRUE) const override;
 
 	void 		addTabPanel(LLPanel* child, 
 							const std::string& label, 
@@ -98,6 +98,7 @@ public:
 	S32			getIndexForPanel(LLPanel* panel);
 	S32			getPanelIndexByTitle(const std::string& title);
 	LLPanel*	getPanelByName(const std::string& name);
+    S32         getTotalTabWidth() const;
 	void		setCurrentTabName(const std::string& name);
 
 	void		selectFirstTab();
@@ -107,10 +108,11 @@ public:
 	BOOL 		selectTabPanel( LLPanel* child );
 	BOOL 		selectTab(S32 which);
 	BOOL 		selectTabByName(const std::string& title);
+    void        setCurrentPanelIndex(S32 index) { mCurrentTabIdx = index; }
 
 	BOOL        getTabPanelFlashing(LLPanel* child);
 	void		setTabPanelFlashing(LLPanel* child, BOOL state);
-	void 		setTabImage(LLPanel* child, std::string img_name, const LLColor4& color = LLColor4::white);
+	void 		setTabImage(LLPanel* child, const std::string& img_name, const LLColor4& color = LLColor4::white);
 	void 		setTabImage(LLPanel* child, const LLUUID& img_id, const LLColor4& color = LLColor4::white);
 	void		setTitle( const std::string& title );
 	const std::string getPanelTitle(S32 index);
@@ -159,8 +161,6 @@ private:
 	void setTabsHidden(BOOL hidden)		{ mTabsHidden = hidden; }
 	BOOL getTabsHidden() const			{ return mTabsHidden; }
 	
-	void setCurrentPanelIndex(S32 index) { mCurrentTabIdx = index; }
-
 	void scrollPrev() { mScrollPos = llmax(0, mScrollPos-1); } // No wrap
 	void scrollNext() { mScrollPos = llmin(mScrollPos+1, mMaxScrollPos); } // No wrap
 
@@ -168,6 +168,7 @@ private:
 	void commitHoveredButton(S32 x, S32 y);
 
 	void reshapeTuple(LLTabTuple* tuple);
+
 	// Variables
 	
 	typedef std::vector<LLTabTuple*> tuple_list_t;
@@ -204,6 +205,5 @@ private:
 
 	LLFrameTimer					mDragAndDropDelayTimer;
 };
-
 
 #endif  // LL_TABCONTAINER_H

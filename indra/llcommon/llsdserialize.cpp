@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llsdserialize.cpp
  * @author Phoenix
@@ -28,11 +30,15 @@
 
 #include "linden_common.h"
 #include "llsdserialize.h"
+#include "llwin32headerslean.h"
 #include "llpointer.h"
 #include "llstreamtools.h" // for fullread
 #include "llbase64.h"
 
 #include <iostream>
+
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/stream.hpp>
 
 #ifdef LL_STANDALONE
 # include <zlib.h>
@@ -43,7 +49,6 @@
 #if !LL_WINDOWS
 #include <netinet/in.h> // htonl & ntohl
 #endif
-#include "apr_general.h" // for strncasecmp
 
 #include "lldate.h"
 #include "llsd.h"
@@ -91,6 +96,10 @@ void LLSDSerialize::serialize(const LLSD& sd, std::ostream& str, ELLSD_Serialize
 	}
 }
 
+#if LL_WINDOWS
+#pragma warning(disable :4996)
+#endif
+
 // static
 bool LLSDSerialize::deserialize(LLSD& sd, std::istream& str, S32 max_bytes)
 {
@@ -112,7 +121,7 @@ bool LLSDSerialize::deserialize(LLSD& sd, std::istream& str, S32 max_bytes)
 		fail_if_not_legacy = true;
 	}
 
-	if (!strncasecmp(LEGACY_NON_HEADER, hdr_buf, strlen(LEGACY_NON_HEADER))) /* Flawfinder: ignore */
+	if (!strnicmp(LEGACY_NON_HEADER, hdr_buf, strlen(LEGACY_NON_HEADER))) /* Flawfinder: ignore */
 	{
 		legacy_no_header = true;
 		inbuf = (int)str.gcount();
@@ -135,9 +144,8 @@ bool LLSDSerialize::deserialize(LLSD& sd, std::istream& str, S32 max_bytes)
 		}
 		header = hdr_buf;
 
-		std::string::size_type start = std::string::npos;
+		std::string::size_type start = header.find_first_not_of("<? ");
 		std::string::size_type end = std::string::npos;
-		start = header.find_first_not_of("<? ");
 		if (start != std::string::npos)
 		{
 			end = header.find_first_of(" ?", start);
@@ -1201,6 +1209,7 @@ bool LLSDBinaryParser::parseString(
 	read(istr, (char*)&value_nbo, sizeof(U32));		 /*Flawfinder: ignore*/
 	S32 size = (S32)ntohl(value_nbo);
 	if(mCheckLimits && (size > mMaxBytesLeft)) return false;
+	if(size < 0) return false;
 	std::vector<char> buf;
 	if(size)
 	{
@@ -1330,7 +1339,13 @@ S32 LLSDNotationFormatter::format_impl(const LLSD& data, std::ostream& ostr, U32
 		break;
 
 	case LLSD::TypeBoolean:
-		if(mBoolAlpha || (ostr.flags() & std::ios::boolalpha))
+		if(mBoolAlpha ||
+#if( LL_WINDOWS || __GNUC__ > 2)
+		   (ostr.flags() & std::ios::boolalpha)
+#else
+		   (ostr.flags() & 0x0100)
+#endif
+			)
 		{
 			ostr << (data.asBoolean()
 					 ? NOTATION_TRUE_SERIAL : NOTATION_FALSE_SERIAL);
@@ -1389,7 +1404,7 @@ S32 LLSDNotationFormatter::format_impl(const LLSD& data, std::ostream& ostr, U32
 				std::ios_base::fmtflags old_flags = ostr.flags();
 				ostr.setf( std::ios::hex, std::ios::basefield );
 				ostr << "0x";
-				for (size_t i = 0; i < buffer.size(); i++)
+				for (int i = 0; i < buffer.size(); i++)
 				{
 					ostr << (int) buffer[i];
 				}
@@ -1696,12 +1711,12 @@ int deserialize_string_raw(
 		// *FIX: This is memory inefficient.
 		S32 len = strtol(buf + 1, NULL, 0);
 		if((max_bytes>0)&&(len>max_bytes)) return LLSDParser::PARSE_FAILURE;
-		std::vector<char> buf;
+		std::vector<char> buf2;
 		if(len)
 		{
-			buf.resize(len);
-			count += (int)fullread(istr, (char *)&buf[0], len);
-			value.assign(buf.begin(), buf.end());
+			buf2.resize(len);
+			count += (int)fullread(istr, (char *)&buf2[0], len);
+			value.assign(buf2.begin(), buf2.end());
 		}
 		c = istr.get();
 		++count;
@@ -2085,7 +2100,18 @@ std::string zip_llsd(LLSD& data)
 			}
 
 			have = CHUNK-strm.avail_out;
-			output = (U8*) realloc(output, cur_size+have);
+			U8* new_output = (U8*) realloc(output, cur_size+have);
+			if (new_output == NULL)
+			{
+				LL_WARNS() << "Failed to compress LLSD block: can't reallocate memory, current size: " << cur_size << " bytes; requested " << cur_size + have << " bytes." << LL_ENDL;
+				deflateEnd(&strm);
+				if (output)
+				{
+					free(output);
+				}
+				return std::string();
+			}
+			output = new_output;
 			memcpy(output+cur_size, out, have);
 			cur_size += have;
 		}
@@ -2122,14 +2148,19 @@ std::string zip_llsd(LLSD& data)
 // and deserializes from that copy using LLSDSerialize
 bool unzip_llsd(LLSD& data, std::istream& is, S32 size)
 {
+	auto in = std::make_unique<U8[]>(size);
+	is.read((char*)in.get(), size);
+
+	return unzip_llsd(data, in.get(), size);
+}
+
+bool unzip_llsd(LLSD& data, U8* in, S32 size)
+{
 	U8* result = NULL;
 	U32 cur_size = 0;
 	z_stream strm;
 		
 	const U32 CHUNK = 65536;
-
-	U8 *in = new U8[size];
-	is.read((char*) in, size); 
 
 	U8 out[CHUNK];
 		
@@ -2156,21 +2187,30 @@ bool unzip_llsd(LLSD& data, std::istream& is, S32 size)
 		case Z_STREAM_ERROR:
 			inflateEnd(&strm);
 			free(result);
-			delete [] in;
 			return false;
 			break;
 		}
 
 		U32 have = CHUNK-strm.avail_out;
 
-		result = (U8*) realloc(result, cur_size + have);
+		U8* new_result = (U8*)realloc(result, cur_size + have);
+		if (new_result == NULL)
+		{
+			LL_WARNS() << "Failed to unzip LLSD block: can't reallocate memory, current size: " << cur_size << " bytes; requested " << cur_size + have << " bytes." << LL_ENDL;
+			inflateEnd(&strm);
+			if (result)
+			{
+				free(result);
+			}
+			return false;
+		}
+		result = new_result;
 		memcpy(result+cur_size, out, have);
 		cur_size += have;
 
 	} while (ret == Z_OK);
 
 	inflateEnd(&strm);
-	delete [] in;
 
 	if (ret != Z_STREAM_END)
 	{
@@ -2180,19 +2220,11 @@ bool unzip_llsd(LLSD& data, std::istream& is, S32 size)
 
 	//result now points to the decompressed LLSD block
 	{
-		std::string res_str((char*) result, cur_size);
+		char* result_ptr = strip_deprecated_header((char*)result, cur_size);
 
-		std::string deprecated_header("<? LLSD/Binary ?>");
-
-		if (res_str.substr(0, deprecated_header.size()) == deprecated_header)
-		{
-			res_str = res_str.substr(deprecated_header.size()+1, cur_size);
-		}
-		cur_size = res_str.size();
-
-		std::istringstream istr(res_str);
+		boost::iostreams::stream<boost::iostreams::array_source> istrm(result_ptr, cur_size);
 		
-		if (!LLSDSerialize::fromBinary(data, istr, cur_size))
+		if (!LLSDSerialize::fromBinary(data, istrm, cur_size))
 		{
 			LL_WARNS() << "Failed to unzip LLSD block" << LL_ENDL;
 			free(result);
@@ -2207,16 +2239,20 @@ bool unzip_llsd(LLSD& data, std::istream& is, S32 size)
 //This unzip function will only work with a gzip header and trailer - while the contents
 //of the actual compressed data is the same for either format (gzip vs zlib ), the headers
 //and trailers are different for the formats.
-U8* unzip_llsdNavMesh( bool& valid, unsigned int& outsize, std::istream& is, S32 size )
+U8* unzip_llsdNavMesh(bool& valid, unsigned int& outsize, std::istream& is, S32 size)
+{
+	auto in = std::make_unique<U8[]>(size);
+	is.read((char*)in.get(), size);
+	return unzip_llsdNavMesh(valid, outsize, in.get(), size);
+}
+
+U8* unzip_llsdNavMesh( bool& valid, unsigned int& outsize, U8* in, S32 size )
 {
 	U8* result = NULL;
 	U32 cur_size = 0;
 	z_stream strm;
 		
 	const U32 CHUNK = 0x4000;
-
-	U8 *in = new U8[size];
-	is.read((char*) in, size); 
 
 	U8 out[CHUNK];
 		
@@ -2242,20 +2278,29 @@ U8* unzip_llsdNavMesh( bool& valid, unsigned int& outsize, std::istream& is, S32
 		case Z_STREAM_ERROR:
 			inflateEnd(&strm);
 			free(result);
-			delete [] in;
 			valid = false;
 			return NULL;
 		}
 		U32 have = CHUNK-strm.avail_out;
 
-		result = (U8*) realloc(result, cur_size + have);
+		U8* new_result = (U8*) realloc(result, cur_size + have);
+		if (new_result == NULL)
+		{
+			LL_WARNS() << "Failed to unzip LLSD NavMesh block: can't reallocate memory, current size: " << cur_size << " bytes; requested " << cur_size + have << " bytes." << LL_ENDL;
+			inflateEnd(&strm);
+			if (result)
+			{
+				free(result);
+			}
+			valid = false;
+			return NULL;
+		}
 		memcpy(result+cur_size, out, have);
 		cur_size += have;
 
 	} while (ret == Z_OK);
-
+	
 	inflateEnd(&strm);
-	delete [] in;
 
 	if (ret != Z_STREAM_END)
 	{
@@ -2271,6 +2316,25 @@ U8* unzip_llsdNavMesh( bool& valid, unsigned int& outsize, std::istream& is, S32
 	}
 
 	return result;
+}
+
+char* strip_deprecated_header(char* in, U32& cur_size, U32* header_size)
+{
+	const char* deprecated_header = "<? LLSD/Binary ?>";
+	constexpr size_t deprecated_header_size = 17;
+
+	if (cur_size > deprecated_header_size
+		&& memcmp(in, deprecated_header, deprecated_header_size) == 0)
+	{
+		in = in + deprecated_header_size;
+		cur_size = cur_size - deprecated_header_size;
+		if (header_size)
+		{
+			*header_size = deprecated_header_size + 1;
+		}
+	}
+
+	return in;
 }
 // </alchemy>
 

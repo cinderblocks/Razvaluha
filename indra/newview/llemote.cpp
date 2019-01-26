@@ -48,7 +48,7 @@
 // LLEmote()
 // Class Constructor
 //-----------------------------------------------------------------------------
-LLEmote::LLEmote(LLUUID const& id, LLMotionController* controller) : LLMotion(id, controller)
+LLEmote::LLEmote(LLUUID const& id) : LLMotion(id)
 {
 	mCharacter = NULL;
 

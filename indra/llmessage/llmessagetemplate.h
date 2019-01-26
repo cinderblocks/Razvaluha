@@ -28,18 +28,17 @@
 #define LL_LLMESSAGETEMPLATE_H
 
 #include "message.h" // TODO: babbage: Remove...
-#include "llstat.h"
 #include "llstl.h"
 #include "llindexedvector.h"
 
 class LLMsgVarData
 {
 public:
-	LLMsgVarData() : mName(NULL), mSize(-1), mDataSize(-1), mData(NULL), mType(MVT_U8)
+	LLMsgVarData() : mName(nullptr), mSize(-1), mDataSize(-1), mData(nullptr), mType(MVT_U8)
 	{
 	}
 
-	LLMsgVarData(const char *name, EMsgVariableType type) : mSize(-1), mDataSize(-1), mData(NULL), mType(type)
+	LLMsgVarData(const char *name, EMsgVariableType type) : mSize(-1), mDataSize(-1), mData(nullptr), mType(type)
 	{
 		mName = (char *)name; 
 	}
@@ -52,7 +51,7 @@ public:
 	void deleteData() 
 	{
 		delete[] mData;
-		mData = NULL;
+		mData = nullptr;
 	}
 	
 	void addData(const void *indata, S32 size, EMsgVariableType type, S32 data_size = -1);
@@ -140,7 +139,7 @@ public:
 class LLMessageVariable
 {
 public:
-	LLMessageVariable() : mName(NULL), mType(MVT_NULL), mSize(-1)
+	LLMessageVariable() : mName(nullptr), mType(MVT_NULL), mSize(-1)
 	{
 	}
 
@@ -193,7 +192,7 @@ public:
 	void addVariable(char *name, const EMsgVariableType type, const S32 size)
 	{
 		LLMessageVariable** varp = &mMemberVariables[name];
-		if (*varp != NULL)
+		if (*varp != nullptr)
 		{
 			LL_ERRS() << name << " has already been used as a variable name!" << LL_ENDL;
 		}
@@ -264,19 +263,20 @@ enum EMsgDeprecation
 	MD_DEPRECATED
 };
 
+
 class LLMessageTemplate
 {
 public:
 	LLMessageTemplate(const char *name, U32 message_number, EMsgFrequency freq)
-		: 
+		:
 		//mMemberBlocks(),
-		mName(NULL),
+		mName(nullptr),
 		mFrequency(freq),
 		mTrust(MT_NOTRUST),
 		mEncoding(ME_ZEROCODED),
 		mDeprecation(MD_NOTDEPRECATED),
 		mMessageNumber(message_number),
-		mTotalSize(0), 
+		mTotalSize(0),
 		mReceiveCount(0),
 		mReceiveBytes(0),
 		mReceiveInvalid(0),
@@ -285,10 +285,8 @@ public:
 		mTotalDecodeTime(0.f),
 		mMaxDecodeTimePerMsg(0.f),
 		mBanFromTrusted(false),
-		mBanFromUntrusted(false),
-		mHandlerFunc(NULL), 
-		mUserData(NULL)
-	{ 
+		mBanFromUntrusted(false)
+	{
 		mName = LLMessageStringTable::getInstance()->getString(name);
 	}
 
@@ -300,16 +298,16 @@ public:
 	void addBlock(LLMessageBlock *blockp)
 	{
 		LLMessageBlock** member_blockp = &mMemberBlocks[blockp->mName];
-		if (*member_blockp != NULL)
+		if (*member_blockp != nullptr)
 		{
 			LL_ERRS() << "Block " << blockp->mName
 				<< "has already been used as a block name!" << LL_ENDL;
 		}
 		*member_blockp = blockp;
-		if (  (mTotalSize != -1)
-			&&(blockp->mTotalSize != -1)
-			&&(  (blockp->mType == MBT_SINGLE)
-			   ||(blockp->mType == MBT_MULTIPLE)))
+		if ((mTotalSize != -1)
+			&& (blockp->mTotalSize != -1)
+			&& ((blockp->mType == MBT_SINGLE)
+				|| (blockp->mType == MBT_MULTIPLE)))
 		{
 			mTotalSize += blockp->mNumber*blockp->mTotalSize;
 		}
@@ -354,21 +352,24 @@ public:
 	{
 		return mDeprecation;
 	}
-	
-	void setHandlerFunc(void (*handler_func)(LLMessageSystem *msgsystem, void **user_data), void **user_data)
+
+	void setHandlerFunc(void(*handler_func)(LLMessageSystem *msgsystem, void **user_data), void **user_data)
 	{
-		mHandlerFunc = handler_func;
-		mUserData = user_data;
+		mMessageCallbacks.clear();
+		if (handler_func)
+			addHandlerFunc(std::bind(handler_func, std::placeholders::_1, user_data));
+	}
+
+	void addHandlerFunc(std::function<void(LLMessageSystem *msgsystem)> callback)
+	{
+		mMessageCallbacks.emplace_back(callback);
 	}
 
 	BOOL callHandlerFunc(LLMessageSystem *msgsystem) const
 	{
-		if (mHandlerFunc)
-		{
-			mHandlerFunc(msgsystem, mUserData);
-			return TRUE;
-		}
-		return FALSE;
+		for (auto& cb : mMessageCallbacks)
+			cb(msgsystem);
+		return (BOOL)!mMessageCallbacks.empty();
 	}
 
 	bool isUdpBanned() const
@@ -388,7 +389,7 @@ public:
 	const LLMessageBlock* getBlock(char* name) const
 	{
 		message_block_map_t::const_iterator iter = mMemberBlocks.find(name);
-		return iter != mMemberBlocks.end()? *iter : NULL;
+		return iter != mMemberBlocks.end() ? *iter : NULL;
 	}
 
 public:
@@ -414,8 +415,8 @@ public:
 
 private:
 	// message handler function (this is set by each application)
-	void									(*mHandlerFunc)(LLMessageSystem *msgsystem, void **user_data);
-	void									**mUserData;
+	typedef std::vector<std::function<void(LLMessageSystem *msgsystem)>> callback_list_t;
+	callback_list_t mMessageCallbacks;
 };
 
 #endif // LL_LLMESSAGETEMPLATE_H

@@ -44,7 +44,6 @@ public:
 
 	void processQueue(const F32 num_secs = 0.005);
 	bool addDecodeRequest(const LLUUID &uuid);
-	void addAudioRequest(const LLUUID &uuid);
 	
 protected:
 	class Impl;

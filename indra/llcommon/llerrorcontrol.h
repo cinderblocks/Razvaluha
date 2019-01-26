@@ -31,9 +31,8 @@
 #include "llerror.h"
 #include "llpointer.h"
 #include "llrefcount.h"
-#include "boost/function.hpp"
-#include "boost/shared_ptr.hpp"
 #include <string>
+#include <functional>
 
 class LLSD;
 
@@ -60,12 +59,7 @@ public:
 
 namespace LLError
 {
-	LL_COMMON_API void initForServer(const std::string& identity);
-		// resets all logging settings to defaults needed by server processes
-		// logs to stderr, syslog, and windows debug log
-		// the identity string is used for in the syslog
-
-	LL_COMMON_API void initForApplication(const std::string& dir, bool log_to_stderr = true);
+	LL_COMMON_API void initForApplication(const std::string& user_dir, const std::string& app_dir, bool log_to_stderr = true);
 		// resets all logging settings to defaults needed by applicaitons
 		// logs to stderr and windows debug log
 		// sets up log configuration from the file logcontrol.xml in dir
@@ -94,7 +88,7 @@ namespace LLError
 		Control functions.
 	*/
 
-	typedef boost::function<void(const std::string&)> FatalFunction;
+	typedef std::function<void(const std::string&)> FatalFunction;
 	LL_COMMON_API void crashAndLoop(const std::string& message);
 		// Default fatal function: access null pointer and loops forever
 
@@ -159,10 +153,10 @@ namespace LLError
 				mWantsFunctionName;
 	};
 
-	typedef boost::shared_ptr<Recorder> RecorderPtr;
+	typedef std::shared_ptr<Recorder> RecorderPtr;
 
 	/**
-	 * @NOTE: addRecorder() and removeRecorder() uses the boost::shared_ptr to allow for shared ownership
+	 * @NOTE: addRecorder() and removeRecorder() uses the std::shared_ptr to allow for shared ownership
 	 * while still ensuring that the allocated memory is eventually freed
 	 */
 	LL_COMMON_API void addRecorder(RecorderPtr);
@@ -189,6 +183,11 @@ namespace LLError
 
 	LL_COMMON_API std::string abbreviateFile(const std::string& filePath);
 	LL_COMMON_API int shouldLogCallCount();
+
+	// Check whether Globals exists. This should only be used by LLSingleton
+	// infrastructure to avoid trying to log when our internal LLSingleton is
+	// unavailable -- circularity ensues.
+	LL_COMMON_API bool is_available();
 };
 
 #endif // LL_LLERRORCONTROL_H

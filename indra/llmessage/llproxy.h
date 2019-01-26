@@ -208,25 +208,27 @@ enum LLSocks5AuthType
  * thread-safe method to apply those options to a curl request
  * (LLProxy::applyProxySettings()). This method is overloaded
  * to accommodate the various abstraction libcurl layers that exist
- * throughout the viewer (CURL).
+ * throughout the viewer (LLCurlEasyRequest, LLCurl::Easy, and CURL).
+ *
+ * If you are working with LLCurl or LLCurlEasyRequest objects,
+ * the configured proxy settings will be applied in the constructors
+ * of those request handles.  If you are working with CURL objects
+ * directly, you will need to pass the handle of the request to
+ * applyProxySettings() before issuing the request.
  *
  * To ensure thread safety, all LLProxy members that relate to the HTTP
  * proxy require the LLProxyMutex to be locked before accessing.
- * 
- * *TODO$: This should be moved into the LLCore::Http space.
- * 
  */
 class LLProxy: public LLSingleton<LLProxy>
 {
-	LOG_CLASS(LLProxy);
-
-public:
 	/*###########################################################################################
 	METHODS THAT DO NOT LOCK mProxyMutex!
 	###########################################################################################*/
 	// Constructor, cannot have parameters due to LLSingleton parent class. Call from main thread only.
-	LLProxy();
+	LLSINGLETON(LLProxy);
+	LOG_CLASS(LLProxy);
 
+public:
 	// Static check for enabled status for UDP packets. Call from main thread only.
 	static bool isSOCKSProxyEnabled() { return sUDPProxyEnabled; }
 
@@ -240,9 +242,11 @@ public:
 	/*###########################################################################################
 	METHODS THAT LOCK mProxyMutex! DO NOT CALL WHILE mProxyMutex IS LOCKED!
 	###########################################################################################*/
+private:
 	// Destructor, closes open connections. Do not call directly, use cleanupClass().
 	~LLProxy();
 
+public:
 	// Delete LLProxy singleton. Allows the apr_socket used in the SOCKS 5 control channel to be
 	// destroyed before the call to apr_terminate. Call from main thread only.
 	static void cleanupClass();

@@ -84,7 +84,12 @@
 // Globals
 //
 
-LLMap< const LLUUID, LLPanelDirBrowser* > gDirBrowserInstances;
+std::map< const LLUUID, LLPanelDirBrowser* > gDirBrowserInstances;
+LLPanelDirBrowser* getBrowserInstance(const LLUUID& id)
+{
+	try { return gDirBrowserInstances.at(id); }
+	catch (...) { return nullptr; }
+}
 
 LLPanelDirBrowser::LLPanelDirBrowser(const std::string& name, LLFloaterDirectory* floater)
 :	LLPanel(name),
@@ -130,8 +135,7 @@ BOOL LLPanelDirBrowser::postBuild()
 LLPanelDirBrowser::~LLPanelDirBrowser()
 {
 	// Children all cleaned up by default view destructor.
-
-	gDirBrowserInstances.removeData(mSearchID);
+	gDirBrowserInstances.erase(mSearchID);
 }
 
 
@@ -500,9 +504,8 @@ void LLPanelDirBrowser::processDirPeopleReply(LLMessageSystem *msg, void**)
 
 	msg->getUUIDFast(_PREHASH_QueryData,_PREHASH_QueryID, query_id);
 
-	LLPanelDirBrowser* self;
-	self = gDirBrowserInstances.getIfThere(query_id);
-	if (!self) 
+	LLPanelDirBrowser* self = getBrowserInstance(query_id);
+	if (!self)
 	{
 		// data from an old query
 		return;
@@ -596,7 +599,7 @@ void LLPanelDirBrowser::processDirPlacesReply(LLMessageSystem* msg, void**)
 	}
 
 	LLPanelDirBrowser* self;
-	self = gDirBrowserInstances.getIfThere(query_id);
+	self = getBrowserInstance(query_id);
 	if (!self) 
 	{
 		// data from an old query
@@ -672,8 +675,7 @@ void LLPanelDirBrowser::processDirEventsReply(LLMessageSystem* msg, void**)
 	msg->getUUID("AgentData", "AgentID", agent_id);
 	msg->getUUID("QueryData", "QueryID", query_id );
 
-	LLPanelDirBrowser* self;
-	self = gDirBrowserInstances.getIfThere(query_id);
+	LLPanelDirBrowser* self = getBrowserInstance(query_id);
 	if (!self)
 	{
 		return;
@@ -821,8 +823,7 @@ void LLPanelDirBrowser::processDirGroupsReply(LLMessageSystem* msg, void**)
 
 	msg->getUUIDFast(_PREHASH_QueryData,_PREHASH_QueryID, query_id );
 
-	LLPanelDirBrowser* self;
-	self = gDirBrowserInstances.getIfThere(query_id);
+	LLPanelDirBrowser* self = getBrowserInstance(query_id);
 	if (!self)
 	{
 		return;
@@ -909,7 +910,7 @@ void LLPanelDirBrowser::processDirClassifiedReply(LLMessageSystem* msg, void**)
 	}
 
 	msg->getUUID("QueryData", "QueryID", query_id);
-	LLPanelDirBrowser* self = gDirBrowserInstances.getIfThere(query_id);
+	LLPanelDirBrowser* self = getBrowserInstance(query_id);
 	if (!self)
 	{
 		return;
@@ -987,8 +988,7 @@ void LLPanelDirBrowser::processDirLandReply(LLMessageSystem *msg, void**)
 	msg->getUUID("AgentData", "AgentID", agent_id);
 	msg->getUUID("QueryData", "QueryID", query_id );
 
-	LLPanelDirBrowser* browser;
-	browser = gDirBrowserInstances.getIfThere(query_id);
+	LLPanelDirBrowser* browser = getBrowserInstance(query_id);
 	if (!browser) 
 	{
 		// data from an old query
@@ -1201,11 +1201,11 @@ void LLPanelDirBrowser::newClassified()
 
 void LLPanelDirBrowser::setupNewSearch()
 {
-	gDirBrowserInstances.removeData(mSearchID);
+	gDirBrowserInstances.erase(mSearchID);
 	// Make a new query ID
 	mSearchID.generate();
 
-	gDirBrowserInstances.addData(mSearchID, this);
+	gDirBrowserInstances[mSearchID] = this;
 
 	// ready the list for results
 	if (LLScrollListCtrl* list = findChild<LLScrollListCtrl>("results"))

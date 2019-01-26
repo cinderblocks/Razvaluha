@@ -48,10 +48,9 @@
 #include "lltextbox.h"
 #include "llviewerobject.h"
 #include "llviewerobjectlist.h"
+#include "roles_constants.h"
 #include "lluictrlfactory.h"
 #include "llviewerwindow.h"
-
-#include <boost/foreach.hpp>
 
 class LLPanelGroupInvite::impl : public boost::signals2::trackable
 {
@@ -103,14 +102,14 @@ public:
 LLPanelGroupInvite::impl::impl(const LLUUID& group_id):
 	mGroupID( group_id ),
 	mLoadingText (),
-	mInvitees ( NULL ),
-	mRoleNames( NULL ),
-	mOKButton ( NULL ),
-	mRemoveButton( NULL ),
-	mGroupName( NULL ),
+	mInvitees (nullptr ),
+	mRoleNames(nullptr ),
+	mOKButton (nullptr ),
+	mRemoveButton(nullptr ),
+	mGroupName(nullptr ),
 	mConfirmedOwnerInvite( false ),
-	mCloseCallback( NULL ),
-	mCloseCallbackUserData( NULL ),
+	mCloseCallback(nullptr ),
+	mCloseCallbackUserData(nullptr ),
 	mAvatarNameCacheConnection()
 {
 }

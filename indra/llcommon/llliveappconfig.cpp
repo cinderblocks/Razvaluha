@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llliveappconfig.cpp
  * @brief Configuration information for an LLApp that overrides indra.xml
@@ -49,7 +51,7 @@ bool LLLiveAppConfig::loadFile()
 {
 	LL_INFOS() << "LLLiveAppConfig::loadFile(): reading from "
 		<< filename() << LL_ENDL;
-    llifstream file(filename());
+    llifstream file(filename().c_str());
 	LLSD config;
     if (file.is_open())
     {

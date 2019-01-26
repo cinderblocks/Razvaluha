@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llallocator_heap_profile.cpp
  * @brief Implementation of the parser for tcmalloc heap profile data.
@@ -26,21 +28,17 @@
  */
 
 #include "linden_common.h"
+
+#ifdef LL_GNUC
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #include "llallocator_heap_profile.h"
 
-#if LL_MSVC
-// disable warning about boost::lexical_cast returning uninitialized data
-// when it fails to parse the string
-#pragma warning (disable:4701)
-#pragma warning (disable:4702)
-#endif
-
 #include <boost/algorithm/string/split.hpp>
-#include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/range/iterator_range.hpp>
 
-static const std::string HEAP_PROFILE_MAGIC_STR = "heap profile:";
+static const std::string HEAP_PROFILE_MAGIC_STR("heap profile:");
 
 static bool is_separator(char c)
 {
@@ -70,7 +68,7 @@ void LLAllocatorHeapProfile::parse(std::string const & prof_text)
 	range_t prof_range(prof_begin, prof_text.end());
     boost::algorithm::split(prof_lines,
         prof_range,
-        boost::bind(std::equal_to<llwchar>(), '\n', _1));
+        std::bind(std::equal_to<llwchar>(), '\n', std::placeholders::_1));
 
     std::vector< range_t >::const_iterator i;
     for(i = prof_lines.begin(); i != prof_lines.end() && !i->empty(); ++i)

@@ -29,6 +29,7 @@
 
 #include "lltool.h"
 #include "v3math.h"
+#include "llsafehandle.h"
 #include "lluuid.h"
 #include "llviewerwindow.h" // for LLPickInfo
 

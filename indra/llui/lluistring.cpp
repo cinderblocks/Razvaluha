@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lluistring.cpp
  * @brief LLUIString implementation.
@@ -129,7 +131,7 @@ void LLUIString::updateResult() const
 		return;
 	}
 	mResult = mOrig;
-	
+
 	// get the default args + local args
 	LLStringUtil::format_map_t combined_args = LLTrans::getDefaultArgs();
 	if (mArgs && !mArgs->empty())

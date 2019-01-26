@@ -205,7 +205,7 @@ void resync_anims()
 		LLViewerObject* object = gObjectList.getObject(i);
 		if (object && object->isAvatar())
 		{
-			LLVOAvatar& avatarp = *(LLVOAvatar*)object;
+			LLVOAvatar& avatarp = *static_cast<LLVOAvatar*>(object);
 			for (const auto& playpair : avatarp.mPlayingAnimations)
 			{
 				avatarp.stopMotion(playpair.first, TRUE);

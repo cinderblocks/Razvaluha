@@ -312,7 +312,7 @@ public:
 
 //	BOOL	importStream(std::istream& input_stream);
 	BOOL	importAccessEntry(std::istream& input_stream, LLAccessEntry* entry);
-//	BOOL	exportStream(std::ostream& output_stream);
+	// BOOL	exportStream(std::ostream& output_stream);
 
 	void	packMessage(LLMessageSystem* msg);
 	void	packMessage(LLSD& msg);
@@ -510,6 +510,9 @@ public:
 					{ return mRegionDenyAnonymousOverride; }
 	BOOL	getRegionDenyAgeUnverifiedOverride() const
 					{ return mRegionDenyAgeUnverifiedOverride; }
+    BOOL    getRegionAllowAccessOverride() const
+                    { return mRegionAllowAccessoverride; }
+
 
 	BOOL	getAllowGroupAVSounds()	const	{ return mAllowGroupAVSounds;	} 
 	BOOL	getAllowAnyAVSounds()	const	{ return mAllowAnyAVSounds;		}
@@ -595,6 +598,7 @@ public:
 	void	setRegionPushOverride(BOOL override) {mRegionPushOverride = override; }
 	void	setRegionDenyAnonymousOverride(BOOL override)	{ mRegionDenyAnonymousOverride = override; }
 	void	setRegionDenyAgeUnverifiedOverride(BOOL override)	{ mRegionDenyAgeUnverifiedOverride = override; }
+    void    setRegionAllowAccessOverride(BOOL override) { mRegionAllowAccessoverride = override; }
 
 	// Accessors for parcel sellWithObjects
 	void	setPreviousOwnerID(LLUUID prev_owner)	{ mPreviousOwnerID = prev_owner; }
@@ -604,8 +608,8 @@ public:
 	LLUUID	getPreviousOwnerID() const		{ return mPreviousOwnerID; }
 	BOOL	getPreviouslyGroupOwned() const	{ return mPreviouslyGroupOwned; }
 	BOOL	getSellWithObjects() const		{ return (mParcelFlags & PF_SELL_PARCEL_OBJECTS) ? TRUE : FALSE; }
-
-
+	
+	
 protected:
 	LLUUID mID;
 	LLUUID				mOwnerID;
@@ -676,6 +680,7 @@ protected:
 	BOOL				mRegionPushOverride;
 	BOOL				mRegionDenyAnonymousOverride;
 	BOOL				mRegionDenyAgeUnverifiedOverride;
+    BOOL                mRegionAllowAccessoverride;
 	BOOL				mAllowGroupAVSounds;
 	BOOL				mAllowAnyAVSounds;
 	

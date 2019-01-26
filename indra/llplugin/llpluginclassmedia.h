@@ -68,6 +68,7 @@ public:
 	int getTextureHeight() const;
 	int getFullWidth() const { return mFullMediaWidth; };
 	int getFullHeight() const { return mFullMediaHeight; };
+	F64 getZoomFactor() const { return mZoomFactor; };
 	
 	// This may return NULL.  Callers need to check for and handle this case.
 	unsigned char* getBitsData();
@@ -83,7 +84,8 @@ public:
 
 	void setSize(int width, int height);
 	void setAutoScale(bool auto_scale);
-	
+	void setZoomFactor(F64 zoom_factor) { mZoomFactor = zoom_factor; }
+
 	void setBackgroundColor(LLColor4 color) { mBackgroundColor = color; };
 	
 	void setOwner(LLPluginClassMediaOwner *owner) { mOwner = owner; };
@@ -94,7 +96,7 @@ public:
 	// until you call idle() again.
 	bool textureValid(void);
 	
-	bool getDirty(LLRect *dirty_rect = NULL);
+	bool getDirty(LLRect *dirty_rect = nullptr);
 	void resetDirty(void);
 	
 	typedef enum 
@@ -152,9 +154,9 @@ public:
 	void setDisableTimeout(bool disable) { if(mPlugin) mPlugin->setDisableTimeout(disable); };
 	
 	// Inherited from LLPluginProcessParentOwner
-	/* virtual */ void receivePluginMessage(const LLPluginMessage &message);
-	/* virtual */ void pluginLaunchFailed();
-	/* virtual */ void pluginDied();
+	/* virtual */ void receivePluginMessage(const LLPluginMessage &message) override;
+	/* virtual */ void pluginLaunchFailed() override;
+	/* virtual */ void pluginDied() override;
 	
 	
 	typedef enum 
@@ -174,7 +176,7 @@ public:
 	
 	F64 getCPUUsage();
 	
-	void sendPickFileResponse(const std::string &file);
+	void sendPickFileResponse(const std::vector<std::string> files);
 
 	void sendAuthResponse(bool ok, const std::string &username, const std::string &password);
 
@@ -204,7 +206,7 @@ public:
 	bool pluginSupportsMediaBrowser(void);
 	
 	void focus(bool focused);
-	void set_page_zoom_factor( double factor );
+	void set_page_zoom_factor( F64 factor );
 	void clear_cache();
 	void clear_cookies();
 	void set_cookies(const std::string &cookies);
@@ -274,6 +276,9 @@ public:
 	// These are valid during MEDIA_EVENT_AUTH_REQUEST
 	std::string	getAuthURL() const { return mAuthURL; };
 	std::string	getAuthRealm() const { return mAuthRealm; };
+
+	// These are valid during MEDIA_EVENT_PICK_FILE_REQUEST
+	bool getIsMultipleFilePick() const { return mIsMultipleFilePick; }
 
 	// These are valid during MEDIA_EVENT_LINK_HOVERED
 	std::string	getHoverText() const { return mHoverText; };
@@ -367,6 +372,8 @@ protected:
 	int			mTextureHeight;
 	int			mMediaWidth;
 	int			mMediaHeight;
+
+	F64			mZoomFactor;
 	
 	float		mRequestedVolume;
 	
@@ -431,6 +438,7 @@ protected:
 	std::string		mHoverText;
 	std::string		mHoverLink;
 	std::string     mFileDownloadFilename;
+	bool			mIsMultipleFilePick;
 	
 	/////////////////////////////////////////
 	// media_time class

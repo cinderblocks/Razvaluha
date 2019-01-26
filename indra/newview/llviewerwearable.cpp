@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llviewerwearable.cpp
  * @brief LLViewerWearable class implementation
@@ -31,6 +33,7 @@
 #include "llagentwearables.h"
 #include "llfloatercustomize.h"
 #include "lllocaltextureobject.h"
+#include "llinventoryobserver.h"
 #include "llnotificationsutil.h"
 #include "llpaneleditwearable.h"
 #include "lltextureentry.h"
@@ -40,8 +43,6 @@
 #include "llviewerwearable.h"
 #include "llviewercontrol.h"
 #include "llviewerregion.h"
-#include "llinventoryobserver.h"
-#include "llinventoryfunctions.h"
 
 using namespace LLAvatarAppearanceDefines;
 
@@ -131,7 +132,7 @@ LLWearable::EImportResult LLViewerWearable::importStream( std::istream& input_st
 		LLViewerFetchedTexture* image = LLViewerTextureManager::getFetchedTexture( textureid );
 		if(gSavedSettings.getBOOL("DebugAvatarLocalTexLoadedTime"))
 		{
-			image->setLoadedCallback(LLVOAvatarSelf::debugOnTimingLocalTexLoaded,0,TRUE,FALSE, new LLVOAvatarSelf::LLAvatarTexData(textureid, (LLAvatarAppearanceDefines::ETextureIndex)te), NULL);
+			image->setLoadedCallback(LLVOAvatarSelf::debugOnTimingLocalTexLoaded,0,TRUE,FALSE, new LLVOAvatarSelf::LLAvatarTexData(textureid, (LLAvatarAppearanceDefines::ETextureIndex)te), nullptr);
 		}
 	}
 
@@ -301,11 +302,11 @@ void LLViewerWearable::setTexturesToDefaults()
 
 
 // virtual
-const LLUUID LLViewerWearable::getDefaultTextureImageID(ETextureIndex index) const
+LLUUID LLViewerWearable::getDefaultTextureImageID(ETextureIndex index) const
 {
 	const LLAvatarAppearanceDictionary::TextureEntry *texture_dict = LLAvatarAppearanceDictionary::getInstance()->getTexture(index);
 	const std::string &default_image_name = texture_dict->mDefaultImageName;
-	if (default_image_name == "")
+	if (default_image_name.empty())
 	{
 		return IMG_DEFAULT_AVATAR;
 	}
@@ -362,7 +363,7 @@ void LLViewerWearable::writeToAvatar(LLAvatarAppearance *avatarp)
 
 // Updates the user's avatar's appearance, replacing this wearables' parameters and textures with default values.
 // static 
-void LLViewerWearable::removeFromAvatar( LLWearableType::EType type, bool upload_bake )
+void LLViewerWearable::removeFromAvatar( LLWearableType::EType type, BOOL upload_bake )
 {
 	if (!isAgentAvatarValid()) return;
 
@@ -392,11 +393,6 @@ void LLViewerWearable::removeFromAvatar( LLWearableType::EType type, bool upload
 
 	gAgentAvatarp->updateVisualParams();
 	gAgentAvatarp->wearableUpdated(type, FALSE);
-
-//	if( upload_bake )
-//	{
-//		gAgent.sendAgentSetAppearance();
-//	}
 }
 
 // Does not copy mAssetID.
@@ -436,7 +432,7 @@ void LLViewerWearable::copyDataFrom(const LLViewerWearable* src)
 		{
 			te_map_t::const_iterator iter = src->mTEMap.find(te);
 			LLUUID image_id;
-			LLViewerFetchedTexture *image = NULL;
+			LLViewerFetchedTexture *image = nullptr;
 			if(iter != src->mTEMap.end())
 			{
 				image = dynamic_cast<LLViewerFetchedTexture*> (src->getLocalTextureObject(te)->getImage());
@@ -472,28 +468,22 @@ void LLViewerWearable::revertValues()
 	LLWearable::revertValues();
 
 
-	/*LLSidepanelAppearance *panel = dynamic_cast<LLSidepanelAppearance*>(LLFloaterSidePanelContainer::getPanel("appearance"));
+	auto* panel = LLFloaterCustomize::instanceExists() && LLFloaterCustomize::getInstance()->getCurrentWearablePanel()->getWearable() == this ? LLFloaterCustomize::getInstance() : nullptr;
 	if( panel )
 	{
 		panel->updateScrollingPanelList();
-	}*/
-	if (LLFloaterCustomize::instanceExists() && LLFloaterCustomize::getInstance()->getCurrentWearablePanel()->getWearable() == this)
-		LLFloaterCustomize::getInstance()->updateScrollingPanelList();
-	
+	}
 }
 
 void LLViewerWearable::saveValues()
 {
 	LLWearable::saveValues();
 
-	/*LLSidepanelAppearance *panel = dynamic_cast<LLSidepanelAppearance*>(LLFloaterSidePanelContainer::getPanel("appearance"));
+	auto* panel = LLFloaterCustomize::instanceExists() && LLFloaterCustomize::getInstance()->getCurrentWearablePanel()->getWearable() == this ? LLFloaterCustomize::getInstance() : nullptr;
 	if( panel )
 	{
 		panel->updateScrollingPanelList();
-	}*/
-
-	if (LLFloaterCustomize::instanceExists() && LLFloaterCustomize::getInstance()->getCurrentWearablePanel()->getWearable() == this)
-		LLFloaterCustomize::getInstance()->updateScrollingPanelList();
+	}
 }
 
 // virtual
@@ -513,7 +503,6 @@ void LLViewerWearable::refreshNameAndDescription()
 	}
 }
 
-// virtual
 void LLViewerWearable::addToBakedTextureHash(LLMD5& hash) const
 {
 	LLUUID asset_id = getAssetID();
@@ -545,28 +534,29 @@ void LLViewerWearable::saveNewAsset() const
 	// save it out to database
 	if( gAssetStorage )
 	{
-		 /*
-		std::string url = gAgent.getRegion()->getCapability("NewAgentInventory");
+#if 0
+		const std::string url = gAgent.getRegion()->getCapability("NewFileAgentInventory");
 		if (!url.empty())
 		{
 			LL_INFOS() << "Update Agent Inventory via capability" << LL_ENDL;
 			LLSD body;
-			body["folder_id"] = gInventory.findCategoryUUIDForType(LLFolderType::assetToFolderType(getAssetType()));
+			body["folder_id"] = gInventory.findCategoryUUIDForType(LLFolderType::assetTypeToFolderType(getAssetType()));
 			body["asset_type"] = LLAssetType::lookup(getAssetType());
 			body["inventory_type"] = LLInventoryType::lookup(LLInventoryType::IT_WEARABLE);
 			body["name"] = getName();
 			body["description"] = getDescription();
-			LLHTTPClient::post(url, body, new LLNewAgentInventoryResponder(body, filename));
+			LLHTTPClient::post(url, body, new LLNewAgentInventoryResponder(body, filename,
+																		   getAssetType()));
 		}
 		else
+#endif // 0
 		{
-		}
-		 */
 		 LLWearableSaveData* data = new LLWearableSaveData;
 		 data->mType = mType;
 		 gAssetStorage->storeAssetData(filename, mTransactionID, getAssetType(),
                                      &LLViewerWearable::onSaveNewAssetComplete,
                                      (void*)data);
+		}
 	}
 }
 
@@ -607,7 +597,7 @@ std::ostream& operator<<(std::ostream &s, const LLViewerWearable &w)
 	//w.mSaleInfo
 
 	s << "    Params:" << "\n";
-	for (LLViewerWearable::visual_param_index_map_t::const_iterator iter = w.mVisualParamIndexMap.begin();
+	for (LLViewerWearable::visual_param_index_map_t::const_iterator iter = w.mVisualParamIndexMap.begin(); // <alchemy/>
 		 iter != w.mVisualParamIndexMap.end(); ++iter)
 	{
 		S32 param_id = iter->first;

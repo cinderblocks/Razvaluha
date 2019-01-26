@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llsdserialize_xml.cpp
  * @brief XML parsers and formatters for LLSD
@@ -134,7 +136,7 @@ S32 LLSDXMLFormatter::format_impl(const LLSD& data, std::ostream& ostr, U32 opti
 		ostr << pre << "<boolean>";
 		if(mBoolAlpha ||
 		   (ostr.flags() & std::ios::boolalpha)
-			)
+		   )
 		{
 			ostr << (data.asBoolean() ? "true" : "false");
 		}
@@ -310,7 +312,7 @@ private:
 LLSDXMLParser::Impl::Impl(bool emit_errors)
 	: mEmitErrors(emit_errors)
 {
-	mParser = XML_ParserCreate(NULL);
+	mParser = XML_ParserCreate(nullptr);
 	reset();
 }
 
@@ -337,9 +339,10 @@ void clear_eol(std::istream& input)
 static unsigned get_till_eol(std::istream& input, char *buf, unsigned bufsize)
 {
 	unsigned count = 0;
+	char c;
 	while (count < bufsize && input.good())
 	{
-		char c = input.get();
+		input.get(c);
 		buf[count++] = c;
 		if (is_eol(c))
 			break;
@@ -352,7 +355,7 @@ S32 LLSDXMLParser::Impl::parse(std::istream& input, LLSD& data)
 	XML_Status status;
 	
 	static const int BUFFER_SIZE = 1024;
-	void* buffer = NULL;	
+	void* buffer = nullptr;	
 	int count = 0;
 	while (input.good() && !input.eof())
 	{
@@ -394,7 +397,7 @@ S32 LLSDXMLParser::Impl::parse(std::istream& input, LLSD& data)
 		}
 		if (mEmitErrors)
 		{
-			LL_INFOS() << "LLSDXMLParser::Impl::parse: XML_STATUS_ERROR parsing:" << (char*) buffer << LL_ENDL;
+		LL_INFOS() << "LLSDXMLParser::Impl::parse: XML_STATUS_ERROR parsing:" << (char*) buffer << LL_ENDL;
 		}
 		data = LLSD();
 		return LLSDParser::PARSE_FAILURE;
@@ -475,7 +478,7 @@ S32 LLSDXMLParser::Impl::parseLines(std::istream& input, LLSD& data)
 	{
 		if (mEmitErrors)
 		{
-			LL_INFOS() << "LLSDXMLParser::Impl::parseLines: XML_STATUS_ERROR" << LL_ENDL;
+		LL_INFOS() << "LLSDXMLParser::Impl::parseLines: XML_STATUS_ERROR" << LL_ENDL;
 		}
 		return LLSDParser::PARSE_FAILURE;
 	}
@@ -518,7 +521,7 @@ void LLSDXMLParser::Impl::startSkipping()
 const XML_Char*
 LLSDXMLParser::Impl::findAttribute(const XML_Char* name, const XML_Char** pairs)
 {
-	while (NULL != pairs && NULL != *pairs)
+	while (nullptr != pairs && nullptr != *pairs)
 	{
 		if(0 == strcmp(name, *pairs))
 		{
@@ -526,12 +529,12 @@ LLSDXMLParser::Impl::findAttribute(const XML_Char* name, const XML_Char** pairs)
 		}
 		pairs += 2;
 	}
-	return NULL;
+	return nullptr;
 }
 
 void LLSDXMLParser::Impl::parsePart(const char* buf, int len)
 {
-	if ( buf != NULL 
+	if ( buf != nullptr 
 		&& len > 0 )
 	{
 		XML_Status status = XML_Parse(mParser, buf, len, false);
@@ -547,7 +550,7 @@ void LLSDXMLParser::Impl::parsePart(const char* buf, int len)
 
 #ifdef XML_PARSER_PERFORMANCE_TESTS
 
-extern LL_COMMON_API U64 totalTime();
+extern U64 totalTime();
 U64	readElementTime = 0;
 U64 startElementTime = 0;
 U64 endElementTime = 0;

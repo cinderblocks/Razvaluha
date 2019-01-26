@@ -75,8 +75,8 @@ typedef struct _xmlrpc_value* XMLRPC_VALUE;
 
 class LLUserAuth : public LLSingleton<LLUserAuth>
 {
+	LLSINGLETON(LLUserAuth);
 public:
-	LLUserAuth();
 	~LLUserAuth();
 
 	// These codes map to the curl return codes...

@@ -52,8 +52,8 @@ public:
 					 U32 priority, S32 discard, BOOL needs_aux,
 					 LLImageDecodeThread::Responder* responder);
 
-		/*virtual*/ bool processRequest();
-		/*virtual*/ void finishRequest(bool completed);
+		/*virtual*/ bool processRequest() override;
+		/*virtual*/ void finishRequest(bool completed) override;
 
 		// Used by unit tests to check the consitency of the request instance
 		bool tut_isOK();
@@ -78,7 +78,7 @@ public:
 	handle_t decodeImage(LLImageFormatted* image,
 						 U32 priority, S32 discard, BOOL needs_aux,
 						 Responder* responder);
-	S32 update(F32 max_time_ms);
+	S32 update(F32 max_time_ms) override;
 
 	// Used by unit tests to check the consistency of the thread instance
 	S32 tut_size();
@@ -86,12 +86,12 @@ public:
 private:
 	struct creation_info
 	{
-		handle_t handle;
 		LLPointer<LLImageFormatted> image;
+		LLPointer<Responder> responder;
+		handle_t handle;
 		U32 priority;
 		S32 discard;
 		BOOL needs_aux;
-		LLPointer<Responder> responder;
 		creation_info(handle_t h, LLImageFormatted* i, U32 p, S32 d, BOOL aux, Responder* r)
 			: handle(h), image(i), priority(p), discard(d), needs_aux(aux), responder(r)
 		{}

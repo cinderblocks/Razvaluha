@@ -27,15 +27,6 @@
 #ifndef LL_LLPATHFINDINGOBJECT_H
 #define LL_LLPATHFINDINGOBJECT_H
 
-#include <string>
-
-#include <boost/shared_ptr.hpp>
-#ifndef BOOST_FUNCTION_HPP_INCLUDED
-#include <boost/function.hpp>
-#define BOOST_FUNCTION_HPP_INCLUDED
-#endif
-#include <boost/signals2.hpp>
-
 #include "llavatarname.h"
 #include "llavatarnamecache.h"
 #include "lluuid.h"
@@ -44,7 +35,7 @@
 class LLPathfindingObject;
 class LLSD;
 
-typedef boost::shared_ptr<LLPathfindingObject> LLPathfindingObjectPtr;
+typedef std::shared_ptr<LLPathfindingObject> LLPathfindingObjectPtr;
 
 class LLPathfindingObject
 {
@@ -65,7 +56,7 @@ public:
 	inline BOOL               isGroupOwned() const   {return mIsGroupOwned;};
 	inline const LLVector3&   getLocation() const    {return mLocation;};
 
-	typedef boost::function<void (const LLPathfindingObject *)>         name_callback_t;
+	typedef std::function<void (const LLPathfindingObject *)>         name_callback_t;
 	typedef boost::signals2::signal<void (const LLPathfindingObject *)> name_signal_t;
 	typedef boost::signals2::connection                                 name_connection_t;
 

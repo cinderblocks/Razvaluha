@@ -77,8 +77,8 @@ const F64 CURRENCY_ESTIMATE_FREQUENCY = 0.5;
 class LLFloaterBuyLandUI
 :	public LLFloater, public LLSingleton<LLFloaterBuyLandUI>
 {
+	LLSINGLETON(LLFloaterBuyLandUI);
 public:
-	LLFloaterBuyLandUI();
 	virtual ~LLFloaterBuyLandUI();
 	
 	/*virtual*/ void onClose(bool app_quitting);
@@ -87,13 +87,9 @@ public:
 	static const S32 ICON_PAD = 2;
 
 private:
-	class SelectionObserver : public LLParcelObserver
+	struct SelectionObserver : public LLParcelObserver
 	{
-	public:
-		SelectionObserver(LLFloaterBuyLandUI* floater) : mFloater(floater) {}
-		virtual void changed();
-	private:
-		LLFloaterBuyLandUI* mFloater;
+		void changed() override;
 	};
 	
 private:
@@ -280,7 +276,7 @@ void LLFloaterBuyLand::updateEstateOwnerName(const std::string& name)
 #endif 
 LLFloaterBuyLandUI::LLFloaterBuyLandUI()
 :	LLFloater(std::string("Buy Land")),
-	mParcelSelectionObserver(this),
+	mParcelSelectionObserver(),
 	mRegion(nullptr),
 	mParcel(0),
 	mIsClaim(false),
@@ -334,15 +330,8 @@ void LLFloaterBuyLandUI::onClose(bool app_quitting)
 
 void LLFloaterBuyLandUI::SelectionObserver::changed()
 {
-	if (LLViewerParcelMgr::getInstance()->selectionEmpty())
-	{
-		mFloater->close();
-	}
-	else
-	{
-		mFloater->setParcel(LLViewerParcelMgr::getInstance()->getSelectionRegion(),
-							LLViewerParcelMgr::getInstance()->getParcelSelection());
-	}
+	const auto& inst(LLViewerParcelMgr::instance());
+	inst.selectionEmpty() ? instance().close() : instance().setParcel(inst.getSelectionRegion(), inst.getParcelSelection());
 }
 
 

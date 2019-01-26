@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llkeyboardsdl.cpp
  * @brief Handler for assignable key bindings
@@ -40,7 +42,7 @@ LLKeyboardSDL::LLKeyboardSDL()
 	// Virtual key mappings from SDL_keysym.h ...
 
 	// SDL maps the letter keys to the ASCII you'd expect, but it's lowercase...
-	U16 cur_char;
+	U32 cur_char;
 	for (cur_char = 'A'; cur_char <= 'Z'; cur_char++)
 	{
 		mTranslateKeyMap[cur_char] = cur_char;
@@ -124,7 +126,7 @@ LLKeyboardSDL::LLKeyboardSDL()
 	mTranslateKeyMap[SDLK_QUOTE] = '\'';
 
 	// Build inverse map
-	std::map<U16, KEY>::iterator iter;
+	std::map<U32, KEY>::iterator iter;
 	for (iter = mTranslateKeyMap.begin(); iter != mTranslateKeyMap.end(); iter++)
 	{
 		mInvTranslateKeyMap[iter->second] = iter->first;
@@ -201,11 +203,11 @@ MASK LLKeyboardSDL::updateModifiers(const U32 mask)
 }
 
 
-static U16 adjustNativekeyFromUnhandledMask(const U16 key, const U32 mask)
+static U32 adjustNativekeyFromUnhandledMask(const U32 key, const U32 mask)
 {
 	// SDL doesn't automatically adjust the keysym according to
 	// whether NUMLOCK is engaged, so we massage the keysym manually.
-	U16 rtn = key;
+	U32 rtn = key;
 	if (!(mask & KMOD_NUM))
 	{
 		switch (key)
@@ -226,9 +228,9 @@ static U16 adjustNativekeyFromUnhandledMask(const U16 key, const U32 mask)
 }
 
 
-BOOL LLKeyboardSDL::handleKeyDown(const U16 key, const U32 mask)
+BOOL LLKeyboardSDL::handleKeyDown(const U32 key, U32 mask)
 {
-	U16     adjusted_nativekey;
+	U32     adjusted_nativekey;
 	KEY	translated_key = 0;
 	U32	translated_mask = MASK_NONE;
 	BOOL	handled = FALSE;
@@ -246,9 +248,9 @@ BOOL LLKeyboardSDL::handleKeyDown(const U16 key, const U32 mask)
 }
 
 
-BOOL LLKeyboardSDL::handleKeyUp(const U16 key, const U32 mask)
+BOOL LLKeyboardSDL::handleKeyUp(const U32 key, U32 mask)
 {
-	U16     adjusted_nativekey;
+	U32     adjusted_nativekey;
 	KEY	translated_key = 0;
 	U32	translated_mask = MASK_NONE;
 	BOOL	handled = FALSE;
@@ -310,26 +312,25 @@ void LLKeyboardSDL::scanKeyboard()
 }
 
  
-BOOL LLKeyboardSDL::translateNumpadKey( const U16 os_key, KEY *translated_key)
+BOOL LLKeyboardSDL::translateNumpadKey( const U32 os_key, KEY *translated_key)
 {
 	if(mNumpadDistinct == ND_NUMLOCK_ON)
 	{
-		std::map<U16, KEY>::iterator iter= mTranslateNumpadMap.find(os_key);
+		auto iter= mTranslateNumpadMap.find(os_key);
 		if(iter != mTranslateNumpadMap.end())
 		{
 			*translated_key = iter->second;
 			return TRUE;
 		}
 	}
-	BOOL success = translateKey(os_key, translated_key);
-	return success;	
+	return translateKey(os_key, translated_key);	
 }
 
-U16 LLKeyboardSDL::inverseTranslateNumpadKey(const KEY translated_key)
+U32 LLKeyboardSDL::inverseTranslateNumpadKey(const KEY translated_key)
 {
 	if(mNumpadDistinct == ND_NUMLOCK_ON)
 	{
-		std::map<KEY, U16>::iterator iter= mInvTranslateNumpadMap.find(translated_key);
+		auto iter= mInvTranslateNumpadMap.find(translated_key);
 		if(iter != mInvTranslateNumpadMap.end())
 		{
 			return iter->second;

@@ -2,31 +2,25 @@
  * @file llworldmap.h
  * @brief Underlying data storage for the map of the entire world.
  *
- * $LicenseInfo:firstyear=2003&license=viewergpl$
- * 
- * Copyright (c) 2003-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2003&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -50,6 +44,19 @@
 #include "v3color.h"
 
 class LLMessageSystem;
+
+
+// map item types
+const U32 MAP_ITEM_TELEHUB = 0x01;
+const U32 MAP_ITEM_PG_EVENT = 0x02;
+const U32 MAP_ITEM_MATURE_EVENT = 0x03;
+//const U32 MAP_ITEM_POPULAR = 0x04;		// No longer supported, 2009-03-02 KLW
+//const U32 MAP_ITEM_AGENT_COUNT = 0x05;
+const U32 MAP_ITEM_AGENT_LOCATIONS = 0x06;
+const U32 MAP_ITEM_LAND_FOR_SALE = 0x07;
+const U32 MAP_ITEM_CLASSIFIED = 0x08;
+const U32 MAP_ITEM_ADULT_EVENT = 0x09;
+const U32 MAP_ITEM_LAND_FOR_SALE_ADULT = 0x0a;
 
 // Description of objects like hubs, events, land for sale, people and more (TBD).
 // Note: we don't store a "type" in there so we need to store instances of this class in 
@@ -142,9 +149,7 @@ public:
 
 	// Setters
 	void setName(std::string& name) { mName = name; }
-// <FS:CR> Aurora Sim
 	void setSize(U16 sizeX, U16 sizeY) { mSizeX = sizeX; mSizeY = sizeY; }
-// </FS:CR> Aurora Sim
 	void setAccess (U32 accesscode) { mAccess = accesscode; }
 	void setRegionFlags (U32 region_flags) { mRegionFlags = region_flags; }
 	void setAlpha(F32 alpha) { mAlpha = alpha; }
@@ -164,11 +169,10 @@ public:
 	LLPointer<LLViewerFetchedTexture> getLandForSaleImage();	// Get the overlay image, fetch it if necessary
 	
 	const F32 getAlpha() const { return mAlpha; }
-// <FS:CR> Aurora Sim
 	const U64& getHandle() const { return mHandle; }
 	const U16 getSizeX() const { return mSizeX; }
 	const U16 getSizeY() const { return mSizeY; }
-// </FS:CR> Aurora Sim
+
 	bool isName(const std::string& name) const;
 	bool isDown() { return (mAccess == SIM_ACCESS_DOWN); }
 	bool isPG() { return (mAccess <= SIM_ACCESS_PG); }
@@ -201,18 +205,17 @@ public:
 
 private:
 	U64 mHandle;				// This is a hash of the X and Y world coordinates of the SW corner of the sim
-// <FS:CR> Aurora Sim
 	U16 mSizeX;
 	U16 mSizeY;
-// </FS:CR> Aurora Sim
-
-	std::string mName;
+	std::string mName;			// Region name
 
 	F64 mAgentsUpdateTime;		// Time stamp giving the last time the agents information was requested for that region
 	bool mFirstAgentRequest;	// Init agent request flag
 
 	U32  mAccess;				// Down/up and maturity rating of the region
-	U32 mRegionFlags;
+	U32 mRegionFlags;			// Tell us if the siminfo has been received (if non 0) and what kind of region it is (Sandbox, allow damage)
+	// Currently not used but might prove useful one day so we comment out 
+//	F32 mWaterHeight;			// Water height on the region (not actively used)
 	
 	F32 mAlpha;
 
@@ -245,24 +248,20 @@ struct LLWorldMapLayer
 
 // We request region data on the world by "blocks" of (MAP_BLOCK_SIZE x MAP_BLOCK_SIZE) regions
 // This is to reduce the number of requests to the asset DB and get things in big "blocks"
-// <FS:CR> Aurora Sim
-//const S32 MAP_MAX_SIZE = 2048;
-//const S32 MAP_BLOCK_SIZE = 4;
 const S32 MAP_MAX_SIZE = 16384;
 const S32 MAP_BLOCK_SIZE = 16;
-// </FS:CR> Aurora Sim
 const S32 MAP_BLOCK_RES = (MAP_MAX_SIZE / MAP_BLOCK_SIZE);
 
 class LLWorldMap : public LLSingleton<LLWorldMap>
 {
-	friend class LLMapLayerResponder;
 public:
 	typedef void(*url_callback_t)(U64 region_handle, const std::string& url, const LLUUID& snapshot_id, bool teleport);
 
-	LLWorldMap();
+	LLSINGLETON(LLWorldMap);
 	~LLWorldMap();
 
-	// clears the list
+public:
+	// Clear all: list of region info, tiles, blocks and items
 	void reset();
 
 	void clearImageRefs();					// Clears the image references
@@ -276,10 +275,7 @@ public:
 
 	// Insert a region and items in the map global instance
 	// Note: x_world and y_world in world coordinates (meters)
-// <FS:CR> Aurora Sim
-	static bool insertRegion(U32 x_world, U32 y_world, std::string& name, LLUUID& uuid, U32 accesscode, U64 region_flags);
 	static bool insertRegion(U32 x_world, U32 y_world, U16 x_size, U16 y_size, std::string& name, LLUUID& uuid, U32 accesscode, U64 region_flags);
-// </FS:CR> Aurora Sim
 	static bool insertItem(U32 x_world, U32 y_world, std::string& name, LLUUID& uuid, U32 type, S32 extra, S32 extra2);
 
 	// Get info on sims (region) : note that those methods only search the range of loaded sims (the one that are being browsed)
@@ -288,13 +284,14 @@ public:
 	LLSimInfo* simInfoFromPosGlobal(const LLVector3d& pos_global);
 	LLSimInfo* simInfoFromName(const std::string& sim_name);
 
-	// Gets simulator name for a global position, returns true if it was found
+	// Gets simulator name from a global position, returns true if found
 	bool simNameFromPosGlobal(const LLVector3d& pos_global, std::string& outSimName );
 	
 	static void gotMapServerURL(bool flag) { sGotMapURL = flag; }
 	static bool useWebMapTiles();
 
-	void dump();
+	// Debug only
+	void dump();	// Print the world info to the standard output
 
 	// Track handling
 	void cancelTracking() { mIsTrackingLocation = false; mIsTrackingFound = false; mIsInvalidLocation = false; mIsTrackingDoubleClick = false; mIsTrackingCommit = false; }
@@ -333,7 +330,7 @@ private:
 	// Create a region record corresponding to the handle, insert it in the region map and returns a pointer
 	LLSimInfo* createSimInfoFromHandle(const U64 handle);
 	
-	// Map from region-handle to simulator info
+	// Map from region-handle to region info
 	sim_info_map_t mSimInfoMap;
 
 	// Request legacy background layers.
@@ -342,8 +339,7 @@ private:
 	std::vector<LLWorldMapLayer>	mMapLayers;
 	bool							mMapLoaded;
 
-private:
-	
+	// Holds the tiled mipmap of the world. This is the structure that contains the images used for rendering.
 	LLWorldMipmap	mWorldMipmap;	
 	
 	// The World is divided in "blocks" of (MAP_BLOCK_SIZE x MAP_BLOCK_SIZE) regions that get requested at once.

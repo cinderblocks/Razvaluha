@@ -32,12 +32,6 @@ include_directories(SYSTEM
 
 ### media_plugin_example
 
-if(NOT WORD_SIZE EQUAL 32)
-  if(NOT WINDOWS)
-    add_definitions(-fPIC)
-  endif(NOT WINDOWS)
-endif(NOT WORD_SIZE EQUAL 32)
-
 set(media_plugin_example_SOURCE_FILES
     media_plugin_example.cpp
     )
@@ -46,6 +40,8 @@ add_library(media_plugin_example
     SHARED
     ${media_plugin_example_SOURCE_FILES}
 )
+
+set_target_properties(media_plugin_example PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_link_libraries(media_plugin_example
   ${LLPLUGIN_LIBRARIES}
@@ -75,7 +71,7 @@ if (DARWIN)
     media_plugin_example
     PROPERTIES
     PREFIX ""
-    BUILD_WITH_INSTALL_RPATH 1
+    BUILD_WITH_INSTALL_RPATH TRUE
     INSTALL_NAME_DIR "@executable_path"
     LINK_FLAGS "-exported_symbols_list ${CMAKE_CURRENT_SOURCE_DIR}/../base/media_plugin_base.exp"
   )

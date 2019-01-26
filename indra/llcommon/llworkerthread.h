@@ -27,12 +27,9 @@
 #define LL_LLWORKERTHREAD_H
 
 #include <list>
-#include <map>
-#include <queue>
-#include <set>
-#include <string>
 
 #include "llqueuedthread.h"
+#include "llatomic.h"
 
 #define USE_FRAME_CALLBACK_MANAGER 0
 
@@ -65,9 +62,9 @@ public:
 			return mWorkerClass;
 		}
 
-		/*virtual*/ bool processRequest();
-		/*virtual*/ void finishRequest(bool completed);
-		/*virtual*/ void deleteRequest();
+		/*virtual*/ bool processRequest() override;
+		/*virtual*/ void finishRequest(bool completed) override;
+		/*virtual*/ void deleteRequest() override;
 		
 	private:
 		LLWorkerClass* mWorkerClass;
@@ -86,7 +83,7 @@ public:
 	LLWorkerThread(const std::string& name, bool threaded = true, bool should_pause = false);
 	~LLWorkerThread();
 
-	/*virtual*/ S32 update(F32 max_time_ms);
+	/*virtual*/ S32 update(F32 max_time_ms) override;
 	
 	handle_t addWorkRequest(LLWorkerClass* workerclass, S32 param, U32 priority = PRIORITY_NORMAL);
 	

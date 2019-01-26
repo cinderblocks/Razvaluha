@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llglsandbox.cpp
  * @brief GL functionality access
  *
- * $LicenseInfo:firstyear=2003&license=viewergpl$
- * 
- * Copyright (c) 2003-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2003&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -49,7 +45,7 @@
 #include "lltextureentry.h"
 #include "llviewercamera.h"
 
-#include "llvoavatar.h"
+#include "llvoavatarself.h"
 #include "llagent.h"
 #include "lltoolmgr.h"
 #include "llselectmgr.h"
@@ -183,7 +179,7 @@ void LLToolSelectRect::handleRectangleSelection(S32 x, S32 y, MASK mask)
 	{
 		struct f : public LLSelectedObjectFunctor
 		{
-			virtual bool apply(LLViewerObject* vobjp)
+			bool apply(LLViewerObject* vobjp) override
 			{
 				LLDrawable* drawable = vobjp->mDrawable;
 				if (!drawable || vobjp->getPCode() != LL_PCODE_VOLUME || vobjp->isAttachment())
@@ -251,9 +247,7 @@ void LLToolSelectRect::handleRectangleSelection(S32 x, S32 y, MASK mask)
 
 // [RLVa:KB] - Checked: 2010-11-29 (RLVa-1.3.0c) | Added: RLVa-1.3.0c
 			if ( (rlv_handler_t::isEnabled()) && (!gRlvHandler.canEdit(vobjp)) )
-			{
 				continue;
-			}
 // [/RLVa:KB]
 
 			S32 result = LLViewerCamera::getInstance()->sphereInFrustum(drawable->getPositionAgent(), drawable->getRadius());
@@ -297,24 +291,21 @@ void LLWind::renderVectors()
 	S32 i,j;
 	F32 x,y;
 
-// <FS:CR> Aurora Sim
-	//F32 region_width_meters = LLWorld::getInstance()->getRegionWidthInMeters();
 	F32 region_width_meters = gAgent.getRegion()->getWidth();
-// </FS:CR> Aurora Sim
 
 	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 	gGL.pushMatrix();
 	LLVector3 origin_agent;
 	origin_agent = gAgent.getPosAgentFromGlobal(mOriginGlobal);
 	gGL.translatef(origin_agent.mV[VX], origin_agent.mV[VY], gAgent.getPositionAgent().mV[VZ] + WIND_RELATIVE_ALTITUDE);
-	for (j = 0; j < mSize; j++)
+	for (j = 0; j < WIND_SIZE; j++)
 	{
-		for (i = 0; i < mSize; i++)
+		for (i = 0; i < WIND_SIZE; i++)
 		{
-			x = mVelX[i + j*mSize] * WIND_SCALE_HACK;
-			y = mVelY[i + j*mSize] * WIND_SCALE_HACK;
+			x = mVelX[i + j*WIND_SIZE] * WIND_SCALE_HACK;
+			y = mVelY[i + j*WIND_SIZE] * WIND_SCALE_HACK;
 			gGL.pushMatrix();
-			gGL.translatef((F32)i * region_width_meters/mSize, (F32)j * region_width_meters/mSize, 0.0);
+			gGL.translatef((F32)i * region_width_meters/WIND_SIZE, (F32)j * region_width_meters/WIND_SIZE, 0.0);
 			gGL.color3f(0,1,0);
 			gGL.begin(LLRender::POINTS);
 				gGL.vertex3f(0,0,0);
@@ -386,25 +377,16 @@ void LLViewerParcelMgr::renderRect(const LLVector3d &west_south_bottom_global,
 	gGL.end();
 
 	gGL.color4f(1.f, 1.f, 0.f, 0.2f);
-	gGL.begin(LLRender::QUADS);
+	gGL.begin(LLRender::TRIANGLE_STRIP);
 
-	gGL.vertex3f(west, north, nw_bottom);
 	gGL.vertex3f(west, north, nw_top);
+	gGL.vertex3f(west, north, nw_bottom);
 	gGL.vertex3f(east, north, ne_top);
 	gGL.vertex3f(east, north, ne_bottom);
-
-	gGL.vertex3f(east, north, ne_bottom);
-	gGL.vertex3f(east, north, ne_top);
 	gGL.vertex3f(east, south, se_top);
 	gGL.vertex3f(east, south, se_bottom);
-
-	gGL.vertex3f(east, south, se_bottom);
-	gGL.vertex3f(east, south, se_top);
 	gGL.vertex3f(west, south, sw_top);
 	gGL.vertex3f(west, south, sw_bottom);
-
-	gGL.vertex3f(west, south, sw_bottom);
-	gGL.vertex3f(west, south, sw_top);
 	gGL.vertex3f(west, north, nw_top);
 	gGL.vertex3f(west, north, nw_bottom);
 
@@ -524,8 +506,8 @@ void LLViewerParcelMgr::renderOneSegment(F32 x1, F32 y1, F32 x2, F32 y2, F32 hei
 	if (clamped_y2 > BORDER) clamped_y2 = BORDER;
 
 	F32 z;
-	F32 z1 = regionp->getLand().resolveHeightRegion( LLVector3( clamped_x1, clamped_y1, 0.f ) );;
-	F32 z2 = regionp->getLand().resolveHeightRegion( LLVector3( clamped_x2, clamped_y2, 0.f ) );;
+	F32 z1 = regionp->getLand().resolveHeightRegion( LLVector3( clamped_x1, clamped_y1, 0.f ) );
+	F32 z2 = regionp->getLand().resolveHeightRegion( LLVector3( clamped_x2, clamped_y2, 0.f ) );
 
 	// Convert x1 and x2 from region-local to agent coords.
 	LLVector3 origin = regionp->getOriginAgent();
@@ -541,10 +523,11 @@ void LLViewerParcelMgr::renderOneSegment(F32 x1, F32 y1, F32 x2, F32 y2, F32 hei
 
 		gGL.vertex3f(x1, y1, z1);
 
-		gGL.vertex3f(x2, y2, z2);
-
-		z = z2+height;
+		z = z2 + height;
 		gGL.vertex3f(x2, y2, z);
+		gGL.vertex3f(x2, y2, z);
+		gGL.vertex3f(x1, y1, z1);
+		gGL.vertex3f(x2, y2, z2);
 	}
 	else
 	{
@@ -581,11 +564,14 @@ void LLViewerParcelMgr::renderOneSegment(F32 x1, F32 y1, F32 x2, F32 y2, F32 hei
 
 		// top edge stairsteps
 		z = llmax(z2+height, z1+height);
+		gGL.texCoord2f(tex_coord1*0.5f + 0.5f, z*0.5f);
+		gGL.vertex3f(x1, y1, z);
+		gGL.texCoord2f(tex_coord1*0.5f + 0.5f, z*0.5f);
+		gGL.vertex3f(x1, y1, z);
 		gGL.texCoord2f(tex_coord2*0.5f+0.5f, z*0.5f);
 		gGL.vertex3f(x2, y2, z);
-
-		gGL.texCoord2f(tex_coord1*0.5f+0.5f, z*0.5f);
-		gGL.vertex3f(x1, y1, z);
+		gGL.texCoord2f(tex_coord1*0.5f + 0.5f, z1*0.5f);
+		gGL.vertex3f(x1, y1, z1);
 	}
 }
 
@@ -625,7 +611,7 @@ void LLViewerParcelMgr::renderHighlightSegments(const U8* segments, LLViewerRegi
 				if (!has_segments)
 				{
 					has_segments = true;
-					gGL.begin(LLRender::QUADS);
+					gGL.begin(LLRender::TRIANGLES);
 				}
 				renderOneSegment(x1, y1, x2, y2, PARCEL_POST_HEIGHT, SOUTH_MASK, regionp);
 			}
@@ -641,7 +627,7 @@ void LLViewerParcelMgr::renderHighlightSegments(const U8* segments, LLViewerRegi
 				if (!has_segments)
 				{
 					has_segments = true;
-					gGL.begin(LLRender::QUADS);
+					gGL.begin(LLRender::TRIANGLES);
 				}
 				renderOneSegment(x1, y1, x2, y2, PARCEL_POST_HEIGHT, WEST_MASK, regionp);
 			}
@@ -697,7 +683,7 @@ void LLViewerParcelMgr::renderCollisionSegments(U8* segments, BOOL use_pass, LLV
 		gGL.getTexUnit(0)->bind(mBlockedImage);
 	}
 
-	gGL.begin(LLRender::QUADS);
+	gGL.begin(LLRender::TRIANGLES);
 
 	for (y = 0; y < STRIDE; y++)
 	{
@@ -913,7 +899,7 @@ void LLViewerObjectList::renderObjectBeacons()
 		for (std::vector<LLDebugBeacon>::iterator iter = mDebugBeacons.begin(); iter != mDebugBeacons.end(); ++iter)
 		{
 			LLDebugBeacon &debug_beacon = *iter;
-			if (debug_beacon.mString == "")
+			if (debug_beacon.mString.empty())
 			{
 				continue;
 			}

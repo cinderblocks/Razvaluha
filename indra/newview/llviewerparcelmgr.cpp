@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llviewerparcelmgr.cpp
  * @brief Viewer-side representation of owned land
@@ -36,7 +38,6 @@
 #include "llnotifications.h"
 #include "llnotificationsutil.h"
 #include "llparcel.h"
-#include "llsecondlifeurls.h"
 #include "message.h"
 
 // Viewer includes
@@ -48,7 +49,6 @@
 #include "llfirstuse.h"
 #include "llfloaterbuyland.h"
 #include "llfloatergroups.h"
-//#include "llfloaterhtml.h"
 #include "llpanelnearbymedia.h"
 #include "llfloatersellland.h"
 #include "llfloaterteleporthistory.h"
@@ -58,8 +58,10 @@
 #include "llresmgr.h"
 #include "llsdutil.h"
 #include "llsdutil_math.h"
+#include "llslurl.h"
 #include "llstatusbar.h"
 #include "llui.h"
+#include "llviewertexture.h"
 #include "llviewertexturelist.h"
 #include "llviewermenu.h"
 #include "llviewerparcelmedia.h"
@@ -69,6 +71,7 @@
 #include "lloverlaybar.h"
 #include "roles_constants.h"
 #include "llweb.h"
+#include "llvieweraudio.h"
 #include "llcorehttputil.h"
 #include "rlvactions.h"
 
@@ -122,20 +125,18 @@ LLViewerParcelMgr::LLViewerParcelMgr()
 	mHoverRequestResult(0),
 	mHoverWestSouth(),
 	mHoverEastNorth(),
+	mCollisionRegionHandle(0),
+	mCollisionUpdateSignal(nullptr),
 	mRenderCollision(FALSE),
 	mRenderSelection(TRUE),
 	mCollisionBanned(0),
 	mCollisionTimer(),
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
-	mCollisionRegionHandle(0),
-	mCollisionUpdateSignal(NULL),
-// [/SL:KB]
 	mMediaParcelId(0),
-	mMediaRegionId(0),
-	mHighlightSegments(NULL),
-	mCollisionSegments(NULL),
-	mAgentParcelOverlay(NULL),
-	mParcelsPerEdge(0)
+	mHighlightSegments(nullptr),
+	mCollisionSegments(nullptr),
+	mAgentParcelOverlay(nullptr),
+	mParcelsPerEdge(0),
+	mMediaRegionId(0)
 {
 	mCurrentParcel = new LLParcel();
 	mCurrentParcelSelection = new LLParcelSelection(mCurrentParcel);
@@ -145,17 +146,12 @@ LLViewerParcelMgr::LLViewerParcelMgr()
 	mHoverParcel = new LLParcel();
 	mCollisionParcel = new LLParcel();
 
-// <FS:CR> Aurora Sim
-	mParcelsPerEdge = S32(8192.f / PARCEL_GRID_STEP_METERS); // 8192 is the maximum region size on Aurora and solves the audio problem.
-	//mParcelsPerEdge = S32(	REGION_WIDTH_METERS / PARCEL_GRID_STEP_METERS );
-// </FS:CR> Aurora Sim
+	mParcelsPerEdge = S32(8192.f / PARCEL_GRID_STEP_METERS); // 8192 is the maximum region size on Aurora
 	mHighlightSegments = new U8[(mParcelsPerEdge+1)*(mParcelsPerEdge+1)];
 	resetSegments(mHighlightSegments);
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 	mCollisionBitmap = new U8[getCollisionBitmapSize()];
 	memset(mCollisionBitmap, 0, getCollisionBitmapSize());
-// [/SL:KB]
 
 	mCollisionSegments = new U8[(mParcelsPerEdge+1)*(mParcelsPerEdge+1)];
 	resetSegments(mCollisionSegments);
@@ -163,8 +159,8 @@ LLViewerParcelMgr::LLViewerParcelMgr()
 	// JC: Resolved a merge conflict here, eliminated
 	// mBlockedImage->setAddressMode(LLTexUnit::TAM_WRAP);
 	// because it is done in llviewertexturelist.cpp
-	mBlockedImage = LLViewerTextureManager::getFetchedTextureFromFile("noentrylines.j2c");
-	mPassImage = LLViewerTextureManager::getFetchedTextureFromFile("noentrypasslines.j2c");
+	mBlockedImage = LLViewerTextureManager::getFetchedTextureFromFile("world/NoEntryLines.png");
+	mPassImage = LLViewerTextureManager::getFetchedTextureFromFile("world/NoEntryPassLines.png");
 
 	S32 overlay_size = mParcelsPerEdge * mParcelsPerEdge / PARCEL_OVERLAY_CHUNKS;
 	sPackedOverlay = new U8[overlay_size];
@@ -176,19 +172,14 @@ LLViewerParcelMgr::LLViewerParcelMgr()
 		mAgentParcelOverlay[i] = 0;
 	}
 
-// <FS:CR> Aurora Sim
 	mParcelsPerEdge = S32(REGION_WIDTH_METERS / PARCEL_GRID_STEP_METERS);
-// </FS:CR> Aurora Sim
-
 	mTeleportInProgress = TRUE; // the initial parcel update is treated like teleport
 }
 
-// <FS:CR> Aurora Sim
 void LLViewerParcelMgr::init(F32 region_size)
 {
 	mParcelsPerEdge = S32(region_size / PARCEL_GRID_STEP_METERS);
 }
-// </FS:CR> Aurora Sim
 
 LLViewerParcelMgr::~LLViewerParcelMgr()
 {
@@ -213,10 +204,8 @@ LLViewerParcelMgr::~LLViewerParcelMgr()
 	delete[] mHighlightSegments;
 	mHighlightSegments = NULL;
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 	delete[] mCollisionBitmap;
 	mCollisionBitmap = NULL;
-// [/SL:KB]
 
 	delete[] mCollisionSegments;
 	mCollisionSegments = NULL;
@@ -251,7 +240,7 @@ void LLViewerParcelMgr::dump()
 }
 
 
-LLViewerRegion* LLViewerParcelMgr::getSelectionRegion()
+LLViewerRegion* LLViewerParcelMgr::getSelectionRegion() const
 {
 	return LLWorld::getInstance()->getRegionFromPosGlobal( mWestSouth );
 }
@@ -471,14 +460,9 @@ LLParcelSelectionHandle LLViewerParcelMgr::selectParcelInRectangle()
 void LLViewerParcelMgr::selectCollisionParcel()
 {
 	// BUG: Claim to be in the agent's region
-// <FS:CR> Aurora Sim
-	//mWestSouth = gAgent.getRegion()->getOriginGlobal();
-	//mEastNorth = mWestSouth;
-	//mEastNorth += LLVector3d(PARCEL_GRID_STEP_METERS, PARCEL_GRID_STEP_METERS, 0.0);
 	mWestSouth = getSelectionRegion()->getOriginGlobal();
 	mEastNorth = mWestSouth;
 	mEastNorth += LLVector3d(getSelectionRegion()->getWidth()/REGION_WIDTH_METERS * PARCEL_GRID_STEP_METERS, getSelectionRegion()->getWidth()/REGION_WIDTH_METERS * PARCEL_GRID_STEP_METERS, 0.0);
-// </FS:CR> Aurora Sim
 
 	// BUG: must be in the sim you are in
 	LLMessageSystem *msg = gMessageSystem;
@@ -890,8 +874,8 @@ LLParcel* LLViewerParcelMgr::getCollisionParcel() const
 
 void LLViewerParcelMgr::render()
 {
-	static const LLCachedControl<bool> RenderParcelSelection("RenderParcelSelection");
-	if (mSelected && mRenderSelection && RenderParcelSelection)
+	static LLCachedControl<bool> render_parcel_selection(gSavedSettings, "RenderParcelSelection");
+	if (mSelected && mRenderSelection && render_parcel_selection)
 	{
 		// Rendering is done in agent-coordinates, so need to supply
 		// an appropriate offset to the render code.
@@ -911,8 +895,8 @@ void LLViewerParcelMgr::renderParcelCollision()
 		mRenderCollision = FALSE;
 	}
 
-	static const LLCachedControl<bool> ShowBanLines("ShowBanLines");
-	if (mRenderCollision && ShowBanLines)
+	static LLCachedControl<bool> render_ban_line(gSavedSettings, "ShowBanLines");
+	if (mRenderCollision && render_ban_line)
 	{
 		LLViewerRegion* regionp = gAgent.getRegion();
 		if (regionp)
@@ -944,6 +928,14 @@ void LLViewerParcelMgr::sendParcelAccessListRequest(U32 flags)
 	if (flags & AL_ACCESS) 
 	{
 		mCurrentParcel->mAccessList.clear();
+	}		
+	if (flags & AL_ALLOW_EXPERIENCE) 
+	{
+		mCurrentParcel->clearExperienceKeysByType(EXPERIENCE_KEY_TYPE_ALLOWED);
+	}
+	if (flags & AL_BLOCK_EXPERIENCE) 
+	{
+		mCurrentParcel->clearExperienceKeysByType(EXPERIENCE_KEY_TYPE_BLOCKED);
 	}		
 
 	// Only the headers differ
@@ -1369,10 +1361,8 @@ void LLViewerParcelMgr::setHoverParcel(const LLVector3d& pos)
 	static U32 last_west, last_south;
 
 	// only request parcel info when tooltip is shown
-	if (!gSavedSettings.getBOOL("ShowLandHoverTip"))
-	{
-		return;
-	}
+	if (!gSavedSettings.getBOOL("ShowLandHoverTip")) return;
+
 	// only request parcel info if position has changed outside of the
 	// last parcel grid step
 	U32 west_parcel_step = (U32) floor( pos.mdV[VX] / PARCEL_GRID_STEP_METERS );
@@ -1393,6 +1383,7 @@ void LLViewerParcelMgr::setHoverParcel(const LLVector3d& pos)
 	{
 		return;
 	}
+
 
 	// Send a rectangle around the point.
 	// This means the parcel sent back is at least a rectangle around the point,
@@ -1436,11 +1427,7 @@ void LLViewerParcelMgr::processParcelOverlay(LLMessageSystem *msg, void **user)
 		return;
 	}
 
-// <FS:CR> Aurora Sim
-	//S32 parcels_per_edge = LLViewerParcelMgr::getInstance()->mParcelsPerEdge;
-	//S32 expected_size = parcels_per_edge * parcels_per_edge / PARCEL_OVERLAY_CHUNKS;
 	S32 expected_size = 1024;
-// </FS:CR> Aurora Sim
 	if (packed_overlay_size != expected_size)
 	{
 		LL_WARNS() << "Got parcel overlay size " << packed_overlay_size
@@ -1499,17 +1486,17 @@ void LLViewerParcelMgr::processParcelProperties(LLMessageSystem *msg, void **use
 	BOOL	region_deny_identified_override = false; // Deprecated
 	BOOL	region_deny_transacted_override = false; // Deprecated
 	BOOL	region_deny_age_unverified_override = false;
+    BOOL    region_allow_access_override = true;
+    BOOL	agent_parcel_update = false; // updating previous(existing) agent parcel
 
 	S32		other_clean_time = 0;
 
 	LLViewerParcelMgr& parcel_mgr = LLViewerParcelMgr::instance();
-// <FS:CR> Aurora Sim
 	LLViewerRegion* msg_region = LLWorld::getInstance()->getRegion(msg->getSender());
 	if(msg_region)
 		parcel_mgr.mParcelsPerEdge = S32(msg_region->getWidth() / PARCEL_GRID_STEP_METERS);
 	else
 		parcel_mgr.mParcelsPerEdge = S32(gAgent.getRegion()->getWidth() / PARCEL_GRID_STEP_METERS);
-// </FS:CR> Aurora Sim
 
 	msg->getS32Fast(_PREHASH_ParcelData, _PREHASH_RequestResult, request_result );
 	msg->getS32Fast(_PREHASH_ParcelData, _PREHASH_SequenceID, sequence_id );
@@ -1590,11 +1577,28 @@ void LLViewerParcelMgr::processParcelProperties(LLMessageSystem *msg, void **use
 		msg->getBOOLFast(_PREHASH_AgeVerificationBlock, _PREHASH_RegionDenyAgeUnverified, region_deny_age_unverified_override );
 	}
 
+    if (msg->getNumberOfBlocks(_PREHASH_RegionAllowAccessBlock))
+    {
+        msg->getBOOLFast(_PREHASH_RegionAllowAccessBlock, _PREHASH_RegionAllowAccessOverride, region_allow_access_override);
+    }
+	
 	msg->getS32("ParcelData", "OtherCleanTime", other_clean_time );
 
 	// Actually extract the data.
 	if (parcel)
 	{
+        if (local_id == parcel_mgr.mAgentParcel->getLocalID())
+        {
+            // Parcels in different regions can have same ids.
+            LLViewerRegion* parcel_region = LLWorld::getInstance()->getRegion(msg->getSender());
+            LLViewerRegion* agent_region = gAgent.getRegion();
+            if (parcel_region && agent_region && parcel_region->getRegionID() == agent_region->getRegionID())
+            {
+                // we got an updated version of agent parcel
+                agent_parcel_update = true;
+            }
+        }
+
 		parcel->init(owner_id,
 			FALSE, FALSE, FALSE,
 			claim_date, claim_price_per_meter, rent_price_per_meter,
@@ -1619,6 +1623,7 @@ void LLViewerParcelMgr::processParcelProperties(LLMessageSystem *msg, void **use
 		parcel->setRegionPushOverride(region_push_override);
 		parcel->setRegionDenyAnonymousOverride(region_deny_anonymous_override);
 		parcel->setRegionDenyAgeUnverifiedOverride(region_deny_age_unverified_override);
+        parcel->setRegionAllowAccessOverride(region_allow_access_override);
 		parcel->unpackMessage(msg);
 
 		if (parcel == parcel_mgr.mAgentParcel)
@@ -1715,7 +1720,7 @@ void LLViewerParcelMgr::processParcelProperties(LLMessageSystem *msg, void **use
 			}
 
 			// Request access list information for this land
-			parcel_mgr.sendParcelAccessListRequest(AL_ACCESS | AL_BAN);
+			parcel_mgr.sendParcelAccessListRequest(AL_ACCESS | AL_BAN | AL_ALLOW_EXPERIENCE | AL_BLOCK_EXPERIENCE);
 
 			// Request dwell for this land, if it's not public land.
 			parcel_mgr.mSelectedDwell = DWELL_NAN;
@@ -1827,14 +1832,16 @@ void LLViewerParcelMgr::processParcelProperties(LLMessageSystem *msg, void **use
 						else
 						{
 							LL_INFOS() << "Stopping parcel music (invalid audio stream URL)" << LL_ENDL;
-							// clears the URL 
-							gAudiop->startInternetStream(LLStringUtil::null); 
+							// clears the URL
+                            // null value causes fade out
+							gAudiop->startInternetStream(LLStringUtil::null);
 						}
 					}
 					else if (!gAudiop->getInternetStreamURL().empty())
 					{
 						LL_INFOS() << "Stopping parcel music (parcel stream URL is empty)" << LL_ENDL;
-						gAudiop->startInternetStream(LLStringUtil::null);
+						// null value causes fade out
+                        gAudiop->startInternetStream(LLStringUtil::null);
 					}
 				}
 			}
@@ -1851,26 +1858,23 @@ void optionally_start_music(LLParcel* parcel)
 {
 	if (gSavedSettings.getBOOL("AudioStreamingMusic"))
 	{
-		// Make the user click the start button on the overlay bar. JC
-		//		LL_INFOS() << "Starting parcel music " << parcel->getMusicURL() << LL_ENDL;
-
-		// now only play music when you enter a new parcel if the control is in PLAY state
-		// changed as part of SL-4878
-		if (gOverlayBar && gOverlayBar->musicPlaying())
+		// only play music when you enter a new parcel if the UI control for this
+		// was not *explicitly* stopped by the user. (part of SL-4878)
+		LLPanelNearByMedia* nearby_media_panel = gOverlayBar && gOverlayBar->musicPlaying() && LLFloaterNearbyMedia::instanceExists() ? LLFloaterNearbyMedia::getInstance()->getMediaPanel() : nullptr;
+		if ((nearby_media_panel &&
+		     nearby_media_panel->getParcelAudioAutoStart()) ||
+		    // or they have expressed no opinion in the UI, but have autoplay on...
+		    (!nearby_media_panel &&
+		     /*gSavedSettings.getBOOL(LLViewerMedia::AUTO_PLAY_MEDIA_SETTING) &&*/
+			 gSavedSettings.getBOOL("MediaTentativeAutoPlay")))
 		{
-			LLPanelNearByMedia* nearby_media_panel = LLFloaterNearbyMedia::instanceExists() ? LLFloaterNearbyMedia::getInstance()->getMediaPanel() : NULL;
-			if ((nearby_media_panel &&
-			     nearby_media_panel->getParcelAudioAutoStart()) ||
-			    // or they have expressed no opinion in the UI, but have autoplay on...
-			    (!nearby_media_panel &&
-			     /*gSavedSettings.getBOOL(LLViewerMedia::AUTO_PLAY_MEDIA_SETTING) &&*/
-				 gSavedSettings.getBOOL("MediaTentativeAutoPlay")))
-			{
-				LLViewerParcelMedia::playStreamingMusic(parcel);
-				return;
-			}
+			LL_INFOS() << "Starting parcel music " << parcel->getMusicURL() << LL_ENDL;
+			LLViewerParcelMedia::playStreamingMusic(parcel);
 		}
-		gAudiop->startInternetStream(LLStringUtil::null); 
+		else
+		{
+			gAudiop->startInternetStream(LLStringUtil::null);
+		}
 	}
 }
 
@@ -1892,7 +1896,7 @@ void LLViewerParcelMgr::processParcelAccessListReply(LLMessageSystem *msg, void 
 
 	if (parcel_id != parcel->getLocalID())
 	{
-		LL_WARNS() << "processParcelAccessListReply for parcel " << parcel_id
+		LL_WARNS_ONCE("") << "processParcelAccessListReply for parcel " << parcel_id
 			<< " which isn't the selected parcel " << parcel->getLocalID()<< LL_ENDL;
 		return;
 	}
@@ -1904,6 +1908,14 @@ void LLViewerParcelMgr::processParcelAccessListReply(LLMessageSystem *msg, void 
 	else if (message_flags & AL_BAN)
 	{
 		parcel->unpackAccessEntries(msg, &(parcel->mBanList) );
+	}
+	else if (message_flags & AL_ALLOW_EXPERIENCE)
+	{
+		parcel->unpackExperienceEntries(msg, EXPERIENCE_KEY_TYPE_ALLOWED);
+	}
+	else if (message_flags & AL_BLOCK_EXPERIENCE)
+	{
+		parcel->unpackExperienceEntries(msg, EXPERIENCE_KEY_TYPE_BLOCKED);
 	}
 	/*else if (message_flags & AL_RENTER)
 	{
@@ -1939,10 +1951,6 @@ void LLViewerParcelMgr::processParcelDwellReply(LLMessageSystem* msg, void**)
 
 void LLViewerParcelMgr::sendParcelAccessListUpdate(U32 which)
 {
-
-	LLUUID transactionUUID;
-	transactionUUID.generate();
-
 	if (!mSelected)
 	{
 		return;
@@ -1951,124 +1959,91 @@ void LLViewerParcelMgr::sendParcelAccessListUpdate(U32 which)
 	LLViewerRegion* region = LLWorld::getInstance()->getRegionFromPosGlobal( mWestSouth );
 	if (!region) return;
 
-	LLMessageSystem* msg = gMessageSystem;
-
 	LLParcel* parcel = mCurrentParcel;
 	if (!parcel) return;
 
 	if (which & AL_ACCESS)
 	{	
-		S32 count = parcel->mAccessList.size();
-		S32 num_sections = (S32) ceil(count/PARCEL_MAX_ENTRIES_PER_PACKET);
-		S32 sequence_id = 1;
-		BOOL start_message = TRUE;
-		BOOL initial = TRUE;
-
-		auto cit = parcel->mAccessList.begin();
-		auto end = parcel->mAccessList.end();
-		while ( (cit != end) || initial ) 
-		{	
-			if (start_message) 
-			{
-				msg->newMessageFast(_PREHASH_ParcelAccessListUpdate);
-				msg->nextBlockFast(_PREHASH_AgentData);
-				msg->addUUIDFast(_PREHASH_AgentID, gAgent.getID() );
-				msg->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID() );
-				msg->nextBlockFast(_PREHASH_Data);
-				msg->addU32Fast(_PREHASH_Flags, AL_ACCESS);
-				msg->addS32(_PREHASH_LocalID, parcel->getLocalID() );
-				msg->addUUIDFast(_PREHASH_TransactionID, transactionUUID);
-				msg->addS32Fast(_PREHASH_SequenceID, sequence_id);
-				msg->addS32Fast(_PREHASH_Sections, num_sections);
-				start_message = FALSE;
-
-				if (initial && (cit == end))
-				{
-					// pack an empty block if there will be no data
-					msg->nextBlockFast(_PREHASH_List);
-					msg->addUUIDFast(_PREHASH_ID,  LLUUID::null );
-					msg->addS32Fast(_PREHASH_Time, 0 );
-					msg->addU32Fast(_PREHASH_Flags,	0 );
-				}
-
-				initial = FALSE;
-				sequence_id++;
-
-			}
-			
-			while ( (cit != end) && (msg->getCurrentSendTotal() < MTUBYTES)) 
-			{
-
-				const LLAccessEntry& entry = (*cit).second;
-				
-				msg->nextBlockFast(_PREHASH_List);
-				msg->addUUIDFast(_PREHASH_ID,  entry.mID );
-				msg->addS32Fast(_PREHASH_Time, entry.mTime );
-				msg->addU32Fast(_PREHASH_Flags,	entry.mFlags );
-				++cit;
-			}
-
-			start_message = TRUE;
-			msg->sendReliable( region->getHost() );
-		}
+		sendParcelAccessListUpdate(AL_ACCESS, parcel->mAccessList, region, parcel->getLocalID());
 	}
 
 	if (which & AL_BAN)
 	{	
-		S32 count = parcel->mBanList.size();
-		S32 num_sections = (S32) ceil(count/PARCEL_MAX_ENTRIES_PER_PACKET);
-		S32 sequence_id = 1;
-		BOOL start_message = TRUE;
-		BOOL initial = TRUE;
+		sendParcelAccessListUpdate(AL_BAN, parcel->mBanList, region, parcel->getLocalID());
+	}
 
-		auto cit = parcel->mBanList.begin();
-		auto end = parcel->mBanList.end();
-		while ( (cit != end) || initial ) 
-		{
-			if (start_message) 
-			{
-				msg->newMessageFast(_PREHASH_ParcelAccessListUpdate);
-				msg->nextBlockFast(_PREHASH_AgentData);
-				msg->addUUIDFast(_PREHASH_AgentID, gAgent.getID() );
-				msg->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID() );
-				msg->nextBlockFast(_PREHASH_Data);
-				msg->addU32Fast(_PREHASH_Flags, AL_BAN);
-				msg->addS32(_PREHASH_LocalID, parcel->getLocalID() );
-				msg->addUUIDFast(_PREHASH_TransactionID, transactionUUID);
-				msg->addS32Fast(_PREHASH_SequenceID, sequence_id);
-				msg->addS32Fast(_PREHASH_Sections, num_sections);
-				start_message = FALSE;
-
-				if (initial && (cit == end))
-				{
-					// pack an empty block if there will be no data
-					msg->nextBlockFast(_PREHASH_List);
-					msg->addUUIDFast(_PREHASH_ID,  LLUUID::null );
-					msg->addS32Fast(_PREHASH_Time, 0 );
-					msg->addU32Fast(_PREHASH_Flags,	0 );
-				}
-
-				initial = FALSE;
-				sequence_id++;
-
-			}
-			
-			while ( (cit != end) && (msg->getCurrentSendTotal() < MTUBYTES)) 
-			{
-				const LLAccessEntry& entry = (*cit).second;
-				
-				msg->nextBlockFast(_PREHASH_List);
-				msg->addUUIDFast(_PREHASH_ID,  entry.mID );
-				msg->addS32Fast(_PREHASH_Time, entry.mTime );
-				msg->addU32Fast(_PREHASH_Flags,	entry.mFlags );
-				++cit;
-			}
-
-			start_message = TRUE;
-			msg->sendReliable( region->getHost() );
-		}
+	if(which & AL_ALLOW_EXPERIENCE)
+	{	
+		sendParcelAccessListUpdate(AL_ALLOW_EXPERIENCE, parcel->getExperienceKeysByType(EXPERIENCE_KEY_TYPE_ALLOWED), region, parcel->getLocalID());
+	}
+	if(which & AL_BLOCK_EXPERIENCE)
+	{
+		sendParcelAccessListUpdate(AL_BLOCK_EXPERIENCE, parcel->getExperienceKeysByType(EXPERIENCE_KEY_TYPE_BLOCKED), region, parcel->getLocalID());
 	}
 }
+
+void LLViewerParcelMgr::sendParcelAccessListUpdate(U32 flags, const LLAccessEntry::map& entries, LLViewerRegion* region, S32 parcel_local_id)
+{
+	S32 count = entries.size();
+	S32 num_sections = (S32) ceil(count/PARCEL_MAX_ENTRIES_PER_PACKET);
+	S32 sequence_id = 1;
+	BOOL start_message = TRUE;
+	BOOL initial = TRUE;
+
+	LLUUID transactionUUID;
+	transactionUUID.generate();
+
+
+	LLMessageSystem* msg = gMessageSystem;
+
+	LLAccessEntry::map::const_iterator cit = entries.begin();
+	LLAccessEntry::map::const_iterator  end = entries.end();
+	while ( (cit != end) || initial ) 
+	{
+		if (start_message) 
+		{
+			msg->newMessageFast(_PREHASH_ParcelAccessListUpdate);
+			msg->nextBlockFast(_PREHASH_AgentData);
+			msg->addUUIDFast(_PREHASH_AgentID, gAgent.getID() );
+			msg->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID() );
+			msg->nextBlockFast(_PREHASH_Data);
+			msg->addU32Fast(_PREHASH_Flags, flags);
+			msg->addS32(_PREHASH_LocalID,  parcel_local_id);
+			msg->addUUIDFast(_PREHASH_TransactionID, transactionUUID);
+			msg->addS32Fast(_PREHASH_SequenceID, sequence_id);
+			msg->addS32Fast(_PREHASH_Sections, num_sections);
+			start_message = FALSE;
+
+			if (initial && (cit == end))
+			{
+				// pack an empty block if there will be no data
+				msg->nextBlockFast(_PREHASH_List);
+				msg->addUUIDFast(_PREHASH_ID,  LLUUID::null );
+				msg->addS32Fast(_PREHASH_Time, 0 );
+				msg->addU32Fast(_PREHASH_Flags,	0 );
+			}
+
+			initial = FALSE;
+			sequence_id++;
+
+		}
+		
+		while ( (cit != end) && (msg->getCurrentSendTotal() < MTUBYTES)) 
+		{
+			const LLAccessEntry& entry = (*cit).second;
+			
+			msg->nextBlockFast(_PREHASH_List);
+			msg->addUUIDFast(_PREHASH_ID,  entry.mID );
+			msg->addS32Fast(_PREHASH_Time, entry.mTime );
+			msg->addU32Fast(_PREHASH_Flags,	entry.mFlags );
+			++cit;
+		}
+
+		start_message = TRUE;
+		msg->sendReliable( region->getHost() );
+	}
+}
+
 
 void LLViewerParcelMgr::deedLandToGroup()
 {
@@ -2536,7 +2511,6 @@ void sanitize_corners(const LLVector3d &corner1,
 
 void LLViewerParcelMgr::cleanupGlobals()
 {
-	LLParcelSelection::sNullSelection = NULL;
 }
 
 LLViewerTexture* LLViewerParcelMgr::getBlockedImage() const
@@ -2598,11 +2572,9 @@ void LLViewerParcelMgr::onTeleportFailed()
 	mTeleportFailedSignal();
 }
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 boost::signals2::connection LLViewerParcelMgr::setCollisionUpdateCallback(const collision_update_signal_t::slot_type & cb)
 {
 	if (!mCollisionUpdateSignal)
 		mCollisionUpdateSignal = new collision_update_signal_t();
 	return mCollisionUpdateSignal->connect(cb);
 }
-// [/SL:KB]

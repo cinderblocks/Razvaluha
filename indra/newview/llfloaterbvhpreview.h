@@ -32,15 +32,16 @@
 #ifndef LL_LLFLOATERBVHPREVIEW_H
 #define LL_LLFLOATERBVHPREVIEW_H
 
+#include "llassettype.h"
 #include "llfloaternamedesc.h"
 #include "lldynamictexture.h"
 #include "llcharacter.h"
 #include "llquaternion.h"
+#include "llextendedstatus.h"
 
 class LLVOAvatar;
 class LLViewerJointMesh;
 
-LL_ALIGN_PREFIX(16)
 class LLPreviewAnimation : public LLViewerDynamicTexture
 {
 public:
@@ -49,19 +50,9 @@ public:
 public:
 	LLPreviewAnimation(S32 width, S32 height);
 
-	void* operator new(size_t size)
-	{
-		return ll_aligned_malloc_16(size);
-	}
+	/*virtual*/ S8 getType() const override;
 
-	void operator delete(void* ptr)
-	{
-		ll_aligned_free_16(ptr);
-	}
-
-	/*virtual*/ S8 getType() const ;
-
-	BOOL	render();
+	BOOL	render() override;
 	void	requestUpdate();
 	void	rotate(F32 yaw_radians, F32 pitch_radians);
 	void	zoom(F32 zoom_delta);
@@ -80,25 +71,25 @@ protected:
 	LLVector3			mCameraOffset;
 	LLVector3			mCameraRelPos;
 	LLPointer<LLVOAvatar>			mDummyAvatar;
-} LL_ALIGN_POSTFIX(16);
+};
 
 class LLFloaterBvhPreview : public LLFloaterNameDesc
 {
 public:
 	//<edit>
-	LLFloaterBvhPreview(const std::string& filename, void* item = NULL);
+	LLFloaterBvhPreview(const std::string& filename, void* item = nullptr);
 	//<edit>
 	virtual ~LLFloaterBvhPreview();
 	
-	BOOL postBuild();
+	BOOL postBuild() override;
 
-	BOOL handleMouseDown(S32 x, S32 y, MASK mask);
-	BOOL handleMouseUp(S32 x, S32 y, MASK mask);
-	BOOL handleHover(S32 x, S32 y, MASK mask);
-	BOOL handleScrollWheel(S32 x, S32 y, S32 clicks); 
-	void onMouseCaptureLost();
+	BOOL handleMouseDown(S32 x, S32 y, MASK mask) override;
+	BOOL handleMouseUp(S32 x, S32 y, MASK mask) override;
+	BOOL handleHover(S32 x, S32 y, MASK mask) override;
+	BOOL handleScrollWheel(S32 x, S32 y, S32 clicks) override; 
+	void onMouseCaptureLost() override;
 
-	void refresh();
+	void refresh() override;
 
 	void	onBtnPlay();
 	void	onBtnStop();
@@ -124,9 +115,11 @@ public:
 									   S32 status, LLExtStat ext_status);
 private:
 	void setAnimCallbacks() ;
+    std::map <std::string, std::string> getJointAliases();
+
 	
 protected:
-	void			draw();
+	void			draw() override;
 	void			resetMotion();
 
 	LLPointer< LLPreviewAnimation> mAnimPreview;

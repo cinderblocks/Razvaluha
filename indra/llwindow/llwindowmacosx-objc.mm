@@ -68,9 +68,10 @@ bool copyToPBoard(const unsigned short *str, unsigned int len)
 	NSPasteboard *pboard = [NSPasteboard generalPasteboard];
 	[pboard clearContents];
 	
-	NSArray *contentsToPaste = [[NSArray alloc] initWithObjects:[NSString stringWithCharacters:str length:len], nil];
+	NSArray *contentsToPaste = [[[NSArray alloc] initWithObjects:[NSString stringWithCharacters:str length:len], nil] autorelease];
+	BOOL ret = [pboard writeObjects:contentsToPaste];
 	[pool release];
-	return [pboard writeObjects:contentsToPaste];
+	return ret;
 }
 
 bool pasteBoardAvailable()
@@ -91,8 +92,10 @@ const unsigned short *copyFromPBoard()
 		NSArray *objToPaste = [pboard readObjectsForClasses:classArray options:[NSDictionary dictionary]];
 		str = [objToPaste objectAtIndex:0];
 	}
-	unichar* temp = (unichar*)calloc([str length]+1, sizeof(unichar));
-	[str getCharacters:temp];
+	NSUInteger len = [str length];
+	unichar* temp = (unichar*)calloc(len+1, sizeof(unichar));
+	[str getCharacters:temp range:NSMakeRange(0, len)];
+
 	[pool release];
 	return temp;
 }
@@ -222,11 +225,6 @@ GLViewRef createOpenGLView(NSWindowRef window, unsigned int samples, bool vsync)
 	return glview;
 }
 
-void setResizeMode(bool oldresize, void* glview)
-{
-    [(LLOpenGLView *)glview setOldResize:oldresize];
-}
-
 void glSwapBuffers(void* context)
 {
 	[(NSOpenGLContext*)context flushBuffer];
@@ -254,6 +252,15 @@ void getContentViewBounds(NSWindowRef window, float* bounds)
 	bounds[1] = [[(LLNSWindow*)window contentView] bounds].origin.y;
 	bounds[2] = [[(LLNSWindow*)window contentView] bounds].size.width;
 	bounds[3] = [[(LLNSWindow*)window contentView] bounds].size.height;
+}
+
+void getScaledContentViewBounds(NSWindowRef window, GLViewRef view, float* bounds)
+{
+    NSRect b = [(NSOpenGLView*)view convertRectToBacking:[[(LLNSWindow*)window contentView] bounds]];
+	bounds[0] = b.origin.x;
+	bounds[1] = b.origin.y;
+	bounds[2] = b.size.width;
+	bounds[3] = b.size.height;
 }
 
 void getWindowSize(NSWindowRef window, float* size)
@@ -296,9 +303,7 @@ void makeWindowOrderFront(NSWindowRef window)
 
 void convertScreenToWindow(NSWindowRef window, float *coord)
 {
-	NSRect point;
-	point.origin.x = coord[0];
-	point.origin.y = coord[1];
+	NSRect point = NSMakeRect(coord[0], coord[1], 0, 0);
 	point = [(LLNSWindow*)window convertRectFromScreen:point];
 	coord[0] = point.origin.x;
 	coord[1] = point.origin.y;
@@ -306,12 +311,7 @@ void convertScreenToWindow(NSWindowRef window, float *coord)
 
 void convertRectToScreen(NSWindowRef window, float *coord)
 {
-	NSRect point;
-	point.origin.x = coord[0];
-	point.origin.y = coord[1];
-	point.size.width = coord[2];
-	point.size.height = coord[3];
-	
+	NSRect point = NSMakeRect(coord[0], coord[1], coord[2], coord[3]);
 	point = [(LLNSWindow*)window convertRectToScreen:point];
 	
 	coord[0] = point.origin.x;
@@ -322,12 +322,7 @@ void convertRectToScreen(NSWindowRef window, float *coord)
 
 void convertRectFromScreen(NSWindowRef window, float *coord)
 {
-	NSRect point;
-	point.origin.x = coord[0];
-	point.origin.y = coord[1];
-	point.size.width = coord[2];
-	point.size.height = coord[3];
-	
+	NSRect point = NSMakeRect(coord[0], coord[1], coord[2], coord[3]);
 	point = [(LLNSWindow*)window convertRectFromScreen:point];
 	
 	coord[0] = point.origin.x;
@@ -336,23 +331,15 @@ void convertRectFromScreen(NSWindowRef window, float *coord)
 	coord[3] = point.size.height;
 }
 
-void convertScreenToView(NSWindowRef window, float *coord)
-{
-	NSRect point;
-	point.origin.x = coord[0];
-	point.origin.y = coord[1];
-	point.origin = [(LLNSWindow*)window convertScreenToBase:point.origin];
-	point.origin = [[(LLNSWindow*)window contentView] convertPoint:point.origin fromView:nil];
-}
-
 void convertWindowToScreen(NSWindowRef window, float *coord)
 {
-	NSPoint point;
-	point.x = coord[0];
-	point.y = coord[1];
-	point = [(LLNSWindow*)window convertToScreenFromLocalPoint:point relativeToView:[(LLNSWindow*)window contentView]];
-	coord[0] = point.x;
-	coord[1] = point.y;
+	LLNSWindow *nsWindow = (LLNSWindow*)window;
+	NSRect rect = NSMakeRect(coord[0], coord[1], 0, 0);
+	rect = [nsWindow convertRectToScreen:rect];
+	NSRect screenRect = [[nsWindow screen] frame];
+	NSPoint retPoint = NSMakePoint(rect.origin.x, screenRect.origin.y + screenRect.size.height - rect.origin.y);
+	coord[0] = retPoint.x;
+	coord[1] = retPoint.y;
 }
 
 void closeWindow(NSWindowRef window)
@@ -384,7 +371,7 @@ void allowDirectMarkedTextInput(bool allow, GLViewRef glView)
 
 NSWindowRef getMainAppWindow()
 {
-	LLNSWindow *winRef = [(LLAppDelegate*)[[NSApplication sharedApplication] delegate] window];
+	LLNSWindow *winRef = [(LLAppDelegate*)[[LLNSApplication sharedApplication] delegate] window];
 	
 	[winRef setAcceptsMouseMovedEvents:TRUE];
 	return winRef;
@@ -397,7 +384,7 @@ void makeFirstResponder(NSWindowRef window, GLViewRef view)
 
 void requestUserAttention()
 {
-	[[NSApplication sharedApplication] requestUserAttention:NSInformationalRequest];
+	[[LLNSApplication sharedApplication] requestUserAttention:NSInformationalRequest];
 }
 
 long showAlert(std::string text, std::string title, int type)
@@ -447,7 +434,7 @@ long showAlert(std::string text, std::string title, int type)
 /*
  GLViewRef getGLView()
  {
- return [(LLAppDelegate*)[[NSApplication sharedApplication] delegate] glview];
+ return [(LLAppDelegate*)[[LLNSApplication sharedApplication] delegate] glview];
  }
  */
 
@@ -455,3 +442,32 @@ unsigned int getModifiers()
 {
 	return [NSEvent modifierFlags];
 }
+
+// [CR:Retina]
+float getScaleFactor(GLViewRef view)
+{
+    return [[(LLOpenGLView*)view window] backingScaleFactor];
+}
+
+void updateBadge(int count)
+{
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	NSDockTile *tile = [[LLNSApplication sharedApplication] dockTile];
+	if (count > 0) {
+		NSString *value = [NSString stringWithFormat:@"%d",count];
+		[tile setBadgeLabel:value];
+	} else {
+		[tile setBadgeLabel:nil];
+	}
+	[pool release];
+}
+
+void setTitle(const std::string& title)
+{
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	LLNSWindow *winRef = [(LLAppDelegate*)[[LLNSApplication sharedApplication] delegate] window];
+	NSString *nsTitle = [NSString stringWithUTF8String:title.c_str()];
+	[winRef setTitle:nsTitle];
+	[pool release];
+}
+

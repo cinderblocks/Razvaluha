@@ -36,6 +36,31 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/indirect_iterator.hpp>
 
+// As of 2017-05-06, as far as nat knows, only clang supports __has_feature().
+// Unfortunately VS2013's preprocessor shortcut logic doesn't prevent it from
+// producing (fatal) warnings for defined(__clang__) && __has_feature(...).
+// Have to work around that.
+#if ! defined(__clang__)
+#define __has_feature(x) 0
+#endif // __clang__
+
+#if defined(LL_TEST_llinstancetracker) && __has_feature(cxx_noexcept)
+// ~LLInstanceTracker() performs llassert_always() validation. That's fine in
+// production code, since the llassert_always() is implemented as an LL_ERRS
+// message, which will crash-with-message. In our integration test executable,
+// though, this llassert_always() throws an exception instead so we can test
+// error conditions and continue running the test. However -- as of C++11,
+// destructors are implicitly noexcept(true). Unless we mark
+// ~LLInstanceTracker() noexcept(false), the test executable crashes even on
+// the ATTEMPT to throw.
+#define LLINSTANCETRACKER_DTOR_NOEXCEPT noexcept(false)
+#else
+// If we're building for production, or in fact building *any other* test, or
+// we're using a compiler that doesn't support __has_feature(), or we're not
+// compiling with a C++ version that supports noexcept -- don't specify it.
+#define LLINSTANCETRACKER_DTOR_NOEXCEPT
+#endif
+
 /**
  * Base class manages "class-static" data that must actually have singleton
  * semantics: one instance per process, rather than one instance per module as
@@ -49,10 +74,14 @@ protected:
     /// implementations do.
     struct StaticBase
     {
-        StaticBase():
-            sIterationNestDepth(0)
+#ifdef LL_DEBUG
+        StaticBase()
+            : sIterationNestDepth(0)
         {}
-
+#else
+       StaticBase()
+        {}
+#endif
 		void incrementDepth();
 		void decrementDepth();
 		U32 getDepth();
@@ -96,19 +125,23 @@ public:
 		instance_iter(const typename InstanceMap::iterator& it)
 		:	mIterator(it)
 		{
+#ifdef LL_DEBUG
 			getStatic().incrementDepth();
+#endif
 		}
 
 		~instance_iter()
 		{
+#ifdef LL_DEBUG
 			getStatic().decrementDepth();
+#endif
 		}
 
 
 	private:
 		friend class boost::iterator_core_access;
 
-		void increment() { mIterator++; }
+		void increment() { ++mIterator; }
 		void decrement() { --mIterator; }
 		difference_type distance_to(instance_iter const& other) const
 		{
@@ -133,27 +166,33 @@ public:
 		typedef boost::iterator_facade<key_iter, KEY, boost::forward_traversal_tag> super_t;
 
 		key_iter(typename InstanceMap::iterator it)
-			:	mIterator(it)
+		:	mIterator(it)
 		{
+#ifdef LL_DEBUG
 			getStatic().incrementDepth();
+#endif
 		}
 
 		key_iter(const key_iter& other)
-			:	mIterator(other.mIterator)
+		:	mIterator(other.mIterator)
 		{
+#ifdef LL_DEBUG
 			getStatic().incrementDepth();
+#endif
 		}
 
 		~key_iter()
 		{
+#ifdef LL_DEBUG
 			getStatic().decrementDepth();
+#endif
 		}
 
 
 	private:
 		friend class boost::iterator_core_access;
 
-		void increment() { mIterator++; }
+		void increment() { ++mIterator; }
 		void decrement() { --mIterator; }
 		difference_type distance_to(instance_iter const& other) const
 		{
@@ -210,10 +249,12 @@ protected:
 		getStatic();
 		add_(key); 
 	}
-	virtual ~LLInstanceTracker() 
+	virtual ~LLInstanceTracker() LLINSTANCETRACKER_DTOR_NOEXCEPT
 	{ 
 		// it's unsafe to delete instances of this type while all instances are being iterated over.
+#ifdef LL_DEBUG
 		llassert_always(getStatic().getDepth() == 0);
+#endif
 		remove_();		
 	}
 	virtual void setKey(KEY key) { remove_(); add_(key); }
@@ -306,24 +347,30 @@ public:
 		instance_iter(const typename InstanceSet::iterator& it)
 		:	mIterator(it)
 		{
+#ifdef LL_DEBUG
 			getStatic().incrementDepth();
+#endif
 		}
 
 		instance_iter(const instance_iter& other)
 		:	mIterator(other.mIterator)
 		{
+#ifdef LL_DEBUG
 			getStatic().incrementDepth();
+#endif
 		}
 
 		~instance_iter()
 		{
+#ifdef LL_DEBUG
 			getStatic().decrementDepth();
+#endif
 		}
 
 	private:
 		friend class boost::iterator_core_access;
 
-		void increment() { mIterator++; }
+		void increment() { ++mIterator; }
 		bool equal(instance_iter const& other) const
 		{
 			return mIterator == other.mIterator;
@@ -347,11 +394,12 @@ protected:
 		getStatic();
 		getSet_().insert(static_cast<T*>(this));
 	}
-	virtual ~LLInstanceTracker()
+	virtual ~LLInstanceTracker() LLINSTANCETRACKER_DTOR_NOEXCEPT
 	{
 		// it's unsafe to delete instances of this type while all instances are being iterated over.
-		// But exceptions in destructors are unsafe in c++11
-        //llassert_always(getStatic().getDepth() == 0);
+#ifdef LL_DEBUG
+		llassert_always(getStatic().getDepth() == 0);
+#endif
 		getSet_().erase(static_cast<T*>(this));
 	}
 

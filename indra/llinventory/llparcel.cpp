@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llparcel.cpp
  * @brief A land parcel.
@@ -1106,7 +1108,7 @@ void LLParcel::startSale(const LLUUID& buyer_id, BOOL is_buyer_group)
 	mSaleTimerExpires.start();
 	mSaleTimerExpires.setTimerExpirySec(U64Microseconds(DEFAULT_USEC_SALE_TIMEOUT));
 	mStatus = OS_LEASE_PENDING;
-	mClaimDate = time(NULL);
+	mClaimDate = time(nullptr);
 	setAuctionID(0);
 	// clear the autoreturn whenever land changes hands
 	setCleanOtherTime(0);

@@ -29,7 +29,7 @@
 
 #include <map>
 
-#include "llstringtable.h"
+#include "string_table.h"
 
 template <class DATA>
 class LLNameTable
@@ -93,7 +93,7 @@ public:
 			if (iter->second == data)
 				return iter->first;
 		}
-   		return NULL;
+   		return nullptr;
 	}		
 
 	typedef std::map<const char *, DATA> name_map_t;

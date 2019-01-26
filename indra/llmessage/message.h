@@ -35,12 +35,9 @@
 #include <netinet/in.h>
 #endif
 
-#if LL_SOLARIS
-#include <netinet/in.h>
-#endif
 
 #if LL_WINDOWS
-#include "winsock2.h" // htons etc.
+#include "llwin32headerslean.h"
 #endif
 
 #include "llerror.h"
@@ -59,7 +56,9 @@
 #include "llmessagesenderinterface.h"
 
 #include "llstoredmessage.h"
-#include "boost/function.hpp"
+
+#include <boost/signals2/connection.hpp>
+#include "llpounceable.h"
 
 const U32 MESSAGE_MAX_STRINGS_LENGTH = 64;
 const U32 MESSAGE_NUMBER_OF_HASH_BUCKETS = 8192;
@@ -68,10 +67,10 @@ const S32 MESSAGE_MAX_PER_FRAME = 400;
 
 class LLMessageStringTable : public LLSingleton<LLMessageStringTable>
 {
-public:
-	LLMessageStringTable();
+	LLSINGLETON(LLMessageStringTable);
 	~LLMessageStringTable();
 
+public:
 	char *getString(const char *str);
 
 	U32	 mUsed;
@@ -148,7 +147,6 @@ const F32Seconds LL_PING_BASED_TIMEOUT_DUMMY(0.0f);
 
 const F32 LL_SEMIRELIABLE_TIMEOUT_FACTOR	= 5.f;		// averaged ping
 const F32 LL_RELIABLE_TIMEOUT_FACTOR		= 5.f;		// averaged ping
-const F32 LL_FILE_XFER_TIMEOUT_FACTOR		= 5.f;      //averaged ping
 const F32 LL_LOST_TIMEOUT_FACTOR			= 16.f;     // averaged ping for marking packets "Lost"
 const F32Seconds LL_MAX_LOST_TIMEOUT(5.f);				// Maximum amount of time before considering something "lost"
 
@@ -210,30 +208,26 @@ class LLMessageSystem : public LLMessageSenderInterface
 
  public:
 	LLPacketRing				mPacketRing;
-	LLReliablePacketParams			mReliablePacketParams;
+	LLReliablePacketParams		mReliablePacketParams;
 
 	// Set this flag to TRUE when you want *very* verbose logs.
-	BOOL mVerboseLog;
+	BOOL						mVerboseLog;
 
-	F32                                     mMessageFileVersionNumber;
+	F32                         mMessageFileVersionNumber;
 
 	typedef std::map<const char *, LLMessageTemplate*> message_template_name_map_t;
 	typedef std::map<U32, LLMessageTemplate*> message_template_number_map_t;
 
-private:
 	message_template_name_map_t		mMessageTemplates;
-	message_template_number_map_t		mMessageNumbers;
-	friend class LLFloaterMessageLogItem;
-	friend class LLFloaterMessageLog;
+	message_template_number_map_t	mMessageNumbers;
 
-public:
 	S32					mSystemVersionMajor;
 	S32					mSystemVersionMinor;
 	S32					mSystemVersionPatch;
 	S32					mSystemVersionServer;
 	U32					mVersionFlags;
 
-	BOOL					mbProtected;
+	BOOL				mbProtected;
 
 	U32					mNumberHighFreqMessages;
 	U32					mNumberMediumFreqMessages;
@@ -253,11 +247,11 @@ public:
 	U32					mReliablePacketsIn;	    // total reliable packets in
 	U32					mReliablePacketsOut;	    // total reliable packets out
 
-	U32                                     mDroppedPackets;            // total dropped packets in
-	U32                                     mResentPackets;             // total resent packets out
-	U32                                     mFailedResendPackets;       // total resend failure packets out
-	U32                                     mOffCircuitPackets;         // total # of off-circuit packets rejected
-	U32                                     mInvalidOnCircuitPackets;   // total # of on-circuit but invalid packets rejected
+	U32                 mDroppedPackets;            // total dropped packets in
+	U32                 mResentPackets;             // total resent packets out
+	U32                 mFailedResendPackets;       // total resend failure packets out
+	U32                 mOffCircuitPackets;         // total # of off-circuit packets rejected
+	U32                 mInvalidOnCircuitPackets;   // total # of on-circuit but invalid packets rejected
 
 	S64					mUncompressedBytesIn;	    // total uncompressed size of compressed packets in
 	S64					mUncompressedBytesOut;	    // total uncompressed size of compressed packets out
@@ -266,14 +260,14 @@ public:
 	S64					mTotalBytesIn;		    // total size of all uncompressed packets in
 	S64					mTotalBytesOut;		    // total size of all uncompressed packets out
 
-	BOOL                                    mSendReliable;              // does the outgoing message require a pos ack?
+	BOOL                mSendReliable;              // does the outgoing message require a pos ack?
 
-	LLCircuit 	 			mCircuitInfo;
+	LLCircuit 	 		mCircuitInfo;
 	F64Seconds			mCircuitPrintTime;	    // used to print circuit debug info every couple minutes
 	F32Seconds			mCircuitPrintFreq;	    
 
-	std::map<U64, U32>			mIPPortToCircuitCode;
-	std::map<U32, U64>			mCircuitCodeToIPPort;
+	std::map<U64, U32>	mIPPortToCircuitCode;
+	std::map<U32, U64>	mCircuitCodeToIPPort;
 	U32					mOurCircuitCode;
 	S32					mSendPacketFailureCount;
 	S32					mUnackedListDepth;
@@ -299,14 +293,19 @@ public:
 
 
 	// methods for building, sending, receiving, and handling messages
-	void	setHandlerFuncFast(const char *name, void (*handler_func)(LLMessageSystem *msgsystem, void **user_data), void **user_data = NULL);
-	void	setHandlerFunc(const char *name, void (*handler_func)(LLMessageSystem *msgsystem, void **user_data), void **user_data = NULL)
+	void	setHandlerFuncFast(const char *name, void (*handler_func)(LLMessageSystem *msgsystem, void **user_data), void **user_data = nullptr);
+	void	setHandlerFunc(const char *name, void (*handler_func)(LLMessageSystem *msgsystem, void **user_data), void **user_data = nullptr)
 	{
 		setHandlerFuncFast(LLMessageStringTable::getInstance()->getString(name), handler_func, user_data);
 	}
 
+	void addHandlerFuncFast(const char *name, std::function<void (LLMessageSystem *msgsystem)> handler_slot);
+	void addHandlerFunc(const char *name, std::function<void (LLMessageSystem *msgsystem)> handler_slot)
+	{
+		addHandlerFuncFast(LLMessageStringTable::getInstance()->getString(name), handler_slot);
+	}
 	// Set a callback function for a message system exception.
-	void setExceptionFunc(EMessageException exception, msg_exception_callback func, void* data = NULL);
+	void setExceptionFunc(EMessageException exception, msg_exception_callback func, void* data = nullptr);
 	// Call the specified exception func, and return TRUE if a
 	// function was found and called. Otherwise return FALSE.
 	BOOL callExceptionFunc(EMessageException exception);
@@ -315,7 +314,7 @@ public:
 	// hashed message name and the time spent in the processing handler function
 	// measured in seconds.  JC
 	typedef void (*msg_timing_callback)(const char* hashed_name, F32 time, void* data);
-	void setTimingFunc(msg_timing_callback func, void* data = NULL);
+	void setTimingFunc(msg_timing_callback func, void* data = nullptr);
 	msg_timing_callback getTimingCallback() 
 	{ 
 		return mTimingCallback; 
@@ -333,7 +332,7 @@ public:
 	bool addCircuitCode(U32 code, const LLUUID& session_id);
 
 	BOOL	poll(F32 seconds); // Number of seconds that we want to block waiting for data, returns if data was received
-	BOOL	checkMessages( S64 frame_count = 0 );
+	BOOL	checkMessages( S64 frame_count = 0, bool faked_message = false, U8 fake_buffer[MAX_BUFFER_SIZE] = nullptr, LLHost fake_host = LLHost(), S32 fake_size = 0 );
 	void	processAcks(F32 collect_time = 0.f);
 
 	BOOL	isMessageFast(const char *msg);
@@ -372,7 +371,7 @@ public:
 public:
 	LLStoredMessagePtr getReceivedMessage() const; 
 	LLStoredMessagePtr getBuiltMessage() const;
-	S32 sendMessage(const LLHost &host, LLStoredMessagePtr message);
+	S32 sendMessage(const LLHost &host, LLStoredMessagePtr message) override;
 
 private:
 	LLSD getReceivedMessageLLSD() const;
@@ -447,8 +446,8 @@ public:
 	// you need to go to the next block type or need to start a new
 	// message. Specify the current blockname to check block counts,
 	// otherwise the method only checks against MTU.
-	BOOL isSendFull(const char* blockname = NULL);
-	BOOL isSendFullFast(const char* blockname = NULL);
+	BOOL isSendFull(const char* blockname = nullptr);
+	BOOL isSendFullFast(const char* blockname = nullptr);
 
 	BOOL removeLastBlock();
 
@@ -577,6 +576,7 @@ public:
 	void getCircuitInfo(LLSD& info) const;
 
 	U32 getOurCircuitCode();
+	LLCircuit* getCircuit();
 	
 	void	enableCircuit(const LLHost &host, BOOL trusted);
 	void	disableCircuit(const LLHost &host);
@@ -605,7 +605,7 @@ public:
 	bool isUntrustedMessage(const std::string& name) const;
 
 	// Mark an interface ineligible for trust
-	void setUntrustedInterface( const LLHost host ) { mUntrustedInterface = host; }
+	void setUntrustedInterface( const LLHost& host ) { mUntrustedInterface = host; }
 	LLHost getUntrustedInterface() const { return mUntrustedInterface; }
 	void setBlockUntrustedInterface( bool block ) { mBlockUntrustedInterface = block; } // Throw a switch to allow, sending warnings only
 	bool getBlockUntrustedInterface() const { return mBlockUntrustedInterface; }
@@ -742,7 +742,7 @@ public:
 	void receivedMessageFromTrustedSender();
 	
 private:
-    typedef boost::function<void(S32)>  UntrustedCallback_t;
+    typedef std::function<void(S32)>  UntrustedCallback_t;
     void sendUntrustedSimulatorMessageCoro(std::string url, std::string message, LLSD body, UntrustedCallback_t callback);
 
 
@@ -765,12 +765,11 @@ private:
 	void		logValidMsg(LLCircuitData *cdp, const LLHost& sender, BOOL recv_reliable, BOOL recv_resent, BOOL recv_acks );
 	void		logRanOffEndOfPacket( const LLHost& sender );
 
-	class LLMessageCountInfo
+	struct LLMessageCountInfo
 	{
-	public:
-		U32 mMessageNum;
-		U32 mMessageBytes;
-		BOOL mInvalid;
+		U32 mMessageNum = 0;
+		U32 mMessageBytes = 0;
+		bool mInvalid = false;
 	};
 
 	LLMessagePollInfo						*mPollInfop;
@@ -786,7 +785,7 @@ private:
 
 	F64Seconds										mResendDumpTime; // The last time we dumped resends
 
-	LLMessageCountInfo mMessageCountList[MAX_MESSAGE_COUNT_NUM];
+	std::array<LLMessageCountInfo, MAX_MESSAGE_COUNT_NUM> mMessageCountList;
 	S32 mNumMessageCounts;
 	F32Seconds mReceiveTime;
 	F32Seconds mMaxMessageTime; // Max number of seconds for processing messages
@@ -816,6 +815,7 @@ private:
 	S32 mIncomingCompressedSize;		// original size of compressed msg (0 if uncomp.)
 	TPACKETID mCurrentRecvPacketID;       // packet ID of current receive packet (for reporting)
 
+public:
 	LLMessageBuilder* mMessageBuilder;
 	LLTemplateMessageBuilder* mTemplateMessageBuilder;
 	LLSDMessageBuilder* mLLSDMessageBuilder;
@@ -823,6 +823,7 @@ private:
 	LLTemplateMessageReader* mTemplateMessageReader;
 	LLSDMessageReader* mLLSDMessageReader;
 
+private:
 	friend class LLMessageHandlerBridge;
 	
 	bool callHandler(const char *name, bool trustedSource,
@@ -835,7 +836,7 @@ private:
 
 
 // external hook into messaging system
-extern LLMessageSystem	*gMessageSystem;
+extern LLPounceable<LLMessageSystem*, LLPounceableStatic> gMessageSystem;
 
 // Must specific overall system version, which is used to determine
 // if a patch is available in the message template checksum verification.

@@ -28,23 +28,18 @@
 #define LL_LLAPP_H
 
 #include <map>
+#include "llatomic.h"
 #include "llrun.h"
 #include "llsd.h"
-#include "lloptioninterface.h"
 
-#if !LL_WINDOWS
-#include "llatomic.h"
-#endif
-
-// Forward declarations
-class LLErrorThread;
-class LLLiveFile;
-#if LL_LINUX
+#if LL_LINUX || LL_DARWIN
 #include <signal.h>
 #endif
 
+class LLErrorThread;
+class LLLiveFile;
+
 typedef void (*LLAppErrorHandler)();
-typedef void (*LLAppChildCallback)(int pid, bool exited, int status);
 
 #if !LL_WINDOWS
 extern S32 LL_SMACKDOWN_SIGNAL;
@@ -53,20 +48,13 @@ extern S32 LL_HEARTBEAT_SIGNAL;
 // Clear all of the signal handlers (which we want to do for the child process when we fork
 void clear_signals();
 
-class LLChildInfo
-{
-public:
-	LLChildInfo() : mGotSigChild(FALSE), mCallback(NULL) {}
-	BOOL mGotSigChild;
-	LLAppChildCallback mCallback;
-};
 #endif
 
 namespace google_breakpad {
 	class ExceptionHandler; // See exception_handler.h
 }
 
-class LL_COMMON_API LLApp : public LLOptionInterface
+class LL_COMMON_API LLApp
 {
 	friend class LLErrorThread;
 public:
@@ -115,10 +103,10 @@ public:
 	 * @param name The name of the option.
 	 * @return Returns the option data.
 	 */
-	virtual LLSD getOption(const std::string& name) const;
+	LLSD getOption(const std::string& name) const;
 
 	/** 
-	 * @brief Parse command line options and insert them into
+	 * @brief Parse ASCII command line options and insert them into
 	 * application command line options.
 	 *
 	 * The name inserted into the option will have leading option
@@ -130,6 +118,20 @@ public:
 	 * @return Returns true if the parse succeeded.
 	 */
 	bool parseCommandOptions(int argc, char** argv);
+
+	/** 
+	 * @brief Parse Unicode command line options and insert them into
+	 * application command line options.
+	 *
+	 * The name inserted into the option will have leading option
+	 * identifiers (a minus or double minus) stripped. All options
+	 * with values will be stored as a string, while all options
+	 * without values will be stored as true.
+	 * @param argc The argc passed into main().
+	 * @param wargv The wargv passed into main().
+	 * @return Returns true if the parse succeeded.
+	 */
+	bool parseCommandOptions(int argc, wchar_t** wargv);
 
 	/**
 	 * @brief Keep track of live files automatically.
@@ -184,12 +186,12 @@ public:
 	virtual bool cleanup() = 0;			// Override to do application cleanup
 
 	//
-	// mainLoop()
+	// frame()
 	//
-	// Runs the application main loop.  It's assumed that when you exit
-	// this method, the application is in one of the cleanup states, either QUITTING or ERROR
+	// Pass control to the application for a single frame. Returns 'done'
+	// flag: if frame() returns false, it expects to be called again.
 	//
-	virtual bool mainLoop() = 0; // Override for the application main loop.  Needs to at least gracefully notice the QUITTING state and exit.
+	virtual bool frame() = 0; // Override for application body logic
 
 	//
 	// Crash logging
@@ -208,10 +210,6 @@ public:
 	static bool isQuitting();
 	static bool isError();
 	static bool isExiting(); // Either quitting or error (app is exiting, cleanly or not)
-#if !LL_WINDOWS
-	static U32  getSigChildCount();
-	static void incSigChildCount();
-#endif
 	static int getPid();
 
 	/** @name Error handling methods */
@@ -229,7 +227,7 @@ public:
 	 * DO NOT call this method if your application has specialized
 	 * error handling code.
 	 */
-	void setupErrorHandling();
+	void setupErrorHandling(bool mSecondInstance=false);
 
 	void setErrorHandler(LLAppErrorHandler handler);
 	static void runErrorHandler(); // run shortly after we detect an error, ran in the relatively robust context of the LLErrorThread - preferred.
@@ -251,25 +249,16 @@ public:
 	void writeMiniDump();
 
 
-#if !LL_WINDOWS
-	//
-	// Child process handling (Unix only for now)
-	//
-	// Set a callback to be run on exit of a child process
-	// WARNING!  This callback is run from the signal handler due to the extreme crappiness of
-	// Linux threading requiring waitpid() to be called from the thread that spawned the process.
-	// At some point I will make this more behaved, but I'm not going to fix this right now - djs
-	void setChildCallback(pid_t pid, LLAppChildCallback callback);
-
-    // The child callback to run if no specific handler is set
-	void setDefaultChildCallback(LLAppChildCallback callback); 
-	
-    // Fork and do the proper signal handling/error handling mojo
-	// WARNING: You need to make sure your signal handling callback is correct after
-	// you fork, because not all threads are duplicated when you fork!
-	pid_t fork(); 
-#endif
-
+	/**
+	  * @brief Get a reference to the application runner
+	  *
+	  * Please use the runner with caution. Since the Runner usage
+	  * pattern is not yet clear, this method just gives access to it
+	  * to add and remove runnables.
+	  * @return Returns the application runner. Do not save the
+	  * pointer past the caller's stack frame.
+	  */
+	LLRunner& getRunner() { return mRunner; }
 
 public:
 	typedef std::map<std::string, std::string> string_map;
@@ -285,21 +274,14 @@ protected:
 
     std::string mDumpPath;  //output path for google breakpad.  Dependency workaround.
 
-#if !LL_WINDOWS
-	static LLAtomicU32* sSigChildCount; // Number of SIGCHLDs received.
-	typedef std::map<pid_t, LLChildInfo> child_map; // Map key is a PID
-	static child_map sChildMap;
-	static LLAppChildCallback sDefaultChildCallback;
-#endif
-
-	void startErrorThread();
-
 	/**
-	 * @brief This method is called at the end, just prior to deinitializing curl.
-	 */
-	void stopErrorThread();
+	  * @brief This method is called once a frame to do once a frame tasks.
+	  */
+	void stepFrame();
 
 private:
+	void startErrorThread();
+	
 	// Contains the filename of the minidump file after a crash.
 	char mMinidumpPath[MAX_MINDUMP_PATH_LENGTH];
     
@@ -315,6 +297,8 @@ private:
 	// Default application threads
 	LLErrorThread* mThreadErrorp;		// Waits for app to go to status ERROR, then runs the error callback
 
+	// This is the application level runnable scheduler.
+	LLRunner mRunner;
 	/** @name Runtime option implementation */
 	//@{
 
@@ -328,7 +312,7 @@ private:
 private:
 	// the static application instance if it was created.
 	static LLApp* sApplication;
-
+	
 	google_breakpad::ExceptionHandler * mExceptionHandler;
 
 

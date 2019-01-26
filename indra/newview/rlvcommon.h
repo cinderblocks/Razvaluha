@@ -43,6 +43,7 @@ using namespace LLOldEvents;
 // General viewer source
 //
 class LLInventoryItem;
+class LLUICtrl;
 class LLViewerInventoryCategory;
 class LLViewerInventoryItem;
 class LLViewerJointAttachment;
@@ -81,18 +82,18 @@ class RlvSettings
 {
 public:
 	static bool getDebug()						{ return rlvGetSetting<bool>(RLV_SETTING_DEBUG, false); }
-	static bool getCanOOC()						{ return fCanOOC; }
+	static bool getCanOOC()						{ return s_fCanOOC; }
 	static bool getForbidGiveToRLV()			{ return rlvGetSetting<bool>(RLV_SETTING_FORBIDGIVETORLV, true); }
-	static bool getNoSetEnv()					{ return fNoSetEnv; }
+	static bool getNoSetEnv()					{ return s_fNoSetEnv; }
 
 	static std::string getWearAddPrefix()		{ return rlvGetSetting<std::string>(RLV_SETTING_WEARADDPREFIX, LLStringUtil::null); }
 	static std::string getWearReplacePrefix()	{ return rlvGetSetting<std::string>(RLV_SETTING_WEARREPLACEPREFIX, LLStringUtil::null); }
 
 	static bool getDebugHideUnsetDup()			{ return rlvGetSetting<bool>(RLV_SETTING_DEBUGHIDEUNSETDUP, false); }
 	#ifdef RLV_EXPERIMENTAL_COMPOSITEFOLDERS
-	static BOOL getEnableComposites()			{ return fCompositeFolders; }
+	static BOOL getEnableComposites()			{ return s_fCompositeFolders; }
 	#endif // RLV_EXPERIMENTAL_COMPOSITEFOLDERS
-	static bool getEnableLegacyNaming()			{ return fLegacyNaming; }
+	static bool getEnableLegacyNaming()			{ return s_fLegacyNaming; }
 	static bool getEnableSharedWear()			{ return rlvGetSetting<bool>(RLV_SETTING_ENABLESHAREDWEAR, false); }
 	static bool getHideLockedLayers()			{ return rlvGetSetting<bool>(RLV_SETTING_HIDELOCKEDLAYER, false); }		
 	static bool getHideLockedAttach()			{ return rlvGetSetting<bool>(RLV_SETTING_HIDELOCKEDATTACH, false); }
@@ -100,10 +101,10 @@ public:
 	static bool getSharedInvAutoRename()		{ return rlvGetSetting<bool>(RLV_SETTING_SHAREDINVAUTORENAME, true); }
 	static bool getShowNameTags()				{ return fShowNameTags; }
 
-	#ifdef RLV_EXTENSION_STARTLOCATION
 	static bool getLoginLastLocation()			{ return rlvGetPerUserSetting<bool>(RLV_SETTING_LOGINLASTLOCATION, true); }
 	static void updateLoginLastLocation();
-	#endif // RLV_EXTENSION_STARTLOCATION
+
+
 
 	static void initClass();
 protected:
@@ -112,11 +113,16 @@ protected:
 	static bool onChangedSettingBOOL(const LLSD& sdValue, bool* pfSetting);
 
 	#ifdef RLV_EXPERIMENTAL_COMPOSITEFOLDERS
-	static BOOL fCompositeFolders;
+	static BOOL s_fCompositeFolders;
 	#endif // RLV_EXPERIMENTAL_COMPOSITEFOLDERS
-	static bool fCanOOC;
-	static bool fLegacyNaming;
-	static bool fNoSetEnv;
+
+	/*
+	 * Member variables
+	 */
+protected:
+	static bool s_fCanOOC;
+	static bool s_fLegacyNaming;
+	static bool s_fNoSetEnv;
 	static bool fShowNameTags;
 };
 
@@ -173,7 +179,7 @@ public:
 	static void notifyFailedAssertion(const std::string& strAssert, const std::string& strFile, int nLine);
 
 	static void sendBusyMessage(const LLUUID& idTo, const std::string& strMsg, const LLUUID& idSession = LLUUID::null);
-	static bool isValidReplyChannel(S32 nChannel);
+	static bool isValidReplyChannel(S32 nChannel, bool fLoopback = false);
 	static bool sendChatReply(S32 nChannel, const std::string& strUTF8Text);
 	static bool sendChatReply(const std::string& strChannel, const std::string& strUTF8Text);
 
@@ -185,16 +191,16 @@ protected:
 // Extensibility classes
 //
 
-class RlvCommandHandler
+class RlvExtCommandHandler
 {
 public:
-	virtual ~RlvCommandHandler() {}
+	virtual ~RlvExtCommandHandler() {}
 	virtual bool onAddRemCommand(const RlvCommand& rlvCmd, ERlvCmdRet& cmdRet) { return false; }
 	virtual bool onClearCommand(const RlvCommand& rlvCmd, ERlvCmdRet& cmdRet)  { return false; }
 	virtual bool onReplyCommand(const RlvCommand& rlvCmd, ERlvCmdRet& cmdRet)  { return false; }
 	virtual bool onForceCommand(const RlvCommand& rlvCmd, ERlvCmdRet& cmdRet)  { return false; }
 };
-typedef bool (RlvCommandHandler::*rlvCommandHandler)(const RlvCommand& rlvCmd, ERlvCmdRet& cmdRet);
+typedef bool (RlvExtCommandHandler::*rlvExtCommandHandler)(const RlvCommand& rlvCmd, ERlvCmdRet& cmdRet);
 
 // ============================================================================
 // Generic menu enablers
@@ -308,9 +314,9 @@ inline bool RlvUtil::isEmote(const std::string& strUTF8Text)
 }
 
 // Checked: 2010-03-09 (RLVa-1.2.0b) | Added: RLVa-1.0.2a
-inline bool RlvUtil::isValidReplyChannel(S32 nChannel)
+inline bool RlvUtil::isValidReplyChannel(S32 nChannel, bool fLoopback /*=false*/)
 {
-	return (nChannel > 0) && (CHAT_CHANNEL_DEBUG != nChannel);
+	return (nChannel > ((!fLoopback) ? 0 : -1)) && (CHAT_CHANNEL_DEBUG != nChannel);
 }
 
 // Checked: 2009-08-05 (RLVa-1.0.1e) | Added: RLVa-1.0.0e

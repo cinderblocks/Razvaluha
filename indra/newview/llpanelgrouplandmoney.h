@@ -34,7 +34,6 @@
 #define LL_PANEL_GROUP_LAND_MONEY_H
 
 #include "llpanelgroup.h"
-#include "llmap.h"
 #include "lluuid.h"
 
 class LLPanelGroupLandMoney : public LLPanelGroupTab
@@ -42,20 +41,21 @@ class LLPanelGroupLandMoney : public LLPanelGroupTab
 public:
 	LLPanelGroupLandMoney(const std::string& name, const LLUUID& group_id);
 	virtual ~LLPanelGroupLandMoney();
-	virtual BOOL postBuild();
-	virtual BOOL isVisibleByAgent(LLAgent* agentp);
+	BOOL postBuild() override;
+	BOOL isVisibleByAgent(LLAgent* agentp) override;
 
 	static void* createTab(void* data);
 
-	virtual void activate();
-	virtual bool needsApply(std::string& mesg);
-	virtual bool apply(std::string& mesg);
-	virtual void cancel();
-	virtual void update(LLGroupChange gc);
+	void activate() override;
+	bool needsApply(std::string& mesg) override;
+	bool apply(std::string& mesg) override;
+	void cancel() override;
+	void update(LLGroupChange gc) override;
 
 	static void processPlacesReply(LLMessageSystem* msg, void**);
 
-	static LLMap<LLUUID, LLPanelGroupLandMoney*> sGroupIDs;
+	typedef std::map<LLUUID, LLPanelGroupLandMoney*> group_id_map_t;
+	static group_id_map_t sGroupIDs;
 
 	static void processGroupAccountDetailsReply(LLMessageSystem* msg,  void** data);
 	static void processGroupAccountTransactionsReply(LLMessageSystem* msg, void** data);

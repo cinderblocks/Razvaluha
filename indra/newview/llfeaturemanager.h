@@ -96,8 +96,7 @@ protected:
 
 class LLFeatureManager : public LLFeatureList, public LLSingleton<LLFeatureManager>
 {
-public:
-	LLFeatureManager()
+	LLSINGLETON(LLFeatureManager)
 	:	LLFeatureList("default"),
 
 		mInited(FALSE),
@@ -107,6 +106,7 @@ public:
 		mGPUSupported(FALSE)
 	{
 	}
+public:
 	~LLFeatureManager() {cleanupFeatureTables();}
 
 	// initialize this by loading feature table and gpu table

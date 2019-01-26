@@ -1,25 +1,27 @@
-/**
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+/** 
  * @file llvoicechannel.cpp
  * @brief Voice Channel related classes
  *
  * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
  * version 2.1 of the License only.
- *
+ * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
+ * 
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
@@ -36,8 +38,8 @@
 
 LLVoiceChannel::voice_channel_map_t LLVoiceChannel::sVoiceChannelMap;
 LLVoiceChannel::voice_channel_map_uri_t LLVoiceChannel::sVoiceChannelURIMap;
-LLVoiceChannel* LLVoiceChannel::sCurrentVoiceChannel = NULL;
-LLVoiceChannel* LLVoiceChannel::sSuspendedVoiceChannel = NULL;
+LLVoiceChannel* LLVoiceChannel::sCurrentVoiceChannel = nullptr;
+LLVoiceChannel* LLVoiceChannel::sSuspendedVoiceChannel = nullptr;
 LLVoiceChannel::channel_changed_signal_t LLVoiceChannel::sCurrentVoiceChannelChangedSignal;
 
 BOOL LLVoiceChannel::sSuspended = FALSE;
@@ -50,13 +52,13 @@ const U32 DEFAULT_RETRIES_COUNT = 3;
 //
 // LLVoiceChannel
 //
-LLVoiceChannel::LLVoiceChannel(const LLUUID& session_id, const std::string& session_name) :
-	mSessionID(session_id),
+LLVoiceChannel::LLVoiceChannel(const LLUUID& session_id, const std::string& session_name) : 
+	mCallDirection(OUTGOING_CALL), 
+	mSessionID(session_id), 
 	mState(STATE_NO_CHANNEL_INFO),
 	mSessionName(session_name),
-	mCallDirection(OUTGOING_CALL),
-	mIgnoreNextSessionLeave(FALSE),
-	mCallEndedByAgent(false)
+	mCallEndedByAgent(false),
+	mIgnoreNextSessionLeave(FALSE)
 {
 	mNotifyArgs["VOICE_CHANNEL_NAME"] = mSessionName;
 
@@ -75,7 +77,7 @@ LLVoiceChannel::~LLVoiceChannel()
 	{
 		LLVoiceClient::getInstance()->removeObserver(this);
 	}
-
+	
 	sVoiceChannelMap.erase(mSessionID);
 	sVoiceChannelURIMap.erase(mURI);
 }
@@ -189,9 +191,9 @@ void LLVoiceChannel::handleError(EStatusType type)
 }
 
 BOOL LLVoiceChannel::isActive()
-{
+{ 
 	// only considered active when currently bound channel matches what our channel
-	return callStarted() && LLVoiceClient::getInstance()->getCurrentChannel() == mURI;
+	return callStarted() && LLVoiceClient::getInstance()->getCurrentChannel() == mURI; 
 }
 
 BOOL LLVoiceChannel::callStarted()
@@ -217,11 +219,11 @@ void LLVoiceChannel::deactivate()
 			LLVoiceClient::getInstance()->getUserPTTState())
 		{
 			gSavedSettings.setBOOL("PTTCurrentlyEnabled", true);
-			LLVoiceClient::getInstance()->inputUserControlState(true);
+			LLVoiceClient::getInstance()->setUserPTTState(false);
 		}
 	}
 	LLVoiceClient::getInstance()->removeObserver(this);
-
+	
 	if (sCurrentVoiceChannel == this)
 	{
 		// default channel is proximal channel
@@ -261,9 +263,9 @@ void LLVoiceChannel::activate()
 	{
 		setState(STATE_CALL_STARTED);
 	}
-
+	
 	LLVoiceClient::getInstance()->addObserver(this);
-
+	
 	//do not send earlier, channel should be initialized, should not be in STATE_NO_CHANNEL_INFO state
 	sCurrentVoiceChannelChangedSignal(this->mSessionID);
 }
@@ -277,13 +279,13 @@ void LLVoiceChannel::getChannelInfo()
 	}
 }
 
-//static
+//static 
 LLVoiceChannel* LLVoiceChannel::getChannelByID(const LLUUID& session_id)
 {
 	voice_channel_map_t::iterator found_it = sVoiceChannelMap.find(session_id);
 	if (found_it == sVoiceChannelMap.end())
 	{
-		return NULL;
+		return nullptr;
 	}
 	else
 	{
@@ -291,13 +293,13 @@ LLVoiceChannel* LLVoiceChannel::getChannelByID(const LLUUID& session_id)
 	}
 }
 
-//static
+//static 
 LLVoiceChannel* LLVoiceChannel::getChannelByURI(std::string uri)
 {
 	voice_channel_map_uri_t::iterator found_it = sVoiceChannelURIMap.find(uri);
 	if (found_it == sVoiceChannelURIMap.end())
 	{
-		return NULL;
+		return nullptr;
 	}
 	else
 	{
@@ -359,7 +361,7 @@ void LLVoiceChannel::initClass()
 	sCurrentVoiceChannel = LLVoiceChannelProximal::getInstance();
 }
 
-//static
+//static 
 void LLVoiceChannel::suspend()
 {
 	if (!sSuspended)
@@ -369,7 +371,7 @@ void LLVoiceChannel::suspend()
 	}
 }
 
-//static
+//static 
 void LLVoiceChannel::resume()
 {
 	if (sSuspended)
@@ -405,7 +407,7 @@ boost::signals2::connection LLVoiceChannel::setCurrentVoiceChannelChangedCallbac
 // LLVoiceChannelGroup
 //
 
-LLVoiceChannelGroup::LLVoiceChannelGroup(const LLUUID& session_id, const std::string& session_name) :
+LLVoiceChannelGroup::LLVoiceChannelGroup(const LLUUID& session_id, const std::string& session_name) : 
 	LLVoiceChannel(session_id, session_name)
 {
 	mRetries = DEFAULT_RETRIES_COUNT;
@@ -464,7 +466,7 @@ void LLVoiceChannelGroup::activate()
 		{
 			LLVoiceClient::getInstance()->inputUserControlState(true);
 		}
-
+		
 	}
 }
 
@@ -661,14 +663,14 @@ void LLVoiceChannelGroup::voiceCallCapCoro(std::string url)
 //
 // LLVoiceChannelProximal
 //
-LLVoiceChannelProximal::LLVoiceChannelProximal() :
+LLVoiceChannelProximal::LLVoiceChannelProximal() : 
 	LLVoiceChannel(LLUUID::null, LLStringUtil::null)
 {
 }
 
 BOOL LLVoiceChannelProximal::isActive()
 {
-	return callStarted() && LLVoiceClient::getInstance()->inProximalChannel();
+	return callStarted() && LLVoiceClient::getInstance()->inProximalChannel(); 
 }
 
 void LLVoiceChannelProximal::activate()
@@ -678,7 +680,7 @@ void LLVoiceChannelProximal::activate()
 	if((LLVoiceChannel::sCurrentVoiceChannel != this) && (LLVoiceChannel::getState() == STATE_CONNECTED))
 	{
 		// we're connected to a non-spatial channel, so disconnect.
-		LLVoiceClient::getInstance()->leaveNonSpatialChannel();
+		LLVoiceClient::getInstance()->leaveNonSpatialChannel();	
 	}
 
 	// Singu Note: Mic default state is OFF for local voice
@@ -688,7 +690,7 @@ void LLVoiceChannelProximal::activate()
 	}
 
 	LLVoiceChannel::activate();
-
+	
 }
 
 void LLVoiceChannelProximal::onChange(EStatusType type, const std::string &channelURI, bool proximal)
@@ -717,6 +719,8 @@ void LLVoiceChannelProximal::handleStatusChange(EStatusType status)
 		// do not notify user when leaving proximal channel
 		return;
 	case STATUS_VOICE_DISABLED:
+		LLVoiceClient::getInstance()->setUserPTTState(false);
+		gAgent.setVoiceConnected(false);
 		//skip showing "Voice not available at your current location" when agent voice is disabled (EXT-4749)
 		if(LLVoiceClient::getInstance()->voiceEnabled() && LLVoiceClient::getInstance()->isVoiceWorking())
 		{
@@ -764,8 +768,8 @@ void LLVoiceChannelProximal::deactivate()
 //
 // LLVoiceChannelP2P
 //
-LLVoiceChannelP2P::LLVoiceChannelP2P(const LLUUID& session_id, const std::string& session_name, const LLUUID& other_user_id) :
-		LLVoiceChannelGroup(session_id, session_name),
+LLVoiceChannelP2P::LLVoiceChannelP2P(const LLUUID& session_id, const std::string& session_name, const LLUUID& other_user_id) : 
+		LLVoiceChannelGroup(session_id, session_name), 
 		mOtherUserID(other_user_id),
 		mReceivedCall(FALSE)
 {
@@ -793,9 +797,9 @@ void LLVoiceChannelP2P::handleStatusChange(EStatusType type)
 			}
 			else
 			{
-				// other user hung up, so we didn't end the call
+				// other user hung up, so we didn't end the call				
 				LLNotificationsUtil::add("VoiceChannelDisconnectedP2P", mNotifyArgs);
-				mCallEndedByAgent = false;
+				mCallEndedByAgent = false;			
 			}
 			deactivate();
 		}
@@ -934,7 +938,7 @@ void LLVoiceChannelP2P::setState(EState state)
 	{
 		// you only "answer" voice invites in p2p mode
 		// so provide a special purpose message here
-		if (mReceivedCall && state == STATE_RINGING)
+		if (state == STATE_RINGING)
 		{
 			gIMMgr->addSystemMessage(mSessionID, "answering", mNotifyArgs);
 			doSetState(state);
@@ -948,17 +952,17 @@ void LLVoiceChannelP2P::setState(EState state)
 /*void LLVoiceChannelP2P::addToTheRecentPeopleList()
 {
 	bool avaline_call = LLIMModel::getInstance()->findIMSession(mSessionID)->isAvalineSessionType();
-
+	
 	if (avaline_call)
 	{
 		LLSD call_data;
 		std::string call_number = LLVoiceChannel::getSessionName();
-
+		
 		call_data["avaline_call"]	= true;
 		call_data["session_id"]		= mSessionID;
 		call_data["call_number"]	= call_number;
 		call_data["date"]			= LLDate::now();
-
+		
 		LLRecentPeople::instance().add(mOtherUserID, call_data);
 	}
 	else

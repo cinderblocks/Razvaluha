@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file _httpservice.cpp
  * @brief Internal definitions of the Http service thread
@@ -26,9 +28,6 @@
 
 #include "_httpservice.h"
 
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
-
 #include "_httpoperation.h"
 #include "_httprequestqueue.h"
 #include "_httppolicy.h"
@@ -38,7 +37,8 @@
 
 #include "lltimer.h"
 #include "llthread.h"
-
+#include "llexception.h"
+#include "llmemory.h"
 
 namespace
 {
@@ -64,15 +64,15 @@ const HttpService::OptionDescriptor HttpService::sOptionDesc[] =
 	{	true,		true,		false,		true,		false	},		// PO_THROTTLE_RATE
 	{   false,		false,		true,		false,		true	}		// PO_SSL_VERIFY_CALLBACK
 };
-HttpService * HttpService::sInstance(NULL);
+HttpService * HttpService::sInstance(nullptr);
 volatile HttpService::EState HttpService::sState(NOT_INITIALIZED);
 
 HttpService::HttpService()
-	: mRequestQueue(NULL),
+	: mRequestQueue(nullptr),
 	  mExitRequested(0U),
-	  mThread(NULL),
-	  mPolicy(NULL),
-	  mTransport(NULL),
+	  mThread(nullptr),
+	  mPolicy(nullptr),
+	  mTransport(nullptr),
 	  mLastPolicy(0)
 {}
 
@@ -89,9 +89,25 @@ HttpService::~HttpService()
 			mRequestQueue->stopQueue();
 		}
 		
-		if (mThread)
+		if (mThread && mThread->joinable())
 		{
-			if (! mThread->timedJoin(250))
+			bool joined = false;
+			S32 counter = 0;
+			const S32 MAX_WAIT = 600;
+			while (counter < MAX_WAIT)
+			{
+				// Try to join for a tenth of a second
+				if (mThread->timedJoin(100))
+				{
+					LL_INFOS() << "Successfully joined thread: HttpThread" << LL_ENDL;
+					joined = true;
+					break;
+				}
+				mThread->yield();
+				counter++;
+			}
+
+			if (!joined)
 			{
 				// Failed to join, expect problems ahead so do a hard termination.
 				mThread->cancel();
@@ -105,19 +121,19 @@ HttpService::~HttpService()
 	if (mRequestQueue)
 	{
 		mRequestQueue->release();
-		mRequestQueue = NULL;
+		mRequestQueue = nullptr;
 	}
 
 	delete mTransport;
-	mTransport = NULL;
+	mTransport = nullptr;
 	
 	delete mPolicy;
-	mPolicy = NULL;
+	mPolicy = nullptr;
 
 	if (mThread)
 	{
 		mThread->release();
-		mThread = NULL;
+		mThread = nullptr;
 	}
 }
 	
@@ -156,7 +172,7 @@ void HttpService::term()
 		}
 
 		delete sInstance;
-		sInstance = NULL;
+		sInstance = nullptr;
 	}
 	sState = NOT_INITIALIZED;
 }
@@ -201,7 +217,7 @@ void HttpService::startThread()
 	mPolicy->start();
 	mTransport->start(mLastPolicy + 1);
 
-	mThread = new LLCoreInt::HttpThread(boost::bind(&HttpService::threadRun, this, _1));
+	mThread = new LLCoreInt::HttpThread(std::bind(&HttpService::threadRun, this, std::placeholders::_1));
 	sState = RUNNING;
 }
 
@@ -291,22 +307,42 @@ void HttpService::threadRun(LLCoreInt::HttpThread * thread)
 	ELoopSpeed loop(REQUEST_SLEEP);
 	while (! mExitRequested)
 	{
-		loop = processRequestQueue(loop);
+        try
+        {
+		    loop = processRequestQueue(loop);
 
-		// Process ready queue issuing new requests as needed
-		ELoopSpeed new_loop = mPolicy->processReadyQueue();
-		loop = (std::min)(loop, new_loop);
+		    // Process ready queue issuing new requests as needed
+		    ELoopSpeed new_loop = mPolicy->processReadyQueue();
+		    loop = (std::min)(loop, new_loop);
 		
-		// Give libcurl some cycles
-		new_loop = mTransport->processTransport();
-		loop = (std::min)(loop, new_loop);
+		    // Give libcurl some cycles
+		    new_loop = mTransport->processTransport();
+		    loop = (std::min)(loop, new_loop);
 		
-		// Determine whether to spin, sleep briefly or sleep for next request
-		if (REQUEST_SLEEP != loop)
-		{
-			ms_sleep(HTTP_SERVICE_LOOP_SLEEP_NORMAL_MS);
-		}
-	}
+		    // Determine whether to spin, sleep briefly or sleep for next request
+		    if (REQUEST_SLEEP != loop)
+		    {
+			    ms_sleep(HTTP_SERVICE_LOOP_SLEEP_NORMAL_MS);
+		    }
+        }
+        catch (const LLContinueError&)
+        {
+            LOG_UNHANDLED_EXCEPTION("");
+        }
+        catch (std::bad_alloc)
+        {
+            LLMemory::logMemoryInfo(TRUE);
+
+            //output possible call stacks to log file.
+            LLError::LLCallStacks::print();
+
+            LL_ERRS() << "Bad memory allocation in HttpService::threadRun()!" << LL_ENDL;
+        }
+        catch (...)
+        {
+            CRASH_ON_UNHANDLED_EXCEPTION("");
+        }
+    }
 
 	shutdown();
 	sState = STOPPED;

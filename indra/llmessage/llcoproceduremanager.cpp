@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
 * @file LLCoprocedurePool.cpp
 * @author Rider Linden
@@ -27,22 +29,22 @@
 
 #include "linden_common.h" 
 #include "llcoproceduremanager.h"
-#include <boost/assign.hpp>
+#include "llexception.h"
+#include "stringize.h"
 
 //=========================================================================
 // Map of pool sizes for known pools
-// *TODO$: When C++11 this can be initialized here as follows:
-// = {{"AIS", 25}, {"Upload", 1}}
-static std::map<std::string, U32> DefaultPoolSizes = 
-    boost::assign::map_list_of
-        (std::string("Upload"),  1)
-        (std::string("AIS"),     1);    
-        // *TODO: Rider for the moment keep AIS calls serialized otherwise the COF will tend to get out of sync.
+static std::map<std::string, U32> DefaultPoolSizes = {
+    {"Upload", 1},
+    {"AIS", 1}
+    // *TODO: Rider for the moment keep AIS calls serialized otherwise the COF will tend to get out of sync.
+};
+        
 
 #define DEFAULT_POOL_SIZE 5
 
 //=========================================================================
-class LLCoprocedurePool: private boost::noncopyable
+class LLCoprocedurePool
 {
 public:
     typedef LLCoprocedureManager::CoProcedure_t CoProcedure_t;
@@ -50,6 +52,11 @@ public:
     LLCoprocedurePool(const std::string &name, size_t size);
     virtual ~LLCoprocedurePool();
 
+protected:
+	LLCoprocedurePool(const LLCoprocedurePool&) = delete;
+	LLCoprocedurePool& operator=(const LLCoprocedurePool&) = delete;
+
+public:
     /// Places the coprocedure on the queue for processing. 
     /// 
     /// @param name Is used for debugging and should identify this coroutine.
@@ -139,7 +146,7 @@ LLCoprocedureManager::poolPtr_t LLCoprocedureManager::initializePool(const std::
 {
     // Attempt to look up a pool size in the configuration.  If found use that
     std::string keyName = "PoolSize" + poolName;
-    int size = 0;
+    size_t size = 0;
 
     if (poolName.empty())
         LL_ERRS("CoprocedureManager") << "Poolname must not be empty" << LL_ENDL;
@@ -152,7 +159,7 @@ LLCoprocedureManager::poolPtr_t LLCoprocedureManager::initializePool(const std::
     if (size == 0)
     {   // if not found grab the know default... if there is no known 
         // default use a reasonable number like 5.
-        std::map<std::string, U32>::iterator it = DefaultPoolSizes.find(poolName);
+        std::map<std::string, U32>::const_iterator it = DefaultPoolSizes.find(poolName);
         if (it == DefaultPoolSizes.end())
             size = DEFAULT_POOL_SIZE;
         else
@@ -177,7 +184,7 @@ LLUUID LLCoprocedureManager::enqueueCoprocedure(const std::string &pool, const s
     // Attempt to find the pool and enqueue the procedure.  If the pool does 
     // not exist, create it.
     poolPtr_t targetPool;
-    poolMap_t::iterator it = mPoolMap.find(pool);
+    poolMap_t::const_iterator it = mPoolMap.find(pool);
 
     if (it == mPoolMap.end())
     {
@@ -281,8 +288,8 @@ LLCoprocedurePool::LLCoprocedurePool(const std::string &poolName, size_t size):
     mPendingCoprocs(),
     mShutdown(false),
     mWakeupTrigger("CoprocedurePool" + poolName, true),
-    mCoroMapping(),
-    mHTTPPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID)
+    mHTTPPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID),
+    mCoroMapping()
 {
     for (size_t count = 0; count < mPoolSize; ++count)
     {
@@ -331,7 +338,7 @@ LLUUID LLCoprocedurePool::enqueueCoprocedure(const std::string &name, LLCoproced
 {
     LLUUID id(LLUUID::generateNewID());
 
-    mPendingCoprocs.push_back(QueuedCoproc::ptr_t(new QueuedCoproc(name, id, proc)));
+    mPendingCoprocs.push_back(boost::make_shared<QueuedCoproc>(name, id, proc));
     LL_INFOS() << "Coprocedure(" << name << ") enqueued with id=" << id.asString() << " in pool \"" << mPoolName << "\"" << LL_ENDL;
 
     mWakeupTrigger.post(LLSD());
@@ -388,14 +395,14 @@ void LLCoprocedurePool::coprocedureInvokerCoro(LLCoreHttpUtil::HttpCoroutineAdap
             {
                 coproc->mProc(httpAdapter, coproc->mId);
             }
-            catch (std::exception &e)
-            {
-                LL_WARNS() << "Coprocedure(" << coproc->mName << ") id=" << coproc->mId.asString() <<
-                    " threw an exception! Message=\"" << e.what() << "\"" << LL_ENDL;
-            }
             catch (...)
             {
-                LL_WARNS() << "A non std::exception was thrown from " << coproc->mName << " with id=" << coproc->mId << "." << " in pool \"" << mPoolName << "\"" << LL_ENDL;
+                LOG_UNHANDLED_EXCEPTION(STRINGIZE("Coprocedure('" << coproc->mName
+                                                  << "', id=" << coproc->mId.asString()
+                                                  << ") in pool '" << mPoolName << "'"));
+                // must NOT omit this or we deplete the pool
+                mActiveCoprocs.erase(itActive);
+                throw;
             }
 
             LL_INFOS() << "Finished coprocedure(" << coproc->mName << ")" << " in pool \"" << mPoolName << "\"" << LL_ENDL;

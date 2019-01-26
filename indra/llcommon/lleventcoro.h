@@ -26,15 +26,15 @@
  * $/LicenseInfo$
  */
 
-#if ! defined(LL_LLEVENTCORO_H)
+#ifndef LL_LLEVENTCORO_H
 #define LL_LLEVENTCORO_H
 
 #include <boost/optional.hpp>
 #include <string>
-#include <stdexcept>
 #include <utility>                  // std::pair
 #include "llevents.h"
 #include "llerror.h"
+#include "llexception.h"
 
 /**
  * Like LLListenerOrPumpName, this is a class intended for parameter lists:
@@ -85,7 +85,7 @@ void suspend();
 
 /**
  * Yield control from a coroutine for at least the specified number of seconds
-     */
+ */
 void suspendUntilTimeout(float seconds);
 
 /**
@@ -146,6 +146,11 @@ LLSD suspendUntilEventOn(const LLEventPumpOrPumpName& pump)
     // This is now a convenience wrapper for postAndSuspend().
     return postAndSuspend(LLSD(), LLEventPumpOrPumpName(), pump);
 }
+
+/// Suspend the coroutine until an event is fired on the identified pump
+/// or the timeout duration has elapsed.  If the timeout duration 
+/// elapses the specified LLSD is returned.
+LLSD suspendUntilEventOnWithTimeout(const LLEventPumpOrPumpName& suspendPumpOrName, F32 timeoutin, const LLSD &timeoutResult);
 
 } // namespace llcoro
 
@@ -229,11 +234,11 @@ LLSD errorException(const LLEventWithID& result, const std::string& desc);
  * because it's not an error in event processing: rather, this exception
  * announces an event that bears error information (for some other API).
  */
-class LL_COMMON_API LLErrorEvent: public std::runtime_error
+class LL_COMMON_API LLErrorEvent: public LLException
 {
 public:
     LLErrorEvent(const std::string& what, const LLSD& data):
-        std::runtime_error(what),
+        LLException(what),
         mData(data)
     {}
     virtual ~LLErrorEvent() throw() {}
@@ -352,7 +357,7 @@ public:
                               const LLSD& replyPump1NamePath=LLSD())
     {
         return llcoro::postAndSuspend2(event, requestPump, mPump0, mPump1,
-                            replyPump0NamePath, replyPump1NamePath);
+                                    replyPump0NamePath, replyPump1NamePath);
     }
 
     LLSD postAndSuspendWithException(const LLSD& event,
@@ -361,8 +366,8 @@ public:
                                   const LLSD& replyPump1NamePath=LLSD())
     {
         return llcoro::errorException(postAndSuspend(event, requestPump,
-                                          replyPump0NamePath, replyPump1NamePath),
-                              std::string("Error event on ") + getName1());
+                                                  replyPump0NamePath, replyPump1NamePath),
+                                      std::string("Error event on ") + getName1());
     }
 
     LLSD postAndSuspendWithLog(const LLSD& event,
@@ -371,8 +376,8 @@ public:
                             const LLSD& replyPump1NamePath=LLSD())
     {
         return llcoro::errorLog(postAndSuspend(event, requestPump,
-                                    replyPump0NamePath, replyPump1NamePath),
-                        std::string("Error event on ") + getName1());
+                                            replyPump0NamePath, replyPump1NamePath),
+                                std::string("Error event on ") + getName1());
     }
 
 private:

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpolymesh.cpp
  * @brief Implementation of LLPolyMesh class
@@ -35,7 +37,7 @@
 //#include "llviewercontrol.h"
 #include "llxmltree.h"
 #include "llavatarappearance.h"
-//#include "llwearable.h"
+#include "llwearable.h"
 #include "lldir.h"
 #include "llvolume.h"
 #include "llendianswizzle.h"
@@ -43,8 +45,6 @@
 
 #define HEADER_ASCII "Linden Mesh 1.0"
 #define HEADER_BINARY "Linden Binary Mesh 1.0"
-
-//extern LLControlGroup gSavedSettings;                           // read only
 
 LLPolyMorphData *clone_morph_param_duplicate(const LLPolyMorphData *src_data,
 					     const std::string &name);
@@ -65,28 +65,28 @@ LLPolyMesh::LLPolyMeshSharedDataTable LLPolyMesh::sGlobalSharedMeshList;
 //-----------------------------------------------------------------------------
 LLPolyMeshSharedData::LLPolyMeshSharedData()
 {
-	mNumVertices = 0;
-	mBaseCoords = NULL;
-	mBaseNormals = NULL;
-	mBaseBinormals = NULL;
-	mTexCoords = NULL;
-	mDetailTexCoords = NULL;
-	mWeights = NULL;
-	mHasWeights = FALSE;
-	mHasDetailTexCoords = FALSE;
+        mNumVertices = 0;
+        mBaseCoords = nullptr;
+        mBaseNormals = nullptr;
+        mBaseBinormals = nullptr;
+        mTexCoords = nullptr;
+        mDetailTexCoords = nullptr;
+        mWeights = nullptr;
+        mHasWeights = FALSE;
+        mHasDetailTexCoords = FALSE;
 
-	mNumFaces = 0;
-	mFaces = NULL;
+        mNumFaces = 0;
+        mFaces = nullptr;
 
-	mNumJointNames = 0;
-	mJointNames = NULL;
+        mNumJointNames = 0;
+        mJointNames = nullptr;
 
-	mTriangleIndices = NULL;
-	mNumTriangleIndices = 0;
+        mTriangleIndices = nullptr;
+        mNumTriangleIndices = 0;
 
-	mReferenceData = NULL;
+        mReferenceData = nullptr;
 
-	mLastIndexOffset = -1;
+        mLastIndexOffset = -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -94,9 +94,9 @@ LLPolyMeshSharedData::LLPolyMeshSharedData()
 //-----------------------------------------------------------------------------
 LLPolyMeshSharedData::~LLPolyMeshSharedData()
 {
-	freeMeshData();
-	for_each(mMorphData.begin(), mMorphData.end(), DeletePointer());
-	mMorphData.clear();
+        freeMeshData();
+        for_each(mMorphData.begin(), mMorphData.end(), DeletePointer());
+        mMorphData.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -104,19 +104,19 @@ LLPolyMeshSharedData::~LLPolyMeshSharedData()
 //-----------------------------------------------------------------------------
 void LLPolyMeshSharedData::setupLOD(LLPolyMeshSharedData* reference_data)
 {
-	mReferenceData = reference_data;
+        mReferenceData = reference_data;
 
-	if (reference_data)
-	{
-		mBaseCoords = reference_data->mBaseCoords;
-		mBaseNormals = reference_data->mBaseNormals;
-		mBaseBinormals = reference_data->mBaseBinormals;
-		mTexCoords = reference_data->mTexCoords;
-		mDetailTexCoords = reference_data->mDetailTexCoords;
-		mWeights = reference_data->mWeights;
-		mHasWeights = reference_data->mHasWeights;
-		mHasDetailTexCoords = reference_data->mHasDetailTexCoords;
-	}
+        if (reference_data)
+        {
+                mBaseCoords = reference_data->mBaseCoords;
+                mBaseNormals = reference_data->mBaseNormals;
+                mBaseBinormals = reference_data->mBaseBinormals;
+                mTexCoords = reference_data->mTexCoords;
+                mDetailTexCoords = reference_data->mDetailTexCoords;
+                mWeights = reference_data->mWeights;
+                mHasWeights = reference_data->mHasWeights;
+                mHasDetailTexCoords = reference_data->mHasDetailTexCoords;
+        }
 }
 
 //-----------------------------------------------------------------------------
@@ -129,36 +129,36 @@ void LLPolyMeshSharedData::freeMeshData()
                 mNumVertices = 0;
 
                 ll_aligned_free_16(mBaseCoords);
-                mBaseCoords = NULL;
+                mBaseCoords = nullptr;
 
                 ll_aligned_free_16(mBaseNormals);
-                mBaseNormals = NULL;
+                mBaseNormals = nullptr;
 
                 ll_aligned_free_16(mBaseBinormals);
-                mBaseBinormals = NULL;
+                mBaseBinormals = nullptr;
 
                 ll_aligned_free_16(mTexCoords);
-                mTexCoords = NULL;
+                mTexCoords = nullptr;
 
                 ll_aligned_free_16(mDetailTexCoords);
-                mDetailTexCoords = NULL;
+                mDetailTexCoords = nullptr;
 
                 ll_aligned_free_16(mWeights);
-                mWeights = NULL;
+                mWeights = nullptr;
         }
 
-	mNumFaces = 0;
-	delete [] mFaces;
-	mFaces = NULL;
+        mNumFaces = 0;
+        delete [] mFaces;
+        mFaces = nullptr;
 
-	mNumJointNames = 0;
-	delete [] mJointNames;
-	mJointNames = NULL;
+        mNumJointNames = 0;
+        delete [] mJointNames;
+        mJointNames = nullptr;
 
-	delete [] mTriangleIndices;
-	mTriangleIndices = NULL;
+        delete [] mTriangleIndices;
+        mTriangleIndices = nullptr;
 
-//	mVertFaceMap.deleteAllData();
+//      mVertFaceMap.deleteAllData();
 }
 
 // compare_int is used by the qsort function to sort the index array
@@ -169,26 +169,26 @@ S32 compare_int(const void *a, const void *b);
 //-----------------------------------------------------------------------------
 void LLPolyMeshSharedData::genIndices(S32 index_offset)
 {
-	if (index_offset == mLastIndexOffset)
-	{
-		return;
-	}
+        if (index_offset == mLastIndexOffset)
+        {
+                return;
+        }
 
-	delete []mTriangleIndices;
-	mTriangleIndices = new U32[mNumTriangleIndices];
+        delete []mTriangleIndices;
+        mTriangleIndices = new U32[mNumTriangleIndices];
 
-	S32 cur_index = 0;
-	for (S32 i = 0; i < mNumFaces; i++)
-	{
-		mTriangleIndices[cur_index] = mFaces[i][0] + index_offset;
-		cur_index++;
-		mTriangleIndices[cur_index] = mFaces[i][1] + index_offset;
-		cur_index++;
-		mTriangleIndices[cur_index] = mFaces[i][2] + index_offset;
-		cur_index++;
-	}
+        S32 cur_index = 0;
+        for (S32 i = 0; i < mNumFaces; i++)
+        {
+                mTriangleIndices[cur_index] = mFaces[i][0] + index_offset;
+                cur_index++;
+                mTriangleIndices[cur_index] = mFaces[i][1] + index_offset;
+                cur_index++;
+                mTriangleIndices[cur_index] = mFaces[i][2] + index_offset;
+                cur_index++;
+        }
 
-	mLastIndexOffset = index_offset;
+        mLastIndexOffset = index_offset;
 }
 
 //--------------------------------------------------------------------
@@ -196,30 +196,30 @@ void LLPolyMeshSharedData::genIndices(S32 index_offset)
 //--------------------------------------------------------------------
 U32 LLPolyMeshSharedData::getNumKB()
 {
-	U32 num_kb = sizeof(LLPolyMesh);
+        U32 num_kb = sizeof(LLPolyMesh);
 
-	if (!isLOD())
-	{
-		num_kb += mNumVertices *
-					( sizeof(LLVector3) +	// coords
-					sizeof(LLVector3) +		// normals
-					sizeof(LLVector2) );	// texCoords
-	}
+        if (!isLOD())
+        {
+                num_kb += mNumVertices *
+                        ( sizeof(LLVector3) +   // coords
+                          sizeof(LLVector3) +             // normals
+                          sizeof(LLVector2) );    // texCoords
+        }
 
-	if (mHasDetailTexCoords && !isLOD())
-	{
-		num_kb += mNumVertices * sizeof(LLVector2);	// detailTexCoords
-	}
+        if (mHasDetailTexCoords && !isLOD())
+        {
+                num_kb += mNumVertices * sizeof(LLVector2);     // detailTexCoords
+        }
 
-	if (mHasWeights && !isLOD())
-	{
-		num_kb += mNumVertices * sizeof(float);		// weights
-	}
+        if (mHasWeights && !isLOD())
+        {
+                num_kb += mNumVertices * sizeof(float);         // weights
+        }
 
-	num_kb += mNumFaces * sizeof(LLPolyFace);	// faces
+        num_kb += mNumFaces * sizeof(LLPolyFace);       // faces
 
-	num_kb /= 1024;
-	return num_kb;
+        num_kb /= 1024;
+        return num_kb;
 }
 
 //-----------------------------------------------------------------------------
@@ -233,17 +233,17 @@ BOOL LLPolyMeshSharedData::allocateVertexData( U32 numVertices )
         mBaseBinormals = (LLVector4a*) ll_aligned_malloc_16(numVertices*sizeof(LLVector4a));
         mTexCoords = (LLVector2*) ll_aligned_malloc_16((numVertices+numVertices%2)*sizeof(LLVector2));
         mDetailTexCoords = (LLVector2*) ll_aligned_malloc_16((numVertices+numVertices%2)*sizeof(LLVector2));
-        mWeights = (F32*) ll_aligned_malloc_16(((numVertices)*sizeof(F32)+0xF) & ~0xF);
+        mWeights = (F32*) ll_aligned_malloc_16(((numVertices*sizeof(F32)) + 0xF) & ~0xF);
         for (i = 0; i < numVertices; i++)
-	{
-		mBaseCoords[i].clear();
-		mBaseNormals[i].clear();
-		mBaseBinormals[i].clear();
-		mTexCoords[i].clear();
-		mWeights[i] = 0.f;
-    }
-	mNumVertices = numVertices;
-	return TRUE;
+        {
+			mBaseCoords[i].clear();
+			mBaseNormals[i].clear();
+			mBaseBinormals[i].clear();
+			mTexCoords[i].clear();
+            mWeights[i] = 0.f;
+        }
+        mNumVertices = numVertices;
+        return TRUE;
 }
 
 //-----------------------------------------------------------------------------
@@ -251,10 +251,10 @@ BOOL LLPolyMeshSharedData::allocateVertexData( U32 numVertices )
 //-----------------------------------------------------------------------------
 BOOL LLPolyMeshSharedData::allocateFaceData( U32 numFaces )
 {
-	mFaces = new LLPolyFace[ numFaces ];
-	mNumFaces = numFaces;
-	mNumTriangleIndices = mNumFaces * 3;
-	return TRUE;
+        mFaces = new LLPolyFace[ numFaces ];
+        mNumFaces = numFaces;
+        mNumTriangleIndices = mNumFaces * 3;
+        return TRUE;
 }
 
 //-----------------------------------------------------------------------------
@@ -262,9 +262,9 @@ BOOL LLPolyMeshSharedData::allocateFaceData( U32 numFaces )
 //-----------------------------------------------------------------------------
 BOOL LLPolyMeshSharedData::allocateJointNames( U32 numJointNames )
 {
-	mJointNames = new std::string[ numJointNames ];
-	mNumJointNames = numJointNames;
-	return TRUE;
+        mJointNames = new std::string[ numJointNames ];
+        mNumJointNames = numJointNames;
+        return TRUE;
 }
 
 //--------------------------------------------------------------------
@@ -272,453 +272,485 @@ BOOL LLPolyMeshSharedData::allocateJointNames( U32 numJointNames )
 //--------------------------------------------------------------------
 BOOL LLPolyMeshSharedData::loadMesh( const std::string& fileName )
 {
-	//-------------------------------------------------------------------------
-	// Open the file
-	//-------------------------------------------------------------------------
-	if(fileName.empty())
-	{
+        //-------------------------------------------------------------------------
+        // Open the file
+        //-------------------------------------------------------------------------
+        if(fileName.empty())
+        {
                 LL_ERRS() << "Filename is Empty!" << LL_ENDL;
-		return FALSE;
-	}
-	LLFILE* fp = LLFile::fopen(fileName, "rb");			/*Flawfinder: ignore*/
-	if (!fp)
-	{
+                return FALSE;
+        }
+        LLFILE* fp = LLFile::fopen(fileName, "rb");                     /*Flawfinder: ignore*/
+        if (!fp)
+        {
                 LL_ERRS() << "can't open: " << fileName << LL_ENDL;
-		return FALSE;
-	}
+                return FALSE;
+        }
 
-	//-------------------------------------------------------------------------
-	// Read a chunk
-	//-------------------------------------------------------------------------
-	char header[128];		/*Flawfinder: ignore*/
-	if (fread(header, sizeof(char), 128, fp) != 128)
-	{
+        //-------------------------------------------------------------------------
+        // Read a chunk
+        //-------------------------------------------------------------------------
+        char header[128];               /*Flawfinder: ignore*/
+        if (fread(header, sizeof(char), 128, fp) != 128)
+        {
                 LL_WARNS() << "Short read" << LL_ENDL;
-	}
+        }
 
-	//-------------------------------------------------------------------------
-	// Check for proper binary header
-	//-------------------------------------------------------------------------
-	BOOL status = FALSE;
-	if ( strncmp(header, HEADER_BINARY, strlen(HEADER_BINARY)) == 0 )	/*Flawfinder: ignore*/
-	{
+        //-------------------------------------------------------------------------
+        // Check for proper binary header
+        //-------------------------------------------------------------------------
+        BOOL status = FALSE;
+        if ( strncmp(header, HEADER_BINARY, strlen(HEADER_BINARY)) == 0 )       /*Flawfinder: ignore*/
+        {
                 LL_DEBUGS() << "Loading " << fileName << LL_ENDL;
 
-		//----------------------------------------------------------------
-		// File Header (seek past it)
-		//----------------------------------------------------------------
-		fseek(fp, 24, SEEK_SET);
+                //----------------------------------------------------------------
+                // File Header (seek past it)
+                //----------------------------------------------------------------
+                if (fseek(fp, 24, SEEK_SET) != 0)
+                {
+                        LL_ERRS() << "can't seek past header from " << fileName << LL_ENDL;
+						fclose(fp);
+                        return FALSE;
+                }
 
-		//----------------------------------------------------------------
-		// HasWeights
-		//----------------------------------------------------------------
-		U8 hasWeights;
-		size_t numRead = fread(&hasWeights, sizeof(U8), 1, fp);
-		if (numRead != 1)
-		{
+                //----------------------------------------------------------------
+                // HasWeights
+                //----------------------------------------------------------------
+                U8 hasWeights;
+                size_t numRead = fread(&hasWeights, sizeof(U8), 1, fp);
+                if (numRead != 1)
+                {
                         LL_ERRS() << "can't read HasWeights flag from " << fileName << LL_ENDL;
-			return FALSE;
-		}
-		if (!isLOD())
-		{
-			mHasWeights = (hasWeights==0) ? FALSE : TRUE;
-		}
+						fclose(fp);
+                        return FALSE;
+                }
+                if (!isLOD())
+                {
+                        mHasWeights = (hasWeights==0) ? FALSE : TRUE;
+                }
 
-		//----------------------------------------------------------------
-		// HasDetailTexCoords
-		//----------------------------------------------------------------
-		U8 hasDetailTexCoords;
-		numRead = fread(&hasDetailTexCoords, sizeof(U8), 1, fp);
-		if (numRead != 1)
-		{
+                //----------------------------------------------------------------
+                // HasDetailTexCoords
+                //----------------------------------------------------------------
+                U8 hasDetailTexCoords;
+                numRead = fread(&hasDetailTexCoords, sizeof(U8), 1, fp);
+                if (numRead != 1)
+                {
                         LL_ERRS() << "can't read HasDetailTexCoords flag from " << fileName << LL_ENDL;
-			return FALSE;
-		}
+						fclose(fp);
+                        return FALSE;
+                }
 
-		//----------------------------------------------------------------
-		// Position
-		//----------------------------------------------------------------
-		LLVector3 position;
-		numRead = fread(position.mV, sizeof(float), 3, fp);
-		llendianswizzle(position.mV, sizeof(float), 3);
-		if (numRead != 3)
-		{
+                //----------------------------------------------------------------
+                // Position
+                //----------------------------------------------------------------
+                LLVector3 position;
+                numRead = fread(position.mV, sizeof(float), 3, fp);
+                llendianswizzle(position.mV, sizeof(float), 3);
+                if (numRead != 3)
+                {
                         LL_ERRS() << "can't read Position from " << fileName << LL_ENDL;
-			return FALSE;
-		}
-		setPosition( position );
+						fclose(fp);
+                        return FALSE;
+                }
+                setPosition( position );
 
-		//----------------------------------------------------------------
-		// Rotation
-		//----------------------------------------------------------------
-		LLVector3 rotationAngles;
-		numRead = fread(rotationAngles.mV, sizeof(float), 3, fp);
-		llendianswizzle(rotationAngles.mV, sizeof(float), 3);
-		if (numRead != 3)
-		{
+                //----------------------------------------------------------------
+                // Rotation
+                //----------------------------------------------------------------
+                LLVector3 rotationAngles;
+                numRead = fread(rotationAngles.mV, sizeof(float), 3, fp);
+                llendianswizzle(rotationAngles.mV, sizeof(float), 3);
+                if (numRead != 3)
+                {
                         LL_ERRS() << "can't read RotationAngles from " << fileName << LL_ENDL;
-			return FALSE;
-		}
+						fclose(fp);
+                        return FALSE;
+                }
 
-		U8 rotationOrder;
-		numRead = fread(&rotationOrder, sizeof(U8), 1, fp);
+                U8 rotationOrder;
+                numRead = fread(&rotationOrder, sizeof(U8), 1, fp);
 
-		if (numRead != 1)
-		{
+                if (numRead != 1)
+                {
                         LL_ERRS() << "can't read RotationOrder from " << fileName << LL_ENDL;
-			return FALSE;
-		}
+						fclose(fp);
+                        return FALSE;
+                }
 
-		rotationOrder = 0;
+                rotationOrder = 0;
 
-		setRotation( mayaQ(	rotationAngles.mV[0],
-							rotationAngles.mV[1],
-							rotationAngles.mV[2],
-							(LLQuaternion::Order)rotationOrder ) );
+                setRotation( mayaQ(     rotationAngles.mV[0],
+                                        rotationAngles.mV[1],
+                                        rotationAngles.mV[2],
+                                        (LLQuaternion::Order)rotationOrder ) );
 
-		//----------------------------------------------------------------
-		// Scale
-		//----------------------------------------------------------------
-		LLVector3 scale;
-		numRead = fread(scale.mV, sizeof(float), 3, fp);
-		llendianswizzle(scale.mV, sizeof(float), 3);
-		if (numRead != 3)
-		{
+                //----------------------------------------------------------------
+                // Scale
+                //----------------------------------------------------------------
+                LLVector3 scale;
+                numRead = fread(scale.mV, sizeof(float), 3, fp);
+                llendianswizzle(scale.mV, sizeof(float), 3);
+                if (numRead != 3)
+                {
                         LL_ERRS() << "can't read Scale from " << fileName << LL_ENDL;
-			return FALSE;
-		}
-		setScale( scale );
+						fclose(fp);
+                        return FALSE;
+                }
+                setScale( scale );
 
-		//-------------------------------------------------------------------------
-		// Release any existing mesh geometry
-		//-------------------------------------------------------------------------
-		freeMeshData();
+                //-------------------------------------------------------------------------
+                // Release any existing mesh geometry
+                //-------------------------------------------------------------------------
+                freeMeshData();
 
-		U16 numVertices = 0;
+                U16 numVertices = 0;
 
-		//----------------------------------------------------------------
-		// NumVertices
-		//----------------------------------------------------------------
-		if (!isLOD())
-		{
-			numRead = fread(&numVertices, sizeof(U16), 1, fp);
-			llendianswizzle(&numVertices, sizeof(U16), 1);
-			if (numRead != 1)
-			{
+                //----------------------------------------------------------------
+                // NumVertices
+                //----------------------------------------------------------------
+                if (!isLOD())
+                {
+                        numRead = fread(&numVertices, sizeof(U16), 1, fp);
+                        llendianswizzle(&numVertices, sizeof(U16), 1);
+                        if (numRead != 1)
+                        {
                                 LL_ERRS() << "can't read NumVertices from " << fileName << LL_ENDL;
-				return FALSE;
-			}
+								fclose(fp);
+                                return FALSE;
+                        }
 
-			allocateVertexData( numVertices );	
+                        allocateVertexData( numVertices );      
 
-			for (U16 i = 0; i < numVertices; ++i)
-			{
-				//----------------------------------------------------------------
-				// Coords
-				//----------------------------------------------------------------
-				numRead = fread(&mBaseCoords[i], sizeof(float), 3, fp);
-				llendianswizzle(&mBaseCoords[i], sizeof(float), 3);
-				if (numRead != 3)
-					{
+						for (U16 i = 0; i < numVertices; ++i)
+						{
+							//----------------------------------------------------------------
+							// Coords
+							//----------------------------------------------------------------
+							numRead = fread(&mBaseCoords[i], sizeof(float), 3, fp);
+							llendianswizzle(&mBaseCoords[i], sizeof(float), 3);
+							if (numRead != 3)
+							{
 									LL_ERRS() << "can't read Coordinates from " << fileName << LL_ENDL;
-						return FALSE;
-					}
-				}
+									freeMeshData();
+									fclose(fp);
+									return FALSE;
+							}
+						}
 
-				for (U16 i = 0; i < numVertices; ++i)
-				{
-					//----------------------------------------------------------------
-					// Normals
-					//----------------------------------------------------------------
-					numRead = fread(&mBaseNormals[i], sizeof(float), 3, fp);
-					llendianswizzle(&mBaseNormals[i], sizeof(float), 3);
-					if (numRead != 3)
-					{
+						for (U16 i = 0; i < numVertices; ++i)
+						{
+							//----------------------------------------------------------------
+							// Normals
+							//----------------------------------------------------------------
+							numRead = fread(&mBaseNormals[i], sizeof(float), 3, fp);
+							llendianswizzle(&mBaseNormals[i], sizeof(float), 3);
+							if (numRead != 3)
+							{
 									LL_ERRS() << " can't read Normals from " << fileName << LL_ENDL;
-						return FALSE;
-					}
-				}
+									freeMeshData();
+									fclose(fp);
+									return FALSE;
+							}
+						}
 
-				for (U16 i = 0; i < numVertices; ++i)
-				{
-				//----------------------------------------------------------------
-				// Binormals
-				//----------------------------------------------------------------
-				numRead = fread(&mBaseBinormals[i], sizeof(float), 3, fp);
-				llendianswizzle(&mBaseBinormals[i], sizeof(float), 3);
-				if (numRead != 3)
-				{
+						for (U16 i = 0; i < numVertices; ++i)
+						{
+							//----------------------------------------------------------------
+							// Binormals
+							//----------------------------------------------------------------
+							numRead = fread(&mBaseBinormals[i], sizeof(float), 3, fp);
+							llendianswizzle(&mBaseBinormals[i], sizeof(float), 3);
+							if (numRead != 3)
+							{
 									LL_ERRS() << " can't read Binormals from " << fileName << LL_ENDL;
-					return FALSE;
-				}
-			}
+									freeMeshData();
+									fclose(fp);
+									return FALSE;
+							}
+						}
 
-			//----------------------------------------------------------------
-			// TexCoords
-			//----------------------------------------------------------------
-			numRead = fread(mTexCoords, 2*sizeof(float), numVertices, fp);
-			llendianswizzle(mTexCoords, sizeof(float), 2*numVertices);
-			if (numRead != numVertices)
-			{
+                        //----------------------------------------------------------------
+                        // TexCoords
+                        //----------------------------------------------------------------
+                        numRead = fread(mTexCoords, 2*sizeof(float), numVertices, fp);
+                        llendianswizzle(mTexCoords, sizeof(float), 2*numVertices);
+                        if (numRead != numVertices)
+                        {
                                 LL_ERRS() << "can't read TexCoords from " << fileName << LL_ENDL;
-				return FALSE;
-			}
+								freeMeshData();
+								fclose(fp);
+                                return FALSE;
+                        }
 
-			//----------------------------------------------------------------
-			// DetailTexCoords
-			//----------------------------------------------------------------
-			if (mHasDetailTexCoords)
-			{
-				numRead = fread(mDetailTexCoords, 2*sizeof(float), numVertices, fp);
-				llendianswizzle(mDetailTexCoords, sizeof(float), 2*numVertices);
-				if (numRead != numVertices)
-				{
+                        //----------------------------------------------------------------
+                        // DetailTexCoords
+                        //----------------------------------------------------------------
+                        if (mHasDetailTexCoords)
+                        {
+                                numRead = fread(mDetailTexCoords, 2*sizeof(float), numVertices, fp);
+                                llendianswizzle(mDetailTexCoords, sizeof(float), 2*numVertices);
+                                if (numRead != numVertices)
+                                {
                                         LL_ERRS() << "can't read DetailTexCoords from " << fileName << LL_ENDL;
-					return FALSE;
-				}
-			}
-
-			//----------------------------------------------------------------
-			// Weights
-			//----------------------------------------------------------------
-			if (mHasWeights)
-			{
-				numRead = fread(mWeights, sizeof(float), numVertices, fp);
-				llendianswizzle(mWeights, sizeof(float), numVertices);
-				if (numRead != numVertices)
-				{
-                                        LL_ERRS() << "can't read Weights from " << fileName << LL_ENDL;
-					return FALSE;
-				}
-			}
-		}
-
-		//----------------------------------------------------------------
-		// NumFaces
-		//----------------------------------------------------------------
-		U16 numFaces;
-		numRead = fread(&numFaces, sizeof(U16), 1, fp);
-		llendianswizzle(&numFaces, sizeof(U16), 1);
-		if (numRead != 1)
-		{
-                        LL_ERRS() << "can't read NumFaces from " << fileName << LL_ENDL;
-			return FALSE;
-		}
-		allocateFaceData( numFaces );
-
-
-		//----------------------------------------------------------------
-		// Faces
-		//----------------------------------------------------------------
-		U32 i;
-		U32 numTris = 0;
-		for (i = 0; i < numFaces; i++)
-		{
-			S16 face[3];
-			numRead = fread(face, sizeof(U16), 3, fp);
-			llendianswizzle(face, sizeof(U16), 3);
-			if (numRead != 3)
-			{
-                                LL_ERRS() << "can't read Face[" << i << "] from " << fileName << LL_ENDL;
-				return FALSE;
-			}
-			if (mReferenceData)
-			{
-				llassert(face[0] < mReferenceData->mNumVertices);
-				llassert(face[1] < mReferenceData->mNumVertices);
-				llassert(face[2] < mReferenceData->mNumVertices);
-			}
-			
-			if (isLOD())
-			{
-				// store largest index in case of LODs
-				for (S32 j = 0; j < 3; j++)
-				{
-					if (face[j] > mNumVertices - 1)
-					{
-						mNumVertices = face[j] + 1;
-					}
-				}
-			}
-			mFaces[i][0] = face[0];
-			mFaces[i][1] = face[1];
-			mFaces[i][2] = face[2];
-
-//			S32 j;
-//			for(j = 0; j < 3; j++)
-//			{
-//				std::vector<S32> *face_list = mVertFaceMap.getIfThere(face[j]);
-//				if (!face_list)
-//				{
-//					face_list = new std::vector<S32>;
-//					mVertFaceMap.addData(face[j], face_list);
-//				}
-//				face_list->push_back(i);
-//			}
-
-			numTris++;
-		}
-
-                LL_DEBUGS() << "verts: " << numVertices 
-			<< ", faces: "   << numFaces
-			<< ", tris: "    << numTris
-                         << LL_ENDL;
-
-		//----------------------------------------------------------------
-		// NumSkinJoints
-		//----------------------------------------------------------------
-		if (!isLOD())
-		{
-			U16 numSkinJoints = 0;
-			if ( mHasWeights )
-			{
-				numRead = fread(&numSkinJoints, sizeof(U16), 1, fp);
-				llendianswizzle(&numSkinJoints, sizeof(U16), 1);
-				if (numRead != 1)
-				{
-                                        LL_ERRS() << "can't read NumSkinJoints from " << fileName << LL_ENDL;
-					return FALSE;
-				}
-				allocateJointNames( numSkinJoints );
-			}
-
-			//----------------------------------------------------------------
-			// SkinJoints
-			//----------------------------------------------------------------
-			for (i=0; i < numSkinJoints; i++)
-			{
-				char jointName[64+1];
-				numRead = fread(jointName, sizeof(jointName)-1, 1, fp);
-				jointName[sizeof(jointName)-1] = '\0'; // ensure nul-termination
-				if (numRead != 1)
-				{
-                                        LL_ERRS() << "can't read Skin[" << i << "].Name from " << fileName << LL_ENDL;
-					return FALSE;
-				}
-
-				std::string *jn = &mJointNames[i];
-				*jn = jointName;
-			}
-
-			//-------------------------------------------------------------------------
-			// look for morph section
-			//-------------------------------------------------------------------------
-			char morphName[64+1];
-			morphName[sizeof(morphName)-1] = '\0'; // ensure nul-termination
-			while(fread(&morphName, sizeof(char), 64, fp) == 64)
-			{
-				if (!strcmp(morphName, "End Morphs"))
-				{
-					// we reached the end of the morphs
-					break;
-				}
-				LLPolyMorphData* morph_data = new LLPolyMorphData(std::string(morphName));
-
-				BOOL result = morph_data->loadBinary(fp, this);
-
-				if (!result)
-				{
-					delete morph_data;
-					continue;
-				}
-
-                                mMorphData.insert(morph_data);
-
-                                if (!strcmp(morphName, "Breast_Female_Cleavage"))
-                                {
-                                        mMorphData.insert(clone_morph_param_cleavage(morph_data,
-                                                                                     .75f,
-                                                                                     "Breast_Physics_LeftRight_Driven"));
-                                }
-
-                                if (!strcmp(morphName, "Breast_Female_Cleavage"))
-                                {
-                                        mMorphData.insert(clone_morph_param_duplicate(morph_data,
-										      "Breast_Physics_InOut_Driven"));
-                                }
-                                if (!strcmp(morphName, "Breast_Gravity"))
-                                {
-                                        mMorphData.insert(clone_morph_param_duplicate(morph_data,
-										      "Breast_Physics_UpDown_Driven"));
-                                }
-
-                                if (!strcmp(morphName, "Big_Belly_Torso"))
-                                {
-                                        mMorphData.insert(clone_morph_param_direction(morph_data,
-										      LLVector3(0,0,0.05f),
-										      "Belly_Physics_Torso_UpDown_Driven"));
-                                }
-
-                                if (!strcmp(morphName, "Big_Belly_Legs"))
-                                {
-                                        mMorphData.insert(clone_morph_param_direction(morph_data,
-										      LLVector3(0,0,0.05f),
-										      "Belly_Physics_Legs_UpDown_Driven"));
-                                }
-
-                                if (!strcmp(morphName, "skirt_belly"))
-                                {
-                                        mMorphData.insert(clone_morph_param_direction(morph_data,
-										      LLVector3(0,0,0.05f),
-										      "Belly_Physics_Skirt_UpDown_Driven"));
-                                }
-
-                                if (!strcmp(morphName, "Small_Butt"))
-                                {
-                                        mMorphData.insert(clone_morph_param_direction(morph_data,
-										      LLVector3(0,0,0.05f),
-										      "Butt_Physics_UpDown_Driven"));
-                                }
-                                if (!strcmp(morphName, "Small_Butt"))
-                                {
-                                        mMorphData.insert(clone_morph_param_direction(morph_data,
-										      LLVector3(0,0.03f,0),
-										      "Butt_Physics_LeftRight_Driven"));
+										freeMeshData();
+										fclose(fp);
+                                        return FALSE;
                                 }
                         }
 
-			S32 numRemaps;
-			if (fread(&numRemaps, sizeof(S32), 1, fp) == 1)
-			{
-				llendianswizzle(&numRemaps, sizeof(S32), 1);
-				for (S32 i = 0; i < numRemaps; i++)
-				{
-					S32 remapSrc;
-					S32 remapDst;
-					if (fread(&remapSrc, sizeof(S32), 1, fp) != 1)
-					{
+                        //----------------------------------------------------------------
+                        // Weights
+                        //----------------------------------------------------------------
+                        if (mHasWeights)
+                        {
+                                numRead = fread(mWeights, sizeof(float), numVertices, fp);
+                                llendianswizzle(mWeights, sizeof(float), numVertices);
+                                if (numRead != numVertices)
+                                {
+                                        LL_ERRS() << "can't read Weights from " << fileName << LL_ENDL;
+										freeMeshData();
+										fclose(fp);
+                                        return FALSE;
+                                }
+                        }
+                }
+
+                //----------------------------------------------------------------
+                // NumFaces
+                //----------------------------------------------------------------
+                U16 numFaces;
+                numRead = fread(&numFaces, sizeof(U16), 1, fp);
+                llendianswizzle(&numFaces, sizeof(U16), 1);
+                if (numRead != 1)
+                {
+                        LL_ERRS() << "can't read NumFaces from " << fileName << LL_ENDL;
+						freeMeshData();
+						fclose(fp);
+                        return FALSE;
+                }
+                allocateFaceData( numFaces );
+
+
+                //----------------------------------------------------------------
+                // Faces
+                //----------------------------------------------------------------
+                U32 i;
+                U32 numTris = 0;
+                for (i = 0; i < numFaces; i++)
+                {
+                        S16 face[3];
+                        numRead = fread(face, sizeof(U16), 3, fp);
+                        llendianswizzle(face, sizeof(U16), 3);
+                        if (numRead != 3)
+                        {
+                                LL_ERRS() << "can't read Face[" << i << "] from " << fileName << LL_ENDL;
+								freeMeshData();
+								fclose(fp);
+                                return FALSE;
+                        }
+                        if (mReferenceData)
+                        {
+                                llassert(face[0] < mReferenceData->mNumVertices);
+                                llassert(face[1] < mReferenceData->mNumVertices);
+                                llassert(face[2] < mReferenceData->mNumVertices);
+                        }
+                        
+                        if (isLOD())
+                        {
+                                // store largest index in case of LODs
+                                for (S32 j = 0; j < 3; j++)
+                                {
+                                        if (face[j] > mNumVertices - 1)
+                                        {
+                                                mNumVertices = face[j] + 1;
+                                        }
+                                }
+                        }
+                        mFaces[i][0] = face[0];
+                        mFaces[i][1] = face[1];
+                        mFaces[i][2] = face[2];
+
+//                      S32 j;
+//                      for(j = 0; j < 3; j++)
+//                      {
+//                              std::vector<S32> *face_list = mVertFaceMap.getIfThere(face[j]);
+//                              if (!face_list)
+//                              {
+//                                      face_list = new std::vector<S32>;
+//                                      mVertFaceMap.addData(face[j], face_list);
+//                              }
+//                              face_list->put(i);
+//                      }
+
+                        numTris++;
+                }
+
+                LL_DEBUGS() << "verts: " << numVertices 
+                         << ", faces: "   << numFaces
+                         << ", tris: "    << numTris
+                         << LL_ENDL;
+
+                //----------------------------------------------------------------
+                // NumSkinJoints
+                //----------------------------------------------------------------
+                if (!isLOD())
+                {
+                        U16 numSkinJoints = 0;
+                        if ( mHasWeights )
+                        {
+                                numRead = fread(&numSkinJoints, sizeof(U16), 1, fp);
+                                llendianswizzle(&numSkinJoints, sizeof(U16), 1);
+                                if (numRead != 1)
+                                {
+                                        LL_ERRS() << "can't read NumSkinJoints from " << fileName << LL_ENDL;
+										freeMeshData();
+										fclose(fp);
+                                        return FALSE;
+                                }
+                                allocateJointNames( numSkinJoints );
+                        }
+
+                        //----------------------------------------------------------------
+                        // SkinJoints
+                        //----------------------------------------------------------------
+                        for (i=0; i < numSkinJoints; i++)
+                        {
+                                char jointName[64+1];
+                                numRead = fread(jointName, sizeof(jointName)-1, 1, fp);
+                                jointName[sizeof(jointName)-1] = '\0'; // ensure nul-termination
+                                if (numRead != 1)
+                                {
+                                        LL_ERRS() << "can't read Skin[" << i << "].Name from " << fileName << LL_ENDL;
+										freeMeshData();
+										fclose(fp);
+                                        return FALSE;
+                                }
+
+                                std::string *jn = &mJointNames[i];
+                                *jn = jointName;
+                        }
+
+                        //-------------------------------------------------------------------------
+                        // look for morph section
+                        //-------------------------------------------------------------------------
+						constexpr size_t morph_buf_size = 64;
+						char morphName[morph_buf_size + 1] = {};
+						int read_bytes = 0;
+						while ((read_bytes = fread(morphName, sizeof(char), morph_buf_size, fp)) == 64)
+						{
+							morphName[read_bytes] = '\0'; // ensure nul-termination
+							if (!strcmp(morphName, "End Morphs"))
+							{
+								// we reached the end of the morphs
+								break;
+							}
+							LLPolyMorphData* morph_data = new LLPolyMorphData(std::string(morphName));
+
+							BOOL result = morph_data->loadBinary(fp, this);
+
+							if (!result)
+							{
+								delete morph_data;
+								continue;
+							}
+
+							mMorphData.insert(morph_data);
+
+							if (!strcmp(morphName, "Breast_Female_Cleavage"))
+							{
+								mMorphData.insert(clone_morph_param_cleavage(morph_data,
+									.75f,
+									"Breast_Physics_LeftRight_Driven"));
+								mMorphData.insert(clone_morph_param_duplicate(morph_data,
+									"Breast_Physics_InOut_Driven"));
+							}
+
+							if (!strcmp(morphName, "Breast_Gravity"))
+							{
+								mMorphData.insert(clone_morph_param_duplicate(morph_data,
+									"Breast_Physics_UpDown_Driven"));
+							}
+
+							if (!strcmp(morphName, "Big_Belly_Torso"))
+							{
+								mMorphData.insert(clone_morph_param_direction(morph_data,
+									LLVector3(0, 0, 0.05f),
+									"Belly_Physics_Torso_UpDown_Driven"));
+							}
+
+							if (!strcmp(morphName, "Big_Belly_Legs"))
+							{
+								mMorphData.insert(clone_morph_param_direction(morph_data,
+									LLVector3(0, 0, 0.05f),
+									"Belly_Physics_Legs_UpDown_Driven"));
+							}
+
+							if (!strcmp(morphName, "skirt_belly"))
+							{
+								mMorphData.insert(clone_morph_param_direction(morph_data,
+									LLVector3(0, 0, 0.05f),
+									"Belly_Physics_Skirt_UpDown_Driven"));
+							}
+
+							if (!strcmp(morphName, "Small_Butt"))
+							{
+								mMorphData.insert(clone_morph_param_direction(morph_data,
+									LLVector3(0, 0, 0.05f),
+									"Butt_Physics_UpDown_Driven"));
+								mMorphData.insert(clone_morph_param_direction(morph_data,
+									LLVector3(0, 0.03f, 0),
+									"Butt_Physics_LeftRight_Driven"));
+							}
+						}
+
+                        S32 numRemaps;
+                        if (fread(&numRemaps, sizeof(S32), 1, fp) == 1)
+                        {
+                                llendianswizzle(&numRemaps, sizeof(S32), 1);
+                                for (S32 i = 0; i < numRemaps; i++)
+                                {
+                                        S32 remapSrc;
+                                        S32 remapDst;
+                                        if (fread(&remapSrc, sizeof(S32), 1, fp) != 1)
+                                        {
                                                 LL_ERRS() << "can't read source vertex in vertex remap data" << LL_ENDL;
-						break;
-					}
-					if (fread(&remapDst, sizeof(S32), 1, fp) != 1)
-					{
+												freeMeshData();
+												fclose(fp);
+												return FALSE;
+                                        }
+                                        if (fread(&remapDst, sizeof(S32), 1, fp) != 1)
+                                        {
                                                 LL_ERRS() << "can't read destination vertex in vertex remap data" << LL_ENDL;
-						break;
-					}
-					llendianswizzle(&remapSrc, sizeof(S32), 1);
-					llendianswizzle(&remapDst, sizeof(S32), 1);
+												freeMeshData();
+												fclose(fp);
+												return FALSE;
+                                        }
+                                        llendianswizzle(&remapSrc, sizeof(S32), 1);
+                                        llendianswizzle(&remapDst, sizeof(S32), 1);
 
-					mSharedVerts[remapSrc] = remapDst;
-				}
-			}
-		}
+                                        mSharedVerts[remapSrc] = remapDst;
+                                }
+                        }
+                }
 
-		status = TRUE;
-	}
-	else
-	{
+                status = TRUE;
+        }
+        else
+        {
                 LL_ERRS() << "invalid mesh file header: " << fileName << LL_ENDL;
-		status = FALSE;
-	}
+                status = FALSE;
+        }
 
-	if (0 == mNumJointNames)
-	{
-		allocateJointNames(1);
-	}
+        if (0 == mNumJointNames)
+        {
+                allocateJointNames(1);
+        }
 
-	fclose( fp );
+        fclose( fp );
 
-	return status;
+        return status;
 }
 
 //-----------------------------------------------------------------------------
@@ -726,11 +758,11 @@ BOOL LLPolyMeshSharedData::loadMesh( const std::string& fileName )
 //-----------------------------------------------------------------------------
 const S32 *LLPolyMeshSharedData::getSharedVert(S32 vert)
 {
-	if (mSharedVerts.count(vert) > 0)
-	{
-		return &mSharedVerts[vert];
-	}
-	return NULL;
+        if (mSharedVerts.count(vert) > 0)
+        {
+                return &mSharedVerts[vert];
+        }
+        return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -738,23 +770,23 @@ const S32 *LLPolyMeshSharedData::getSharedVert(S32 vert)
 //-----------------------------------------------------------------------------
 const LLVector2 &LLPolyMeshSharedData::getUVs(U32 index)
 {
-	// TODO: convert all index variables to S32
-	llassert((S32)index < mNumVertices);
+        // TODO: convert all index variables to S32
+        llassert((S32)index < mNumVertices);
 
-	return mTexCoords[index];
+        return mTexCoords[index];
 }
 
 //-----------------------------------------------------------------------------
 // LLPolyMesh()
 //-----------------------------------------------------------------------------
 LLPolyMesh::LLPolyMesh(LLPolyMeshSharedData *shared_data, LLPolyMesh *reference_mesh)
-{	
+{       
 	llassert(shared_data);
 
 	mSharedData = shared_data;
 	mReferenceMesh = reference_mesh;
-	mAvatarp = NULL;
-	mVertexData = NULL;
+	mAvatarp = nullptr;
+	mVertexData = nullptr;
 
 	mCurVertexCount = 0;
 	mFaceIndexCount = 0;
@@ -818,40 +850,40 @@ LLPolyMesh::~LLPolyMesh()
 //-----------------------------------------------------------------------------
 LLPolyMesh *LLPolyMesh::getMesh(const std::string &name, LLPolyMesh* reference_mesh)
 {
-	//-------------------------------------------------------------------------
-	// search for an existing mesh by this name
-	//-------------------------------------------------------------------------
-	LLPolyMeshSharedData* meshSharedData = get_if_there(sGlobalSharedMeshList, name, (LLPolyMeshSharedData*)NULL);
-	if (meshSharedData)
-	{
-//		LL_INFOS() << "Polymesh " << name << " found in global mesh table." << LL_ENDL;
-		LLPolyMesh *poly_mesh = new LLPolyMesh(meshSharedData, reference_mesh);
-		return poly_mesh;
-	}
+        //-------------------------------------------------------------------------
+        // search for an existing mesh by this name
+        //-------------------------------------------------------------------------
+        LLPolyMeshSharedData* meshSharedData = get_if_there(sGlobalSharedMeshList, name, (LLPolyMeshSharedData*)nullptr);
+        if (meshSharedData)
+        {
+//              LL_INFOS() << "Polymesh " << name << " found in global mesh table." << LL_ENDL;
+                LLPolyMesh *poly_mesh = new LLPolyMesh(meshSharedData, reference_mesh);
+                return poly_mesh;
+        }
 
-	//-------------------------------------------------------------------------
-	// if not found, create a new one, add it to the list
-	//-------------------------------------------------------------------------
-	std::string full_path;
-	full_path = gDirUtilp->getExpandedFilename(LL_PATH_CHARACTER,name);
+        //-------------------------------------------------------------------------
+        // if not found, create a new one, add it to the list
+        //-------------------------------------------------------------------------
+        std::string full_path;
+        full_path = gDirUtilp->getExpandedFilename(LL_PATH_CHARACTER,name);
 
-	LLPolyMeshSharedData *mesh_data = new LLPolyMeshSharedData();
-	if (reference_mesh)
-	{
-		mesh_data->setupLOD(reference_mesh->getSharedData());
-	}
-	if ( ! mesh_data->loadMesh( full_path ) )
-	{
-		delete mesh_data;
-		return NULL;
-	}
+        LLPolyMeshSharedData *mesh_data = new LLPolyMeshSharedData();
+        if (reference_mesh)
+        {
+                mesh_data->setupLOD(reference_mesh->getSharedData());
+        }
+        if ( ! mesh_data->loadMesh( full_path ) )
+        {
+                delete mesh_data;
+                return nullptr;
+        }
 
-	LLPolyMesh *poly_mesh = new LLPolyMesh(mesh_data, reference_mesh);
+        LLPolyMesh *poly_mesh = new LLPolyMesh(mesh_data, reference_mesh);
 
-//	LL_INFOS() << "Polymesh " << name << " added to global mesh table." << LL_ENDL;
-	sGlobalSharedMeshList[name] = poly_mesh->mSharedData;
+//      LL_INFOS() << "Polymesh " << name << " added to global mesh table." << LL_ENDL;
+        sGlobalSharedMeshList[name] = poly_mesh->mSharedData;
 
-	return poly_mesh;
+        return poly_mesh;
 }
 
 //-----------------------------------------------------------------------------
@@ -1148,21 +1180,12 @@ BOOL LLPolyMesh::saveLLM(LLFILE *fp)
 	LLPolyMeshSharedData::morphdata_list_t::iterator end  = mSharedData->mMorphData.end();
 
 	// Sort them
-	morph_list_t morph_list;
+	std::map<std::string, LLPolyMorphData*> morph_list;
+	char padding[64] = {};	// zeroes
 	for (; iter != end; ++iter)
 	{
 		LLPolyMorphData *morph_data = *iter;
-		std::string morph_name = morph_data->getName();
-
-		morph_list.insert(std::pair<std::string,LLPolyMorphData*>(morph_name, morph_data));
-	}
-
-	char padding[64] = {};	// zeroes
-	for (morph_list_t::iterator morph_iter = morph_list.begin();
-		morph_iter != morph_list.end(); ++morph_iter)
-	{
-		const std::string& morph_name = morph_iter->first;
-		LLPolyMorphData* morph_data = morph_iter->second;
+		const std::string& morph_name = morph_data->getName();
 
 		if (fwrite(morph_name.c_str(), 1, morph_name.length(), fp) != morph_name.length())
 		{
@@ -1595,62 +1618,55 @@ std::string const* LLPolyMesh::getSharedMeshName(LLPolyMeshSharedData* shared)
 //-----------------------------------------------------------------------------
 void LLPolyMesh::freeAllMeshes()
 {
-	// delete each item in the global lists
-	for_each(sGlobalSharedMeshList.begin(), sGlobalSharedMeshList.end(), DeletePairedPointer());
-	sGlobalSharedMeshList.clear();
+        // delete each item in the global lists
+        for_each(sGlobalSharedMeshList.begin(), sGlobalSharedMeshList.end(), DeletePairedPointer());
+        sGlobalSharedMeshList.clear();
 }
 
 LLPolyMeshSharedData *LLPolyMesh::getSharedData() const
 {
-	return mSharedData;
+        return mSharedData;
 }
 
 
 //--------------------------------------------------------------------
 // LLPolyMesh::dumpDiagInfo()
 //--------------------------------------------------------------------
-void LLPolyMesh::dumpDiagInfo(void*)
+void LLPolyMesh::dumpDiagInfo()
 {
-	// keep track of totals
-	U32 total_verts = 0;
-	U32 total_faces = 0;
-	U32 total_kb = 0;
+        // keep track of totals
+        U32 total_verts = 0;
+        U32 total_faces = 0;
+        U32 total_kb = 0;
 
-	std::string buf;
+        std::string buf;
 
         LL_INFOS() << "-----------------------------------------------------" << LL_ENDL;
         LL_INFOS() << "       Global PolyMesh Table (DEBUG only)" << LL_ENDL;
         LL_INFOS() << "   Verts    Faces  Mem(KB) Name" << LL_ENDL;
         LL_INFOS() << "-----------------------------------------------------" << LL_ENDL;
 
-	// print each loaded mesh, and it's memory usage
-	for(LLPolyMeshSharedDataTable::iterator iter = sGlobalSharedMeshList.begin();
-		iter != sGlobalSharedMeshList.end(); ++iter)
-	{
-		const std::string& mesh_name = iter->first;
-		LLPolyMeshSharedData* mesh = iter->second;
+        // print each loaded mesh, and it's memory usage
+        for(LLPolyMeshSharedDataTable::iterator iter = sGlobalSharedMeshList.begin();
+            iter != sGlobalSharedMeshList.end(); ++iter)
+        {
+                const std::string& mesh_name = iter->first;
+                LLPolyMeshSharedData* mesh = iter->second;
 
-		S32 num_verts = mesh->mNumVertices;
-		S32 num_faces = mesh->mNumFaces;
-		U32 num_kb = mesh->getNumKB();
+                S32 num_verts = mesh->mNumVertices;
+                S32 num_faces = mesh->mNumFaces;
+                U32 num_kb = mesh->getNumKB();
 
-		std::string type;
-		if (mesh->isLOD()) {
-			type = "LOD ";
-		} else {
-			type = "base";
-		}
+                buf = llformat("%8d %8d %8d %s", num_verts, num_faces, num_kb, mesh_name.c_str());
+                LL_INFOS() << buf << LL_ENDL;
 
-		buf = llformat("%8d %8d %8d %s %s", num_verts, num_faces, num_kb, type.c_str(), mesh_name.c_str());
-		LL_INFOS() << buf << LL_ENDL;
-
-		total_verts += num_verts;
-		total_faces += num_faces;
-		total_kb += num_kb;
-	}
+                total_verts += num_verts;
+                total_faces += num_faces;
+                total_kb += num_kb;
+        }
 
         LL_INFOS() << "-----------------------------------------------------" << LL_ENDL;
-	buf = llformat("%8d %8d %8d TOTAL", total_verts, total_faces, total_kb );
+        buf = llformat("%8d %8d %8d TOTAL", total_verts, total_faces, total_kb );
         LL_INFOS() << buf << LL_ENDL;
         LL_INFOS() << "-----------------------------------------------------" << LL_ENDL;
 }
@@ -1660,7 +1676,7 @@ void LLPolyMesh::dumpDiagInfo(void*)
 //-----------------------------------------------------------------------------
 LLVector4a *LLPolyMesh::getWritableCoords()
 {
-	return mCoords;
+        return mCoords;
 }
 
 //-----------------------------------------------------------------------------
@@ -1668,7 +1684,7 @@ LLVector4a *LLPolyMesh::getWritableCoords()
 //-----------------------------------------------------------------------------
 LLVector4a *LLPolyMesh::getWritableNormals()
 {
-	return mNormals;
+        return mNormals;
 }
 
 //-----------------------------------------------------------------------------
@@ -1676,7 +1692,7 @@ LLVector4a *LLPolyMesh::getWritableNormals()
 //-----------------------------------------------------------------------------
 LLVector4a *LLPolyMesh::getWritableBinormals()
 {
-	return mBinormals;
+        return mBinormals;
 }
 
 
@@ -1685,15 +1701,15 @@ LLVector4a *LLPolyMesh::getWritableBinormals()
 //-----------------------------------------------------------------------------
 LLVector4a       *LLPolyMesh::getWritableClothingWeights()
 {
-	return mClothingWeights;
+        return mClothingWeights;
 }
 
 //-----------------------------------------------------------------------------
 // getWritableTexCoords()
 //-----------------------------------------------------------------------------
-LLVector2	*LLPolyMesh::getWritableTexCoords()
+LLVector2       *LLPolyMesh::getWritableTexCoords()
 {
-	return mTexCoords;
+        return mTexCoords;
 }
 
 //-----------------------------------------------------------------------------
@@ -1701,7 +1717,7 @@ LLVector2	*LLPolyMesh::getWritableTexCoords()
 //-----------------------------------------------------------------------------
 LLVector4a *LLPolyMesh::getScaledNormals()
 {
-	return mScaledNormals;
+        return mScaledNormals;
 }
 
 //-----------------------------------------------------------------------------
@@ -1709,7 +1725,7 @@ LLVector4a *LLPolyMesh::getScaledNormals()
 //-----------------------------------------------------------------------------
 LLVector4a *LLPolyMesh::getScaledBinormals()
 {
-	return mScaledBinormals;
+        return mScaledBinormals;
 }
 
 
@@ -1718,9 +1734,6 @@ LLVector4a *LLPolyMesh::getScaledBinormals()
 //-----------------------------------------------------------------------------
 void LLPolyMesh::initializeForMorph()
 {
-	if (!mSharedData)
-		return;
-
     LLVector4a::memcpyNonAliased16((F32*) mCoords, (F32*) mSharedData->mBaseCoords, sizeof(LLVector4a) * mSharedData->mNumVertices);
 	LLVector4a::memcpyNonAliased16((F32*) mNormals, (F32*) mSharedData->mBaseNormals, sizeof(LLVector4a) * mSharedData->mNumVertices);
 	LLVector4a::memcpyNonAliased16((F32*) mScaledNormals, (F32*) mSharedData->mBaseNormals, sizeof(LLVector4a) * mSharedData->mNumVertices);
@@ -1728,87 +1741,60 @@ void LLPolyMesh::initializeForMorph()
 	LLVector4a::memcpyNonAliased16((F32*) mScaledBinormals, (F32*) mSharedData->mBaseNormals, sizeof(LLVector4a) * mSharedData->mNumVertices);
 	LLVector4a::memcpyNonAliased16((F32*) mTexCoords, (F32*) mSharedData->mTexCoords, sizeof(LLVector2) * (mSharedData->mNumVertices + mSharedData->mNumVertices%2));
 
-	for (U32 i = 0; i < (U32)mSharedData->mNumVertices; ++i)
+	for (U32 i = 0; i < mSharedData->mNumVertices; ++i)
 	{
 		mClothingWeights[i].clear();
 	}
 }
 
-
-//-----------------------------------------------------------------------------
-// getMorphList()
-//-----------------------------------------------------------------------------
-void LLPolyMesh::getMorphList (const std::string& mesh_name, morph_list_t* morph_list)
-{
-	if (!morph_list)
-		return;
-
-	LLPolyMeshSharedData* mesh_shared_data = get_if_there(sGlobalSharedMeshList, mesh_name, (LLPolyMeshSharedData*)NULL);
-
-	if (!mesh_shared_data)
-		return;
-
-	LLPolyMeshSharedData::morphdata_list_t::iterator iter = mesh_shared_data->mMorphData.begin();
-	LLPolyMeshSharedData::morphdata_list_t::iterator end = mesh_shared_data->mMorphData.end();
-
-	for (; iter != end; ++iter)
-	{
-		LLPolyMorphData *morph_data = *iter;
-		std::string morph_name = morph_data->getName();
-
-		morph_list->insert(std::pair<std::string,LLPolyMorphData*>(morph_name, morph_data));
-	}
-	return;
-}
-
 //-----------------------------------------------------------------------------
 // getMorphData()
 //-----------------------------------------------------------------------------
-LLPolyMorphData*	LLPolyMesh::getMorphData(const std::string& morph_name)
+LLPolyMorphData*        LLPolyMesh::getMorphData(const std::string& morph_name)
 {
-	if (!mSharedData)
-		return NULL;
-	for (LLPolyMeshSharedData::morphdata_list_t::iterator iter = mSharedData->mMorphData.begin();
-		 iter != mSharedData->mMorphData.end(); ++iter)
-	{
-		LLPolyMorphData *morph_data = *iter;
-		if (morph_data->getName() == morph_name)
-		{
-			return morph_data;
-		}
-	}
-	return NULL;
+        if (!mSharedData)
+                return nullptr;
+        for (LLPolyMeshSharedData::morphdata_list_t::iterator iter = mSharedData->mMorphData.begin();
+             iter != mSharedData->mMorphData.end(); ++iter)
+        {
+                LLPolyMorphData *morph_data = *iter;
+                if (morph_data->getName() == morph_name)
+                {
+                        return morph_data;
+                }
+        }
+        return nullptr;
 }
 
 //-----------------------------------------------------------------------------
 // removeMorphData()
 //-----------------------------------------------------------------------------
 // // erasing but not deleting seems bad, but fortunately we don't actually use this...
-// void	LLPolyMesh::removeMorphData(LLPolyMorphData *morph_target)
+// void LLPolyMesh::removeMorphData(LLPolyMorphData *morph_target)
 // {
-// 	if (!mSharedData)
-// 		return;
-// 	mSharedData->mMorphData.erase(morph_target);
+//      if (!mSharedData)
+//              return;
+//      mSharedData->mMorphData.erase(morph_target);
 // }
 
 //-----------------------------------------------------------------------------
 // deleteAllMorphData()
 //-----------------------------------------------------------------------------
-// void	LLPolyMesh::deleteAllMorphData()
+// void LLPolyMesh::deleteAllMorphData()
 // {
-// 	if (!mSharedData)
-// 		return;
+//      if (!mSharedData)
+//              return;
 
-// 	for_each(mSharedData->mMorphData.begin(), mSharedData->mMorphData.end(), DeletePointer());
-// 	mSharedData->mMorphData.clear();
+//      for_each(mSharedData->mMorphData.begin(), mSharedData->mMorphData.end(), DeletePointer());
+//      mSharedData->mMorphData.clear();
 // }
 
 //-----------------------------------------------------------------------------
 // getWritableWeights()
 //-----------------------------------------------------------------------------
-F32*	LLPolyMesh::getWritableWeights() const
+F32*    LLPolyMesh::getWritableWeights() const
 {
-	return mSharedData->mWeights;
+        return mSharedData->mWeights;
 }
 
 // End

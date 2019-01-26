@@ -37,7 +37,7 @@ void LLUrlRegistryNullCallback(const std::string &url, const std::string &label,
 
 LLUrlRegistry::LLUrlRegistry()
 {
-	mUrlEntry.reserve(20);
+	mUrlEntry.reserve(23); // <alchemy/>
 
 	// Urls are matched in the order that they were registered
 	registerUrl(new LLUrlEntryNoLink());

@@ -81,6 +81,7 @@
 #include "llviewerregion.h"
 #include "lldrawpoolwater.h"
 #include "lldrawpoolbump.h"
+#include "lldrawpoolavatar.h"
 #include "llwlparammanager.h"
 #include "llwaterparammanager.h"
 #include "llpostprocess.h"
@@ -112,6 +113,11 @@ BOOL gResizeScreenTexture = FALSE;
 BOOL gWindowResized = FALSE;
 BOOL gSnapshot = FALSE;
 
+// This is how long the sim will try to teleport you before giving up.
+const F32 TELEPORT_EXPIRY = 15.0f;
+// Additional time (in seconds) to wait per attachment
+const F32 TELEPORT_EXPIRY_PER_ATTACHMENT = 3.f;
+
 U32 gRecentFrameCount = 0; // number of 'recent' frames
 LLFrameTimer gRecentFPSTime;
 LLFrameTimer gRecentMemoryTime;
@@ -139,7 +145,14 @@ void display_startup()
 
 	// Update images?
 	//gImageList.updateImages(0.01f);
+	
+	// Written as branch to appease GCC which doesn't like different
+	// pointer types across ternary ops
+	//
+	if (!LLViewerFetchedTexture::sWhiteImagep.isNull())
+	{
 	LLTexUnit::sWhiteTexture = LLViewerFetchedTexture::sWhiteImagep->getTexName();
+	}
 
 	LLGLSDefault gls_default;
 
@@ -228,7 +241,7 @@ void display_stats()
 		gRecentFrameCount = 0;
 		gRecentFPSTime.reset();
 	}
-	F32 fps_log_freq = gSavedSettings.getF32("FPSLogFrequency");
+	static LLCachedControl<F32> fps_log_freq(gSavedSettings, "FPSLogFrequency");
 	if (fps_log_freq > 0.f && gRecentFPSTime.getElapsedTimeF32() >= fps_log_freq)
 	{
 		F32 fps = gRecentFrameCount / fps_log_freq;
@@ -240,10 +253,11 @@ void display_stats()
 		gRecentFrameCount = 0;
 		gRecentFPSTime.reset();
 	}
-	F32 mem_log_freq = gSavedSettings.getF32("MemoryLogFrequency");
+
+	static LLCachedControl<F32> mem_log_freq(gSavedSettings, "MemoryLogFrequency");
 	if (mem_log_freq > 0.f && gRecentMemoryTime.getElapsedTimeF32() >= mem_log_freq)
 	{
-		gMemoryAllocated = (U64Bytes)LLMemory::getCurrentRSS();
+		gMemoryAllocated = U64Bytes(LLMemory::getCurrentRSS());
 		U32Megabytes memory = gMemoryAllocated;
 		LL_INFOS() << llformat("MEMORY: %d MB", memory.value()) << LL_ENDL;
 		LL_INFOS() << "MALLOC: " << SGMemStat::getPrintableStat() <<LL_ENDL;
@@ -267,10 +281,22 @@ static LLTrace::BlockTimerStatHandle FTM_DISPLAY_UPDATE_GEOM("Update Geom");
 static LLTrace::BlockTimerStatHandle FTM_TEXTURE_UNBIND("Texture Unbind");
 static LLTrace::BlockTimerStatHandle FTM_TELEPORT_DISPLAY("Teleport Display");
 
+int sMaxCacheHit = 0;
+int sCurCacheHit = 0;
+
 // Paint the display!
 void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, bool tiling)
 {
 	LL_RECORD_BLOCK_TIME(FTM_RENDER);
+
+	for (auto avatar : LLCharacter::sInstances)
+	{
+		LLVOAvatar* avatarp = dynamic_cast<LLVOAvatar*>(avatar);
+		if (!avatarp) continue;
+		if (avatarp->isDead()) continue;
+		avatarp->clearRiggedMatrixCache();
+	}
+	sCurCacheHit = 0;
 
 	if (gWindowResized)
 	{ //skip render on frames where window has been resized
@@ -356,6 +382,7 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 	// Logic for forcing window updates if we're in drone mode.
 	//
 
+	// *TODO: Investigate running display() during gHeadlessClient.  See if this early exit is needed DK 2011-02-18
 	if (gNoRender) 
 	{
 #if LL_WINDOWS
@@ -397,8 +424,10 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 
 	LLImageGL::updateStats(gFrameTimeSeconds);
 	
-	LLVOAvatar::sRenderName = gSavedSettings.getS32("RenderName");
-	LLVOAvatar::sRenderGroupTitles = !gSavedSettings.getBOOL("RenderHideGroupTitleAll");
+	static LLCachedControl<S32> name_tag_mode(gSavedSettings, "RenderName");
+	static LLCachedControl<bool> hide_group_titles(gSavedSettings, "RenderHideGroupTitleAll");
+	LLVOAvatar::sRenderName = name_tag_mode;
+	LLVOAvatar::sRenderGroupTitles = !hide_group_titles;
 	
 	gPipeline.mBackfaceCull = TRUE;
 	gFrameCount++;
@@ -1016,11 +1045,11 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 					gGL.loadIdentity();
 					gGL.color4fv( LLColor4::white.mV );
 					gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
-					gGL.begin( LLRender::QUADS );
+					gGL.begin( LLRender::TRIANGLE_STRIP );
 						gGL.vertex3f(rect.mLeft, rect.mTop,0.f);
 						gGL.vertex3f(rect.mLeft, rect.mBottom,0.f);
+						gGL.vertex3f(rect.mRight, rect.mTop, 0.f);
 						gGL.vertex3f(rect.mRight, rect.mBottom,0.f);
-						gGL.vertex3f(rect.mRight, rect.mTop,0.f);
 					gGL.end();
 
 					gGL.matrixMode(LLRender::MM_PROJECTION);
@@ -1038,20 +1067,21 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 				LLGLEnable cull_face(GL_CULL_FACE);
 				gGL.setColorMask(false, false);
 				
-				static const U32 types[] = { 
+				static const std::array<U32, 3> types{{
 					LLRenderPass::PASS_SIMPLE, 
 					LLRenderPass::PASS_FULLBRIGHT, 
 					LLRenderPass::PASS_SHINY 
-				};
+				}};
 
-				U32 num_types = LL_ARRAY_SIZE(types);
 				gOcclusionProgram.bind();
-				for (U32 i = 0; i < num_types; i++)
+				for (const U32 type : types)
 				{
-					gPipeline.renderObjects(types[i], LLVertexBuffer::MAP_VERTEX, FALSE);
+					gPipeline.renderObjects(type, LLVertexBuffer::MAP_VERTEX, FALSE);
 				}
+
 				gOcclusionProgram.unbind();
 			}
+
 
 			gGL.setColorMask(true, false);
 			if (LLPipeline::sRenderDeferred)
@@ -1112,7 +1142,6 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 				}
 			}
 		}
-		//gGL.flush();
 
 		if (LLPipeline::sRenderDeferred)
 		{
@@ -1170,7 +1199,7 @@ void render_hud_attachments()
 	gAgentCamera.mHUDTargetZoom = llclamp(gAgentCamera.mHUDTargetZoom, (!gRlvAttachmentLocks.hasLockedHUD()) ? 0.1f : 0.85f, 1.f);
 // [/RLVa:KB]
 	// smoothly interpolate current zoom level
-	gAgentCamera.mHUDCurZoom = lerp(gAgentCamera.mHUDCurZoom, gAgentCamera.mHUDTargetZoom, LLCriticalDamp::getInterpolant(0.03f));
+	gAgentCamera.mHUDCurZoom = lerp(gAgentCamera.mHUDCurZoom, gAgentCamera.mHUDTargetZoom, LLSmoothInterpolation::getInterpolant(0.03f));
 
 	if (LLPipeline::sShowHUDAttachments && !gDisconnected && setup_hud_matrices())
 	{
@@ -1670,3 +1699,4 @@ void display_cleanup()
 {
 	gDisconnectedImagep = NULL;
 }
+

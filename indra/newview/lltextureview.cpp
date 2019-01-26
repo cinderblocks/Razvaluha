@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltextureview.cpp
  * @brief LLTextureView class implementation
@@ -45,6 +47,7 @@
 #include "lltexturefetch.h"
 #include "llviewercontrol.h"
 #include "llviewerobject.h"
+#include "llviewerobjectlist.h"
 #include "llviewertexture.h"
 #include "llviewertexturelist.h"
 #include "llvovolume.h"
@@ -57,9 +60,9 @@
 
 extern F32 texmem_lower_bound_scale;
 
-LLTextureView *gTextureView = NULL;
-LLTextureSizeView *gTextureSizeView = NULL;
-LLTextureSizeView *gTextureCategoryView = NULL;
+LLTextureView *gTextureView = nullptr;
+LLTextureSizeView *gTextureSizeView = nullptr;
+LLTextureSizeView *gTextureCategoryView = nullptr;
 
 #define HIGH_PRIORITY 100000000.f
 
@@ -104,9 +107,9 @@ public:
 		mTextureView(p.texture_view)
 	{}
 
-	virtual void draw();
-	virtual BOOL handleMouseDown(S32 x, S32 y, MASK mask);
-	virtual LLRect getRequiredRect();	// Return the height of this object, given the set options.
+	void draw() override;
+	BOOL handleMouseDown(S32 x, S32 y, MASK mask) override;
+	LLRect getRequiredRect() override;	// Return the height of this object, given the set options.
 
 // Used for sorting
 	struct sort
@@ -415,9 +418,9 @@ public:
 		mTextureView(p.texture_view)
 	{}
 
-	virtual void draw();	
-	virtual BOOL handleMouseDown(S32 x, S32 y, MASK mask);
-	virtual LLRect getRequiredRect();	// Return the height of this object, given the set options.
+	void draw() override;
+	BOOL handleMouseDown(S32 x, S32 y, MASK mask) override;
+	LLRect getRequiredRect() override;	// Return the height of this object, given the set options.
 
 private:
 	LLTextureView* mTextureView;
@@ -459,6 +462,7 @@ void LLAvatarTexBar::draw()
 		{
 			text_color = LLColor4::magenta;
 		}
+
 		std::string text = layerset_buffer->dumpTextureInfo();
 		LLFontGL::getFontMonospace()->renderUTF8(text, 0, l_offset, v_offset + line_height*line_num,
 												 text_color, LLFontGL::LEFT, LLFontGL::TOP); //, LLFontGL::BOLD, LLFontGL::DROP_SHADOW_SOFT);
@@ -514,9 +518,9 @@ public:
 		mTextureView(p.texture_view)
 	{}
 
-	virtual void draw();	
-	virtual BOOL handleMouseDown(S32 x, S32 y, MASK mask);
-	virtual LLRect getRequiredRect();	// Return the height of this object, given the set options.
+	void draw() override;
+	BOOL handleMouseDown(S32 x, S32 y, MASK mask) override;
+	LLRect getRequiredRect() override;	// Return the height of this object, given the set options.
 
 private:
 	LLTextureView* mTextureView;
@@ -751,7 +755,7 @@ void LLGLTexSizeBar::draw()
 
 	if(LLImageGL::sCurTexSizeBar == mIndex)
 	{
-		F32 text_color[] = {1.f, 1.f, 1.f, 0.75f};	
+		LLColor4 text_color(1.f, 1.f, 1.f, 0.75f);	
 		std::string text;
 	
 		text = llformat("%d", mTopLoaded) ;
@@ -763,8 +767,8 @@ void LLGLTexSizeBar::draw()
 									 text_color, LLFontGL::LEFT, LLFontGL::TOP);
 	}
 
-	F32 loaded_color[] = {1.0f, 0.0f, 0.0f, 0.75f};
-	F32 bound_color[] = {1.0f, 1.0f, 0.0f, 0.75f};
+	LLColor4 loaded_color(1.0f, 0.0f, 0.0f, 0.75f);
+	LLColor4 bound_color(1.0f, 1.0f, 0.0f, 0.75f);
 	gl_rect_2d(mLeft, mBottom + (S32)(mTopLoaded * mScale), (mLeft + mRight) / 2, mBottom, loaded_color) ;
 	gl_rect_2d((mLeft + mRight) / 2, mBottom + (S32)(mTopBound * mScale), mRight, mBottom, bound_color) ;
 }
@@ -780,18 +784,18 @@ LLTextureView::LLTextureView(const LLTextureView::Params& p)
 	setVisible(FALSE);
 	
 	setDisplayChildren(TRUE);
-	mGLTexMemBar = 0;
-	mAvatarTexBar = 0;
+	mGLTexMemBar = nullptr;
+	mAvatarTexBar = nullptr;
 }
 
 LLTextureView::~LLTextureView()
 {
 	// Children all cleaned up by default view destructor.
 	delete mGLTexMemBar;
-	mGLTexMemBar = 0;
+	mGLTexMemBar = nullptr;
 	
 	delete mAvatarTexBar;
-	mAvatarTexBar = 0;
+	mAvatarTexBar = nullptr;
 }
 
 typedef std::pair<F32,LLViewerFetchedTexture*> decode_pair_t;
@@ -826,14 +830,14 @@ void LLTextureView::draw()
 		{
 			removeChild(mGLTexMemBar);
 			mGLTexMemBar->die();
-			mGLTexMemBar = 0;
+			mGLTexMemBar = nullptr;
 		}
 
 		if (mAvatarTexBar)
 		{
 			removeChild(mAvatarTexBar);
 			mAvatarTexBar->die();
-			mAvatarTexBar = 0;
+			mAvatarTexBar = nullptr;
 		}
 
 		typedef std::multiset<decode_pair_t, compare_decode_pair > display_list_t;
@@ -899,7 +903,8 @@ void LLTextureView::draw()
 					{
 							LLViewerFetchedTexture* mImage;
 							f(LLViewerFetchedTexture* image) : mImage(image) {}
-						virtual bool apply(LLViewerObject* object, S32 te)
+
+						bool apply(LLViewerObject* object, S32 te) override
 						{
 							return (mImage == object->getTEImage(te));
 						}
@@ -1189,8 +1194,8 @@ F32 LLTextureSizeView::drawTextureSizeDistributionGraph()
 	}
 
 	//texts
-	//--------------------------------------------------
-	F32 text_color[] = {1.f, 1.f, 1.f, 0.75f};	
+	//--------------------------------------------------=
+	LLColor4 text_color(1.f, 1.f, 1.f, 0.75f);
 	std::string text;
 	
 	//-------
@@ -1220,13 +1225,13 @@ F32 LLTextureSizeView::drawTextureSizeDistributionGraph()
 	}
 
 	//--------------------------------------------------
-	F32 loaded_color[] = {1.0f, 0.0f, 0.0f, 0.75f};
+	LLColor4 loaded_color(1.0f, 0.0f, 0.0f, 0.75f);
 	gl_rect_2d(left + 70, top + line_height * 2, left + 90, top + line_height, loaded_color) ;
 	text = llformat("Loaded") ;
 	LLFontGL::getFontMonospace()->renderUTF8(text, 0, left + 100, top + line_height * 2,
 									 loaded_color, LLFontGL::LEFT, LLFontGL::TOP);
 
-	F32 bound_color[] = {1.0f, 1.0f, 0.0f, 0.75f};
+	LLColor4 bound_color(1.0f, 1.0f, 0.0f, 0.75f);
 	gl_rect_2d(left + 170, top + line_height * 2, left + 190, top + line_height, bound_color) ;
 	text = llformat("Bound") ;
 	LLFontGL::getFontMonospace()->renderUTF8(text, 0, left + 200, top + line_height * 2,
@@ -1317,7 +1322,7 @@ F32 LLTextureSizeView::drawTextureCategoryDistributionGraph()
 
 	//texts
 	//--------------------------------------------------
-	F32 text_color[] = {1.f, 1.f, 1.f, 0.75f};	
+	LLColor4 text_color(1.f, 1.f, 1.f, 0.75f);
 	std::string text;
 	
 	//-------
@@ -1350,14 +1355,14 @@ F32 LLTextureSizeView::drawTextureCategoryDistributionGraph()
 	LLFontGL::getFontMonospace()->renderUTF8(text, 0, left - 20, top + line_height * 2 ,
 									 text_color, LLFontGL::LEFT, LLFontGL::TOP);
 	//--------------------------------------------------
-	F32 loaded_color[] = {1.0f, 0.0f, 0.0f, 0.75f};
+	LLColor4 loaded_color(1.0f, 0.0f, 0.0f, 0.75f);
 	gl_rect_2d(left + 70, top + line_height * 2, left + 90, top + line_height, loaded_color) ;
 	text = llformat("Loaded") ;
 	LLFontGL::getFontMonospace()->renderUTF8(text, 0, left + 100, top + line_height * 2,
 									 loaded_color, 
 									 LLFontGL::LEFT, LLFontGL::TOP);
 
-	F32 bound_color[] = {1.0f, 1.0f, 0.0f, 0.75f};
+	LLColor4 bound_color(1.0f, 1.0f, 0.0f, 0.75f);
 	gl_rect_2d(left + 170, top + line_height * 2, left + 190, top + line_height, bound_color) ;
 	text = llformat("Bound") ;
 	LLFontGL::getFontMonospace()->renderUTF8(text, 0, left + 200, top + line_height * 2,

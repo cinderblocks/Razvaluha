@@ -37,21 +37,14 @@ class LLFace;
 class LLCharacter;
 class LLTexLayerSet;
 
-typedef enum e_avatar_render_pass
-{
-	AVATAR_RENDER_PASS_SINGLE,
-	AVATAR_RENDER_PASS_CLOTHING_INNER,
-	AVATAR_RENDER_PASS_CLOTHING_OUTER
-} EAvatarRenderPass;
-
 class LLSkinJoint
 {
 public:
 	LLSkinJoint();
 	~LLSkinJoint();
-	void setupSkinJoint( LLJoint *joint);
+	BOOL setupSkinJoint( LLAvatarJoint *joint);
 
-	LLJoint*		mJoint;
+	LLAvatarJoint	*mJoint;
 	LLVector3		mRootToJointSkinOffset;
 	LLVector3		mRootToParentJointSkinOffset;
 };
@@ -83,7 +76,6 @@ public:
 	static BOOL					sPipelineRender;
 	//RN: this is here for testing purposes
 	static U32					sClothingMaskImageName;
-	static EAvatarRenderPass	sRenderPass;
 	static LLColor4				sClothingInnerColor;
 
 public:
@@ -122,7 +114,10 @@ public:
 	void setMesh( LLPolyMesh *mesh );
 
 	// Sets up joint matrix data for rendering
-	void setupJoint(LLJoint* current_joint);
+	void setupJoint(LLAvatarJoint* current_joint);
+
+	// Render time method to upload batches of joint matrices
+	void uploadJointMatrices();
 
 	// Sets ID for picking
 	void setMeshID( S32 id ) {mMeshID = id;}

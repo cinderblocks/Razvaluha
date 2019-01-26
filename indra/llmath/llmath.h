@@ -1,4 +1,4 @@
-/** 
+/**
  * @file llmath.h
  * @brief Useful math constants and macros.
  *
@@ -31,6 +31,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <vector>
 #include <limits>
 #include "lldefs.h"
@@ -40,6 +41,9 @@
 // file in llcommon so we can use lltut.h for llcommon tests without making
 // llcommon depend on llmath.
 #include "is_approx_equal_fraction.h"
+
+#define llisnan(val)	std::isnan(val)
+#define llfinite(val)	std::isfinite(val)
 
 // Single Precision Floating Point Routines
 // (There used to be more defined here, but they appeared to be redundant and 
@@ -107,19 +111,27 @@ inline bool is_approx_zero( F32 f ) { return (-F_APPROXIMATELY_ZERO < f) && (f <
 // handles negative and positive zeros
 inline bool is_zero(F32 x)
 {
-	return (*(U32*)(&x) & 0x7fffffff) == 0;
+	U32 tmp = 0;
+	memcpy(&tmp, &x, sizeof(tmp));
+	return (tmp & 0x7fffffff) == 0;
 }
 
 inline bool is_approx_equal(F32 x, F32 y)
 {
 	constexpr S32 COMPARE_MANTISSA_UP_TO_BIT = 0x02;
-	return (std::abs((S32) ((U32&)x - (U32&)y) ) < COMPARE_MANTISSA_UP_TO_BIT);
+	U32 x_tmp, y_tmp;
+	memcpy(&x_tmp, &x, sizeof(x_tmp));
+	memcpy(&y_tmp, &y, sizeof(x_tmp));
+	return (std::abs((S32) (x_tmp - y_tmp) ) < COMPARE_MANTISSA_UP_TO_BIT);
 }
 
 inline bool is_approx_equal(F64 x, F64 y)
 {
 	constexpr S64 COMPARE_MANTISSA_UP_TO_BIT = 0x02;
-	return (std::abs((S32) ((U64&)x - (U64&)y) ) < COMPARE_MANTISSA_UP_TO_BIT);
+	U64 x_tmp, y_tmp;
+	memcpy(&x_tmp, &x, sizeof(x_tmp));
+	memcpy(&y_tmp, &y, sizeof(x_tmp));
+	return (std::abs((S32) (x_tmp - y_tmp) ) < COMPARE_MANTISSA_UP_TO_BIT);
 }
 
 inline S32 llabs(const S32 a)
@@ -179,15 +191,22 @@ inline S32 ll_round(const F32 val)
 	return (S32)round(val);
 }
 
-inline F32 ll_round(F32 val, F32 nearest)
+inline F32 ll_round( F32 val, F32 nearest )
 {
 	return F32(round(val * (1.0f / nearest))) * nearest;
 }
 
-inline F64 ll_round(F64 val, F64 nearest)
+inline F64 ll_round( F64 val, F64 nearest )
 {
 	return F64(round(val * (1.0 / nearest))) * nearest;
 }
+
+
+inline F64 ll_round(const F64 val)
+{
+	return round(val);
+}
+
 
 // these provide minimum peak error
 //
@@ -204,8 +223,8 @@ constexpr F32 FAST_MAG_BETA = 0.397824734759f;
 // peak error = -32.6 dB
 // RMS  error = -25.7 dB
 //
-//constexpr F32 FAST_MAG_ALPHA = 0.948059448969f;
-//constexpr F32 FAST_MAG_BETA = 0.392699081699f;
+//const F32 FAST_MAG_ALPHA = 0.948059448969f;
+//const F32 FAST_MAG_BETA = 0.392699081699f;
 
 inline F32 fastMagnitude(F32 a, F32 b)
 { 
@@ -233,25 +252,6 @@ constexpr S32 LL_SHIFT_AMOUNT			= 16;                    //16.16 fixed point rep
 	#define LL_EXP_INDEX				0
 	#define LL_MAN_INDEX				1
 #endif
-
-/* Deprecated: use ll_round(), lltrunc(), or llfloor() instead
-// ================================================================================================
-// Real2Int
-// ================================================================================================
-inline S32 F64toS32(F64 val)
-{
-	val		= val + LL_DOUBLE_TO_FIX_MAGIC;
-	return ((S32*)&val)[LL_MAN_INDEX] >> LL_SHIFT_AMOUNT; 
-}
-
-// ================================================================================================
-// Real2Int
-// ================================================================================================
-inline S32 F32toS32(F32 val)
-{
-	return F64toS32 ((F64)val);
-}
-*/
 
 ////////////////////////////////////////////////
 //
@@ -294,9 +294,6 @@ inline F32 snap_to_sig_figs(F32 foo, S32 sig_figs)
 	{
 		bar *= 10.f;
 	}
-
-	//F32 new_foo = (F32)ll_round(foo * bar);
-	// the ll_round() implementation sucks.  Don't us it.
 
 	F32 sign = (foo > 0.f) ? 1.f : -1.f;
 	F32 new_foo = F32( S64(foo * bar + sign * 0.5f));
@@ -464,13 +461,13 @@ inline void ll_remove_outliers(std::vector<VEC_TYPE>& data, F32 k)
 		i++;
 	}
 
-	S32 j = (S32)data.size()-1;
+	S32 j = data.size()-1;
 	while (j > 0 && data[j] > max)
 	{
 		j--;
 	}
 
-	if (j < (S32)data.size()-1)
+	if (j < data.size()-1)
 	{
 		data.erase(data.begin()+j, data.end());
 	}

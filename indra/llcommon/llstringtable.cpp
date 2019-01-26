@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llstringtable.cpp
  * @brief The LLStringTable class provides a _fast_ method for finding
@@ -33,7 +35,7 @@
 LLStringTable gStringTable(32768);
 
 LLStringTableEntry::LLStringTableEntry(const char *str)
-: mString(NULL), mCount(1)
+: mString(nullptr), mCount(1)
 {
 	// Copy string
 	U32 length = (U32)strlen(str) + 1;	 /*Flawfinder: ignore*/
@@ -75,7 +77,7 @@ LLStringTable::LLStringTable(int tablesize)
 	// Clear strings
 	for (i = 0; i < mMaxEntries; i++)
 	{
-		mStringList[i] = NULL;
+		mStringList[i] = nullptr;
 	}
 #endif
 }
@@ -90,13 +92,13 @@ LLStringTable::~LLStringTable()
 			if (mStringList[i])
 			{
 				string_list_t::iterator iter;
-				for (iter = mStringList[i]->begin(); iter != mStringList[i]->end(); iter++)
+				for (iter = mStringList[i]->begin(); iter != mStringList[i]->end(); ++iter)
 					delete *iter; // *iter = (LLStringTableEntry*)
 			}
 			delete mStringList[i];
 		}
 		delete [] mStringList;
-		mStringList = NULL;
+		mStringList = nullptr;
 	}
 #else
 	// Need to clean up the string hash
@@ -142,7 +144,7 @@ char* LLStringTable::checkString(const char *str)
     }
     else
     {
-	return NULL;
+	return nullptr;
     }
 }
 
@@ -167,7 +169,7 @@ LLStringTableEntry* LLStringTable::checkStringEntry(const char *str)
 		string_hash_t::iterator lower = P.first;
 		string_hash_t::iterator upper = P.second;
 #endif
-		for (string_hash_t::iterator iter = lower; iter != upper; iter++)
+		for (string_hash_t::iterator iter = lower; iter != upper; ++iter)
 		{
 			entry = iter->second;
 			ret_val = entry->mString;
@@ -181,7 +183,7 @@ LLStringTableEntry* LLStringTable::checkStringEntry(const char *str)
 		if (strlist)
 		{
 			string_list_t::iterator iter;
-			for (iter = strlist->begin(); iter != strlist->end(); iter++)
+			for (iter = strlist->begin(); iter != strlist->end(); ++iter)
 			{
 				entry = *iter;
 				ret_val = entry->mString;
@@ -193,7 +195,7 @@ LLStringTableEntry* LLStringTable::checkStringEntry(const char *str)
 		}
 #endif
 	}
-	return NULL;
+	return nullptr;
 }
 
 char* LLStringTable::addString(const std::string& str)
@@ -212,7 +214,7 @@ char* LLStringTable::addString(const char *str)
     }
     else
     {
-	return NULL;
+	return nullptr;
     }
 }
 
@@ -225,7 +227,7 @@ LLStringTableEntry* LLStringTable::addStringEntry(const char *str)
 {
 	if (str)
 	{
-		char *ret_val = NULL;
+		char *ret_val = nullptr;
 		LLStringTableEntry	*entry;
 		U32					hash_value = hash_my_string(str, mMaxEntries);
 #if STRING_TABLE_HASH_MAP
@@ -258,7 +260,7 @@ LLStringTableEntry* LLStringTable::addStringEntry(const char *str)
 		if (strlist)
 		{
 			string_list_t::iterator iter;
-			for (iter = strlist->begin(); iter != strlist->end(); iter++)
+			for (iter = strlist->begin(); iter != strlist->end(); ++iter)
 			{
 				entry = *iter;
 				ret_val = entry->mString;
@@ -285,7 +287,7 @@ LLStringTableEntry* LLStringTable::addStringEntry(const char *str)
 	}
 	else
 	{
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -332,7 +334,7 @@ void LLStringTable::removeString(const char *str)
 		if (strlist)
 		{
 			string_list_t::iterator iter;
-			for (iter = strlist->begin(); iter != strlist->end(); iter++)
+			for (iter = strlist->begin(); iter != strlist->end(); ++iter)
 			{
 				entry = *iter;
 				ret_val = entry->mString;

@@ -30,10 +30,6 @@
 #include "v3math.h"
 #include "llstring.h"
 #include "llxmltree.h"
-#ifndef BOOST_FUNCTION_HPP_INCLUDED
-#include <boost/function.hpp>
-#define BOOST_FUNCTION_HPP_INCLUDED
-#endif
 
 class LLPolyMesh;
 class LLXmlTreeNode;
@@ -107,10 +103,22 @@ LL_ALIGN_PREFIX(16)
 class LLVisualParam
 {
 public:
-	typedef	boost::function<LLVisualParam*(S32)> visual_param_mapper;
+	typedef	std::function<LLVisualParam*(S32)> visual_param_mapper;
 
 	LLVisualParam();
 	virtual ~LLVisualParam();
+
+	// <alchemy>
+	void* operator new(size_t size)
+	{
+		return ll_aligned_malloc_16(size);
+	}
+
+	void operator delete(void* ptr)
+	{
+		ll_aligned_free_16(ptr);
+	}
+	// </alchemy>
 
 	// Special: These functions are overridden by child classes
 	// (They can not be virtual because they use specific derived Info classes)
@@ -123,10 +131,10 @@ public:
 	//virtual BOOL			parseData( LLXmlTreeNode *node ) = 0;
 	virtual void			apply( ESex avatar_sex ) = 0;
 	//  Default functions
-	virtual void			setWeight(F32 weight, bool upload_bake = false);
-	virtual void			setAnimationTarget(F32 target_value, bool upload_bake = false);
-	virtual void			animate(F32 delta, bool upload_bake = false);
-	virtual void			stopAnimating(bool upload_bake = false);
+	virtual void			setWeight(F32 weight, BOOL upload_bake = false);
+	virtual void			setAnimationTarget(F32 target_value, BOOL upload_bake = false);
+	virtual void			animate(F32 delta, BOOL upload_bake = false);
+	virtual void			stopAnimating(BOOL upload_bake = false);
 
 	virtual BOOL			linkDrivenParams(visual_param_mapper mapper, BOOL only_cross_params);
 	virtual void			resetDrivenParams();
@@ -153,6 +161,7 @@ public:
 	F32						getWeight() const		{ return mIsAnimating ? mTargetWeight : mCurWeight; }
 	F32						getCurrentWeight() const 	{ return mCurWeight; }
 	F32						getLastWeight() const	{ return mLastWeight; }
+	void					setLastWeight(F32 val) { mLastWeight = val; }
 	BOOL					isAnimating() const	{ return mIsAnimating; }
 	BOOL					isTweakable() const { return (getGroup() == VISUAL_PARAM_GROUP_TWEAKABLE)  || (getGroup() == VISUAL_PARAM_GROUP_TWEAKABLE_NO_TRANSMIT); }
 

@@ -57,7 +57,6 @@
 #include "lltabcontainer.h"
 #include "v2math.h"
 #include "llfasttimer.h"
-#include "airecursive.h"
 #include "llnotifications.h"
 
 const S32 MINIMIZED_WIDTH = 160;
@@ -1464,7 +1463,7 @@ void LLFloater::draw()
 		if(gFocusMgr.childHasKeyboardFocus(this) && !getIsChrome() && !getCurrentTitle().empty())
 		{
 			// draw highlight on title bar to indicate focus.  RDW
-			const LLFontGL* font = LLResMgr::getInstance()->getRes( LLFONT_SANSSERIF );
+			const LLFontGL* font = LLFontGL::getFontSansSerif();
 			LLRect r = getRect();
 			gl_rect_2d_offset_local(0, r.getHeight(), r.getWidth(), r.getHeight() - (S32)font->getLineHeight() - 1, 
 				LLUI::sColorsGroup->getColor("TitleBarFocusColor"), 0, TRUE);
@@ -1932,9 +1931,9 @@ void LLFloaterView::bringToFront(LLFloater* child, BOOL give_focus)
 	//   LLFloaterView::bringToFront calls
 	//   LLFloater::setFocus         calls
 	//   LLFloater::setFrontmost     calls this again.
-	static bool recursive;
-	if (recursive) { return; }
-	AIRecursive enter(recursive);
+	static bool recursive = false;
+	if (recursive) return;
+	recursive = true;
 
 	// *TODO: make this respect floater's mAutoFocus value, instead of
 	// using parameter
@@ -2020,6 +2019,7 @@ void LLFloaterView::bringToFront(LLFloater* child, BOOL give_focus)
 			gFocusMgr.setKeyboardFocus(NULL);
 		}
 	}
+	recursive = false;
 }
 
 void LLFloaterView::highlightFocusedFloater()

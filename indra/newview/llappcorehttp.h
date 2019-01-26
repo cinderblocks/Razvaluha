@@ -61,6 +61,20 @@ public:
 		/// Pipelined:       no
 		AP_DEFAULT,
 
+		/// Asset fetching policy class.  Used to
+		/// download assets via capability.
+		/// Deep queueing of requests.
+		/// Do not share.  GET requests only.
+		///
+		/// Destination:     cdn:80
+		/// Protocol:        http:
+		/// Transfer size:   KB-MB
+		/// Long poll:       no
+		/// Concurrency:     high
+		/// Request rate:    high
+		/// Pipelined:       yes
+		AP_ASSET,
+
 		/// Texture fetching policy class.  Used to
 		/// download textures via capability or SSA
 		/// baking service.  Deep queueing of requests.
@@ -213,7 +227,7 @@ public:
 	void cleanup();
 
 	// Notification when the stop request is complete.
-	virtual void onCompleted(LLCore::HttpHandle handle, LLCore::HttpResponse * response);
+	void onCompleted(LLCore::HttpHandle handle, LLCore::HttpResponse * response) override;
 
 	// Retrieve a policy class identifier for desired
 	// application function.

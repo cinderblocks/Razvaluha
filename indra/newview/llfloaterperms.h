@@ -35,6 +35,10 @@
 #define LL_LLFLOATERPERMPREFS_H
 
 #include "llfloater.h"
+#include "lleventcoro.h"
+#include "llcoros.h"
+
+class LLViewerRegion;
 
 namespace LLFloaterPerms
 {
@@ -61,33 +65,20 @@ public:
 	static void updateCap();
 	static void setCapSent(bool cap_sent);
 
-// Update instantiation of sCategoryNames in the .cpp file to match if you change this!
-enum Categories
-{
-	CAT_OBJECTS,
-	CAT_UPLOADS,
-	CAT_SCRIPTS,
-	CAT_NOTECARDS,
-	CAT_GESTURES,
-	CAT_WEARABLES,
-	CAT_LAST
-};
-
 private:
 	LLFloaterPermsDefault(const LLSD& seed);
 	void refresh();
 
-	static const std::string sCategoryNames[CAT_LAST];
+	static const std::array<std::string, 6> sCategoryNames;
     static void updateCapCoro(std::string url);
 
-
 	// cached values only for implementing cancel.
-	bool mShareWithGroup[CAT_LAST];
-	bool mEveryoneCopy[CAT_LAST];
-	bool mEveryoneExport[CAT_LAST];
-	bool mNextOwnerCopy[CAT_LAST];
-	bool mNextOwnerModify[CAT_LAST];
-	bool mNextOwnerTransfer[CAT_LAST];
+	bool mShareWithGroup[6];
+	bool mEveryoneCopy[6];
+	bool mEveryoneExport[6];
+	bool mNextOwnerCopy[6];
+	bool mNextOwnerModify[6];
+	bool mNextOwnerTransfer[6];
 };
 
 #endif

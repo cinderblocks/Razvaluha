@@ -29,15 +29,11 @@
 
 #include "llrect.h"
 #include "llcoord.h"
-#include "llstring.h"
 #include "llcursortypes.h"
 #include "llinstancetracker.h"
 #include "llsd.h"
 
 class LLSplashScreen;
-
-class LLWindow;
-
 class LLPreeditor;
 class LLWindowCallbacks;
 
@@ -50,6 +46,7 @@ const S32 MIN_WINDOW_HEIGHT = 256;
 class LLWindow : public LLInstanceTracker<LLWindow>
 {
 public:
+
 	struct LLWindowResolution
 	{
 		S32 mWidth;
@@ -66,6 +63,7 @@ public:
 		// currently unused
 	};
 public:
+	virtual void postInitialized() {}
 	virtual void show() = 0;
 	virtual void hide() = 0;
 	virtual void close() = 0;
@@ -75,7 +73,7 @@ public:
 	virtual BOOL maximize() = 0;
 	virtual void minimize() = 0;
 	virtual void restore() = 0;
-	BOOL getFullscreen()	{ return mFullscreen; };
+	virtual BOOL getFullscreen()	{ return mFullscreen; };
 	virtual BOOL getPosition(LLCoordScreen *position) = 0;
 	virtual BOOL getSize(LLCoordScreen *size) = 0;
 	virtual BOOL getSize(LLCoordWindow *size) = 0;
@@ -83,7 +81,7 @@ public:
 	BOOL setSize(LLCoordScreen size);
 	BOOL setSize(LLCoordWindow size);
 	virtual void setMinSize(U32 min_width, U32 min_height, bool enforce_immediately = true);
-	virtual BOOL switchContext(BOOL fullscreen, const LLCoordScreen &size, const S32 vsync_mode, const LLCoordScreen * const posp = NULL) = 0;
+	virtual BOOL switchContext(BOOL fullscreen, const LLCoordScreen &size, const S32 vsync_mode, const LLCoordScreen * const posp = nullptr) = 0;
 	virtual BOOL setCursorPosition(LLCoordWindow position) = 0;
 	virtual BOOL getCursorPosition(LLCoordWindow *position) = 0;
 	virtual void showCursor() = 0;
@@ -117,6 +115,7 @@ public:
 	virtual BOOL pasteTextFromPrimary(LLWString &dst);
 	virtual BOOL copyTextToPrimary(const LLWString &src);
  
+	virtual void setWindowTitle(const std::string& title) {}
 	virtual void flashIcon(F32 seconds) = 0;
 	virtual F32 getGamma() = 0;
 	virtual BOOL setGamma(const F32 gamma) = 0; // Set the gamma
@@ -175,8 +174,10 @@ public:
 	// Provide native key event data
 	virtual LLSD getNativeKeyData() { return LLSD::emptyMap(); }
 
-	virtual void setTitle(const std::string &title){};
+	virtual float getScaleFactor() { return 1.0f; } //[CR:Retina]
 
+	// Get system UI size based on DPI (for 96 DPI UI size should be 1.0)
+	virtual F32 getSystemUISize() { return 1.0; }
 protected:
 	LLWindow(LLWindowCallbacks* callbacks, BOOL fullscreen, U32 flags);
 	virtual ~LLWindow();
@@ -289,6 +290,9 @@ public:
 // helper funcs
 //
 extern BOOL gDebugWindowProc;
+#ifdef LL_DARWIN
+extern BOOL gUseMultGL;
+#endif
 
 // Protocols, like "http" and "https" we support in URLs
 extern const S32 gURLProtocolWhitelistCount;

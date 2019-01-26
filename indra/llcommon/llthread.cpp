@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llthread.cpp
  *
@@ -24,14 +26,17 @@
  */
 
 #include "linden_common.h"
+#include "llapr.h"
 
 #include "llthread.h"
 #include "llmutex.h"
 
 #include "lltimer.h"
 #include "lltrace.h"
-#include "lltracethreadrecorder.h"
-#include "llwin32headerslean.h"
+//#include "lltracethreadrecorder.h"
+#include "llexception.h"
+
+#include <chrono>
 
 
 #ifdef LL_WINDOWS
@@ -40,30 +45,31 @@ const DWORD MS_VC_EXCEPTION=0x406D1388;
 #pragma pack(push,8)
 typedef struct tagTHREADNAME_INFO
 {
-	DWORD dwType; // Must be 0x1000.
-	LPCSTR szName; // Pointer to name (in user addr space).
-	DWORD dwThreadID; // Thread ID (-1=caller thread).
-	DWORD dwFlags; // Reserved for future use, must be zero.
+    DWORD dwType; // Must be 0x1000.
+    LPCSTR szName; // Pointer to name (in user addr space).
+    DWORD dwThreadID; // Thread ID (-1=caller thread).
+    DWORD dwFlags; // Reserved for future use, must be zero.
 } THREADNAME_INFO;
 #pragma pack(pop)
 
 void set_thread_name( DWORD dwThreadID, const char* threadName)
 {
-	THREADNAME_INFO info;
-	info.dwType = 0x1000;
-	info.szName = threadName;
-	info.dwThreadID = dwThreadID;
-	info.dwFlags = 0;
+    THREADNAME_INFO info;
+    info.dwType = 0x1000;
+    info.szName = threadName;
+    info.dwThreadID = dwThreadID;
+    info.dwFlags = 0;
 
-	__try
-	{
-		::RaiseException( MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(DWORD), (ULONG_PTR*)&info );
-	}
-	__except(EXCEPTION_CONTINUE_EXECUTION)
-	{
-	}
+    __try
+    {
+        ::RaiseException( MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(DWORD), (ULONG_PTR*)&info );
+    }
+    __except(EXCEPTION_CONTINUE_EXECUTION)
+    {
+    }
 }
 #endif
+
 
 //----------------------------------------------------------------------------
 // Usage:
@@ -102,39 +108,102 @@ void LLThread::runWrapper()
 #endif
 
 	// for now, hard code all LLThreads to report to single master thread recorder, which is known to be running on main thread
-	mRecorder = new LLTrace::ThreadRecorder(*LLTrace::get_master_thread_recorder());
+	//mRecorder = std::make_unique<LLTrace::ThreadRecorder>(*LLTrace::get_master_thread_recorder());
 
-	// Run the user supplied function
-	run();
+    try
+    {
+        // Run the user supplied function
+        do 
+        {
+            try
+            {
+                run();
+            }
+            catch (const LLContinueError &e)
+            {
+                LL_WARNS("THREAD") << "ContinueException on thread '" << mName <<
+                    "' reentering run(). Error what is: '" << e.what() << "'" << LL_ENDL;
+                //output possible call stacks to log file.
+                LLError::LLCallStacks::print();
 
-	//LL_INFOS() << "LLThread::staticRun() Exiting: " << threadp->mName << LL_ENDL;
+                LOG_UNHANDLED_EXCEPTION("LLThread");
+                continue;
+            }
+            break;
 
-	delete mRecorder;
-	mRecorder = NULL;
+        } while (true);
 
-	// We're done with the run function, this thread is done executing now.
-	//NB: we are using this flag to sync across threads...we really need memory barriers here
-	mStatus = STOPPED;
+        //LL_INFOS() << "LLThread::staticRun() Exiting: " << mName << LL_ENDL;
+
+		//mRecorder.reset(nullptr);
+
+        // We're done with the run function, this thread is done executing now.
+        //NB: we are using this flag to sync across threads...we really need memory barriers here
+        mStatus = STOPPED;
+    }
+    catch (const std::bad_alloc&)
+    {
+        mStatus = CRASHED;
+        LLMemory::logMemoryInfo(TRUE);
+
+        //output possible call stacks to log file.
+        LLError::LLCallStacks::print();
+
+        LL_ERRS("THREAD") << "Bad memory allocation in LLThread::staticRun() named '" << mName << "'!" << LL_ENDL;
+    }
+    catch (...)
+    {
+        mStatus = CRASHED;
+        CRASH_ON_UNHANDLED_EXCEPTION("LLThread");
+    }
 }
 
-LLThread::LLThread(const std::string& name) :
-	mPaused(FALSE),
-	mName(name),
-	mStatus(STOPPED),
-	mRecorder(NULL)
+LLThread::LLThread(const std::string& name, apr_pool_t *poolp) :
+    mPaused(FALSE),
+    mName(name),
+	mRunCondition(std::make_unique<LLCondition>()),
+	mDataLock(std::make_unique<LLMutex>()),
+    mStatus(STOPPED)
 {
-	mRunCondition = new LLCondition();
-	mDataLock = new LLMutex();
+
+
+    // Thread creation probably CAN be paranoid about APR being initialized, if necessary
+    if (poolp)
+    {
+        mIsLocalPool = FALSE;
+        mAPRPoolp = poolp;
+    }
+    else
+    {
+        mIsLocalPool = TRUE;
+        apr_pool_create(&mAPRPoolp, NULL); // Create a subpool for this thread
+    }
+	mLocalAPRFilePoolp = nullptr;
 }
 
 
 LLThread::~LLThread()
 {
-	shutdown();
+    shutdown();
+
+    if (isCrashed())
+    {
+        LL_WARNS("THREAD") << "Destroying crashed thread named '" << mName << "'" << LL_ENDL;
+    }
+
+    if(mLocalAPRFilePoolp)
+    {
+        delete mLocalAPRFilePoolp ;
+		mLocalAPRFilePoolp = nullptr;
+    }
 }
 
 void LLThread::shutdown()
 {
+    if (isCrashed())
+    {
+        LL_WARNS("THREAD") << "Shutting down crashed thread named '" << mName << "'" << LL_ENDL;
+    }
 	// Warning!  If you somehow call the thread destructor from itself,
 	// the thread will die in an unclean fashion!
 	if (!isStopped())
@@ -147,66 +216,84 @@ void LLThread::shutdown()
 		// Now wait a bit for the thread to exit
 		// It's unclear whether I should even bother doing this - this destructor
 		// should never get called unless we're already stopped, really...
-		S32 counter = 0;
-		const S32 MAX_WAIT = 600;
-		while (counter < MAX_WAIT)
+		U32 count = 0;
+		constexpr U32 MAX_WAIT = 600;
+		for (; count < MAX_WAIT; count++)
 		{
 			if (isStopped())
 			{
 				break;
 			}
-			// Sleep for a tenth of a second
-			mThread.try_join_for(boost::chrono::microseconds(100));
-			counter++;
+			yield();
+		}
+
+		if (count >= MAX_WAIT)
+		{
+			LL_WARNS() << "Failed to stop thread: \"" << mName << "\" with status: " << mStatus << " and id: " << mThread.get_id() << LL_ENDL;
 		}
 	}
 
-	if (!isStopped())
+	if (mThread.joinable())
 	{
-		// This thread just wouldn't stop, even though we gave it time
-		//LL_WARNS() << "LLThread::~LLThread() exiting thread before clean exit!" << LL_ENDL;
-		// Put a stake in its heart.
-		delete mRecorder;
+		try
+		{
+			bool joined = false;
+			constexpr U32 MAX_WAIT = 100;
+			for(U32 count = 0; count < MAX_WAIT; count++)
+			{
+				// Try to join for a tenth of a second
+				if (mThread.try_join_for(boost::chrono::milliseconds(100)))
+				{
+					LL_INFOS() << "Successfully joined thread: \"" << mName << "\"" << LL_ENDL;
+					joined = true;
+					break;
+				}
+				yield();
+			}
 
-		boost::thread::native_handle_type thread(mThread.native_handle());
+			if (!joined)
+			{
+				// This thread just wouldn't join, even though we gave it time
+				LL_WARNS() << "Forcefully terminating thread: \"" << mName << "\" with id: " << mThread.get_id() << " before clean exit!" << LL_ENDL;
+				// Put a stake in its heart.
+				boost::thread::native_handle_type thread(mThread.native_handle());
 #if LL_WINDOWS
-		TerminateThread(thread, 0);
+				TerminateThread(thread, 0);
 #else
-		pthread_cancel(thread);
+				pthread_cancel(thread);
 #endif
-		return;
+			}
+		}
+		catch (const boost::thread_interrupted&)
+		{
+			LL_WARNS() << "Failed to join thread: \"" << mName << "\" with id: " << mThread.get_id() << " and interrupted exception" << LL_ENDL;
+		}
 	}
 
-	delete mRunCondition;
-	mRunCondition = NULL;
+	//mRecorder.reset();
 
-	delete mDataLock;
-	mDataLock = NULL;
-
-	if (mRecorder)
+	if (mIsLocalPool && mAPRPoolp)
 	{
-		// missed chance to properly shut down recorder (needs to be done in thread context)
-		// probably due to abnormal thread termination
-		// so just leak it and remove it from parent
-		LLTrace::get_master_thread_recorder()->removeChildRecorder(mRecorder);
+		apr_pool_destroy(mAPRPoolp);
+		mAPRPoolp = nullptr;
 	}
 }
 
 
 void LLThread::start()
 {
-	llassert(isStopped());
-	
-	// Set thread state to running
-	mStatus = RUNNING;
+    llassert(isStopped());
+    
+    // Set thread state to running
+    mStatus = RUNNING;
 
 	try
-	{	
+	{
 		mThread = boost::thread(std::bind(&LLThread::runWrapper, this));
 	}
-	catch (boost::thread_resource_error err)
+	catch (const boost::thread_resource_error& err)
 	{
-		mStatus = STOPPED;
+		mStatus = CRASHED;
 		LL_WARNS() << "Failed to start thread: \"" << mName << "\" due to error: " << err.what() << LL_ENDL;
 	}
 }
@@ -218,28 +305,28 @@ void LLThread::start()
 // The thread will pause when (and if) it calls checkPause()
 void LLThread::pause()
 {
-	if (!mPaused)
-	{
-		// this will cause the thread to stop execution as soon as checkPause() is called
-		mPaused = true;		// Does not need to be atomic since this is only set/unset from the main thread
-	}	
+    if (!mPaused)
+    {
+        // this will cause the thread to stop execution as soon as checkPause() is called
+        mPaused = 1;        // Does not need to be atomic since this is only set/unset from the main thread
+    }   
 }
 
 void LLThread::unpause()
 {
-	if (mPaused)
-	{
-		mPaused = false;
-	}
+    if (mPaused)
+    {
+        mPaused = 0;
+    }
 
-	wake(); // wake up the thread if necessary
+    wake(); // wake up the thread if necessary
 }
 
 // virtual predicate function -- returns true if the thread should wake up, false if it should sleep.
 bool LLThread::runCondition(void)
 {
-	// by default, always run.  Handling of pause/unpause is done regardless of this function's result.
-	return true;
+    // by default, always run.  Handling of pause/unpause is done regardless of this function's result.
+    return true;
 }
 
 //============================================================================
@@ -247,31 +334,31 @@ bool LLThread::runCondition(void)
 // Stop thread execution if requested until unpaused.
 void LLThread::checkPause()
 {
-	mDataLock->lock();
+    mDataLock->lock();
 
-	// This is in a while loop because the pthread API allows for spurious wakeups.
-	while(shouldSleep())
-	{
-		mDataLock->unlock();
-		mRunCondition->wait(); // unlocks mRunCondition
-		mDataLock->lock();
-		// mRunCondition is locked when the thread wakes up
-	}
-	
- 	mDataLock->unlock();
+    // This is in a while loop because the pthread API allows for spurious wakeups.
+    while(shouldSleep())
+    {
+        mDataLock->unlock();
+        mRunCondition->wait(); // unlocks mRunCondition
+        mDataLock->lock();
+        // mRunCondition is locked when the thread wakes up
+    }
+    
+    mDataLock->unlock();
 }
 
 //============================================================================
 
 void LLThread::setQuitting()
 {
-	mDataLock->lock();
-	if (mStatus == RUNNING)
-	{
-		mStatus = QUITTING;
-	}
-	mDataLock->unlock();
-	wake();
+    mDataLock->lock();
+    if (mStatus == RUNNING)
+    {
+        mStatus = QUITTING;
+    }
+    mDataLock->unlock();
+    wake();
 }
 
 // static
@@ -288,20 +375,20 @@ void LLThread::yield()
 
 void LLThread::wake()
 {
-	mDataLock->lock();
-	if(!shouldSleep())
-	{
-		mRunCondition->signal();
-	}
-	mDataLock->unlock();
+    mDataLock->lock();
+    if(!shouldSleep())
+    {
+        mRunCondition->signal();
+    }
+    mDataLock->unlock();
 }
 
 void LLThread::wakeLocked()
 {
-	if(!shouldSleep())
-	{
-		mRunCondition->signal();
-	}
+    if(!shouldSleep())
+    {
+        mRunCondition->signal();
+    }
 }
 
 //============================================================================
@@ -309,43 +396,43 @@ void LLThread::wakeLocked()
 //----------------------------------------------------------------------------
 
 //static
-LLMutex* LLThreadSafeRefCount::sMutex = 0;
+LLMutex* LLThreadSafeRefCount::sMutex = nullptr;
 
 //static
 void LLThreadSafeRefCount::initThreadSafeRefCount()
 {
-	if (!sMutex)
-	{
-		sMutex = new LLMutex();
-	}
+    if (!sMutex)
+    {
+        sMutex = new LLMutex();
+    }
 }
 
 //static
 void LLThreadSafeRefCount::cleanupThreadSafeRefCount()
 {
 	delete sMutex;
-	sMutex = NULL;
+	sMutex = nullptr;
 }
-
+    
 
 //----------------------------------------------------------------------------
 
 LLThreadSafeRefCount::LLThreadSafeRefCount() :
-	mRef(0)
+    mRef(0)
 {
 }
 
 LLThreadSafeRefCount::LLThreadSafeRefCount(const LLThreadSafeRefCount& src)
 {
-	mRef = 0;
+    mRef = 0;
 }
 
 LLThreadSafeRefCount::~LLThreadSafeRefCount()
-{
-	if (mRef != 0)
-	{
-		LL_ERRS() << "deleting non-zero reference" << LL_ENDL;
-	}
+{ 
+    if (mRef != 0)
+    {
+		LL_ERRS() << "deleting referenced object mRef = " << mRef << LL_ENDL;
+    }
 }
 
 //============================================================================

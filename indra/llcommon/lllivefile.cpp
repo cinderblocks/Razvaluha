@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lllivefile.cpp
  *
@@ -31,10 +33,11 @@
 
 const F32 DEFAULT_CONFIG_FILE_REFRESH = 5.0f;
 
+
 class LLLiveFile::Impl
 {
 public:
-	Impl(const std::string &filename, const F32 refresh_period);
+	Impl(const std::string& filename, const F32 refresh_period);
 	~Impl();
 	
 	bool check();
@@ -62,7 +65,7 @@ LLLiveFile::Impl::Impl(const std::string& filename, const F32 refresh_period)
 	mLastModTime(0),
 	mLastStatTime(0),
 	mLastExists(false),
-	mEventTimer(NULL)
+	mEventTimer(nullptr)
 {
 }
 
@@ -71,7 +74,7 @@ LLLiveFile::Impl::~Impl()
 	delete mEventTimer;
 }
 
-LLLiveFile::LLLiveFile(const std::string &filename, const F32 refresh_period)
+LLLiveFile::LLLiveFile(const std::string& filename, const F32 refresh_period)
 	: impl(* new Impl(filename, refresh_period))
 {
 }
@@ -168,7 +171,7 @@ namespace
 			: LLEventTimer(refresh), mLiveFile(f)
 			{ }
 			
-		BOOL tick()
+		BOOL tick() override
 		{ 
 			mLiveFile.checkAndReload(); 
 			return FALSE;
@@ -193,3 +196,4 @@ void LLLiveFile::setRefreshPeriod(F32 seconds)
 	}
 	impl.mRefreshPeriod = seconds;
 }
+

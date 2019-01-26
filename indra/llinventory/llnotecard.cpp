@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llnotecard.cpp
  * @brief LLNotecard class definition
@@ -207,8 +209,8 @@ bool LLNotecard::importStream(std::istream& str)
 
 	BOOL success = TRUE;
 
-	char* text = new char[text_len + 1];
-	fullread(str, text, text_len);
+	auto text = std::make_unique<char[]>(text_len + 1);
+	fullread(str, text.get(), text_len);
 	if(str.fail())
 	{
 		LL_WARNS() << "Invalid Linden text: text shorter than text length: " << text_len << LL_ENDL;
@@ -219,10 +221,8 @@ bool LLNotecard::importStream(std::istream& str)
 	if(success)
 	{
 		// Actually set the text
-		mText = std::string(text);
+		mText = std::string(text.get());
 	}
-
-	delete[] text;
 
 	return success;
 }

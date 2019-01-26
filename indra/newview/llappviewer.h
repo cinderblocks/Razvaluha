@@ -1,42 +1,55 @@
 /** 
+ * @mainpage
+ *
+ * This is the sources for the Second Life Viewer;
+ * information on the open source project is at 
+ * https://wiki.secondlife.com/wiki/Open_Source_Portal
+ *
+ * The Mercurial repository for the trunk version is at
+ * https://bitbucket.org/lindenlab/viewer-release
+ * 
+ * @section source-license Source License
+ * @verbinclude LICENSE-source.txt
+ * 
+ * @section artwork-license Artwork License
+ * @verbinclude LICENSE-logos.txt
+ *
+ * $LicenseInfo:firstyear=2007&license=viewerlgpl$
+ * Second Life Viewer Source Code
+ * Copyright (C) 2010, Linden Research, Inc.
+ * 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
+ * 
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
+ * $/LicenseInfo$
+ *
  * @file llappviewer.h
  * @brief The LLAppViewer class declaration
- *
- * $LicenseInfo:firstyear=2007&license=viewergpl$
- * 
- * Copyright (c) 2007-2009, Linden Research, Inc.
- * 
- * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
- * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
- * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
- * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
- * $/LicenseInfo$
  */
 
 #ifndef LL_LLAPPVIEWER_H
 #define LL_LLAPPVIEWER_H
 
 #include "llallocator.h"
+#include "llapp.h"
+#include "llapr.h"
+#include "llcontrol.h"
 #include "llsys.h"			// for LLOSInfo
 #include "lltimer.h"
 #include "llappcorehttp.h"
+#include "lltrace.h"
 
 class LLCommandLineParser;
 class LLFrameTimer;
@@ -65,9 +78,9 @@ public:
 	//
 	// Main application logic
 	//
-	virtual bool init();			// Override to do application initialization
-	virtual bool cleanup();			// Override to do application cleanup
-	virtual bool mainLoop(); // Override for the application main loop.  Needs to at least gracefully notice the QUITTING state and exit.
+	bool init() override;			// Override to do application initialization
+	bool cleanup() override;			// Override to do application cleanup
+	bool frame() override; // Override for application body logic
 
 	// Application control
 	void flushVFSIO(); // waits for vfs transfers to complete
@@ -84,7 +97,7 @@ public:
 
 	void writeDebugInfo(bool isStatic=true);
 
-	const LLOSInfo& getOSInfo() const { return mSysOSInfo; }
+	const LLOSInfo& getOSInfo() const { return LLOSInfo::instance(); }
 
 	// Report true if under the control of a debugger. A null-op default.
 	virtual bool beingDebugged() { return false; } 
@@ -162,12 +175,13 @@ public:
 	void handleLoginComplete();
 
     LLAllocator & getAllocator() { return mAlloc; }
+
 	// On LoginCompleted callback
 	typedef boost::signals2::signal<void (void)> login_completed_signal_t;
 	login_completed_signal_t mOnLoginCompleted;
 	boost::signals2::connection setOnLoginCompletedCallback( const login_completed_signal_t::slot_type& cb ) { return mOnLoginCompleted.connect(cb); } 
 
-	void addOnIdleCallback(const boost::function<void()>& cb); // add a callback to fire (once) when idle
+	void addOnIdleCallback(const std::function<void()>& cb); // add a callback to fire (once) when idle
 
 	void purgeCache(); // Clear the local cache. 
 
@@ -179,9 +193,9 @@ public:
 	LLAppCoreHttp & getAppCoreHttp()			{ return mAppCoreHttp; }
 	
 protected:
-	virtual bool initWindow(); // Initialize the viewer's 
-	virtual bool initLogging(); // Initialize log files, logging system, return false on failure.
-	virtual bool initLoggingPortable(); // <singu/> Portability mode
+	virtual bool initWindow(); // Initialize the viewer's window.
+	virtual void initLoggingAndGetLastDuration(); // Initialize log files, logging system
+	virtual void initLoggingPortable(); // <singu/> Portability mode
 	virtual void initConsole() {}; // Initialize OS level debugging console.
 	virtual bool initHardwareTest() { return true; } // A false result indicates the app should quit.
 	virtual bool initSLURLHandler();
@@ -212,7 +226,7 @@ private:
 	void writeSystemInfo(); // Write system info to "debug_info.log"
 
 	void processMarkerFiles(); 
-	static void recordMarkerVersion(LLFILE* marker_file);
+	static void recordMarkerVersion(LLAPRFile& marker_file);
 	bool markerIsSameVersion(const std::string& marker_name) const;
     
     void idle(); 
@@ -233,13 +247,11 @@ private:
     bool mSecondInstance; // Is this a second instance of the app?
 
 	std::string mMarkerFileName;
-	LLFILE* mMarkerFile; // A file created to indicate the app is running.
+	LLAPRFile mMarkerFile; // A file created to indicate the app is running.
 
 	std::string mLogoutMarkerFileName;
-	LLFILE* mLogoutMarkerFile; // A file created to indicate the app is running.
+	LLAPRFile mLogoutMarkerFile; // A file created to indicate the app is running.
 
-	
-	LLOSInfo mSysOSInfo; 
 	bool mReportedCrash;
 
 	// Thread objects.
@@ -279,6 +291,7 @@ private:
 	//*NOTE: Mani - legacy updater stuff
 	// Still useable?
 public:
+
 	//some information for updater
 	typedef struct
 	{

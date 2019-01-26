@@ -123,8 +123,8 @@ class LLEditWearableDictionary : public LLSingleton<LLEditWearableDictionary>
 	//--------------------------------------------------------------------
 	// Constructors and Destructors
 	//--------------------------------------------------------------------
+	LLSINGLETON(LLEditWearableDictionary);
 public:
-	LLEditWearableDictionary();
 	virtual ~LLEditWearableDictionary();
 
 	//--------------------------------------------------------------------

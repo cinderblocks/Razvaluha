@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llvfsthread.cpp
  * @brief LLVFSThread implementation
@@ -32,7 +34,7 @@
 
 /*static*/ std::string LLVFSThread::sDataPath = "";
 
-/*static*/ LLVFSThread* LLVFSThread::sLocal = NULL;
+/*static*/ LLVFSThread* LLVFSThread::sLocal = nullptr;
 
 //============================================================================
 // Run on MAIN thread
@@ -59,7 +61,7 @@ void LLVFSThread::cleanupClass()
 		sLocal->update(0);
 	}
 	delete sLocal;
-	sLocal = 0;
+	sLocal = nullptr;
 }
 
 //----------------------------------------------------------------------------

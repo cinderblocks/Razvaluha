@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file partsyspacket.cpp
  * @brief Object for packing particle system initialization parameters
@@ -28,7 +30,7 @@
 #include "linden_common.h"
 
 #include "partsyspacket.h"
-#include "imageids.h"
+#include "indra_constants.h"
 
 // this function is global
 void gSetInitDataDefaults(LLPartInitData *setMe)
@@ -1264,7 +1266,7 @@ BOOL LLPartSysCompressedPacket::toLLPartInitData(LLPartInitData *out, U32 *bytes
 
 BOOL LLPartSysCompressedPacket::fromUnsignedBytes(U8 *in, U32 bytesUsed)
 {
-	if ((in != NULL) && (bytesUsed <= sizeof(mData)))
+	if ((in != nullptr) && (bytesUsed <= sizeof(mData)))
 	{
 		memcpy(mData, in, bytesUsed);	/* Flawfinder: ignore */
 		mNumBytes = bytesUsed;

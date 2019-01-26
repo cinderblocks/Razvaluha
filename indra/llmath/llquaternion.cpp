@@ -1,11 +1,13 @@
-/** 
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+/**
  * @file llquaternion.cpp
  * @brief LLQuaternion class implementation.
  *
  * $LicenseInfo:firstyear=2000&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
@@ -785,7 +787,7 @@ LLQuaternion mayaQ(F32 xRot, F32 yRot, F32 zRot, LLQuaternion::Order order)
 
 const char *OrderToString( const LLQuaternion::Order order )
 {
-	const char *p = NULL;
+	const char *p = nullptr;
 	switch( order )
 	{
 	default:
@@ -936,7 +938,7 @@ void LLQuaternion::unpackFromVector3( const LLVector3& vec )
 
 BOOL LLQuaternion::parseQuat(const std::string& buf, LLQuaternion* value)
 {
-	if( buf.empty() || value == NULL)
+	if( buf.empty() || value == nullptr)
 	{
 		return FALSE;
 	}

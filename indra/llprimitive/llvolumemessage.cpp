@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llvolumemessage.cpp
  * @brief LLVolumeMessage base class
@@ -480,9 +482,9 @@ bool LLVolumeMessage::constrainVolumeParams(LLVolumeParams& params)
 	bad |= params.setSkew(params.getPathParams().getSkew()) ? 0 : 0x800;
 	if(bad)
 	{
-		LL_WARNS() << "LLVolumeMessage::constrainVolumeParams() - "
-				<< "forced to constrain incoming volume params: "
-				<< llformat("0x%04x",bad) << LL_ENDL;
+		LL_DEBUGS() << "LLVolumeMessage::constrainVolumeParams() - "
+					<< "forced to constrain incoming volume params: "
+					<< llformat("0x%04x",bad) << LL_ENDL;
 	}
 	return bad ? false : true;
 }
@@ -497,8 +499,8 @@ bool LLVolumeMessage::packVolumeParams(const LLVolumeParams* params, LLMessageSy
 	}
 	else
 	{
-		packPathParams(0, mesgsys);
-		packProfileParams(0, mesgsys);
+		packPathParams(nullptr, mesgsys);
+		packProfileParams(nullptr, mesgsys);
 	}
 	return true;
 }
@@ -513,8 +515,8 @@ bool LLVolumeMessage::packVolumeParams(const LLVolumeParams* params, LLDataPacke
 	}
 	else
 	{
-		packPathParams(0, dp);
-		packProfileParams(0, dp);
+		packPathParams(nullptr, dp);
+		packProfileParams(nullptr, dp);
 	}
 	return true;
 }

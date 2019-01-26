@@ -34,8 +34,6 @@
 
 #include "lldrawpoolsky.h"
 
-#include "imageids.h"
-
 #include "llagent.h"
 #include "lldrawable.h"
 #include "llface.h"

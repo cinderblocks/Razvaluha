@@ -29,7 +29,7 @@ if (NDOF_FOUND)
   endif (NOT NDOF_FIND_QUIETLY)
 else (NDOF_FOUND)
   if (NDOF_FIND_REQUIRED)
-    message(FATAL_ERROR "Could not find NDOF library!")
+    message(FATAL_ERROR " * * *\nCould not find NDOF library!\nIf you don't need Space Navigator Joystick support you can skip this test by configuring with -DNDOF:BOOL=OFF\n * * *")
   endif (NDOF_FIND_REQUIRED)
 endif (NDOF_FOUND)
 

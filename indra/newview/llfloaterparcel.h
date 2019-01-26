@@ -34,11 +34,13 @@
 #define LL_FLOATERPARCELINFO_H
 
 #include "llfloater.h"
+#include "llinstancetracker.h"
 
 class LLPanelPlace;
 
 class LLFloaterParcelInfo
 :	public LLFloater
+,	public LLInstanceTracker<LLFloaterParcelInfo, LLUUID>
 {
 public:
 	static	void*	createPanelPlace(void*	data);
@@ -51,7 +53,6 @@ public:
 	static LLFloaterParcelInfo* show(const LLUUID& parcel_id);
 
 private:
-	LLUUID			mParcelID;			// for which parcel is this window?
 	LLPanelPlace*	mPanelParcelp;
 };
 

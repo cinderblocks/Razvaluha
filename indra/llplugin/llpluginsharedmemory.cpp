@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpluginsharedmemory.cpp
  * LLPluginSharedMemory manages a shared memory segment for use by the LLPlugin API.
@@ -64,13 +66,12 @@
 
 #if USE_APR_SHARED_MEMORY 
 	#include "llapr.h"
-	#include "apr_shm.h"
 #elif USE_SHM_OPEN_SHARED_MEMORY
 	#include <sys/fcntl.h>
 	#include <sys/mman.h>
 	#include <errno.h>
 #elif USE_WIN32_SHARED_MEMORY
-#include <windows.h>
+#include "llwin32headerslean.h"
 #endif // USE_APR_SHARED_MEMORY
 
 
@@ -117,7 +118,7 @@ public:
 LLPluginSharedMemory::LLPluginSharedMemory()
 {
 	mSize = 0;
-	mMappedAddress = NULL;
+	mMappedAddress = nullptr;
 	mNeedsDestroy = false;
 
 	mImpl = new LLPluginSharedMemoryPlatformImpl;
@@ -382,7 +383,7 @@ bool LLPluginSharedMemory::detach(void)
 
 LLPluginSharedMemoryPlatformImpl::LLPluginSharedMemoryPlatformImpl()
 {
-	mMapFile = NULL;
+	mMapFile = nullptr;
 }
 
 LLPluginSharedMemoryPlatformImpl::~LLPluginSharedMemoryPlatformImpl()
@@ -399,7 +400,7 @@ bool LLPluginSharedMemory::map(void)
 		0,                   
 		mSize);
 		
-	if(mMappedAddress == NULL)
+	if(mMappedAddress == nullptr)
 	{
 		LL_WARNS("Plugin") << "MapViewOfFile failed: " << GetLastError() << LL_ENDL;
 		return false;
@@ -412,10 +413,10 @@ bool LLPluginSharedMemory::map(void)
 
 bool LLPluginSharedMemory::unmap(void)
 {
-	if(mMappedAddress != NULL)
+	if(mMappedAddress != nullptr)
 	{
 		UnmapViewOfFile(mMappedAddress);	
-		mMappedAddress = NULL;
+		mMappedAddress = nullptr;
 	}
 
 	return true;
@@ -423,10 +424,10 @@ bool LLPluginSharedMemory::unmap(void)
 
 bool LLPluginSharedMemory::close(void)
 {
-	if(mImpl->mMapFile != NULL)
+	if(mImpl->mMapFile != nullptr)
 	{
 		CloseHandle(mImpl->mMapFile);
-		mImpl->mMapFile = NULL;
+		mImpl->mMapFile = nullptr;
 	}
 	
 	return true;
@@ -445,15 +446,15 @@ bool LLPluginSharedMemory::create(size_t size)
 	mName += createName();
 	mSize = size;
 
-	mImpl->mMapFile = CreateFileMappingA(
+	mImpl->mMapFile = CreateFileMappingW(
                  INVALID_HANDLE_VALUE,		// use paging file
-                 NULL,						// default security 
+                 nullptr,						// default security 
                  PAGE_READWRITE,			// read/write access
                  0,							// max. object size 
                  mSize,						// buffer size  
-                 mName.c_str());			// name of mapping object
+				 utf8str_to_utf16str(mName).c_str());			// name of mapping object
 
-	if(mImpl->mMapFile == NULL)
+	if(mImpl->mMapFile == nullptr)
 	{
 		LL_WARNS("Plugin") << "CreateFileMapping failed: " << GetLastError() << LL_ENDL;
 		return false;
@@ -476,12 +477,12 @@ bool LLPluginSharedMemory::attach(const std::string &name, size_t size)
 	mName = name;
 	mSize = size;
 
-	mImpl->mMapFile = OpenFileMappingA(
+	mImpl->mMapFile = OpenFileMappingW(
 				FILE_MAP_ALL_ACCESS,		// read/write access
 				FALSE,						// do not inherit the name
-				mName.c_str());				// name of mapping object
+				utf8str_to_utf16str(mName).c_str());				// name of mapping object
 	
-	if(mImpl->mMapFile == NULL)
+	if(mImpl->mMapFile == nullptr)
 	{
 		LL_WARNS("Plugin") << "OpenFileMapping failed: " << GetLastError() << LL_ENDL;
 		return false;

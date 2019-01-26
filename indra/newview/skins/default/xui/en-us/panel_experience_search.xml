@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<panel
+  layout="topleft"
+  bottom="18"
+  mouse_opaque="false"
+  left="0"
+  width="350"
+  top="24"
+  label="Search"
+  follows="all">
+
+  <string
+    name="not_found">
+    &apos;[TEXT]&apos; not found
+  </string>
+  <string
+    name="no_results">
+    No results
+  </string>
+  <string
+    name="searching">
+    Searching...
+  </string>
+  <string
+    name="loading">
+    Loading...
+  </string>
+  <string
+    name="maturity_icon_general">
+    "map_event.tga"
+  </string>
+  <string
+    name="maturity_icon_moderate">
+    "map_event_mature.tga"
+  </string>
+  <string
+    name="maturity_icon_adult">
+    "map_event_adult.tga"
+  </string>
+  <panel
+    follows="all"
+    left="5"
+    right="-3"
+    top="-2"
+    bottom="0"
+    name="search_panel">
+    <text
+      bottom="20"
+      left="0"
+      follows="top|left|right"
+      right="-1">
+      Enter part of the name:
+    </text>
+    <line_editor
+      left="0"
+      follows="left|top|right"
+      name="edit"
+      height="18"
+      right="-60"/>
+    <button label="Go"
+            follows="top|right"
+            bottom_delta="0"
+            width="58"
+            right="-1"
+            height="18"
+            name="find"/>
+    <text
+      bottom_delta="-24"
+      left="0"
+      follows="top|left"
+      width="180">
+      Max Content Rating:
+    </text>
+    <combo_box
+      follows="left|top"
+      height="20"
+      label="Moderate"
+      layout="topleft"
+      name="maturity"
+      bottom_delta="0"
+      left_delta="180"
+      right="-1">
+      <combo_box.item
+        label="Adult"
+        name="Adult"
+        value="42">
+      </combo_box.item>
+      <combo_box.item
+        label="Mature"
+        name="Mature"
+        value="21">
+      </combo_box.item>
+      <combo_box.item
+        label="PG"
+        name="PG"
+        value="13">
+      </combo_box.item>
+    </combo_box>
+    <scroll_list
+      draw_heading="true"
+      left="0"
+      right="-1"
+      height="239"
+      bottom_delta="-259"
+      follows="all" 
+      column_padding="5"
+      name="search_results">
+      <columns
+        halign="center"
+        width="24"
+        name="maturity"
+        label=""/>
+      <columns
+        user_resize="true"
+        name="experience_name"
+        label="Name"/>
+      <columns
+        user_resize="true"
+        name="owner"
+        label="Owner"/>
+    </scroll_list>
+
+    <button
+      follows="left|bottom"
+      height="20"
+      label="OK"
+      label_selected="OK"
+      name="ok_btn"
+      bottom_delta="-242"
+      left="0"
+      width="95" />
+    <button
+      follows="left|bottom"
+      height="20"
+      label="Cancel"
+      name="cancel_btn"
+      width="95"
+      left_delta="98" />
+     <button
+        follows="left|bottom"
+        height="20"
+        label="View Profile"
+        name="profile_btn"
+        width="95"
+        left_delta="98" />
+     <button
+        follows="left|bottom"
+        height="20"
+        label="&lt;"
+        name="left_btn"
+        image_overlay="arrow_left.tga"
+        width="20"
+        left_delta="98"
+        enabled="false"/>
+     <button
+        follows="left|bottom"
+        height="20"
+        label="&gt;"
+        image_overlay="arrow_right.tga"
+        name="right_btn"
+        width="20"
+        left_delta="23"
+        enabled="false" />
+     
+  </panel>
+</panel>

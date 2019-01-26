@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llcamera.cpp
  * @brief Implementation of the LLCamera class.
@@ -5,7 +7,7 @@
  * $LicenseInfo:firstyear=2000&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
@@ -187,7 +189,7 @@ bool LLCamera::isChanged()
 {
 	bool changed = false;
 	for (U32 i = 0; i < mPlaneCount; i++)
-{
+	{
 		U8 mask = mPlaneMask[i];
 		if (mask != 0xff && !changed)
 		{
@@ -199,7 +201,7 @@ bool LLCamera::isChanged()
 	return changed;
 }
 
-S32 LLCamera::AABBInFrustum(const LLVector4a &center, const LLVector4a& radius, const LLPlane* planes)
+S32 LLCamera::AABBInFrustum(const LLVector4a &center, const LLVector4a& radius, const LLPlane* planes) 
 {
 	if(!planes)
 	{
@@ -240,12 +242,12 @@ S32 LLCamera::AABBInFrustum(const LLVector4a &center, const LLVector4a& radius, 
 
 //exactly same as the function AABBInFrustum(...)
 //except uses mRegionPlanes instead of mAgentPlanes.
-S32 LLCamera::AABBInRegionFrustum(const LLVector4a& center, const LLVector4a& radius)
+S32 LLCamera::AABBInRegionFrustum(const LLVector4a& center, const LLVector4a& radius) 
 {
 	return AABBInFrustum(center, radius, mRegionPlanes);
 }
 
-S32 LLCamera::AABBInFrustumNoFarClip(const LLVector4a& center, const LLVector4a& radius, const LLPlane* planes)
+S32 LLCamera::AABBInFrustumNoFarClip(const LLVector4a& center, const LLVector4a& radius, const LLPlane* planes) 
 {
 	if(!planes)
 	{
@@ -286,7 +288,7 @@ S32 LLCamera::AABBInFrustumNoFarClip(const LLVector4a& center, const LLVector4a&
 
 //exactly same as the function AABBInFrustumNoFarClip(...)
 //except uses mRegionPlanes instead of mAgentPlanes.
-S32 LLCamera::AABBInRegionFrustumNoFarClip(const LLVector4a& center, const LLVector4a& radius)
+S32 LLCamera::AABBInRegionFrustumNoFarClip(const LLVector4a& center, const LLVector4a& radius) 
 {
 	return AABBInFrustumNoFarClip(center, radius, mRegionPlanes);
 }
@@ -629,7 +631,7 @@ void LLCamera::calcAgentFrustumPlanes(LLVector3* frust)
 
 //calculate regional planes from mAgentPlanes.
 //vector "shift" is the vector of the region origin in the agent space.
-void LLCamera::calcRegionFrustumPlanes(const LLVector3& shift, F32 far_clip_distance)
+void LLCamera::calcRegionFrustumPlanes(const LLVector3& shift, F32 far_clip_distance) 
 {
 	F32 far_w;
 	{

@@ -32,6 +32,7 @@
 #include "v4math.h"
 #include "m4math.h"
 #include <queue>
+#include <boost/align/aligned_allocator.hpp>
 
 class daeElement;
 class domMesh;
@@ -42,18 +43,21 @@ class domMesh;
 class LLMeshSkinInfo 
 {
 public:
-	LLUUID mMeshID;
-	std::vector<std::string> mJointNames;
-	std::vector<LLMatrix4> mInvBindMatrix;
-	std::vector<LLMatrix4> mAlternateBindMatrix;
-	std::map<std::string, U32> mJointMap;
-
-	LLMeshSkinInfo() { }
+	LLMeshSkinInfo();
 	LLMeshSkinInfo(LLSD& data);
 	void fromLLSD(LLSD& data);
-	LLSD asLLSD(bool include_joints) const;
+	LLSD asLLSD(bool include_joints, bool lock_scale_if_joint_position) const;
+
+	LLUUID mMeshID;
+	std::vector<std::string> mJointNames;
+    mutable std::vector<S32> mJointNums;
+	std::vector<LLMatrix4a, boost::alignment::aligned_allocator<LLMatrix4a, 64>> mInvBindMatrix;
+	std::vector<LLMatrix4> mAlternateBindMatrix;
+
 	LLMatrix4 mBindShapeMatrix;
 	float mPelvisOffset;
+    bool mLockScaleIfJointPosition;
+    bool mInvalidJointsScrubbed;
 };
 
 class LLModel : public LLVolume
@@ -138,6 +142,7 @@ public:
 		const LLModel::Decomposition& decomp,
 		BOOL upload_skin,
 		BOOL upload_joints,
+        BOOL lock_scale_if_joint_position,
 		BOOL nowrite = FALSE,
 		BOOL as_slm = FALSE,
 		int submodel_id = 0);
@@ -173,12 +178,12 @@ public:
 
 	void sortVolumeFacesByMaterialName();
 	void normalizeVolumeFaces();
-	void trimVolumeFacesToSize(S32 new_count = LL_SCULPT_MESH_MAX_FACES, LLVolume::face_list_t* remainder = NULL);
+	void trimVolumeFacesToSize(U32 new_count = LL_SCULPT_MESH_MAX_FACES, LLVolume::face_list_t* remainder = NULL);
 	void optimizeVolumeFaces();
 	void offsetMesh( const LLVector3& pivotPoint );
 	void getNormalizedScaleTranslation(LLVector3& scale_out, LLVector3& translation_out);
 	LLVector3 getTransformedCenter(const LLMatrix4& mat);
-
+	
 	//reorder face list based on mMaterialList in this and reference so 
 	//order matches that of reference (material ordering touchup)
 	bool matchMaterialOrder(LLModel* ref, int& refFaceCnt, int& modelFaceCnt );
@@ -223,7 +228,7 @@ public:
 
 	struct CompareWeightGreater
 	{
-		bool operator()(const JointWeight& lhs, const JointWeight& rhs)
+		bool operator()(const JointWeight& lhs, const JointWeight& rhs) const
 		{
 			return rhs < lhs; // strongest = first
 		}
@@ -313,7 +318,7 @@ public:
     
     bool operator<(const LLImportMaterial &params) const;
     
-    LLImportMaterial() : LLModelMaterialBase()
+    LLImportMaterial() : LLModelMaterialBase(), mOpaqueData(nullptr)
     {
         mDiffuseColor.set(1,1,1,1);
     }

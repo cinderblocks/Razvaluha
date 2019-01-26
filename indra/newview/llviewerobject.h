@@ -54,27 +54,30 @@ class LLAgent;			// TODO: Get rid of this.
 class LLAudioSource;
 class LLAudioSourceVO;
 class LLBBox;
-class LLDataPacker;
 class LLColor4;
-class LLFrameTimer;
+class LLDataPacker;
 class LLDrawable;
+class LLFrameTimer;
 class LLHost;
-class LLWorld;
+class LLMessageSystem;
 class LLNameValue;
 class LLNetMap;
-class LLMessageSystem;
 class LLPartSysData;
-class LLPrimitive;
 class LLPipeline;
+class LLPrimitive;
 class LLTextureEntry;
-class LLViewerTexture;
+class LLVOAvatar;
+class LLVOInventoryListener;
 class LLViewerInventoryItem;
 class LLViewerObject;
+class LLViewerObjectMedia;
 class LLViewerPartSourceScript;
 class LLViewerRegion;
-class LLViewerObjectMedia;
-class LLVOInventoryListener;
-class LLVOAvatar;
+class LLViewerTexture;
+class LLWorld;
+
+// The maximum size of an object extra parameters binary (packed) block
+constexpr size_t MAX_OBJECT_PARAMS_SIZE = 1024;
 
 typedef enum e_object_update_type
 {
@@ -135,7 +138,7 @@ public:
 
 	typedef const child_list_t const_child_list_t;
 
-	LLViewerObject(const LLUUID &id, const LLPCode type, LLViewerRegion *regionp, BOOL is_global = FALSE);
+	LLViewerObject(const LLUUID &id, const LLPCode pcode, LLViewerRegion *regionp, BOOL is_global = FALSE);
 
 	virtual void resetVertexBuffers() {}
 	virtual void markDead();				// Mark this object as dead, and clean up its references
@@ -169,6 +172,7 @@ public:
 		INVALID_UPDATE = 0x80000000 
 	};
 
+	static  U32     extractSpatialExtents(LLDataPackerBinaryBuffer *dp, LLVector3& pos, LLVector3& scale, LLQuaternion& rot);
 	virtual U32		processUpdateMessage(LLMessageSystem *mesgsys,
 										void **user_data,
 										U32 block_num,
@@ -183,9 +187,14 @@ public:
 	void			setOnActiveList(BOOL on_active)		{ mOnActiveList = on_active; }
 
 	virtual BOOL	isAttachment() const { return FALSE; }
+	const std::string& getAttachmentItemName() const;
+
 	virtual LLVOAvatar* getAvatar() const;  //get the avatar this object is attached to, or NULL if object is not an attachment
 	virtual BOOL	isHUDAttachment() const { return FALSE; }
 	virtual BOOL	isTempAttachment() const;
+
+	virtual BOOL isHiglightedOrBeacon() const;
+
 	virtual void 	updateRadius() {};
 	virtual F32 	getVObjRadius() const; // default implemenation is mDrawable->getRadius()
 	
@@ -206,11 +215,14 @@ public:
 	
 	virtual LLDrawable* createDrawable(LLPipeline *pipeline);
 	virtual BOOL		updateGeometry(LLDrawable *drawable);
-	virtual void		updateGL();
+	void		updateGL() override;
 	virtual void		updateFaceSize(S32 idx);
 	virtual BOOL		updateLOD();
 	virtual BOOL		setDrawableParent(LLDrawable* parentp);
 	F32					getRotTime() { return mRotTime; }
+private:
+	void				resetRotTime();
+public:
 	void				resetRot();
 	void				applyAngularVelocity(F32 dt);
 
@@ -223,7 +235,7 @@ public:
 	LLViewerRegion* getRegion() const				{ return mRegionp; }
 
 	BOOL isSelected() const							{ return mUserSelected; }
-	void setSelected(BOOL sel);
+	virtual void setSelected(BOOL sel);
 
 	const LLUUID &getID() const						{ return mID; }
 	U32 getLocalID() const							{ return mLocalID; }
@@ -276,11 +288,11 @@ public:
 	virtual BOOL lineSegmentIntersect(const LLVector4a& start, const LLVector4a& end,
 									  S32 face = -1,                          // which face to check, -1 = ALL_SIDES
 									  BOOL pick_transparent = FALSE,
-									  S32* face_hit = NULL,                   // which face was hit
-									  LLVector4a* intersection = NULL,         // return the intersection point
-									  LLVector2* tex_coord = NULL,            // return the texture coordinates of the intersection point
-									  LLVector4a* normal = NULL,               // return the surface normal at the intersection point
-									  LLVector4a* tangent = NULL             // return the surface tangent at the intersection point
+									  S32* face_hit = nullptr,                   // which face was hit
+									  LLVector4a* intersection = nullptr,         // return the intersection point
+									  LLVector2* tex_coord = nullptr,            // return the texture coordinates of the intersection point
+									  LLVector4a* normal = nullptr,               // return the surface normal at the intersection point
+									  LLVector4a* tangent = nullptr             // return the surface tangent at the intersection point
 		);
 	
 	virtual BOOL lineSegmentBoundingBox(const LLVector4a& start, const LLVector4a& end);
@@ -314,39 +326,39 @@ public:
 	inline void setRotation(const LLQuaternion& quat, BOOL damped = FALSE);
 	void sendRotationUpdate() const;
 
-	/*virtual*/	void	setNumTEs(const U8 num_tes);
-	/*virtual*/	void	setTE(const U8 te, const LLTextureEntry &texture_entry);
-	/*virtual*/ S32		setTETexture(const U8 te, const LLUUID &uuid);
+	/*virtual*/	void	setNumTEs(const U8 num_tes) override;
+	/*virtual*/	void	setTE(const U8 te, const LLTextureEntry &texture_entry) override;
+	/*virtual*/ S32		setTETexture(const U8 te, const LLUUID &uuid) override;
 	/*virtual*/ S32		setTENormalMap(const U8 te, const LLUUID &uuid);
 	/*virtual*/ S32		setTESpecularMap(const U8 te, const LLUUID &uuid);
 	S32 setTETextureCore(const U8 te, LLViewerTexture *image);
 	S32 setTENormalMapCore(const U8 te, LLViewerTexture *image);
 	S32 setTESpecularMapCore(const U8 te, LLViewerTexture *image);
-	/*virtual*/ S32		setTEColor(const U8 te, const LLColor3 &color);
-	/*virtual*/ S32		setTEColor(const U8 te, const LLColor4 &color);
-	/*virtual*/ S32		setTEScale(const U8 te, const F32 s, const F32 t);
-	/*virtual*/ S32		setTEScaleS(const U8 te, const F32 s);
-	/*virtual*/ S32		setTEScaleT(const U8 te, const F32 t);
-	/*virtual*/ S32		setTEOffset(const U8 te, const F32 s, const F32 t);
-	/*virtual*/ S32		setTEOffsetS(const U8 te, const F32 s);
-	/*virtual*/ S32		setTEOffsetT(const U8 te, const F32 t);
-	/*virtual*/ S32		setTERotation(const U8 te, const F32 r);
-	/*virtual*/	S32		setTEBumpmap(const U8 te, const U8 bump );
-	/*virtual*/	S32		setTETexGen(const U8 te, const U8 texgen );
-	/*virtual*/	S32		setTEMediaTexGen(const U8 te, const U8 media ); // *FIXME: this confusingly acts upon a superset of setTETexGen's flags without absorbing its semantics
-	/*virtual*/	S32		setTEShiny(const U8 te, const U8 shiny );
-	/*virtual*/	S32		setTEFullbright(const U8 te, const U8 fullbright );
-	/*virtual*/	S32		setTEMediaFlags(const U8 te, const U8 media_flags );
-	/*virtual*/ S32     setTEGlow(const U8 te, const F32 glow);
-	/*virtual*/ S32     setTEMaterialID(const U8 te, const LLMaterialID& pMaterialID);
-	/*virtual*/ S32		setTEMaterialParams(const U8 te, const LLMaterialPtr pMaterialParams);
+	/*virtual*/ S32		setTEColor(const U8 te, const LLColor3 &color) override;
+	/*virtual*/ S32		setTEColor(const U8 te, const LLColor4 &color) override;
+	/*virtual*/ S32		setTEScale(const U8 te, const F32 s, const F32 t) override;
+	/*virtual*/ S32		setTEScaleS(const U8 te, const F32 s) override;
+	/*virtual*/ S32		setTEScaleT(const U8 te, const F32 t) override;
+	/*virtual*/ S32		setTEOffset(const U8 te, const F32 s, const F32 t) override;
+	/*virtual*/ S32		setTEOffsetS(const U8 te, const F32 s) override;
+	/*virtual*/ S32		setTEOffsetT(const U8 te, const F32 t) override;
+	/*virtual*/ S32		setTERotation(const U8 te, const F32 r) override;
+	/*virtual*/	S32		setTEBumpmap(const U8 te, const U8 bump ) override;
+	/*virtual*/	S32		setTETexGen(const U8 te, const U8 texgen ) override;
+	/*virtual*/	S32		setTEMediaTexGen(const U8 te, const U8 media ) override; // *FIXME: this confusingly acts upon a superset of setTETexGen's flags without absorbing its semantics
+	/*virtual*/	S32		setTEShiny(const U8 te, const U8 shiny ) override;
+	/*virtual*/	S32		setTEFullbright(const U8 te, const U8 fullbright ) override;
+	/*virtual*/	S32		setTEMediaFlags(const U8 te, const U8 media_flags ) override;
+	/*virtual*/ S32     setTEGlow(const U8 te, const F32 glow) override;
+	/*virtual*/ S32     setTEMaterialID(const U8 te, const LLMaterialID& pMaterialID) override;
+	/*virtual*/ S32		setTEMaterialParams(const U8 te, const LLMaterialPtr pMaterialParams) override;
 
 	// Used by Materials update functions to properly kick off rebuilds
 	// of VBs etc when materials updates require changes.
 	//
 	void refreshMaterials();
 
-	/*virtual*/	BOOL	setMaterial(const U8 material);
+	/*virtual*/	BOOL	setMaterial(const U8 material) override;
 	virtual		void	setTEImage(const U8 te, LLViewerTexture *imagep); // Not derived from LLPrimitive
 	virtual     void    changeTEImage(S32 index, LLViewerTexture* new_image)  ;
 	virtual     void    changeTENormalMap(S32 index, LLViewerTexture* new_image)  ;
@@ -362,8 +374,8 @@ public:
 	
 	virtual void setScale(const LLVector3 &scale, BOOL damped = FALSE);
 
-	virtual F32 getStreamingCost(S32* bytes = NULL, S32* visible_bytes = NULL, F32* unscaled_value = NULL) const;
-	virtual U32 getTriangleCount(S32* vcount = NULL) const;
+	virtual F32 getStreamingCost(S32* bytes = nullptr, S32* visible_bytes = nullptr, F32* unscaled_value = nullptr) const;
+	virtual U32 getTriangleCount(S32* vcount = nullptr) const;
 	virtual U32 getHighLODTriangleCount();
 
 	void setObjectCost(F32 cost);
@@ -395,11 +407,11 @@ public:
 	// Owner id is this object's owner
 	void setAttachedSound(const LLUUID &audio_uuid, const LLUUID& owner_id, const F32 gain, const U8 flags);
 	void adjustAudioGain(const F32 gain);
-	void clearAttachedSound()								{ mAudioSourcep = NULL; }
+	void clearAttachedSound()								{ mAudioSourcep = nullptr; }
 
 	 // Create if necessary
 	LLAudioSource *getAudioSource(const LLUUID& owner_id);
-	bool isAudioSource() {return mAudioSourcep != NULL;}
+	bool isAudioSource() const {return mAudioSourcep != nullptr;}
 
 	U8 getMediaType() const;
 	void setMediaType(U8 media_type);
@@ -415,6 +427,7 @@ public:
 	void setCanSelect(BOOL canSelect);
 
 	void setDebugText(const std::string &utf8text);
+	void initHudText();
 	// <edit>
 	std::string getDebugText();
 	// </edit>
@@ -434,6 +447,7 @@ public:
 
 	void setDrawableState(U32 state, BOOL recursive = TRUE);
 	void clearDrawableState(U32 state, BOOL recursive = TRUE);
+	BOOL isDrawableState(U32 state, BOOL recursive = TRUE) const;
 
 	// Called when the drawable shifts
 	virtual void onShift(const LLVector4a &shift_vector)	{ }
@@ -450,8 +464,8 @@ public:
 	void removeInventoryListener(LLVOInventoryListener* listener);
 	BOOL isInventoryPending() { return mInventoryPending; }
 	void clearInventoryListeners();
+	bool hasInventoryListeners();
 	void requestInventory();
-	void fetchInventoryFromServer();
 	static void processTaskInv(LLMessageSystem* msg, void** user_data);
 	void removeInventory(const LLUUID& item_id);
 
@@ -518,7 +532,6 @@ public:
 	inline BOOL		flagPhantom() const				{ return ((mFlags & FLAGS_PHANTOM) != 0); }
 	inline BOOL		flagInventoryEmpty() const		{ return ((mFlags & FLAGS_INVENTORY_EMPTY) != 0); }
 	inline BOOL		flagAllowInventoryAdd() const	{ return ((mFlags & FLAGS_ALLOW_INVENTORY_DROP) != 0); }
-	inline BOOL		flagTemporary() const			{ return ((mFlags & FLAGS_TEMPORARY) != 0); }
 	inline BOOL		flagTemporaryOnRez() const		{ return ((mFlags & FLAGS_TEMPORARY_ON_REZ) != 0); }
 	inline BOOL		flagAnimSource() const			{ return ((mFlags & FLAGS_ANIM_SOURCE) != 0); }
 	inline BOOL		flagCameraSource() const		{ return ((mFlags & FLAGS_CAMERA_SOURCE) != 0); }
@@ -544,9 +557,10 @@ public:
 	bool specialHoverCursor() const;	// does it have a special hover cursor?
 
 	void			setRegion(LLViewerRegion *regionp);
-	virtual void	updateRegion(LLViewerRegion *regionp) {}
+	virtual void	updateRegion(LLViewerRegion *regionp);
 
 	void updateFlags(BOOL physics_changed = FALSE);
+	void loadFlags(U32 flags); //load flags from cache or from message
 	BOOL setFlags(U32 flag, BOOL state);
 	BOOL setFlagsWithoutUpdate(U32 flag, BOOL state);
 	void setPhysicsShapeType(U8 type);
@@ -577,6 +591,13 @@ public:
 	friend class LLViewerMediaList;
 
 public:
+	static void unpackVector3(LLDataPackerBinaryBuffer* dp, LLVector3& value, std::string name);
+	static void unpackUUID(LLDataPackerBinaryBuffer* dp, LLUUID& value, std::string name);
+	static void unpackU32(LLDataPackerBinaryBuffer* dp, U32& value, std::string name);
+	static void unpackU8(LLDataPackerBinaryBuffer* dp, U8& value, std::string name);
+	static U32 unpackParentID(LLDataPackerBinaryBuffer* dp, U32& parent_id);
+
+public:
 	//counter-translation
 	void resetChildrenPosition(const LLVector3& offset, BOOL simplified = FALSE) ;
 	//counter-rotation
@@ -599,13 +620,16 @@ private:
 	// Motion prediction between updates
 	void interpolateLinearMotion(const F64SecondsImplicit & time, const F32SecondsImplicit & dt);
 
+	// forms task inventory request if none are pending
+	void fetchInventoryFromServer();
+
 public:
 	//
 	// Viewer-side only types - use the LL_PCODE_APP mask.
 	//
 	typedef enum e_vo_types
 	{
-		LL_VO_CLOUDS =				LL_PCODE_APP | 0x20,
+		LL_VO_CLOUDS =				LL_PCODE_APP | 0x20, // no longer used
 		LL_VO_SURFACE_PATCH =		LL_PCODE_APP | 0x30,
 		LL_VO_WL_SKY =				LL_PCODE_APP | 0x40,
 		LL_VO_SQUARE_TORUS =		LL_PCODE_APP | 0x50,
@@ -721,6 +745,7 @@ private:
 	void deleteTEImages(); // correctly deletes list of images
 	
 protected:
+
 	typedef std::map<char *, LLNameValue *> name_value_map_t;
 	name_value_map_t mNameValuePairs;	// Any name-value pairs stored by script
 
@@ -758,9 +783,10 @@ protected:
 	callback_list_t mInventoryCallbacks;
 	S16 mInventorySerialNum;
 
-	LLViewerRegion	*mRegionp;					// Region that this object belongs to.
 	BOOL			mInventoryPending;
 	BOOL			mInventoryDirty;
+
+	LLViewerRegion	*mRegionp;					// Region that this object belongs to.
 	BOOL			mDead;
 	BOOL			mOrphaned;					// This is an orphaned child
 	BOOL			mUserSelected;				// Cached user select information
@@ -828,6 +854,7 @@ public:
 	void setLastUpdateType(EObjectUpdateType last_update_type);
 	BOOL getLastUpdateCached() const;
 	void setLastUpdateCached(BOOL last_update_cached);
+
 private:
 	LLUUID mAttachmentItemID; // ItemID of the associated object is in user inventory.
 	EObjectUpdateType	mLastUpdateType;
@@ -893,7 +920,8 @@ public:
 		: LLViewerObject(id, pcode, regionp, is_global)
 	{ }
 
-	virtual void updateDrawable(BOOL force_damped);
+	void updateDrawable(BOOL force_damped) override;
 };
+
 
 #endif

@@ -73,8 +73,8 @@ public:
 	virtual ~HttpOpRequest();							// Use release()
 
 private:
-	HttpOpRequest(const HttpOpRequest &);				// Not defined
-	void operator=(const HttpOpRequest &);				// Not defined
+	HttpOpRequest(const HttpOpRequest &) = delete;				// Not defined
+	HttpOpRequest& operator=(const HttpOpRequest &) = delete;	// Not defined
 
 public:
 	enum EMethod
@@ -87,12 +87,13 @@ public:
         HOR_COPY,
         HOR_MOVE
 	};
-	
-	virtual void stageFromRequest(HttpService *);
-	virtual void stageFromReady(HttpService *);
-	virtual void stageFromActive(HttpService *);
+    static std::string methodToString(const EMethod &);
 
-	virtual void visitNotifier(HttpRequest * request);
+	void stageFromRequest(HttpService *) override;
+	void stageFromReady(HttpService *) override;
+	void stageFromActive(HttpService *) override;
+
+	void visitNotifier(HttpRequest * request) override;
 			
 public:
 	/// Setup Methods
@@ -162,8 +163,8 @@ public:
 	// Threading:  called by worker thread
 	//
 	HttpStatus prepareRequest(HttpService * service);
-	
-	virtual HttpStatus cancel();
+
+	HttpStatus cancel() override;
 
 protected:
 	// Common setup for all the request methods.
@@ -232,7 +233,13 @@ public:
 	int					mPolicy503Retries;
 	HttpTime			mPolicyRetryAt;
 	int					mPolicyRetryLimit;
+	HttpTime			mPolicyMinRetryBackoff; // initial delay between retries (mcs)
+	HttpTime			mPolicyMaxRetryBackoff;
+
+    // Alchemy: Request ID for message logger
+    U64                 mRequestId;
 };  // end class HttpOpRequest
+
 
 
 /// HttpOpRequestCompare isn't an operation but a uniform comparison
@@ -241,8 +248,8 @@ public:
 class HttpOpRequestCompare
 {
 public:
-	bool operator()(const HttpOpRequest * lhs, const HttpOpRequest * rhs)
-		{
+	bool operator()(const HttpOpRequest * lhs, const HttpOpRequest * rhs) const
+	{
 			return lhs->mReqPriority > rhs->mReqPriority;
 		}
 };  // end class HttpOpRequestCompare

@@ -144,7 +144,7 @@ public:
 	static void cleanupClass();
 	static void setupClientArrays(U32 data_mask);
 	static void drawArrays(U32 mode, const std::vector<LLVector3>& pos, const std::vector<LLVector3>& norm);
-	static void drawElements(U32 mode, const LLVector4a* pos, const LLVector2* tc, S32 num_indices, const U16* indicesp);
+	static void drawElements(U32 mode, const S32 num_vertices, const LLVector4a* pos, const LLVector2* tc, S32 num_indices, const U16* indicesp);
 
  	static void unbind(); //unbind any bound vertex buffer
 
@@ -228,8 +228,6 @@ public:
 	// map for data access
 	volatile U8*		mapVertexBuffer(S32 type, S32 index, S32 count, bool map_range);
 	volatile U8*		mapIndexBuffer(S32 index, S32 count, bool map_range);
-
-	void bindForFeedback(U32 channel, U32 type, U32 index, U32 count);
 
 	// set for rendering
 	virtual void	setBuffer(U32 data_mask); 	// calls  setupVertexBuffer() if data_mask is not 0
@@ -352,6 +350,9 @@ public:
 	static U32 sIndexCount;
 	static U32 sBindCount;
 	static U32 sSetCount;
+
+private:
+	static LLVertexBuffer* sUtilityBuffer;
 };
 
 

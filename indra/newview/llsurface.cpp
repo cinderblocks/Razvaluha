@@ -34,7 +34,6 @@
 #include "llpatchvertexarray.h"
 #include "patch_dct.h"
 #include "patch_code.h"
-#include "bitpack.h"
 #include "llviewerobjectlist.h"
 #include "llregionhandle.h"
 #include "llagent.h"

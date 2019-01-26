@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltracesampler.cpp
  *
@@ -27,7 +29,7 @@
 
 #include "lltraceaccumulators.h"
 #include "lltrace.h"
-#include "lltracethreadrecorder.h"
+//#include "lltracethreadrecorder.h"
 
 namespace LLTrace
 {
@@ -88,7 +90,7 @@ void AccumulatorBufferGroup::makeCurrent()
 	mStackTimers.makeCurrent();
 	mMemStats.makeCurrent();
 
-	ThreadRecorder* thread_recorder = get_thread_recorder().get();
+	/*ThreadRecorder* thread_recorder = get_thread_recorder().get();
 	AccumulatorBuffer<TimeBlockAccumulator>& timer_accumulator_buffer = mStackTimers;
 	// update stacktimer parent pointers
 	for (S32 i = 0, end_i = mStackTimers.size(); i < end_i; i++)
@@ -98,7 +100,7 @@ void AccumulatorBufferGroup::makeCurrent()
 		{
 			timer_accumulator_buffer[i].mParent = tree_node->mParent;
 		}
-	}
+	}*/
 }
 
 //static
@@ -293,7 +295,7 @@ void EventAccumulator::reset( const EventAccumulator* other )
 	mSum = 0;
 	mMin = std::numeric_limits<float>::quiet_NaN();
 	mMax = std::numeric_limits<float>::quiet_NaN();
-	mMean = NaN;
+	mMean = std::numeric_limits<double>::quiet_NaN();
 	mSumOfSquares = 0;
 	mLastValue = other ? other->mLastValue : NaN;
 }

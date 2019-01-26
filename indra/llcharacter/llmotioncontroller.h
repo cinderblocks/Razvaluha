@@ -2,31 +2,25 @@
  * @file llmotioncontroller.h
  * @brief Implementation of LLMotionController class.
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -36,14 +30,10 @@
 //-----------------------------------------------------------------------------
 // Header files
 //-----------------------------------------------------------------------------
-#include <string>
-#include <map>
-#include <deque>
 
 #include "llmotion.h"
 #include "llpose.h"
 #include "llframetimer.h"
-#include "llstatemachine.h"
 #include "llstring.h"
 
 //-----------------------------------------------------------------------------
@@ -51,14 +41,11 @@
 // This is necessary because llcharacter.h includes this file.
 //-----------------------------------------------------------------------------
 class LLCharacter;
-class LLMotionController;
-class LLPauseRequestHandle;
-typedef LLPointer<LLPauseRequestHandle> LLAnimPauseRequest;
 
 //-----------------------------------------------------------------------------
 // LLMotionRegistry
 //-----------------------------------------------------------------------------
-typedef LLMotion* (*LLMotionConstructor)(LLUUID const& id, LLMotionController*);
+typedef LLMotion*(*LLMotionConstructor)(const LLUUID &id);
 
 class LLMotionRegistry
 {
@@ -75,7 +62,7 @@ public:
 
 	// creates a new instance of a named motion
 	// returns NULL motion is not registered
-	LLMotion* createMotion(LLUUID const& id, LLMotionController* controller);
+	LLMotion *createMotion( const LLUUID &id );
 
 	// initialization of motion failed, don't try to create this motion again
 	void markBad( const LLUUID& id );
@@ -118,6 +105,7 @@ public:
 
 	// unregisters a motion with the controller
 	// (actually just forwards call to motion registry)
+	// returns true if successfull
 	void removeMotion( const LLUUID& id );
 
 	// start motion
@@ -152,20 +140,10 @@ public:
 	//Flush is a liar.
 	void deactivateAllMotions();	
 
-	//<singu>
-	void activated(U32 bit) { mActiveMask |= bit; }
-	void deactivated(U32 bit) { mActiveMask &= ~bit; }
-	bool isactive(U32 bit) const { return (mActiveMask & bit) != 0; }
-	//</singu>
-
 	// pause and continue all motions
 	void pauseAllMotions();
 	void unpauseAllMotions();
 	BOOL isPaused() const { return mPaused; }
-	//<singu>
-	void requestPause(std::vector<LLAnimPauseRequest>& avatar_pause_handles);
-	void pauseAllSyncedCharacters(std::vector<LLAnimPauseRequest>& avatar_pause_handles);
-	//</singu>
 
 	void setTimeStep(F32 step);
 
@@ -192,10 +170,7 @@ protected:
 	// internal operations act on motion instances directly
 	// as there can be duplicate motions per id during blending overlap
 	void deleteAllMotions();
-	// singu: LLMotion needs access to activateMotionInstance.
-public:
 	BOOL activateMotionInstance(LLMotion *motion, F32 time);
-protected:
 	BOOL deactivateMotionInstance(LLMotion *motion);
 	void deprecateMotionInstance(LLMotion* motion);
 	BOOL stopMotionInstance(LLMotion *motion, BOOL stop_imemdiate);
@@ -220,13 +195,10 @@ protected:
 //	Life cycle of an animation:
 //
 //	Animations are instantiated and immediately put in the mAllMotions map for their entire lifetime.
-//	Singu note: that is not true, they are moved to mDeprecatedMotions (often) for the last part of their lifetime.
 //	If the animations depend on any asset data, the appropriate data is fetched from the data server,
 //	and the animation is put on the mLoadingMotions list.
 //	Once an animations is loaded, it will be initialized and put on the mLoadedMotions list.
 //	Any animation that is currently playing also sits in the mActiveMotions list.
-//	Singu note: animations are only put in mDeprecatedMotions if and while they are playing,
-//	therefore animations in mDeprecatedMotions will be (must be) active and in mActiveMotions.
 
 	typedef std::map<LLUUID, LLMotion*> motion_map_t;
 	motion_map_t	mAllMotions;
@@ -235,13 +207,7 @@ protected:
 	motion_set_t		mLoadedMotions;
 	motion_list_t		mActiveMotions;
 	motion_set_t		mDeprecatedMotions;
-
-	//<singu>
-	U32					mActiveMask;
-	int					mDisableSyncing;			// Set while LLMotion::onActivate (and onDeactivate) are called for this controller.
-	bool				mHidden;					// The value of the last call to hidden().
-	bool				mHaveVisibleSyncedMotions;	// Set when we are synchronized with one or more motions of a controller that is not hidden.
-	//</singu>
+	
 	LLFrameTimer		mTimer;
 	F32					mPrevTimerElapsed;
 	F32					mAnimTime;
@@ -253,27 +219,9 @@ protected:
 	S32					mTimeStepCount;
 	F32					mLastInterp;
 
-	U8					mJointSignature[2][LL_CHARACTER_MAX_JOINTS];
-
-	//<singu>
-public:
-	// Internal administration for AISync.
-	void disable_syncing(void) { mDisableSyncing += 100; }
-	void enable_syncing(void) { mDisableSyncing -= 100; }
-	bool syncing_disabled(void) const { return mDisableSyncing >= 100; }
-
-	// Accessors needed for synchronization.
-	F32 getAnimTime(void) const { return mAnimTime; }
-	bool isHidden(void) const { return mHidden; }
-
-	// Called often. Should return false if we still need to keep updating our motions even if we're not visible.
-	bool hidden(bool not_visible) { if (mHidden != not_visible) toggle_hidden(); return !mHaveVisibleSyncedMotions; }
-
+	U8					mJointSignature[2][LL_CHARACTER_MAX_ANIMATED_JOINTS];
 private:
-	void toggle_hidden(void);
-	void refresh_hidden(void);
-	void setHaveVisibleSyncedMotions(void) { mHaveVisibleSyncedMotions = true; }
-	//</singu>
+	U32					mLastCountAfterPurge; //for logging and debugging purposes
 };
 
 //-----------------------------------------------------------------------------

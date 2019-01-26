@@ -46,7 +46,6 @@
 #include "llfloaterworldmap.h"
 #include "llinventorymodel.h"
 #include "llnotificationsutil.h"
-#include "llsecondlifeurls.h"
 #include "lltextbox.h"
 #include "llviewertexteditor.h"
 #include "lluiconstants.h"
@@ -285,6 +284,7 @@ bool LLPanelEvent::callbackCreateEventWebPage(const LLSD& notification, const LL
 	S32 option = LLNotification::getSelectedOption(notification, response);
 	if (0 == option)
 	{
+		const std::string&& EVENTS_URL = "http://secondlife.com/events/";
 		LL_INFOS() << "Loading events page " << EVENTS_URL << LL_ENDL;
 
 		LLWeb::loadURL(EVENTS_URL);

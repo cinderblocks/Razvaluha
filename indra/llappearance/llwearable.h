@@ -30,8 +30,9 @@
 #include "llavatarappearancedefines.h"
 #include "llpermissions.h"
 #include "llsaleinfo.h"
-#include "llsortedvector.h"
 #include "llwearabletype.h"
+#include "llsortedvector.h"
+#include "v4color.h"
 
 class LLMD5;
 class LLVisualParam;
@@ -56,8 +57,8 @@ public:
 public:
 	LLWearableType::EType		getType() const	{ return mType; }
 	void						setType(LLWearableType::EType type, LLAvatarAppearance *avatarp);
-	const std::string&			getName() const								{ return mName; }
-	void						setName( const std::string& name )			{ mName = name; }
+	const std::string&			getName() const	{ return mName; }
+	void						setName(const std::string& name) { mName = name; }
 	const std::string&			getDescription() const { return mDescription; }
 	void						setDescription(const std::string& desc)	{ mDescription = desc; }
 	const LLPermissions& 		getPermissions() const { return mPermissions; }
@@ -88,7 +89,7 @@ public:
 	virtual EImportResult		importStream( std::istream& input_stream, LLAvatarAppearance* avatarp );
 
 	static void			setCurrentDefinitionVersion( S32 version ) { LLWearable::sCurrentDefinitionVersion = version; }
-	virtual const LLUUID		getDefaultTextureImageID(LLAvatarAppearanceDefines::ETextureIndex index) const = 0;
+	virtual LLUUID		getDefaultTextureImageID(LLAvatarAppearanceDefines::ETextureIndex index) const = 0;
 
 	LLLocalTextureObject* getLocalTextureObject(S32 index);
 	const LLLocalTextureObject* getLocalTextureObject(S32 index) const;
@@ -96,14 +97,13 @@ public:
 
 	void				setLocalTextureObject(S32 index, LLLocalTextureObject &lto);
 	void				addVisualParam(LLVisualParam *param);
-	void 				setVisualParamWeight(S32 index, F32 value, bool upload_bake = false);
+	void 				setVisualParamWeight(S32 index, F32 value, BOOL upload_bake = false);
 	F32					getVisualParamWeight(S32 index) const;
 	LLVisualParam*		getVisualParam(S32 index) const;
 	void				getVisualParams(visual_param_vec_t &list);
-	void				animateParams(F32 delta, bool upload_bake = false);
-
+	void				animateParams(F32 delta, BOOL upload_bake = false);
 	LLColor4			getClothesColor(S32 te) const;
-	void 				setClothesColor( S32 te, const LLColor4& new_color, bool upload_bake = false);
+	void 				setClothesColor( S32 te, const LLColor4& new_color, BOOL upload_bake = false);
 
 	virtual void		revertValues();
 	virtual void		saveValues();
@@ -113,9 +113,6 @@ public:
 
 	// Update the baked texture hash.
 	virtual void		addToBakedTextureHash(LLMD5& hash) const = 0;
-
-	typedef LLSortedVector<S32, LLVisualParam *>    visual_param_index_map_t;
-	visual_param_index_map_t mVisualParamIndexMap;
 
 protected:
 	typedef std::map<S32, LLLocalTextureObject*> te_map_t;
@@ -135,6 +132,13 @@ protected:
 
 	typedef std::map<S32, F32> param_map_t;
 	param_map_t mSavedVisualParamMap; // last saved version of visual params
+
+#if USE_LL_APPEARANCE_CODE
+	typedef std::map<S32, LLVisualParam *>    visual_param_index_map_t;
+#else
+	typedef LLSortedVector<S32, LLVisualParam *>    visual_param_index_map_t;
+#endif
+	visual_param_index_map_t mVisualParamIndexMap;
 
 	te_map_t mTEMap;				// maps TE to LocalTextureObject
 	te_map_t mSavedTEMap;			// last saved version of TEMap

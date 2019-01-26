@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llfile.cpp
  * @author Michael Schlachter
@@ -153,7 +155,7 @@ int warnif(const std::string& desc, const std::string& filename, int rc, int acc
 				}
 				else
 				{
-					std::ifstream inf(tf);
+					llifstream inf(tf);
 					std::string line;
 					while (std::getline(inf, line))
 					{
@@ -250,7 +252,7 @@ int	LLFile::close(LLFILE * file)
 }
 
 
-int	LLFile::remove_nowarn(const std::string& filename)
+int	LLFile::remove_nowarn(const std::string& filename, int supress_error)
 {
 #if	LL_WINDOWS
 	std::string utf8filename = filename;
@@ -262,10 +264,10 @@ int	LLFile::remove_nowarn(const std::string& filename)
 	return rc;
 }
 
-int	LLFile::remove(const std::string& filename)
+int	LLFile::remove(const std::string& filename, int supress_error)
 {
-	int rc = LLFile::remove_nowarn(filename);
-	return warnif("remove", filename, rc);
+	int rc = LLFile::remove_nowarn(filename, supress_error);
+	return warnif("remove", filename, rc, supress_error);
 }
 
 int	LLFile::rename_nowarn(const std::string& filename, const std::string& newname)
@@ -288,7 +290,7 @@ int	LLFile::rename(const std::string& filename, const std::string& newname)
 	return warnif(STRINGIZE("rename to '" << newname << "' from"), filename, rc);
 }
 
-bool LLFile::copy(const std::string from, const std::string to)
+bool LLFile::copy(const std::string& from, const std::string& to)
 {
 	bool copied = false;
 	LLFILE* in = LLFile::fopen(from, "rb");		/* Flawfinder: ignore */	 	
@@ -300,7 +302,7 @@ bool LLFile::copy(const std::string from, const std::string to)
 			char buf[16384];		/* Flawfinder: ignore */ 	
 			size_t readbytes;
 			bool write_ok = true;
-			while(write_ok && (readbytes = fread(buf, 1, 16384, in))) /* Flawfinder: ignore */
+			while(write_ok && (readbytes = fread(buf, 1, 16384 * sizeof(char), in))) /* Flawfinder: ignore */
 			{
 				if (fwrite(buf, 1, readbytes, out) != readbytes)
 				{
@@ -362,9 +364,10 @@ const char *LLFile::tmpdir()
 		char sep;
 #if LL_WINDOWS
 		sep = '\\';
-		WCHAR lpTempPathBuffer[MAX_PATH+1];
-		GetTempPath(MAX_PATH+1, lpTempPathBuffer);
-		llutf16string utf16path(lpTempPathBuffer);
+
+		llutf16string utf16path;
+		utf16path.resize(MAX_PATH + 1);
+		GetTempPathW(static_cast<DWORD>(utf16path.size()-1), &utf16path[0]);
 		utf8path = utf16str_to_utf8str(utf16path);
 #else
 		sep = '/';
@@ -560,7 +563,7 @@ LLFILE *	LLFile::_Fiopen(const std::string& filename,
 	{	// fopen mode strings corresponding to valid[i]
 	"r", "w", "w", "a", "rb", "wb", "wb", "ab",
 	"r+", "w+", "a+", "r+b", "w+b", "a+b",
-	0};
+	nullptr};
 	static const int valid[] =
 	{	// valid combinations of open flags
 		std::ios_base::in,
@@ -581,7 +584,7 @@ LLFILE *	LLFile::_Fiopen(const std::string& filename,
 			| std::ios_base::binary,
 	0};
 
-	LLFILE *fp = 0;
+	LLFILE *fp = nullptr;
 	int n;
 	std::ios_base::openmode atendflag = mode & std::ios_base::ate;
 	std::ios_base::openmode norepflag = mode & std::ios_base::_Noreplace;
@@ -593,28 +596,27 @@ LLFILE *	LLFile::_Fiopen(const std::string& filename,
 		;	// look for a valid mode
 
 	if (valid[n] == 0)
-		return (0);	// no valid mode
-	else if (norepflag && mode & (std::ios_base::out || std::ios_base::app)
-		&& (fp = LLFile::fopen(filename, "r")) != 0)	/* Flawfinder: ignore */
+		return (nullptr);	// no valid mode
+	else if (norepflag && mode & (std::ios_base::out | std::ios_base::app)
+		&& (fp = LLFile::fopen(filename, "r")) != nullptr)	/* Flawfinder: ignore */
 		{	// file must not exist, close and fail
 		fclose(fp);
-		return (0);
+		return (nullptr);
 		}
-	else if (fp != 0 && fclose(fp) != 0)
-		return (0);	// can't close after test open
+	else if (fp != nullptr && fclose(fp) != 0)
+		return (nullptr);	// can't close after test open
 // should open with protection here, if other than default
-	else if ((fp = LLFile::fopen(filename, mods[n])) == 0)	/* Flawfinder: ignore */
-		return (0);	// open failed
+	else if ((fp = LLFile::fopen(filename, mods[n])) == nullptr)	/* Flawfinder: ignore */
+		return (nullptr);	// open failed
 
 	if (!atendflag || fseek(fp, 0, SEEK_END) == 0)
 		return (fp);	// no need to seek to end, or seek succeeded
 
 	fclose(fp);	// can't position at end
-	return (0);
+	return (nullptr);
 }
 
 /************** helper functions ********************************/
-
 std::streamsize llifstream_size(llifstream& ifstr)
 {
 	if(!ifstr.is_open()) return 0;
@@ -640,3 +642,4 @@ std::streamsize llofstream_size(llofstream& ofstr)
 }
 
 #endif /* LL_WINDOWS */
+

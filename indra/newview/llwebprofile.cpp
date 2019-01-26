@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llwebprofile.cpp
  * @brief Web profile access.
@@ -29,20 +31,16 @@
 #include "llwebprofile.h"
 
 // libs
-#include "llbufferstream.h"
 #include "llimagepng.h"
 #include "llplugincookiestore.h"
-
 #include "llsdserialize.h"
+#include "bufferstream.h"
 
 // newview
 #include "llpanelprofile.h" // for getProfileURL(). FIXME: move the method to LLAvatarActions
 #include "llviewermedia.h" // FIXME: don't use LLViewerMedia internals
 
 #include "llcorehttputil.h"
-
-// third-party
-#include "jsoncpp/reader.h" // JSON
 
 /*
  * Workflow:
@@ -104,10 +102,10 @@ void LLWebProfile::uploadImageCoro(LLPointer<LLImageFormatted> image, std::strin
     LLCore::HttpOptions::ptr_t httpOpts(new LLCore::HttpOptions);
     LLCore::HttpHeaders::ptr_t httpHeaders;
 
-    if (dynamic_cast<LLImagePNG*>(image.get()) == 0)
+    if (dynamic_cast<LLImagePNG*>(image.get()) == nullptr)
 	{
         LL_WARNS() << "Image to upload is not a PNG" << LL_ENDL;
-        llassert(dynamic_cast<LLImagePNG*>(image.get()) != 0);
+        llassert(dynamic_cast<LLImagePNG*>(image.get()) != nullptr);
 		return;
 	}
 

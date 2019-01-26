@@ -66,6 +66,13 @@ public:
 		const std::string& prefix,
 		const LLSD& path,
 		const LLSD& query);
+
+	static LLURI buildHTTP(
+		const std::string& scheme,
+		const std::string& prefix,
+		const LLSD& path,
+		const LLSD& query);
+
 	///< prefix is either a full URL prefix of the form
 	/// "http://example.com:8080", or it can be simply a host and
 	/// optional port like "example.com" or "example.com:8080", in
@@ -93,20 +100,22 @@ public:
 	std::string scheme() const;		///< ex.: "http", note lack of colon
 	std::string opaque() const;		///< everything after the colon
   
-  // for schemes that follow path like syntax (http, https, ftp)
-  std::string authority() const;	// ex.: "host.com:80"
-  std::string hostName() const;	// ex.: "host.com"
-  std::string userName() const;
-  std::string password() const;
-  U16 hostPort() const;			// ex.: 80, will include implicit port
-  BOOL defaultPort() const;		// true if port is default for scheme
-  const std::string& escapedPath() const { return mEscapedPath; }
-  std::string path() const;		// ex.: "/abc/def", includes leading slash
-  LLSD pathArray() const;			// above decoded into an array of strings
-  std::string query() const;		// ex.: "x=34", section after "?"
-  const std::string& escapedQuery() const { return mEscapedQuery; }
-  LLSD queryMap() const;			// above decoded into a map
-  static LLSD queryMap(std::string escaped_query_string);
+	// for schemes that follow path like syntax (http, https, ftp)
+	std::string authority() const;	// ex.: "user:pass@host.com:80"
+	std::string hostName() const;	// ex.: "host.com"
+
+	std::string hostNameAndPort() const; // ex.: "host.com:80"
+	std::string userName() const;
+	std::string password() const;
+	U16 hostPort() const;			// ex.: 80, will include implicit port
+	BOOL defaultPort() const;		// true if port is default for scheme
+	const std::string& escapedPath() const { return mEscapedPath; }
+	std::string path() const;		// ex.: "/abc/def", includes leading slash
+	LLSD pathArray() const;			// above decoded into an array of strings
+	std::string query() const;		// ex.: "x=34", section after "?"
+	const std::string& escapedQuery() const { return mEscapedQuery; }
+	LLSD queryMap() const;			// above decoded into a map
+	static LLSD queryMap(std::string escaped_query_string);
 
 	/**
 	 * @brief given a name value map, return a serialized query string.
@@ -121,27 +130,24 @@ public:
 	/** @name Escaping Utilities */
 	//@{
 	/**
-	 * @brief Escape a raw url with a reasonable set of allowed characters.
+	 * @brief 'Escape' symbol into stream
 	 *
-	 * The default set was chosen to match HTTP urls and general
-     *  guidelines for naming resources. Passing in a raw url does not
-     *  produce well defined results because you really need to know
-     *  which segments are path parts because path parts are supposed
-     *  to be escaped individually. The default set chosen is:
+	 * @param ostr Output stream.
+	 * @param val Symbol to encode.
+	 */
+	static void encodeCharacter(std::ostream& ostr, std::string::value_type val);
+
+	/**
+	 * @brief Escape the string passed except for unreserved
 	 *
 	 *  ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 	 *  0123456789
 	 *  -._~
-	 *  :@!$'()*+,=/?&#;
 	 *
-	 * *NOTE: This API is basically broken because it does not
-     *  allow you to specify significant path characters. For example,
-     *  if the filename actually contained a /, then you cannot use
-     *  this function to generate the serialized url for that
-     *  resource.
+	 * @see http://www.ietf.org/rfc/rfc1738.txt
 	 *
 	 * @param str The raw URI to escape.
-	 * @return Returns the escaped uri or an empty string.
+	 * @return Returns the rfc 1738 escaped uri or an empty string.
 	 */
 	static std::string escape(const std::string& str);
 

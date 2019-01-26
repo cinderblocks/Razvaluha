@@ -28,8 +28,6 @@
 #ifndef LL_LLFLOATERREGIONDEBUGCONSOLE_H
 #define LL_LLFLOATERREGIONDEBUGCONSOLE_H
 
-#include <boost/signals2.hpp>
-
 #include "llfloater.h"
 
 class LLTextEditor;
@@ -39,12 +37,12 @@ typedef boost::signals2::signal<
 
 class LLFloaterRegionDebugConsole : public LLFloater, public LLSingleton<LLFloaterRegionDebugConsole>
 {
+	LLSINGLETON(LLFloaterRegionDebugConsole);
 public:
-	LLFloaterRegionDebugConsole();
 	virtual ~LLFloaterRegionDebugConsole();
 
 	// virtual
-	BOOL postBuild();
+	BOOL postBuild() override;
 	void onClose(bool app_quitting);
 	
 	void onInput(LLUICtrl* ctrl, const LLSD& param);

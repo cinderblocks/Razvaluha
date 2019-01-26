@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llsaleinfo.cpp
  * @brief 
@@ -147,7 +149,7 @@ BOOL LLSaleInfo::importFile(LLFILE* fp, BOOL& has_perm_mask, U32& perm_mask)
 	valuestr[0] = '\0';
 	while(success && (!feof(fp)))
 	{
-		if (fgets(buffer, MAX_STRING, fp) == NULL)
+		if (fgets(buffer, MAX_STRING, fp) == nullptr)
 		{
 			buffer[0] = '\0';
 		}
@@ -325,7 +327,7 @@ const char* LLSaleInfo::lookup(EForSale type)
 	}
 	else
 	{
-		return NULL;
+		return nullptr;
 	}
 }
 

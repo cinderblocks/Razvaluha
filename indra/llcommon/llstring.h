@@ -212,7 +212,7 @@ public:
 	// currently in daylight savings time?
 	static bool getPacificDaylightTime(void) { return sPacificDaylightTime;}
 
-	static std::string getDatetimeCode (std::string key);
+	static std::string getDatetimeCode (const std::string& key);
 };
 
 /**
@@ -234,9 +234,7 @@ public:
 	operator std::string() const { return mString; }
 	bool operator<(const LLFormatMapString& rhs) const { return mString < rhs.mString; }
 	std::size_t length() const { return mString.length(); }
-	// The destructor may not throw.
-	~LLFormatMapString() throw() { }
-
+	
 private:
 	std::string mString;
 };
@@ -311,6 +309,7 @@ public:
 
 	static void	trimHead(string_type& string);
 	static void	trimTail(string_type& string);
+	static void trimTail(string_type& string, const string_type& tokens);
 	static void	trim(string_type& string)	{ trimHead(string); trimTail(string); }
 	static void truncate(string_type& string, size_type count);
 
@@ -340,6 +339,7 @@ public:
 
 	static void	addCRLF(string_type& string);
 	static void	removeCRLF(string_type& string);
+	static void removeWindowsCR(string_type& string);
 
 	static void	replaceTabsWithSpaces( string_type& string, size_type spaces_per_tab );
 	static void	replaceNonstandardASCII( string_type& string, T replacement );
@@ -448,7 +448,7 @@ public:
 struct LLDictionaryLess
 {
 public:
-	bool operator()(const std::string& a, const std::string& b)
+	bool operator()(const std::string& a, const std::string& b) const
 	{
 		return (LLStringUtil::precedesDict(a, b) ? true : false);
 	}
@@ -555,7 +555,7 @@ LL_COMMON_API S32 utf16str_wstring_length(const llutf16string &utf16str, S32 len
 LL_COMMON_API S32 wstring_utf16_length(const LLWString & wstr, S32 woffset, S32 wlen);
 
 // Length in wstring (i.e., llwchar count) of a part of a wstring specified by utf16 length (i.e., utf16 units.)
-LL_COMMON_API S32 wstring_wstring_length_from_utf16_length(const LLWString & wstr, S32 woffset, S32 utf16_length, BOOL *unaligned = NULL);
+LL_COMMON_API S32 wstring_wstring_length_from_utf16_length(const LLWString & wstr, S32 woffset, S32 utf16_length, BOOL *unaligned = nullptr);
 
 /**
  * @brief Properly truncate a utf8 string to a maximum byte count.
@@ -574,6 +574,17 @@ LL_COMMON_API std::string utf8str_trim(const std::string& utf8str);
 LL_COMMON_API S32 utf8str_compare_insensitive(
 	const std::string& lhs,
 	const std::string& rhs);
+
+/**
+* @brief Properly truncate a utf8 string to a maximum character count.
+*
+* If symbol_len is longer than the string passed in, the return
+* value == utf8str.
+* @param utf8str A valid utf8 string to truncate.
+* @param symbol_len The maximum number of symbols in the return value.
+* @return Returns a valid utf8 string with symbol count <= max_len.
+*/
+LL_COMMON_API std::string utf8str_symbol_truncate(const std::string& utf8str, const S32 symbol_len);
 
 /**
  * @brief Replace all occurences of target_char with replace_char
@@ -817,8 +828,9 @@ public:
 	}
 
 	/// This implementation uses the answer cached by setiter().
-	virtual bool escaped() const { return mIsEsc; }
-	virtual T next()
+	bool escaped() const override { return mIsEsc; }
+
+	T next() override
 	{
 		// If we're looking at the escape character of an escape sequence,
 		// skip that character. This is the one time we can modify 'mIter'
@@ -834,21 +846,21 @@ public:
 		return result;
 	}
 
-	virtual bool is(T ch) const
+	bool is(T ch) const override
 	{
 		// Like base-class is(), except that an escaped character matches
 		// nothing.
 		return (! done()) && (! mIsEsc) && *mIter == ch;
 	}
 
-	virtual bool oneof(const string_type& delims) const
+	bool oneof(const string_type& delims) const override
 	{
 		// Like base-class oneof(), except that an escaped character matches
 		// nothing.
 		return (! done()) && (! mIsEsc) && LLStringUtilBase<T>::contains(delims, *mIter);
 	}
 
-	virtual bool collect_until(string_type& into, const_iterator from, T delim)
+	bool collect_until(string_type& into, const_iterator from, T delim) override
 	{
 		// Deal with escapes in the characters we collect; that is, an escaped
 		// character must become just that character without the preceding
@@ -1162,7 +1174,7 @@ BOOL LLStringUtilBase<T>::precedesDict( const string_type& a, const string_type&
 {
 	if( a.size() && b.size() )
 	{
-		return (LLStringUtilBase<T>::compareDict(a.c_str(), b.c_str()) < 0);
+		return (LLStringUtilBase<T>::compareDict(a, b) < 0);
 	}
 	else
 	{
@@ -1217,11 +1229,27 @@ void LLStringUtilBase<T>::trimHead(string_type& string)
 template<class T> 
 void LLStringUtilBase<T>::trimTail(string_type& string)
 {			
-	if( string.size() )
+	if(!string.empty())
 	{
 		size_type len = string.length();
 		size_type i = len;
 		while( i > 0 && LLStringOps::isSpace( string[i-1] ) )
+		{
+			i--;
+		}
+
+		string.erase( i, len - i );
+	}
+}
+
+template<class T>
+void LLStringUtilBase<T>::trimTail(string_type& string, const string_type& tokens)
+{
+	if(!string.empty())
+	{
+		size_type len = string.length();
+		size_type i = len;
+		while( i > 0 && (tokens.find_first_of(string[i-1]) != string_type::npos) )
 		{
 			i--;
 		}
@@ -1236,6 +1264,9 @@ void LLStringUtilBase<T>::trimTail(string_type& string)
 template<class T>
 void LLStringUtilBase<T>::addCRLF(string_type& string)
 {
+	if (string.empty())
+		return;
+
 	const T LF = 10;
 	const T CR = 13;
 
@@ -1278,6 +1309,8 @@ void LLStringUtilBase<T>::addCRLF(string_type& string)
 template<class T> 
 void LLStringUtilBase<T>::removeCRLF(string_type& string)
 {
+	if (string.empty())
+		return;
 	const T CR = 13;
 
 	size_type cr_count = 0;
@@ -1297,6 +1330,32 @@ void LLStringUtilBase<T>::removeCRLF(string_type& string)
 
 //static
 template<class T> 
+void LLStringUtilBase<T>::removeWindowsCR(string_type& string)
+{
+    if (string.empty())
+    {
+        return;
+    }
+    const T LF = 10;
+    const T CR = 13;
+
+    size_type cr_count = 0;
+    size_type len = string.size();
+    size_type i;
+    for( i = 0; i < len - cr_count - 1; i++ )
+    {
+        if( string[i+cr_count] == CR && string[i+cr_count+1] == LF)
+        {
+            cr_count++;
+        }
+
+        string[i] = string[i+cr_count];
+    }
+    string.erase(i, cr_count);
+}
+
+//static
+template<class T>
 void LLStringUtilBase<T>::replaceChar( string_type& string, T target, T replacement )
 {
 	size_type found_pos = 0;
@@ -1391,27 +1450,20 @@ void LLStringUtilBase<T>::stripNonprintable(string_type& string)
 	{
 		return;
 	}
-	size_t src_size = string.size();
-	char* c_string = new char[src_size + 1];
-	if(c_string == NULL)
-	{
-		return;
-	}
-	copy(c_string, string.c_str(), src_size+1);
-	char* write_head = &c_string[0];
+	const size_t src_size = string.size();
+	auto c_string = std::make_unique<char[]>(src_size + 1);
+
+	copy(c_string.get(), string.c_str(), src_size+1);
 	for (size_type i = 0; i < src_size; i++)
 	{
-		char* read_head = &string[i];
-		write_head = &c_string[j];
-		if(!(*read_head < MIN))
+		if(string[i] >= MIN)
 		{
-			*write_head = *read_head;
+			c_string[j] = string[i];
 			++j;
 		}
 	}
 	c_string[j]= '\0';
-	string = c_string;
-	delete []c_string;
+	string.assign(c_string.get());
 }
 
 // *TODO: reimplement in terms of algorithm 
@@ -1436,7 +1488,9 @@ std::basic_string<T> LLStringUtilBase<T>::quote(const string_type& str,
 	}
 
 	// For whatever reason, we must quote this string.
+	auto needed_escapes = std::count(str.begin(), str.end(), '"');
 	string_type result;
+	result.reserve(len + (needed_escapes * escape.length()));
 	result.push_back('"');
 	for (typename string_type::const_iterator ci(str.begin()), cend(str.end()); ci != cend; ++ci)
 	{

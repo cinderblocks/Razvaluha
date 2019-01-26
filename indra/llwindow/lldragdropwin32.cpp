@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file lldragdrop32.cpp
  * @brief Handler for Windows specific drag and drop (OS to client) code
@@ -55,14 +57,14 @@ class LLDragDropWin32Target:
 
 		////////////////////////////////////////////////////////////////////////////////
 		//
-		ULONG __stdcall AddRef( void )
+		ULONG __stdcall AddRef( void ) override
 		{
 			return InterlockedIncrement( &mRefCount );
 		};
 
 		////////////////////////////////////////////////////////////////////////////////
 		//
-		ULONG __stdcall Release( void )
+		ULONG __stdcall Release( void ) override
 		{
 			LONG count = InterlockedDecrement( &mRefCount );
 				
@@ -79,7 +81,7 @@ class LLDragDropWin32Target:
 
 		////////////////////////////////////////////////////////////////////////////////
 		//
-		HRESULT __stdcall QueryInterface( REFIID iid, void** ppvObject )
+		HRESULT __stdcall QueryInterface( REFIID iid, void** ppvObject ) override
 		{
 			if ( iid == IID_IUnknown || iid == IID_IDropTarget )
 			{
@@ -89,16 +91,16 @@ class LLDragDropWin32Target:
 			}
 			else
 			{
-				*ppvObject = 0;
+				*ppvObject = nullptr;
 				return E_NOINTERFACE;
 			};
 		};
 
 		////////////////////////////////////////////////////////////////////////////////
 		//
-		HRESULT __stdcall DragEnter( IDataObject* pDataObject, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect )
+		HRESULT __stdcall DragEnter( IDataObject* pDataObject, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect ) override
 		{
-			FORMATETC fmtetc = { CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+			FORMATETC fmtetc = { CF_TEXT, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
 
 			// support CF_TEXT using a HGLOBAL?
 			if ( S_OK == pDataObject->QueryGetData( &fmtetc ) )
@@ -113,8 +115,8 @@ class LLDragDropWin32Target:
 					PVOID data = GlobalLock( stgmed.hGlobal );
 					mDropUrl = std::string( (char*)data );
 					// XXX MAJOR MAJOR HACK!
-					LLWindowWin32 *window_imp = (LLWindowWin32 *)GetWindowLongPtr(mAppWindowHandle, GWLP_USERDATA);
-					if (NULL != window_imp)
+					LLWindowWin32 *window_imp = (LLWindowWin32 *)GetWindowLongPtr(mAppWindowHandle, GWLP_USERDATA); // <alchemy/>
+					if (nullptr != window_imp)
 					{
 						LLCoordGL gl_coord( 0, 0 );
 
@@ -163,13 +165,13 @@ class LLDragDropWin32Target:
 
 		////////////////////////////////////////////////////////////////////////////////
 		//
-		HRESULT __stdcall DragOver( DWORD grfKeyState, POINTL pt, DWORD* pdwEffect )
+		HRESULT __stdcall DragOver( DWORD grfKeyState, POINTL pt, DWORD* pdwEffect ) override
 		{
 			if ( mAllowDrop )
 			{
 				// XXX MAJOR MAJOR HACK!
-				LLWindowWin32 *window_imp = (LLWindowWin32 *)GetWindowLongPtr(mAppWindowHandle, GWLP_USERDATA);
-				if (NULL != window_imp)
+				LLWindowWin32 *window_imp = (LLWindowWin32 *)GetWindowLongPtr(mAppWindowHandle, GWLP_USERDATA); // <alchemy/>
+				if (nullptr != window_imp)
 				{
 					LLCoordGL gl_coord( 0, 0 );
 
@@ -212,11 +214,11 @@ class LLDragDropWin32Target:
 
 		////////////////////////////////////////////////////////////////////////////////
 		//
-		HRESULT __stdcall DragLeave( void )
+		HRESULT __stdcall DragLeave( void ) override
 		{
 			// XXX MAJOR MAJOR HACK!
-			LLWindowWin32 *window_imp = (LLWindowWin32 *)GetWindowLongPtr(mAppWindowHandle, GWLP_USERDATA);
-			if (NULL != window_imp)
+			LLWindowWin32 *window_imp = (LLWindowWin32 *)GetWindowLongPtr(mAppWindowHandle, GWLP_USERDATA); // <alchemy/>
+			if (nullptr != window_imp)
 			{
 				LLCoordGL gl_coord( 0, 0 );
 				MASK mask = gKeyboard->currentMask(TRUE);
@@ -227,13 +229,13 @@ class LLDragDropWin32Target:
 
 		////////////////////////////////////////////////////////////////////////////////
 		//
-		HRESULT __stdcall Drop( IDataObject* pDataObject, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect )
+		HRESULT __stdcall Drop( IDataObject* pDataObject, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect ) override
 		{
 			if ( mAllowDrop )
 			{
 				// window impl stored in Window data (neat!)
-				LLWindowWin32 *window_imp = (LLWindowWin32 *)GetWindowLongPtr( mAppWindowHandle, GWLP_USERDATA );
-				if ( NULL != window_imp )
+				LLWindowWin32 *window_imp = (LLWindowWin32 *)GetWindowLongPtr( mAppWindowHandle, GWLP_USERDATA ); // <alchemy/>
+				if (nullptr != window_imp )
 				{
 					POINT pt_client;
 					pt_client.x = pt.x;
@@ -295,8 +297,8 @@ class LLDragDropWin32Target:
 ////////////////////////////////////////////////////////////////////////////////
 //
 LLDragDropWin32::LLDragDropWin32() :
-	mDropTarget( NULL ),
-	mDropWindowHandle( NULL )
+	mDropTarget(nullptr ),
+	mDropWindowHandle(nullptr )
 
 {
 }
@@ -311,10 +313,18 @@ LLDragDropWin32::~LLDragDropWin32()
 //
 bool LLDragDropWin32::init( HWND hWnd )
 {
-	if ( NOERROR != OleInitialize( NULL ) )
-		return FALSE; 
+	if ( NOERROR != OleInitialize(nullptr ) )
+		return false; 
 
-	mDropTarget = new LLDragDropWin32Target( hWnd );
+	try
+	{
+		mDropTarget = new LLDragDropWin32Target( hWnd );
+	}
+	catch (const std::bad_alloc& e)
+	{
+		LL_WARNS() << "Failed to allocate drag drop target with exception: " << e.what() << LL_ENDL;
+		return false;
+	}
 	if ( mDropTarget )
 	{
 		HRESULT result = CoLockObjectExternal( mDropTarget, TRUE, FALSE );

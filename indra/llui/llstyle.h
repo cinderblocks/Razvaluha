@@ -58,7 +58,6 @@ public:
 
 	virtual const std::string& getFontString() const { return mFontName; }
 	virtual void setFontName(const std::string& fontname);
-	virtual LLFONT_ID getFontID() const { return mFontID; }
 
 	virtual const std::string& getLinkHREF() const { return mLink; }
 	virtual void setLinkHREF(const std::string& href);
@@ -108,7 +107,6 @@ private:
 	BOOL		mVisible;
 	LLColor4	mColor;
 	std::string	mFontName;
-	LLFONT_ID   mFontID;
 	std::string	mLink;
 	LLPointer<LLUIImage> mImagep;
 	BOOL		mIsEmbeddedItem;

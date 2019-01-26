@@ -27,9 +27,6 @@
 #ifndef LL_LLPOLYMORPH_H
 #define LL_LLPOLYMORPH_H
 
-#include <string>
-#include <vector>
-
 #include "llviewervisualparam.h"
 
 class LLAvatarJointCollisionVolume;
@@ -143,7 +140,7 @@ public:
 	LLPolyMorphTargetInfo();
 	/*virtual*/ ~LLPolyMorphTargetInfo() {};
 	
-	/*virtual*/ BOOL parseXml(LLXmlTreeNode* node);
+	/*virtual*/ BOOL parseXml(LLXmlTreeNode* node) override;
 
 protected:
 	std::string		mMorphName;
@@ -169,23 +166,25 @@ public:
 	//   This sets mInfo and calls initialization functions
 	BOOL					setInfo(LLPolyMorphTargetInfo *info);
 
-	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable) const;
+	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable) const override;
 
 	// LLVisualParam Virtual functions
 	///*virtual*/ BOOL				parseData(LLXmlTreeNode* node);
-	/*virtual*/ void				apply( ESex sex );
+	/*virtual*/ void				apply( ESex sex ) override;
 	/*virtual*/ char const*			getTypeString(void) const { return "param_morph"; }
 	
 	// LLViewerVisualParam Virtual functions
-	/*virtual*/ F32					getTotalDistortion();
-	/*virtual*/ const LLVector4a&	getAvgDistortion();
-	/*virtual*/ F32					getMaxDistortion();
-	/*virtual*/ LLVector4a			getVertexDistortion(S32 index, LLPolyMesh *poly_mesh);
-	/*virtual*/ const LLVector4a*	getFirstDistortion(U32 *index, LLPolyMesh **poly_mesh);
-	/*virtual*/ const LLVector4a*	getNextDistortion(U32 *index, LLPolyMesh **poly_mesh);
+	/*virtual*/ F32					getTotalDistortion() override;
+	/*virtual*/ const LLVector4a&	getAvgDistortion() override;
+	/*virtual*/ F32					getMaxDistortion() override;
+	/*virtual*/ LLVector4a			getVertexDistortion(S32 index, LLPolyMesh *poly_mesh) override;
+	/*virtual*/ const LLVector4a*	getFirstDistortion(U32 *index, LLPolyMesh **poly_mesh) override;
+	/*virtual*/ const LLVector4a*	getNextDistortion(U32 *index, LLPolyMesh **poly_mesh) override;
 
 	void	applyMask(U8 *maskData, S32 width, S32 height, S32 num_components, BOOL invert);
 	void	addPendingMorphMask() { mNumMorphMasksPending++; }
+
+    void    applyVolumeChanges(F32 delta_weight); // SL-315 - for resetSkeleton()
 
 	void* operator new(size_t size)
 	{

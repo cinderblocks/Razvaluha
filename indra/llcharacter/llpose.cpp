@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpose.cpp
  * @brief Implementation of LLPose class.
@@ -54,7 +56,7 @@ LLJointState* LLPose::getFirstJointState()
 	mListIter = mJointMap.begin();
 	if (mListIter == mJointMap.end())
 	{
-		return NULL;
+		return nullptr;
 	}
 	else
 	{
@@ -67,10 +69,10 @@ LLJointState* LLPose::getFirstJointState()
 //-----------------------------------------------------------------------------
 LLJointState *LLPose::getNextJointState()
 {
-	mListIter++;
+	++mListIter;
 	if (mListIter == mJointMap.end())
 	{
-		return NULL;
+		return nullptr;
 	}
 	else
 	{
@@ -118,7 +120,7 @@ LLJointState* LLPose::findJointState(LLJoint *joint)
 
 	if (iter == mJointMap.end())
 	{
-		return NULL;
+		return nullptr;
 	}
 	else
 	{
@@ -135,7 +137,7 @@ LLJointState* LLPose::findJointState(const std::string &name)
 
 	if (iter == mJointMap.end())
 	{
-		return NULL;
+		return nullptr;
 	}
 	else
 	{
@@ -186,7 +188,7 @@ LLJointStateBlender::LLJointStateBlender()
 {
 	for(S32 i = 0; i < JSB_NUM_JOINT_STATES; i++)
 	{
-		mJointStates[i] = NULL;
+		mJointStates[i] = nullptr;
 		mPriorities[i] = S32_MIN;
 		mAdditiveBlends[i] = FALSE;
 	}
@@ -391,6 +393,7 @@ void LLJointStateBlender::blendJointStates(BOOL apply_now)
 	}
 
 	// apply transforms
+    // SL-315
 	target_joint->setPosition(blended_pos + added_pos);
 	target_joint->setScale(blended_scale + added_scale);
 	target_joint->setRotation(added_rot * blended_rot);
@@ -400,7 +403,7 @@ void LLJointStateBlender::blendJointStates(BOOL apply_now)
 		// now clear joint states
 		for(S32 i = 0; i < JSB_NUM_JOINT_STATES; i++)
 		{
-			mJointStates[i] = NULL;
+			mJointStates[i] = nullptr;
 		}
 	}
 }
@@ -422,6 +425,7 @@ void LLJointStateBlender::interpolate(F32 u)
 		return;
 	}
 
+    // SL-315
 	target_joint->setPosition(lerp(target_joint->getPosition(), mJointCache.getPosition(), u));
 	target_joint->setScale(lerp(target_joint->getScale(), mJointCache.getScale(), u));
 	target_joint->setRotation(nlerp(u, target_joint->getRotation(), mJointCache.getRotation()));
@@ -435,7 +439,7 @@ void LLJointStateBlender::clear()
 	// now clear joint states
 	for(S32 i = 0; i < JSB_NUM_JOINT_STATES; i++)
 	{
-		mJointStates[i] = NULL;
+		mJointStates[i] = nullptr;
 	}
 }
 
@@ -449,6 +453,7 @@ void LLJointStateBlender::resetCachedJoint()
 		return;
 	}
 	LLJoint* source_joint = mJointStates[0]->getJoint();
+    // SL-315
 	mJointCache.setPosition(source_joint->getPosition());
 	mJointCache.setScale(source_joint->getScale());
 	mJointCache.setRotation(source_joint->getRotation());
@@ -466,6 +471,7 @@ LLPoseBlender::LLPoseBlender()
 LLPoseBlender::~LLPoseBlender()
 {
 	for_each(mJointStateBlenderPool.begin(), mJointStateBlenderPool.end(), DeletePairedPointer());
+	mJointStateBlenderPool.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -515,9 +521,9 @@ BOOL LLPoseBlender::addMotion(LLMotion* motion)
 void LLPoseBlender::blendAndApply()
 {
 	for (blender_list_t::iterator iter = mActiveBlenders.begin();
-		 iter != mActiveBlenders.end(); ++iter)
+		 iter != mActiveBlenders.end(); )
 	{
-		LLJointStateBlender* jsbp = *iter;
+		LLJointStateBlender* jsbp = *iter++;
 		jsbp->blendJointStates();
 	}
 

@@ -19,15 +19,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
+ * 
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
 #ifndef LL_LLVOLUMEMGR_H
 #define LL_LLVOLUMEMGR_H
-
-#include <map>
 
 #include "llvolume.h"
 #include "llpointer.h"

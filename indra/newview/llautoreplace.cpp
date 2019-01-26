@@ -25,7 +25,6 @@
 #include "llviewerprecompiledheaders.h"
 #include "llautoreplace.h"
 #include "llsdserialize.h"
-#include "llboost.h"
 #include "llcontrol.h"
 #include "llviewercontrol.h"
 #include "llnotificationsutil.h"
@@ -39,7 +38,7 @@ void LLAutoReplace::autoreplaceCallback(S32& replacement_start, S32& replacement
 	replacement_length = 0;
 	replacement_string.clear();
 
-	static LLCachedControl<bool> perform_autoreplace(gSavedSettings, "AutoReplace", 0);
+	static LLCachedControl<bool> perform_autoreplace(gSavedSettings, "AutoReplace", false);
 	if (perform_autoreplace)
 	{
 		S32 word_end = cursor_pos - 1;
@@ -58,7 +57,6 @@ void LLAutoReplace::autoreplaceCallback(S32& replacement_start, S32& replacement
 			if (have_word)
 			{
 				// word_end points to the end of a word, now find the start of the word
-				std::string word;
 				S32 word_start = word_end;
 				for (S32 back_one = word_start - 1;
 					 back_one >= 0 && LLWStringUtil::isPartOfWord(input_text[back_one]);
@@ -312,9 +310,9 @@ bool LLAutoReplaceSettings::listNameMatches( const LLSD& list, const std::string
 
 const LLSD* LLAutoReplaceSettings::getListEntries(std::string listName)
 {
-	const LLSD* returnedEntries = NULL;
+	const LLSD* returnedEntries = nullptr;
 	for( LLSD::array_const_iterator list = mLists.beginArray(), endList = mLists.endArray();
-		 returnedEntries == NULL && list != endList;
+		 returnedEntries == nullptr && list != endList;
 		 list++
 		)
 	{
@@ -444,9 +442,9 @@ bool LLAutoReplaceSettings::listIsValid(const LLSD& list)
 
 const LLSD* LLAutoReplaceSettings::exportList(std::string listName)
 {
-	const LLSD* exportedList = NULL;
+	const LLSD* exportedList = nullptr;
 	for ( LLSD::array_const_iterator list = mLists.beginArray(), listEnd = mLists.endArray();
-		  exportedList == NULL && list != listEnd;
+		  exportedList == nullptr && list != listEnd;
 		  list++
 		 )
 	{

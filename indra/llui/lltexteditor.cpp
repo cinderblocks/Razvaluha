@@ -3569,7 +3569,7 @@ void LLTextEditor::drawClippedSegment(const LLWString &text, S32 seg_start, S32 
 
 	if ( style->getFontString()[0] )
 	{
-		font = LLResMgr::getInstance()->getRes(style->getFontID());
+		font = LLFontGL::getFontByName(style->getFontString());
 	}
 
 	U8 font_flags = LLFontGL::NORMAL;

@@ -2,31 +2,25 @@
  * @file llselectmgr.h
  * @brief A manager for selected objects and TEs.
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -51,15 +45,40 @@
 #include "llviewerobject.h"	// LLObjectSelection::getSelectedTEValue template
 #include "llmaterial.h"
 
-#include <deque>
 #include <boost/iterator/filter_iterator.hpp>
-#include <boost/signals2.hpp>
 
 class LLMessageSystem;
 class LLViewerTexture;
 class LLColor4;
 class LLVector3;
 class LLSelectNode;
+
+const U8 UPD_NONE      		= 0x00;
+const U8 UPD_POSITION  		= 0x01;
+const U8 UPD_ROTATION  		= 0x02;
+const U8 UPD_SCALE     		= 0x04;
+const U8 UPD_LINKED_SETS 	= 0x08;
+const U8 UPD_UNIFORM 		= 0x10;	// used with UPD_SCALE
+
+// This is used by the DeRezObject message to determine where to put
+// derezed tasks.
+enum EDeRezDestination
+{
+	DRD_SAVE_INTO_AGENT_INVENTORY = 0,
+	DRD_ACQUIRE_TO_AGENT_INVENTORY = 1,		// try to leave copy in world
+	DRD_SAVE_INTO_TASK_INVENTORY = 2,
+	DRD_ATTACHMENT = 3,
+	DRD_TAKE_INTO_AGENT_INVENTORY = 4,		// delete from world
+	DRD_FORCE_TO_GOD_INVENTORY = 5,			// force take copy
+	DRD_TRASH = 6,
+	DRD_ATTACHMENT_TO_INV = 7,
+	DRD_ATTACHMENT_EXISTS = 8,
+	DRD_RETURN_TO_OWNER = 9,				// back to owner's inventory
+	DRD_RETURN_TO_LAST_OWNER = 10,			// deeded object back to last owner's inventory
+
+	DRD_COUNT = 11
+};
+
 
 const S32 SELECT_ALL_TES = -1;
 const S32 SELECT_MAX_TES = 32;
@@ -134,6 +153,8 @@ typedef enum e_selection_type
 	SELECT_TYPE_HUD
 }ESelectType;
 
+const S32 TE_SELECT_MASK_ALL = 0xFFFFFFFF;
+
 // Contains information about a selected object, particularly which TEs are selected.
 class LLSelectNode
 {
@@ -146,6 +167,7 @@ public:
 	void selectTE(S32 te_index, BOOL selected);
 	BOOL isTESelected(S32 te_index);
 	S32 getLastSelectedTE();
+	S32 getLastOperatedTE();
 	S32 getTESelectMask() { return mTESelectMask; }
 	void renderOneWireframe(const LLColor4& color);
 	void renderOneSilhouette(const LLColor4 &color);
@@ -155,6 +177,7 @@ public:
 	void setObject(LLViewerObject* object);
 	// *NOTE: invalidate stored textures and colors when # faces change
 	void saveColors();
+	void saveShinyColors();
 	void saveTextures(const uuid_vec_t& textures);
 	void saveTextureScaleRatios(LLRender::eTexIndex index_to_query);
 
@@ -191,6 +214,7 @@ public:
 	std::string		mSitName;
 	U64				mCreationDate;
 	std::vector<LLColor4>	mSavedColors;
+	std::vector<LLColor4>	mSavedShinyColors;
 	uuid_vec_t		mSavedTextures;
 	std::vector<LLVector3>  mTextureScaleRatios;
 	std::vector<LLVector3>	mSilhouetteVertices;	// array of vertices to render silhouette of object
@@ -206,6 +230,7 @@ protected:
 class LLObjectSelection : public LLRefCount
 {
 	friend class LLSelectMgr;
+	friend class LLSafeHandle<LLObjectSelection>;
 
 protected:
 	~LLObjectSelection();
@@ -218,7 +243,7 @@ public:
 	{
 		bool operator()(LLSelectNode* node)
 		{
-			return (node->getObject() != NULL);
+			return (node->getObject() != nullptr);
 		}
 	};
 	typedef boost::filter_iterator<is_non_null, list_t::iterator > iterator;
@@ -229,7 +254,7 @@ public:
 	{
 		bool operator()(LLSelectNode* node)
 		{
-			return (node->getObject() != NULL) && node->mValid;
+			return (node->getObject() != nullptr) && node->mValid;
 		}
 	};
 	typedef boost::filter_iterator<is_valid, list_t::iterator > valid_iterator;
@@ -267,8 +292,8 @@ public:
 
 	BOOL isEmpty() const;
 
-	LLSelectNode*	getFirstNode(LLSelectedNodeFunctor* func = NULL);
-	LLSelectNode*	getFirstRootNode(LLSelectedNodeFunctor* func = NULL, BOOL non_root_ok = FALSE);
+	LLSelectNode*	getFirstNode(LLSelectedNodeFunctor* func = nullptr);
+	LLSelectNode*	getFirstRootNode(LLSelectedNodeFunctor* func = nullptr, BOOL non_root_ok = FALSE);
 	LLViewerObject* getFirstSelectedObject(LLSelectedNodeFunctor* func, BOOL get_parent = FALSE);
 	LLViewerObject*	getFirstObject();
 	LLViewerObject*	getFirstRootObject(BOOL non_root_ok = FALSE);
@@ -279,6 +304,7 @@ public:
 	LLViewerObject*	getFirstCopyableObject(BOOL get_parent = FALSE);
 	LLViewerObject* getFirstDeleteableObject();
 	LLViewerObject*	getFirstMoveableObject(BOOL get_parent = FALSE);
+	LLViewerObject*	getFirstUndoEnabledObject(BOOL get_parent = FALSE);
 
 	/// Return the object that lead to this selection, possible a child
 	LLViewerObject* getPrimaryObject() { return mPrimaryObject; }
@@ -298,8 +324,8 @@ public:
 	F32 getSelectedLinksetPhysicsCost();
 	S32 getSelectedObjectRenderCost();
 	
-	F32 getSelectedObjectStreamingCost(S32* total_bytes = NULL, S32* visible_bytes = NULL);
-	U32 getSelectedObjectTriangleCount(S32* vcount = NULL);
+	F32 getSelectedObjectStreamingCost(S32* total_bytes = nullptr, S32* visible_bytes = nullptr);
+	U32 getSelectedObjectTriangleCount(S32* vcount = nullptr);
 
 	S32 getTECount();
 	S32 getRootObjectCount();
@@ -320,6 +346,15 @@ public:
 	bool applyToRootNodes(LLSelectedNodeFunctor* func, bool firstonly = false);
 	bool applyToNodes(LLSelectedNodeFunctor* func, bool firstonly = false);
 
+	/*
+	 * Used to apply (no-copy) textures to the selected object or
+	 * selected face/faces of the object.
+	 * This method moves (no-copy) texture to the object's inventory
+	 * and doesn't make copy of the texture for each face.
+	 * Then this only texture is used for all selected faces.
+	 */
+	void applyNoCopyTextureToTEs(LLViewerInventoryItem* item);
+
 	ESelectType getSelectType() const { return mSelectType; }
 
 private:
@@ -330,10 +365,8 @@ private:
 	void deleteAllNodes();
 	void cleanupNodes();
 
-
-private:
 	list_t mList;
-	const LLObjectSelection &operator=(const LLObjectSelection &);
+	const LLObjectSelection& operator=(const LLObjectSelection&) = delete;
 
 	LLPointer<LLViewerObject> mPrimaryObject;
 	std::map<LLPointer<LLViewerObject>, LLSelectNode*> mSelectNodeMap;
@@ -347,8 +380,14 @@ typedef LLSafeHandle<LLObjectSelection> LLObjectSelectionHandle;
 extern template class LLSelectMgr* LLSingleton<class LLSelectMgr>::getInstance();
 #endif
 
+// For use with getFirstTest()
+struct LLSelectGetFirstTest;
+
 class LLSelectMgr : public LLEditMenuHandler, public LLSingleton<LLSelectMgr>
 {
+	LLSINGLETON(LLSelectMgr);
+	~LLSelectMgr();
+
 public:
 	static BOOL					sRectSelectInclusive;	// do we need to surround an object to pick it?
 	static BOOL					sRenderHiddenSelections;	// do we show selection silhouettes that are occluded?
@@ -374,26 +413,23 @@ public:
 	LLCachedControl<bool>					mDebugSelectMgr;
 
 public:
-	LLSelectMgr();
-	~LLSelectMgr();
-
 	static void cleanupGlobals();
 
 	// LLEditMenuHandler interface
-	virtual BOOL canUndo() const;
-	virtual void undo();
+	BOOL canUndo() const override;
+	void undo() override;
 
-	virtual BOOL canRedo() const;
-	virtual void redo();
+	BOOL canRedo() const override;
+	void redo() override;
 
-	virtual BOOL canDoDelete() const;
-	virtual void doDelete();
+	BOOL canDoDelete() const override;
+	void doDelete() override;
 
 	virtual void selectAll();
 	virtual BOOL canSelectAll() const;
 
-	virtual void deselect();
-	virtual BOOL canDeselect() const;
+	void deselect() override;
+	BOOL canDeselect() const override;
 
 	virtual void duplicate();
 	virtual BOOL canDuplicate() const;
@@ -513,6 +549,7 @@ public:
 	////////////////////////////////////////////////////////////////
 	void saveSelectedObjectTransform(EActionType action_type);
 	void saveSelectedObjectColors();
+	void saveSelectedShinyColors();
 	void saveSelectedObjectTextures();
 
 	// Sets which texture channel to query for scale and rot of display
@@ -541,6 +578,7 @@ public:
 	void selectionSetColorOnly(const LLColor4 &color); // Set only the RGB channels
 	void selectionSetAlphaOnly(const F32 alpha); // Set only the alpha channel
 	void selectionRevertColors();
+	void selectionRevertShinyColors();
 	BOOL selectionRevertTextures();
 	void selectionSetBumpmap( U8 bumpmap );
 	void selectionSetTexGen( U8 texgen );
@@ -583,6 +621,9 @@ public:
 	// returns TRUE if you can modify all selected objects. 
 	BOOL selectGetRootsModify();
 	BOOL selectGetModify();
+
+	// returns TRUE if all objects are in same region
+	BOOL selectGetSameRegion();
 
 	// returns TRUE if is all objects are non-permanent-enforced
 	BOOL selectGetRootsNonPermanentEnforced();
@@ -723,6 +764,7 @@ private:
 	void sendListToRegions(	const std::string& message_name,
 							void (*pack_header)(void *user_data), 
 							void (*pack_body)(LLSelectNode* node, void *user_data), 
+							void (*log_func)(LLSelectNode* node, void *user_data), 
 							void *user_data,
 							ESendType send_type);
 
@@ -758,13 +800,21 @@ private:
 	static void packHingeHead(void *user_data);
 	static void packPermissionsHead(void* user_data);
 	static void packGodlikeHead(void* user_data);
+    static void logNoOp(LLSelectNode* node, void *user_data);
+    static void logAttachmentRequest(LLSelectNode* node, void *user_data);
+    static void logDetachRequest(LLSelectNode* node, void *user_data);
 	static bool confirmDelete(const LLSD& notification, const LLSD& response, LLObjectSelectionHandle handle);
+
+	// Get the first ID that matches test and whether or not all ids are identical in selected objects.
+	void getFirst(LLSelectGetFirstTest* test);
 
 public:
 	// Observer/callback support for when object selection changes or
 	// properties are received/updated
 	typedef boost::signals2::signal< void ()> update_signal_t;
 	update_signal_t mUpdateSignal;
+
+	boost::signals2::connection addSelectionUpdateCallback(const update_signal_t::slot_type& cb);
 
 private:
 	LLPointer<LLViewerTexture>				mSilhouetteImagep;
@@ -793,7 +843,7 @@ private:
 	LLFrameTimer			mEffectsTimer;
 	BOOL					mForceSelection;
 
-	std::vector<LLAnimPauseRequest> mPauseRequests;	// Selected avatar and all synchronized avatars.
+	LLAnimPauseRequest		mPauseRequest;
 
 	friend class LLObjectBackup;
 };

@@ -39,6 +39,7 @@
 #include "lleconomy.h"
 #include "llnotificationsutil.h"
 #include "llvfile.h"
+#include "llapr.h"
 #include "llstring.h"
 
 #include "llagent.h"
@@ -102,42 +103,6 @@ struct LLSaveInfo
 	LLTransactionID mTransactionID;
 };
 // </edit>
-
-std::string STATUS[] =
-{
-	"E_ST_OK",
-	"E_ST_EOF",
-	"E_ST_NO_CONSTRAINT",
-	"E_ST_NO_FILE",
-	"E_ST_NO_HIER",
-	"E_ST_NO_JOINT",
-	"E_ST_NO_NAME",
-	"E_ST_NO_OFFSET",
-	"E_ST_NO_CHANNELS",
-	"E_ST_NO_ROTATION",
-	"E_ST_NO_AXIS",
-	"E_ST_NO_MOTION",
-	"E_ST_NO_FRAMES",
-	"E_ST_NO_FRAME_TIME",
-	"E_ST_NO_POS",
-	"E_ST_NO_ROT",
-	"E_ST_NO_XLT_FILE",
-	"E_ST_NO_XLT_HEADER",
-	"E_ST_NO_XLT_NAME",
-	"E_ST_NO_XLT_IGNORE",
-	"E_ST_NO_XLT_RELATIVE",
-	"E_ST_NO_XLT_OUTNAME",
-	"E_ST_NO_XLT_MATRIX",
-	"E_ST_NO_XLT_MERGECHILD",
-	"E_ST_NO_XLT_MERGEPARENT",
-	"E_ST_NO_XLT_PRIORITY",
-	"E_ST_NO_XLT_LOOP",
-	"E_ST_NO_XLT_EASEIN",
-	"E_ST_NO_XLT_EASEOUT",
-	"E_ST_NO_XLT_HAND",
-	"E_ST_NO_XLT_EMOTE",
-"E_ST_BAD_ROOT"
-};
 
 //-----------------------------------------------------------------------------
 // LLFloaterBvhPreview()
@@ -205,14 +170,20 @@ void LLFloaterBvhPreview::setAnimCallbacks()
 	getChild<LLUICtrl>("ease_out_time")->setValidateBeforeCommit( boost::bind(&LLFloaterBvhPreview::validateEaseOut, this, _1));
 }
 
+std::map <std::string, std::string> LLFloaterBvhPreview::getJointAliases()
+{
+    LLPointer<LLVOAvatar> av = mInWorld ? gAgentAvatarp : (LLVOAvatar*)mAnimPreview->getDummyAvatar();
+    return av->getJointAliases();
+}
+
 //-----------------------------------------------------------------------------
 // postBuild()
 //-----------------------------------------------------------------------------
 BOOL LLFloaterBvhPreview::postBuild()
 {
 	LLRect r;
-	LLKeyframeMotion* motionp = NULL;
-	LLBVHLoader* loaderp = NULL;
+	LLKeyframeMotion* motionp = nullptr;
+	LLBVHLoader* loaderp = nullptr;
 
 	if (!LLFloaterNameDesc::postBuild())
 	{
@@ -261,8 +232,8 @@ BOOL LLFloaterBvhPreview::postBuild()
 	mPlayButton->setImages(std::string("button_anim_play.tga"),
 						   std::string("button_anim_play_selected.tga"));
 
-	mPlayButton->setImageDisabled(NULL);
-	mPlayButton->setImageDisabledSelected(NULL);
+	mPlayButton->setImageDisabled(nullptr);
+	mPlayButton->setImageDisabledSelected(nullptr);
 
 	mPlayButton->setScaleImage(TRUE);
 
@@ -272,8 +243,8 @@ BOOL LLFloaterBvhPreview::postBuild()
 	mStopButton->setImages(std::string("button_anim_stop.tga"),
 						   std::string("button_anim_stop_selected.tga"));
 
-	mStopButton->setImageDisabled(NULL);
-	mStopButton->setImageDisabledSelected(NULL);
+	mStopButton->setImageDisabled(nullptr);
+	mStopButton->setImageDisabledSelected(nullptr);
 
 	mStopButton->setScaleImage(TRUE);
 
@@ -284,31 +255,68 @@ BOOL LLFloaterBvhPreview::postBuild()
 	// </edit>
 
 	std::string exten = gDirUtilp->getExtension(mFilename);
+	// <edit> Singu TODO: This whole thing could be combined with the block down below and simplified, probably.
+	if (exten == "animatn")
+	{
+		apr_off_t file_size;
+
+		LLAPRFile infile;
+
+		if (infile.open(mFilenameAndPath, LL_APR_RB, nullptr, &file_size) != APR_SUCCESS)
+		{
+			LL_WARNS() << "Can't open animatn file:" << mFilename << LL_ENDL;
+		}
+		else
+		{
+			auto file_buffer = std::make_unique<char[]>(file_size + 1);
+
+			if (file_size == infile.read(file_buffer.get(), file_size))
+			{
+				file_buffer[file_size] = '\0';
+				LL_INFOS() << "Loading animatn file " << mFilename << LL_ENDL;
+				mTransactionID.generate();
+				mMotionID = mTransactionID.makeAssetID(gAgent.getSecureSessionID());
+				mAnimPreview = new LLPreviewAnimation(256, 256);
+				motionp = (LLKeyframeMotion*)mAnimPreview->getDummyAvatar()->createMotion(mMotionID);
+				LLDataPackerBinaryBuffer dp((U8*)file_buffer.get(), file_size);
+				dp.reset();
+				success = motionp && motionp->deserialize(dp);
+			}
+
+			infile.close();
+		}
+	}
+	else
+	// </edit>
 	if (exten == "bvh")
 	{
 		// loading a bvh file
 
 		// now load bvh file
-		llifstream infstream(mFilenameAndPath, std::ios::in | std::ios::binary);
-		if (!infstream.good())
+		apr_off_t file_size;
+
+		LLAPRFile infile ;
+		apr_status_t s = infile.open(mFilenameAndPath, LL_APR_RB, nullptr, &file_size);
+		
+		if (s != APR_SUCCESS)
 		{
 			LL_WARNS() << "Can't open BVH file:" << mFilename << LL_ENDL;	
 		}
 		else
 		{
-			infstream.seekg(0, std::ios::end);
-			S32 file_size = (S32) infstream.tellg();
-			infstream.seekg(0, std::ios::beg);
-			char* file_buffer = new char[file_size + 1];
-			infstream.read(file_buffer, file_size);
-			if (file_size == infstream.gcount())
+			auto file_buffer = std::make_unique<char[]>(file_size + 1);
+
+			if (file_size == infile.read(file_buffer.get(), file_size))
 			{
 				file_buffer[file_size] = '\0';
 				LL_INFOS() << "Loading BVH file " << mFilename << LL_ENDL;
 				ELoadStatus load_status = E_ST_OK;
 				S32 line_number = 0; 
-				loaderp = new LLBVHLoader(file_buffer, load_status, line_number);
-				std::string status = getString(STATUS[load_status]);
+
+                std::map<std::string, std::string> joint_alias_map = getJointAliases();
+    
+				loaderp = new LLBVHLoader(file_buffer.get(), load_status, line_number, joint_alias_map);
+				std::string status = getString(BVHSTATUS[load_status]);
 				
 				if(load_status == E_ST_NO_XLT_FILE)
 				{
@@ -320,36 +328,40 @@ BOOL LLFloaterBvhPreview::postBuild()
 				}
 			}
 
-			infstream.close();
-			delete[] file_buffer;
+			infile.close() ;
+			// <edit> include everything bvh inside this scope
 
-			// <edit> moved everything bvh from below
 			if(loaderp && loaderp->isInitialized() && loaderp->getDuration() <= MAX_ANIM_DURATION)
-	{
-		// generate unique id for this motion
-		mTransactionID.generate();
-		mMotionID = mTransactionID.makeAssetID(gAgent.getSecureSessionID());
+			{
+				// generate unique id for this motion
+				mTransactionID.generate();
+				mMotionID = mTransactionID.makeAssetID(gAgent.getSecureSessionID());
 
-		mAnimPreview = new LLPreviewAnimation(256, 256);
+				mAnimPreview = new LLPreviewAnimation(256, 256);
 
-		// motion will be returned, but it will be in a load-pending state, as this is a new motion
-		// this motion will not request an asset transfer until next update, so we have a chance to 
-		// load the keyframe data locally
-		if (mInWorld)
-			motionp = (LLKeyframeMotion*)gAgentAvatarp->createMotion(mMotionID);
-		else
-			motionp = (LLKeyframeMotion*)mAnimPreview->getDummyAvatar()->createMotion(mMotionID);
+				// motion will be returned, but it will be in a load-pending state, as this is a new motion
+				// this motion will not request an asset transfer until next update, so we have a chance to 
+				// load the keyframe data locally
+				if (mInWorld)
+					motionp = (LLKeyframeMotion*)gAgentAvatarp->createMotion(mMotionID);
+				else
+					motionp = (LLKeyframeMotion*)mAnimPreview->getDummyAvatar()->createMotion(mMotionID);
 
-		// create data buffer for keyframe initialization
-		S32 buffer_size = loaderp->getOutputSize();
-		U8* buffer = new U8[buffer_size];
+				// create data buffer for keyframe initialization
+				S32 buffer_size = loaderp->getOutputSize();
+				U8* buffer = new U8[buffer_size];
 
-		LLDataPackerBinaryBuffer dp(buffer, buffer_size);
+				LLDataPackerBinaryBuffer dp(buffer, buffer_size);
 
-		// pass animation data through memory buffer
-		loaderp->serialize(dp);
-		dp.reset();
+				// pass animation data through memory buffer
+				LL_INFOS("BVH") << "Serializing loaderp" << LL_ENDL;
+				loaderp->serialize(dp);
+				dp.reset();
+				LL_INFOS("BVH") << "Deserializing motionp" << LL_ENDL;
 				success = motionp && motionp->deserialize(dp);
+				LL_INFOS("BVH") << "Done" << LL_ENDL;
+
+				delete []buffer;
 			}
 			else
 			{
@@ -366,7 +378,7 @@ BOOL LLFloaterBvhPreview::postBuild()
 					else
 					{
 						LLUIString out_str = getString("failed_file_read");
-						out_str.setArg("[STATUS]", getString(STATUS[loaderp->getStatus()])); 
+						out_str.setArg("[STATUS]", getString(BVHSTATUS[loaderp->getStatus()])); 
 						getChild<LLUICtrl>("bad_animation_text")->setValue(out_str.getString());
 					}
 				}
@@ -379,40 +391,7 @@ BOOL LLFloaterBvhPreview::postBuild()
 				mMotionID.setNull();
 				mAnimPreview = NULL;
 			}
-			// </edit>
-		}
-	}
 	// <edit>
-	else if(exten == "animatn")
-	{
-		S32 file_size = LLFile::size(mFilenameAndPath);
-		llifstream raw_animatn(mFilenameAndPath, std::ios::in | std::ios::binary);
-
-		if (!raw_animatn.good())
-		{
-			LL_WARNS() << "Can't open animatn file:" << mFilename << LL_ENDL;	
-		}
-		else
-		{
-			char*	file_buffer;
-
-			file_buffer = new char[file_size + 1];
-			raw_animatn.read(file_buffer, file_size);
-			if (raw_animatn.good())
-			{
-				file_buffer[file_size] = '\0';
-				LL_INFOS() << "Loading animatn file " << mFilename << LL_ENDL;
-				mTransactionID.generate();
-				mMotionID = mTransactionID.makeAssetID(gAgent.getSecureSessionID());
-				mAnimPreview = new LLPreviewAnimation(256, 256);
-				motionp = (LLKeyframeMotion*)mAnimPreview->getDummyAvatar()->createMotion(mMotionID);
-				LLDataPackerBinaryBuffer dp((U8*)file_buffer, file_size);
-				dp.reset();
-				success = motionp && motionp->deserialize(dp);
-			}
-
-			raw_animatn.close();
-			delete[] file_buffer;
 		}
 	}
 	// </edit>
@@ -461,7 +440,7 @@ BOOL LLFloaterBvhPreview::postBuild()
 		}
 		else
 		{
-			mAnimPreview = NULL;
+			mAnimPreview = nullptr;
 			mMotionID.setNull();
 			getChild<LLUICtrl>("bad_animation_text")->setValue(getString("failed_to_initialize"));
 		}
@@ -479,27 +458,23 @@ BOOL LLFloaterBvhPreview::postBuild()
 //-----------------------------------------------------------------------------
 LLFloaterBvhPreview::~LLFloaterBvhPreview()
 {
-	if (mInWorld)
+	if (mInWorld && gAgentAvatarp)
 	{
-		LLVOAvatar* avatarp = gAgentAvatarp;
-		if (avatarp)
+		if (mMotionID.notNull())
 		{
-			if (mMotionID.notNull())
-			{
-				avatarp->stopMotion(mMotionID, TRUE);
-				avatarp->removeMotion(mMotionID);
-			}
-			avatarp->deactivateAllMotions();
-			avatarp->startMotion(ANIM_AGENT_HEAD_ROT);
-			avatarp->startMotion(ANIM_AGENT_EYE);
-			avatarp->startMotion(ANIM_AGENT_BODY_NOISE);
-			avatarp->startMotion(ANIM_AGENT_BREATHE_ROT);
-			avatarp->startMotion(ANIM_AGENT_HAND_MOTION);
-			avatarp->startMotion(ANIM_AGENT_PELVIS_FIX);
-			avatarp->startMotion(ANIM_AGENT_STAND, BASE_ANIM_TIME_OFFSET);
+			gAgentAvatarp->stopMotion(mMotionID, TRUE);
+			gAgentAvatarp->removeMotion(mMotionID);
 		}
+		gAgentAvatarp->deactivateAllMotions();
+		gAgentAvatarp->startMotion(ANIM_AGENT_HEAD_ROT);
+		gAgentAvatarp->startMotion(ANIM_AGENT_EYE);
+		gAgentAvatarp->startMotion(ANIM_AGENT_BODY_NOISE);
+		gAgentAvatarp->startMotion(ANIM_AGENT_BREATHE_ROT);
+		gAgentAvatarp->startMotion(ANIM_AGENT_HAND_MOTION);
+		gAgentAvatarp->startMotion(ANIM_AGENT_PELVIS_FIX);
+		gAgentAvatarp->startMotion(ANIM_AGENT_STAND, BASE_ANIM_TIME_OFFSET);
 	}
-	mAnimPreview = NULL;
+	mAnimPreview = nullptr;
 
 	setEnabled(FALSE);
 }
@@ -520,16 +495,16 @@ void LLFloaterBvhPreview::draw()
 
 		gGL.getTexUnit(0)->bind(mAnimPreview);
 
-		gGL.begin( LLRender::QUADS );
+		gGL.begin( LLRender::TRIANGLE_STRIP );
 		{
 			gGL.texCoord2f(0.f, 1.f);
 			gGL.vertex2i(PREVIEW_HPAD, PREVIEW_TEXTURE_HEIGHT);
 			gGL.texCoord2f(0.f, 0.f);
 			gGL.vertex2i(PREVIEW_HPAD, PREVIEW_HPAD + PREF_BUTTON_HEIGHT + PREVIEW_HPAD);
-			gGL.texCoord2f(1.f, 0.f);
-			gGL.vertex2i(r.getWidth() - PREVIEW_HPAD, PREVIEW_HPAD + PREF_BUTTON_HEIGHT + PREVIEW_HPAD);
 			gGL.texCoord2f(1.f, 1.f);
 			gGL.vertex2i(r.getWidth() - PREVIEW_HPAD, PREVIEW_TEXTURE_HEIGHT);
+			gGL.texCoord2f(1.f, 0.f);
+			gGL.vertex2i(r.getWidth() - PREVIEW_HPAD, PREVIEW_HPAD + PREF_BUTTON_HEIGHT + PREVIEW_HPAD);
 		}
 		gGL.end();
 
@@ -587,7 +562,7 @@ void LLFloaterBvhPreview::resetMotion()
 	}
 	else
 	{
-		mPauseRequest = NULL;	
+		mPauseRequest = nullptr;	
 	}
 }
 
@@ -724,11 +699,12 @@ void LLFloaterBvhPreview::onBtnPlay()
 		if(!avatarp->isMotionActive(mMotionID))
 		{
 			resetMotion();
-			mPauseRequest = NULL;
+			mPauseRequest = nullptr;
 		}
 		else if (avatarp->areAnimationsPaused())
 		{
-			mPauseRequest = NULL;
+			mPauseRequest = nullptr;
+
 		}
 		else //onBtnPause() does this in v3
 		{
@@ -832,7 +808,7 @@ void LLFloaterBvhPreview::onCommitBaseAnim()
 
 	if (!paused)
 	{
-		mPauseRequest = NULL;
+		mPauseRequest = nullptr;
 	}
 }
 
@@ -1234,7 +1210,7 @@ void LLFloaterBvhPreview::onBtnOK(void* userdata)
 			{
 				std::string name = floaterp->getChild<LLUICtrl>("name_form")->getValue().asString();
 				std::string desc = floaterp->getChild<LLUICtrl>("description_form")->getValue().asString();
-				S32 expected_upload_cost = LLGlobalEconomy::Singleton::getInstance()->getPriceUpload();
+				S32 expected_upload_cost = LLGlobalEconomy::getInstance()->getPriceUpload();
 
 				// <edit>
 				if(floaterp->mItem)
@@ -1311,7 +1287,6 @@ LLPreviewAnimation::LLPreviewAnimation(S32 width, S32 height) : LLViewerDynamicT
 	mDummyAvatar->updateGeometry(mDummyAvatar->mDrawable);
 	mDummyAvatar->startMotion(ANIM_AGENT_STAND, BASE_ANIM_TIME_OFFSET);
 	mDummyAvatar->hideSkirt();
-	//gPipeline.markVisible(mDummyAvatar->mDrawable, *LLViewerCamera::getInstance());
 
 	// stop extraneous animations
 	mDummyAvatar->stopMotion( ANIM_AGENT_HEAD_ROT, TRUE );

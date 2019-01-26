@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpluginmessage.cpp
  * @brief LLPluginMessage encapsulates the serialization/deserialization of messages passed to and from plugins.
@@ -283,7 +285,7 @@ U32 LLPluginMessage::getValueU32(const std::string &key) const
 	{
 		std::string value = mMessage["params"][key].asString();
 		
-		result = (U32)strtoul(value.c_str(), NULL, 16);
+		result = (U32)strtoul(value.c_str(), nullptr, 16);
 	}
 	
 	return result;
@@ -336,13 +338,13 @@ F64 LLPluginMessage::getValueReal(const std::string &key) const
  */
 void* LLPluginMessage::getValuePointer(const std::string &key) const
 {
-	void* result = NULL;
+	void* result = nullptr;
 
 	if(mMessage["params"].has(key))
 	{
 		std::string value = mMessage["params"][key].asString();
 		
-		result = (void*)llstrtou64(value.c_str(), NULL, 16);
+		result = (void*) std::stoull(value, nullptr, 16);
 	}
 	
 	return result;

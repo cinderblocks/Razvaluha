@@ -47,7 +47,7 @@
 // necessary for grabbing sounds from sim (implemented in viewer)	
 extern void request_sound(const LLUUID &sound_guid);
 
-LLAudioEngine* gAudiop = NULL;
+LLAudioEngine* gAudiop = nullptr;
 
 int gSoundHistoryPruneCounter = 0;
 
@@ -80,10 +80,10 @@ void LLAudioEngine::setDefaults()
 {
 	mMaxWindGain = 1.f;
 
-	mListenerp = NULL;
+	mListenerp = nullptr;
 
 	mMuted = false;
-	mUserData = NULL;
+	mUserData = nullptr;
 
 	mLastStatus = 0;
 
@@ -93,11 +93,11 @@ void LLAudioEngine::setDefaults()
 	S32 i;
 	for (i = 0; i < MAX_CHANNELS; i++)
 	{
-		mChannels[i] = NULL;
+		mChannels[i] = nullptr;
 	}
 	for (i = 0; i < MAX_BUFFERS; i++)
 	{
-		mBuffers[i] = NULL;
+		mBuffers[i] = nullptr;
 	}
 
 	mMasterGain = 1.f;
@@ -108,7 +108,7 @@ void LLAudioEngine::setDefaults()
 	mInternalGain = -1.f;
 	mNextWindUpdate = 0.f;
 
-	mStreamingAudioImpl = NULL;
+	mStreamingAudioImpl = nullptr;
 
 	for (U32 i = 0; i < LLAudioEngine::AUDIO_TYPE_COUNT; i++)
 		mSecondaryGain[i] = 1.0f;
@@ -139,14 +139,14 @@ void LLAudioEngine::shutdown()
 {
 	// Clean up decode manager
 	delete gAudioDecodeMgrp;
-	gAudioDecodeMgrp = NULL;
+	gAudioDecodeMgrp = nullptr;
 
 	// Clean up wind source
 	cleanupWind();
 
 	// Clean up audio sources
 	source_map::iterator iter_src;
-	for (iter_src = mAllSources.begin(); iter_src != mAllSources.end(); iter_src++)
+	for (iter_src = mAllSources.begin(); iter_src != mAllSources.end(); ++iter_src)
 	{
 		delete iter_src->second;
 	}
@@ -154,7 +154,7 @@ void LLAudioEngine::shutdown()
 
 	// Clean up audio data
 	data_map::iterator iter_data;
-	for (iter_data = mAllData.begin(); iter_data != mAllData.end(); iter_data++)
+	for (iter_data = mAllData.begin(); iter_data != mAllData.end(); ++iter_data)
 	{
 		delete iter_data->second;
 	}
@@ -165,14 +165,14 @@ void LLAudioEngine::shutdown()
 	for (i = 0; i < MAX_CHANNELS; i++)
 	{
 		delete mChannels[i];
-		mChannels[i] = NULL;
+		mChannels[i] = nullptr;
 	}
 
 	// Clean up buffers
 	for (i = 0; i < MAX_BUFFERS; i++)
 	{
 		delete mBuffers[i];
-		mBuffers[i] = NULL;
+		mBuffers[i] = nullptr;
 	}
 
 	delete mStreamingAudioImpl;
@@ -595,7 +595,7 @@ LLAudioBuffer * LLAudioEngine::getFreeBuffer()
 	}
 
 	//checkStates();	//Fails
-	return NULL;
+	return nullptr;
 }
 
 
@@ -624,7 +624,7 @@ LLAudioChannel * LLAudioEngine::getFreeChannel(const F32 priority)
 	// All channels used, check priorities.
 	// Find channel with lowest priority and see if we want to replace it.
 	F32 min_priority = 10000.f;
-	LLAudioChannel *min_channelp = NULL;
+	LLAudioChannel *min_channelp = nullptr;
 
 	for (i = 0; i < mNumChannels; i++)
 	{
@@ -640,7 +640,7 @@ LLAudioChannel * LLAudioEngine::getFreeChannel(const F32 priority)
 	if (!min_channelp || min_priority >= priority)
 	{
 		// All playing channels have higher priority, return.
-		return NULL;
+		return nullptr;
 	}
 
 	LL_DEBUGS("AudioEngine") << "Flushing min channel" << LL_ENDL;
@@ -658,7 +658,7 @@ void LLAudioEngine::cleanupBuffer(LLAudioBuffer *bufferp)
 		if (mBuffers[i] == bufferp)
 		{
 			delete mBuffers[i];
-			mBuffers[i] = NULL;
+			mBuffers[i] = nullptr;
 		}
 	}
 }

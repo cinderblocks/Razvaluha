@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfloaterregiondebugconsole.h
  * @author Brad Kittenbrink <brad@lindenlab.com>
@@ -79,7 +81,7 @@ namespace
 		void post(
 			LLHTTPNode::ResponsePtr reponse,
 			const LLSD& context,
-			const LLSD& input) const
+			const LLSD& input) const override
 		{
 			LL_INFOS() << "Received response from the debug console: "
 				<< input << LL_ENDL;
@@ -120,11 +122,11 @@ BOOL LLFloaterRegionDebugConsole::postBuild()
 
 	mOutput = getChild<LLTextEditor>("region_debug_console_output");
 
-	std::string url = gAgent.getRegion()->getCapability("SimConsoleAsync");
+	std::string url = gAgent.getRegionCapability("SimConsoleAsync");
 	if (url.empty())
 	{
 		// Fall back to see if the old API is supported.
-		url = gAgent.getRegion()->getCapability("SimConsole");
+		url = gAgent.getRegionCapability("SimConsole");
 		if (url.empty())
 		{
 			mOutput->appendText(
@@ -148,11 +150,11 @@ void LLFloaterRegionDebugConsole::onInput(LLUICtrl* ctrl, const LLSD& param)
 	LLLineEditor* input = static_cast<LLLineEditor*>(ctrl);
 	std::string text = input->getText() + "\n";
 
-	std::string url = gAgent.getRegion()->getCapability("SimConsoleAsync");
+	std::string url = gAgent.getRegionCapability("SimConsoleAsync");
 	if (url.empty())
 	{
 		// Fall back to the old API
-		url = gAgent.getRegion()->getCapability("SimConsole");
+		url = gAgent.getRegionCapability("SimConsole");
 		if (url.empty())
 		{
 			text += CONSOLE_UNAVAILABLE + PROMPT;

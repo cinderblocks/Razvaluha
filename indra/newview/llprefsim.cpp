@@ -39,7 +39,6 @@
 #include "llcheckboxctrl.h"
 #include "llstring.h"
 #include "lltexteditor.h"
-#include "llavatarconstants.h"
 #include "llagent.h"
 #include "llviewercontrol.h"
 #include "llviewernetwork.h"
@@ -206,8 +205,8 @@ void LLPrefsIMImpl::apply()
 			// works out in the end. 	 
 			if(new_hide_online != mOriginalHideOnlineStatus) 	 
 			{ 	 
-				if(new_hide_online) mDirectoryVisibility = VISIBILITY_HIDDEN;
-				else mDirectoryVisibility = VISIBILITY_DEFAULT;
+				if(new_hide_online) mDirectoryVisibility = "hidden";
+				else mDirectoryVisibility = "default";
 				//Update showonline value, otherwise multiple applys won't work
 				mOriginalHideOnlineStatus = new_hide_online;
 			} 	 
@@ -232,12 +231,12 @@ void LLPrefsIMImpl::setPersonalInfo(const std::string& visibility, bool im_via_e
 	mOriginalIMViaEmail = im_via_email;
 	mDirectoryVisibility = visibility;
 	
-	if(visibility == VISIBILITY_DEFAULT)
+	if(visibility == "default")
 	{
 		mOriginalHideOnlineStatus = false;
 		childEnable("online_visibility"); 	 
 	}
-	else if(visibility == VISIBILITY_HIDDEN)
+	else if(visibility == "hidden")
 	{
 		mOriginalHideOnlineStatus = true;
 		childEnable("online_visibility"); 	 

@@ -45,6 +45,7 @@ class LLMediaCtrl;
 class LLFloaterSearch :
 	public LLFloaterWebContent, public LLSingleton<LLFloaterSearch>
 {
+	LLSINGLETON(LLFloaterSearch);
 public:
 	struct SearchQuery : public LLInitParam::Block<SearchQuery>
 	{
@@ -62,9 +63,7 @@ public:
 
 	typedef LLSDParamAdapter<_Params> Params;
 
-	LLFloaterSearch(const Params& key = Params());
-
-	using LLSingleton<LLFloaterSearch>::getInstance;
+	static LLFloaterSearch* getInstance() { return LLSingleton::getInstance(); }
 	static void showInstance(const SearchQuery& p, bool web = false);
 
 	/// show the search floater with a new search

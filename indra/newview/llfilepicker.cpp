@@ -88,23 +88,23 @@ LLFilePicker::LLFilePicker()
 
 #if LL_WINDOWS
 	mOFN.lStructSize = sizeof(OPENFILENAMEW);
-	mOFN.hwndOwner = NULL;  // Set later
-	mOFN.hInstance = NULL;
-	mOFN.lpstrCustomFilter = NULL;
+	mOFN.hwndOwner = nullptr;  // Set later
+	mOFN.hInstance = nullptr;
+	mOFN.lpstrCustomFilter = nullptr;
 	mOFN.nMaxCustFilter = 0;
-	mOFN.lpstrFile = NULL;							// set in open and close
+	mOFN.lpstrFile = nullptr;							// set in open and close
 	mOFN.nMaxFile = LL_MAX_PATH;
-	mOFN.lpstrFileTitle = NULL;
+	mOFN.lpstrFileTitle = nullptr;
 	mOFN.nMaxFileTitle = 0;
-	mOFN.lpstrInitialDir = NULL;
-	mOFN.lpstrTitle = NULL;
+	mOFN.lpstrInitialDir = nullptr;
+	mOFN.lpstrTitle = nullptr;
 	mOFN.Flags = 0;									// set in open and close
 	mOFN.nFileOffset = 0;
 	mOFN.nFileExtension = 0;
-	mOFN.lpstrDefExt = NULL;
+	mOFN.lpstrDefExt = nullptr;
 	mOFN.lCustData = 0L;
-	mOFN.lpfnHook = NULL;
-	mOFN.lpTemplateName = NULL;
+	mOFN.lpfnHook = nullptr;
+	mOFN.lpTemplateName = nullptr;
 	mFilesW[0] = '\0';
 #endif
 
@@ -276,13 +276,15 @@ BOOL LLFilePicker::getOpenFile(ELoadFilter filter, bool blocking)
 
 	setupFilter(filter);
 	
+	reset();
+
 	if (blocking)
 	{
 		// Modal, so pause agent
 		send_agent_pause();
 	}
 
-	reset();
+	gViewerWindow->getWindow()->beforeDialog();
 	
 	// NOTA BENE: hitting the file dialog triggers a window focus event, destroying the selection manager!!
 	success = GetOpenFileName(&mOFN);
@@ -291,6 +293,8 @@ BOOL LLFilePicker::getOpenFile(ELoadFilter filter, bool blocking)
 		std::string filename = utf16str_to_utf8str(llutf16string(mFilesW));
 		mFiles.push_back(filename);
 	}
+
+	gViewerWindow->getWindow()->afterDialog();
 
 	if (blocking)
 	{
@@ -332,6 +336,7 @@ BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter)
 	
 	// Modal, so pause agent
 	send_agent_pause();
+	gViewerWindow->getWindow()->beforeDialog();
 	// NOTA BENE: hitting the file dialog triggers a window focus event, destroying the selection manager!!
 	success = GetOpenFileName(&mOFN); // pauses until ok or cancel.
 	if( success )
@@ -349,7 +354,7 @@ BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter)
 			mLocked = true;
 			WCHAR* tptrw = mFilesW;
 			std::string dirname;
-			while(1)
+			while(true)
 			{
 				if (*tptrw == 0 && *(tptrw+1) == 0) // double '\0'
 					break;
@@ -360,10 +365,11 @@ BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter)
 					dirname = filename + "\\";
 				else
 					mFiles.push_back(dirname + filename);
-				tptrw += filename.size();
+				tptrw += wcslen(tptrw);
 			}
 		}
 	}
+	gViewerWindow->getWindow()->afterDialog();
 	send_agent_resume();
 
 	// Account for the fact that the app has been stalled.
@@ -389,7 +395,8 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 	if (!filename.empty())
 	{
 		llutf16string tstring = utf8str_to_utf16str(filename);
-		wcsncpy(mFilesW, tstring.c_str(), FILENAME_BUFFER_SIZE);	}	/*Flawfinder: ignore*/
+		wcsncpy(mFilesW, tstring.c_str(), FILENAME_BUFFER_SIZE);	/*Flawfinder: ignore*/
+	}	
 	else
 	{
 		mFilesW[0] = '\0';
@@ -399,7 +406,7 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 	switch( filter )
 	{
 	case FFSAVE_ALL:
-		mOFN.lpstrDefExt = NULL;
+		mOFN.lpstrDefExt = nullptr;
 		mOFN.lpstrFilter =
 			L"All Files (*.*)\0*.*\0" \
 			L"WAV Sounds (*.wav)\0*.wav\0" \
@@ -456,6 +463,9 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 		mOFN.lpstrFilter =
 			L"PNG Images (*.png)\0*.png\0" \
 			L"Targa Images (*.tga)\0*.tga\0" \
+			L"Jpeg Images (*.jpg)\0*.jpg\0" \
+			L"Jpeg2000 Images (*.j2c)\0*.j2c\0" \
+			L"Bitmap Images (*.bmp)\0*.bmp\0" \
 			L"\0";
 		break;
 		
@@ -515,11 +525,11 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 	case FFSAVE_COLLADA:
 		if (filename.empty())
 		{
-			wcsncpy( mFilesW,L"untitled.collada", FILENAME_BUFFER_SIZE);	/*Flawfinder: ignore*/
+			wcsncpy( mFilesW,L"untitled.dae", FILENAME_BUFFER_SIZE);	/*Flawfinder: ignore*/
 		}
 		mOFN.lpstrDefExt = L"collada";
 		mOFN.lpstrFilter =
-			L"COLLADA File (*.collada)\0*.collada\0" \
+			L"COLLADA Scene (*.dae)\0*.dae\0" \
 			L"\0";
 		break;
 	case FFSAVE_RAW:
@@ -796,13 +806,22 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 	// Modal, so pause agent
 	send_agent_pause();
 	{
+		gViewerWindow->getWindow()->beforeDialog();
 		// NOTA BENE: hitting the file dialog triggers a window focus event, destroying the selection manager!!
-		success = GetSaveFileName(&mOFN);
-		if (success)
+		try
 		{
-			std::string filename = utf16str_to_utf8str(llutf16string(mFilesW));
-			mFiles.push_back(filename);
+			success = GetSaveFileName(&mOFN);
+			if (success)
+			{
+				std::string filename = utf16str_to_utf8str(llutf16string(mFilesW));
+				mFiles.push_back(filename);
+			}
 		}
+		catch (...)
+		{
+			LOG_UNHANDLED_EXCEPTION("");
+		}
+		gViewerWindow->getWindow()->afterDialog();
 		gKeyboard->resetKeys();
 	}
 	send_agent_resume();
@@ -814,9 +833,9 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 
 #elif LL_DARWIN
 
-std::vector<std::string>* LLFilePicker::navOpenFilterProc(ELoadFilter filter) //(AEDesc *theItem, void *info, void *callBackUD, NavFilterModes filterMode)
+std::vector<std::string> LLFilePicker::navOpenFilterProc(ELoadFilter filter) //(AEDesc *theItem, void *info, void *callBackUD, NavFilterModes filterMode)
 {
-    std::vector<std::string> *allowedv = new std::vector< std::string >;
+    std::vector<std::string> allowedv;
     switch(filter)
     {
         case FFLOAD_ALL:
@@ -889,7 +908,7 @@ bool	LLFilePicker::doNavChooseDialog(ELoadFilter filter)
     
 	gViewerWindow->getWindow()->beforeDialog();
     
-    std::vector<std::string> *allowed_types=navOpenFilterProc(filter);
+    std::vector<std::string> allowed_types = navOpenFilterProc(filter);
     
     std::vector<std::string> *filev  = doLoadDialog(allowed_types, 
                                                     mPickOptions);
@@ -996,14 +1015,7 @@ bool	LLFilePicker::doNavSaveDialog(ESaveFilter filter, const std::string& filena
 			break;
 	}
 	
-    std::string namestring = filename;
-    if (namestring.empty()) namestring="Untitled";
-    
-//    if (! boost::algorithm::ends_with(namestring, extension) )
-//    {
-//        namestring = namestring + "." + extension;
-//        
-//    }
+	const std::string namestring = filename.empty() ? LLStringExplicit("Untitled") : filename;
     
 	gViewerWindow->getWindow()->beforeDialog();
 

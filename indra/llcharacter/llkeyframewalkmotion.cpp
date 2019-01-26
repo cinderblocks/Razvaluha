@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llkeyframewalkmotion.cpp
  * @brief Implementation of LLKeyframeWalkMotion class.
@@ -43,21 +45,18 @@ const F32 MAX_WALK_PLAYBACK_SPEED = 8.f;		// max m/s for which we adjust walk cy
 const F32 MIN_WALK_SPEED = 0.1f;				// minimum speed at which we use velocity for down foot detection
 const F32 TIME_EPSILON = 0.001f;				// minumum frame time
 const F32 MAX_TIME_DELTA = 2.f;					// max two seconds a frame for calculating interpolation
-const F32 SPEED_ADJUST_MAX_SEC = 3.f;					// maximum adjustment to walk animation playback speed for a second
+F32 SPEED_ADJUST_MAX_SEC = 2.f;					// maximum adjustment to walk animation playback speed for a second
 F32 ANIM_SPEED_MAX = 1.5f;						// absolute upper limit on animation speed
-const F32 DRIFT_COMP_MAX_TOTAL = 0.1f;			// maximum drift compensation overall, in any direction 
-const F32 DRIFT_COMP_MAX_SPEED = 4.f;			// speed at which drift compensation total maxes out
 const F32 MAX_ROLL = 0.6f;
-const F32 PELVIS_COMPENSATION_WIEGHT = 0.7f; 	// proportion of foot drift that is compensated by moving the avatar directly
 const F32 SPEED_ADJUST_TIME_CONSTANT = 0.1f; 	// time constant for speed adjustment interpolation
 
 //-----------------------------------------------------------------------------
 // LLKeyframeWalkMotion()
 // Class Constructor
 //-----------------------------------------------------------------------------
-LLKeyframeWalkMotion::LLKeyframeWalkMotion(LLUUID const& id, LLMotionController* controller)
-:	LLKeyframeMotion(id, controller),
-    mCharacter(NULL),
+LLKeyframeWalkMotion::LLKeyframeWalkMotion(const LLUUID &id)
+:	LLKeyframeMotion(id),
+    mCharacter(nullptr),
     mCyclePhase(0.0f),
     mRealTimeLast(0.0f),
     mAdjTimeLast(0.0f),
@@ -138,16 +137,21 @@ BOOL LLKeyframeWalkMotion::onUpdate(F32 time, U8* joint_mask)
 // LLWalkAdjustMotion()
 // Class Constructor
 //-----------------------------------------------------------------------------
-LLWalkAdjustMotion::LLWalkAdjustMotion(LLUUID const& id, LLMotionController* controller) :
-	AIMaskedMotion(id, controller, ANIM_AGENT_WALK_ADJUST),
+LLWalkAdjustMotion::LLWalkAdjustMotion(const LLUUID &id) :
+	LLMotion(id),
+	mCharacter(nullptr),
+	mLeftAnkleJoint(nullptr),
+	mRightAnkleJoint(nullptr),
+	mPelvisState(new LLJointState),
+	mPelvisJoint(nullptr),
 	mLastTime(0.f),
-	mAnimSpeed(0.f),
 	mAdjustedSpeed(0.f),
+	mAnimSpeed(0.f),
 	mRelativeDir(0.f),
+	// LLPointer<LLJointState>
 	mAnkleOffset(0.f)
 {
 	mName = "walk_adjust";
-	mPelvisState = new LLJointState;
 }
 
 //-----------------------------------------------------------------------------
@@ -193,7 +197,7 @@ BOOL LLWalkAdjustMotion::onActivate()
 	F32 rightAnkleOffset = (mRightAnkleJoint->getWorldPosition() - mCharacter->getCharacterPosition()).magVec();
 	mAnkleOffset = llmax(leftAnkleOffset, rightAnkleOffset);
 
-	return AIMaskedMotion::onActivate();
+	return TRUE;
 }
 
 //-----------------------------------------------------------------------------
@@ -258,7 +262,7 @@ BOOL LLWalkAdjustMotion::onUpdate(F32 time, U8* joint_mask)
 		// but this will cause the animation playback rate calculation below to 
 		// kick in too slowly and sometimes start playing the animation in reverse.
 
-		//mPelvisOffset -= PELVIS_COMPENSATION_WIEGHT * (foot_slip_vector * world_to_avatar_rot);//lerp(LLVector3::zero, -1.f * (foot_slip_vector * world_to_avatar_rot), LLCriticalDamp::getInterpolant(0.1f));
+		//mPelvisOffset -= PELVIS_COMPENSATION_WIEGHT * (foot_slip_vector * world_to_avatar_rot);//lerp(LLVector3::zero, -1.f * (foot_slip_vector * world_to_avatar_rot), LLSmoothInterpolation::getInterpolant(0.1f));
 
 		////F32 drift_comp_max = DRIFT_COMP_MAX_TOTAL * (llclamp(speed, 0.f, DRIFT_COMP_MAX_SPEED) / DRIFT_COMP_MAX_SPEED);
 		//F32 drift_comp_max = DRIFT_COMP_MAX_TOTAL;
@@ -287,7 +291,7 @@ BOOL LLWalkAdjustMotion::onUpdate(F32 time, U8* joint_mask)
 		F32 desired_speed_multiplier = llclamp(speed / foot_speed, min_speed_multiplier, ANIM_SPEED_MAX);
 
 		// blend towards new speed adjustment value
-		F32 new_speed_adjust = lerp(mAdjustedSpeed, desired_speed_multiplier, LLCriticalDamp::getInterpolant(SPEED_ADJUST_TIME_CONSTANT));
+		F32 new_speed_adjust = LLSmoothInterpolation::lerp(mAdjustedSpeed, desired_speed_multiplier, SPEED_ADJUST_TIME_CONSTANT);
 
 		// limit that rate at which the speed adjustment changes
 		F32 speedDelta = llclamp(new_speed_adjust - mAdjustedSpeed, -SPEED_ADJUST_MAX_SEC * delta_time, SPEED_ADJUST_MAX_SEC * delta_time);
@@ -305,8 +309,8 @@ BOOL LLWalkAdjustMotion::onUpdate(F32 time, U8* joint_mask)
 	{	// standing/turning
 
 		// damp out speed adjustment to 0
-		mAnimSpeed = lerp(mAnimSpeed, 1.f, LLCriticalDamp::getInterpolant(0.2f));
-		//mPelvisOffset = lerp(mPelvisOffset, LLVector3::zero, LLCriticalDamp::getInterpolant(0.2f));
+		mAnimSpeed = LLSmoothInterpolation::lerp(mAnimSpeed, 1.f, 0.2f);
+		//mPelvisOffset = lerp(mPelvisOffset, LLVector3::zero, LLSmoothInterpolation::getInterpolant(0.2f));
 	}
 
 	// broadcast walk speed change
@@ -325,14 +329,14 @@ BOOL LLWalkAdjustMotion::onUpdate(F32 time, U8* joint_mask)
 void LLWalkAdjustMotion::onDeactivate()
 {
 	mCharacter->removeAnimationData("Walk Speed");
-	AIMaskedMotion::onDeactivate();
 }
 
 //-----------------------------------------------------------------------------
 // LLFlyAdjustMotion::LLFlyAdjustMotion()
 //-----------------------------------------------------------------------------
-LLFlyAdjustMotion::LLFlyAdjustMotion(LLUUID const& id, LLMotionController* controller)
-	: AIMaskedMotion(id, controller, ANIM_AGENT_FLY_ADJUST),
+LLFlyAdjustMotion::LLFlyAdjustMotion(const LLUUID &id)
+	: LLMotion(id),
+	  mCharacter(nullptr),
 	  mRoll(0.f)
 {
 	mName = "fly_adjust";
@@ -369,7 +373,7 @@ BOOL LLFlyAdjustMotion::onActivate()
 	mPelvisState->setPosition(LLVector3::zero);
 	mPelvisState->setRotation(LLQuaternion::DEFAULT);
 	mRoll = 0.f;
-	return AIMaskedMotion::onActivate();
+	return TRUE;
 }
 
 //-----------------------------------------------------------------------------
@@ -384,7 +388,7 @@ BOOL LLFlyAdjustMotion::onUpdate(F32 time, U8* joint_mask)
 	F32 target_roll = llclamp(ang_vel.mV[VZ], -4.f, 4.f) * roll_factor;
 
 	// roll is critically damped interpolation between current roll and angular velocity-derived target roll
-	mRoll = lerp(mRoll, target_roll, LLCriticalDamp::getInterpolant(0.1f));
+	mRoll = LLSmoothInterpolation::lerp(mRoll, target_roll, U32Milliseconds(100));
 
 	LLQuaternion roll(mRoll, LLVector3(0.f, 0.f, 1.f));
 	mPelvisState->setRotation(roll);

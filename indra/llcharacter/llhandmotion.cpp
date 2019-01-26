@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llhandmotion.cpp
  * @brief Implementation of LLHandMotion class.
@@ -61,9 +63,9 @@ const F32 HAND_MORPH_BLEND_TIME = 0.2f;
 // LLHandMotion()
 // Class Constructor
 //-----------------------------------------------------------------------------
-LLHandMotion::LLHandMotion(LLUUID const& id, LLMotionController* controller) : AIMaskedMotion(id, controller, ANIM_AGENT_HAND_MOTION)
+LLHandMotion::LLHandMotion(const LLUUID &id) : LLMotion(id)
 {
-	mCharacter = NULL;
+	mCharacter = nullptr;
 	mLastTime = 0.f;
 	mCurrentPose = HAND_POSE_RELAXED;
 	mNewPose = HAND_POSE_RELAXED;
@@ -112,7 +114,7 @@ BOOL LLHandMotion::onActivate()
 		mCharacter->setVisualParamWeight(gHandPoseNames[mCurrentPose], 1.f);
 		mCharacter->updateVisualParams();
 	}
-	return AIMaskedMotion::onActivate();
+	return TRUE;
 }
 
 
@@ -235,6 +237,14 @@ BOOL LLHandMotion::onUpdate(F32 time, U8* joint_mask)
 	return TRUE;
 }
 
+
+//-----------------------------------------------------------------------------
+// LLHandMotion::onDeactivate()
+//-----------------------------------------------------------------------------
+void LLHandMotion::onDeactivate()
+{
+}
+
 //-----------------------------------------------------------------------------
 // LLHandMotion::getHandPoseName()
 //-----------------------------------------------------------------------------
@@ -247,7 +257,7 @@ std::string LLHandMotion::getHandPoseName(eHandPose pose)
 	return LLStringUtil::null;
 }
 
-LLHandMotion::eHandPose LLHandMotion::getHandPose(std::string posename)
+LLHandMotion::eHandPose LLHandMotion::getHandPose(const std::string& posename)
 {
 	for (S32 pose = 0; pose < LLHandMotion::NUM_HAND_POSES; ++pose)
 	{

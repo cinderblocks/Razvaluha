@@ -43,9 +43,9 @@ class LLFloaterSettingsDebug
 :	public LLFloater
 ,	public LLSingleton<LLFloaterSettingsDebug>
 {
-public:
-	LLFloaterSettingsDebug();
+	LLSINGLETON(LLFloaterSettingsDebug);
 	virtual ~LLFloaterSettingsDebug();
+public:
 
 	virtual BOOL postBuild();
 	virtual void draw();

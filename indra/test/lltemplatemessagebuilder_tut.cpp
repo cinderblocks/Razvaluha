@@ -1,33 +1,29 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file lltemplatemessagebuilder_tut.cpp
  * @date 2007-04
  * @brief Tests for building messages.
  *
- * $LicenseInfo:firstyear=2007&license=viewergpl$
- * 
- * Copyright (c) 2007-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2007&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -35,11 +31,12 @@
 #include "linden_common.h"
 #include "lltut.h"
 
+#include "llapr.h"
 #include "llmessagetemplate.h"
+#include "llmath.h"
 #include "llquaternion.h"
 #include "lltemplatemessagebuilder.h"
 #include "lltemplatemessagereader.h"
-#include "llversionserver.h"
 #include "message_prehash.h"
 #include "u64.h"
 #include "v3dmath.h"
@@ -58,13 +55,14 @@ namespace tut
 			static bool init = false;
 			if(! init)
 			{
+				ll_init_apr();
 				const F32 circuit_heartbeat_interval=5;
 				const F32 circuit_timeout=100;
 
 				start_messaging_system("notafile", 13035,
-									   LL_VERSION_MAJOR,
-									   LL_VERSION_MINOR,        
-									   LL_VERSION_PATCH,        
+									   1,
+									   0,        
+									   0,        
 									   FALSE,        
 									   "notasharedsecret",
 									   NULL,
@@ -323,7 +321,7 @@ namespace tut
 	{
 		LLMessageTemplate messageTemplate = defaultTemplate();
 		messageTemplate.addBlock(defaultBlock(MVT_LLQuaternion, 12));
-		LLQuaternion outValue, inValue = LLQuaternion(1,2,3,0);
+		LLQuaternion outValue, inValue = LLQuaternion(0.3713907f, 0.5570861f, 0.7427813f,0.0f);
 		LLTemplateMessageBuilder* builder = defaultBuilder(messageTemplate);
 		builder->addQuat(_PREHASH_Test0, inValue);
 		LLTemplateMessageReader* reader = setReader(messageTemplate, builder);
@@ -510,7 +508,7 @@ namespace tut
 
 	template<> template<>
 	void LLTemplateMessageBuilderTestObject::test<22>()
-		// repeated penultimate block (crashes when data in LLIndexedVector)
+		// repeated penultimate block (crashes when data in LLDynamicArrayIndexed)
 	{
 		U32 inTest00 = 0, inTest01 = 1, inTest1 = 2;
 		U32 outTest00, outTest01, outTest1;
@@ -790,7 +788,7 @@ namespace tut
 	{
 		LLMessageTemplate messageTemplate = defaultTemplate();
 		messageTemplate.addBlock(defaultBlock(MVT_LLQuaternion, 12));
-		LLQuaternion outValue, inValue = LLQuaternion(1,2,3,0);
+		LLQuaternion outValue, inValue = LLQuaternion(0.3713907f, 0.5570861f, 0.7427813f,0.0f);
 		LLTemplateMessageBuilder* builder = defaultBuilder(messageTemplate);
 		builder->addQuat(_PREHASH_Test0, inValue);
 		LLTemplateMessageReader* reader = setReader(
@@ -940,7 +938,7 @@ namespace tut
 		// build message with single block
 		LLMessageTemplate messageTemplate = defaultTemplate();
 		messageTemplate.addBlock(defaultBlock(MVT_U32, 4, MBT_SINGLE));
-		U32 outValue, outValue2, inValue = 0xbbbbbbbb;
+		U32 outValue, inValue = 0xbbbbbbbb;
 		LLTemplateMessageBuilder* builder = defaultBuilder(messageTemplate);
 		builder->addU32(_PREHASH_Test0, inValue);
 		const U32 bufferSize = 1024;
@@ -961,11 +959,11 @@ namespace tut
 		reader->validateMessage(buffer, builtSize, LLHost());
 		reader->readMessage(buffer, LLHost());
 		reader->getU32(_PREHASH_Test0, _PREHASH_Test0, outValue);
+		(void)outValue;
 		char outBuffer[bufferSize];
 		memset(buffer, 0xcc, bufferSize);
 		reader->getString(_PREHASH_Test1, _PREHASH_Test0, bufferSize, 
 						  outBuffer);
-		outValue2 = reader->getNumberOfBlocks(_PREHASH_Test1);
 		ensure_equals("Ensure present value ", outValue, inValue);
 		ensure_equals("Ensure unchanged buffer ", strlen(outBuffer), 0);
 		delete reader;

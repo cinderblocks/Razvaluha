@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lljointsolverrp3.cpp
  * @brief Implementation of LLJointSolverRP3 class.
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -47,10 +43,10 @@
 //-----------------------------------------------------------------------------
 LLJointSolverRP3::LLJointSolverRP3()
 {
-	mJointA = NULL;
-	mJointB = NULL;
-	mJointC = NULL;
-	mJointGoal = NULL;
+	mJointA = nullptr;
+	mJointB = nullptr;
+	mJointC = nullptr;
+	mJointGoal = nullptr;
 	mLengthAB = 1.0f;
 	mLengthBC = 1.0f;
 	mPoleVector.setVec( 1.0f, 0.0f, 0.0f );
@@ -141,8 +137,6 @@ void LLJointSolverRP3::setTwist( F32 twist )
 //-----------------------------------------------------------------------------
 void LLJointSolverRP3::solve()
 {
-//	LL_INFOS() << LL_ENDL;
-//	LL_INFOS() << "LLJointSolverRP3::solve()" << LL_ENDL;
 
 	//-------------------------------------------------------------------------
 	// setup joints in their base rotations
@@ -158,25 +152,25 @@ void LLJointSolverRP3::solve()
 	LLVector3 cPos = mJointC->getWorldPosition();
 	LLVector3 gPos = mJointGoal->getWorldPosition();
 
-//	LL_INFOS() << "bPosLocal = " << mJointB->getPosition() << LL_ENDL;
-//	LL_INFOS() << "cPosLocal = " << mJointC->getPosition() << LL_ENDL;
-//	LL_INFOS() << "bRotLocal = " << mJointB->getRotation() << LL_ENDL;
-//	LL_INFOS() << "cRotLocal = " << mJointC->getRotation() << LL_ENDL;
-
-//	LL_INFOS() << "aPos : " << aPos << LL_ENDL;
-//	LL_INFOS() << "bPos : " << bPos << LL_ENDL;
-//	LL_INFOS() << "cPos : " << cPos << LL_ENDL;
-//	LL_INFOS() << "gPos : " << gPos << LL_ENDL;
+	LL_DEBUGS("JointSolver") << "LLJointSolverRP3::solve()" << LL_NEWLINE
+							<< "bPosLocal = " << mJointB->getPosition() << LL_NEWLINE
+							<< "cPosLocal = " << mJointC->getPosition() << LL_NEWLINE
+							<< "bRotLocal = " << mJointB->getRotation() << LL_NEWLINE
+							<< "cRotLocal = " << mJointC->getRotation() << LL_NEWLINE
+							<< "aPos : " << aPos << LL_NEWLINE
+							<< "bPos : " << bPos << LL_NEWLINE
+							<< "cPos : " << cPos << LL_NEWLINE
+							<< "gPos : " << gPos << LL_ENDL;
 
 	//-------------------------------------------------------------------------
 	// get the poleVector in world space
 	//-------------------------------------------------------------------------
 	LLVector3 poleVec = mPoleVector;
-	if ( mJointA->getParent() )
+	if (mJointA->getParent())
 	{
 		LLVector4a pole_veca;
 		pole_veca.load3(mPoleVector.mV);
-		mJointA->getParent()->getWorldMatrix().rotate(pole_veca,pole_veca);
+		mJointA->getParent()->getWorldMatrix().rotate(pole_veca, pole_veca);
 		poleVec.set(pole_veca.getF32ptr());
 	}
 
@@ -192,11 +186,6 @@ void LLJointSolverRP3::solve()
 	LLVector3 acVec = cPos - aPos;
 	LLVector3 agVec = gPos - aPos;
 
-//	LL_INFOS() << "abVec : " << abVec << LL_ENDL;
-//	LL_INFOS() << "bcVec : " << bcVec << LL_ENDL;
-//	LL_INFOS() << "acVec : " << acVec << LL_ENDL;
-//	LL_INFOS() << "agVec : " << agVec << LL_ENDL;
-
 	//-------------------------------------------------------------------------
 	// compute needed lengths of those vectors
 	//-------------------------------------------------------------------------
@@ -204,16 +193,19 @@ void LLJointSolverRP3::solve()
 	F32 bcLen = bcVec.magVec();
 	F32 agLen = agVec.magVec();
 
-//	LL_INFOS() << "abLen : " << abLen << LL_ENDL;
-//	LL_INFOS() << "bcLen : " << bcLen << LL_ENDL;
-//	LL_INFOS() << "agLen : " << agLen << LL_ENDL;
-
 	//-------------------------------------------------------------------------
 	// compute component vector of (A->B) orthogonal to (A->C)
 	//-------------------------------------------------------------------------
 	LLVector3 abacCompOrthoVec = abVec - acVec * ((abVec * acVec)/(acVec * acVec));
 
-//	LL_INFOS() << "abacCompOrthoVec : " << abacCompOrthoVec << LL_ENDL;
+	LL_DEBUGS("JointSolver") << "abVec : " << abVec << LL_NEWLINE
+		<< "bcVec : " << bcVec << LL_NEWLINE
+		<< "acVec : " << acVec << LL_NEWLINE
+		<< "agVec : " << agVec << LL_NEWLINE
+		<< "abLen : " << abLen << LL_NEWLINE
+		<< "bcLen : " << bcLen << LL_NEWLINE
+		<< "agLen : " << agLen << LL_NEWLINE
+		<< "abacCompOrthoVec : " << abacCompOrthoVec << LL_ENDL;
 
 	//-------------------------------------------------------------------------
 	// compute the normal of the original ABC plane (and store for later)
@@ -281,13 +273,17 @@ void LLJointSolverRP3::solve()
 
 	LLQuaternion bRot(theta - abbcAng, abbcOrthoVec);
 
-//	LL_INFOS() << "abbcAng      : " << abbcAng << LL_ENDL;
-//	LL_INFOS() << "abbcOrthoVec : " << abbcOrthoVec << LL_ENDL;
-//	LL_INFOS() << "agLenSq      : " << agLenSq << LL_ENDL;
-//	LL_INFOS() << "cosTheta     : " << cosTheta << LL_ENDL;
-//	LL_INFOS() << "theta        : " << theta << LL_ENDL;
-//	LL_INFOS() << "bRot         : " << bRot << LL_ENDL;
-//	LL_INFOS() << "theta abbcAng theta-abbcAng: " << theta*180.0/F_PI << " " << abbcAng*180.0f/F_PI << " " << (theta - abbcAng)*180.0f/F_PI << LL_ENDL;
+	LL_DEBUGS("JointSolver") << "abbcAng      : " << abbcAng << LL_NEWLINE
+							<< "abbcOrthoVec : " << abbcOrthoVec << LL_NEWLINE
+							<< "agLenSq      : " << agLenSq << LL_NEWLINE
+							<< "cosTheta     : " << cosTheta << LL_NEWLINE
+							<< "theta        : " << theta << LL_NEWLINE
+							<< "bRot         : " << bRot << LL_NEWLINE
+							<< "theta abbcAng theta-abbcAng: " 
+								<< theta*180.0/F_PI << " " 
+								<< abbcAng*180.0f/F_PI << " " 
+								<< (theta - abbcAng)*180.0f/F_PI 
+	<< LL_ENDL;
 
 	//-------------------------------------------------------------------------
 	// compute rotation that rotates new A->C to A->G
@@ -301,9 +297,9 @@ void LLJointSolverRP3::solve()
 	LLQuaternion cgRot;
 	cgRot.shortestArc( acVec, agVec );
 
-//	LL_INFOS() << "bcVec : " << bcVec << LL_ENDL;
-//	LL_INFOS() << "acVec : " << acVec << LL_ENDL;
-//	LL_INFOS() << "cgRot : " << cgRot << LL_ENDL;
+	LL_DEBUGS("JointSolver") << "bcVec : " << bcVec << LL_NEWLINE
+							<< "acVec : " << acVec << LL_NEWLINE
+							<< "cgRot : " << cgRot << LL_ENDL;
 
 	// update A->B and B->C with rotation from C to G
 	abVec = abVec * cgRot;
@@ -361,18 +357,16 @@ void LLJointSolverRP3::solve()
 		pRot.shortestArc( abcNorm, apgNorm );
 	}
 
-//	LL_INFOS() << "abcNorm = " << abcNorm << LL_ENDL;
-//	LL_INFOS() << "apgNorm = " << apgNorm << LL_ENDL;
-//	LL_INFOS() << "pRot = " << pRot << LL_ENDL;
-
 	//-------------------------------------------------------------------------
 	// compute twist rotation
 	//-------------------------------------------------------------------------
 	LLQuaternion twistRot( mTwist, agVec );
 
-//	LL_INFOS() << "twist    : " << mTwist*180.0/F_PI << LL_ENDL;
-//	LL_INFOS() << "agNormVec: " << agNormVec << LL_ENDL;
-//	LL_INFOS() << "twistRot : " << twistRot << LL_ENDL;
+	LL_DEBUGS("JointSolver") << "abcNorm = " << abcNorm << LL_NEWLINE
+							<< "apgNorm = " << apgNorm << LL_NEWLINE
+							<< "pRot = " << pRot << LL_NEWLINE
+							<< "twist    : " << mTwist*180.0/F_PI << LL_NEWLINE
+							<< "twistRot : " << twistRot << LL_ENDL;
 
 	//-------------------------------------------------------------------------
 	// compute rotation of A

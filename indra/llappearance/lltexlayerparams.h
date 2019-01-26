@@ -49,7 +49,7 @@ public:
 	LLTexLayerParam(LLTexLayerInterface *layer);
 	LLTexLayerParam(LLAvatarAppearance *appearance);
 	/*virtual*/ BOOL setInfo(LLViewerVisualParamInfo *info, BOOL add_to_appearance);
-	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable) const = 0;
+	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable) const override = 0;
 
 protected:
 	LLTexLayerParam(const LLTexLayerParam& pOther);
@@ -80,23 +80,25 @@ public:
 		ll_aligned_free_16(ptr);
 	}
 
-	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable = NULL) const;
+	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable = nullptr) const override;
 
 	// LLVisualParam Virtual functions
 	///*virtual*/ BOOL		parseData(LLXmlTreeNode* node);
-	/*virtual*/ void		apply( ESex avatar_sex ) {}
-	/*virtual*/ void		setWeight(F32 weight, bool upload_bake = false);
-	/*virtual*/ void		setAnimationTarget(F32 target_value, bool upload_bake = false); 
-	/*virtual*/ void		animate(F32 delta, bool upload_bake = false);
+	/*virtual*/ void		apply( ESex avatar_sex ) override {}
+	/*virtual*/ void		setWeight(F32 weight, BOOL upload_bake = false) override;
+	/*virtual*/ void		setAnimationTarget(F32 target_value, BOOL upload_bake = false) override;
+	/*virtual*/ void		animate(F32 delta, BOOL upload_bake = false) override;
 	/*virtual*/ char const* getTypeString(void) const { return "param_alpha"; }
 
 	// LLViewerVisualParam Virtual functions
-	/*virtual*/ F32					getTotalDistortion()									{ return 1.f; }
-	/*virtual*/ const LLVector4a&	getAvgDistortion()										{ return mAvgDistortionVec; }
-	/*virtual*/ F32					getMaxDistortion()										{ return 3.f; }
-	/*virtual*/ LLVector4a			getVertexDistortion(S32 index, LLPolyMesh *poly_mesh)	{ return LLVector4a(1.f, 1.f, 1.f);}
-	/*virtual*/ const LLVector4a*	getFirstDistortion(U32 *index, LLPolyMesh **poly_mesh)	{ index = 0; poly_mesh = NULL; return &mAvgDistortionVec;};
-	/*virtual*/ const LLVector4a*	getNextDistortion(U32 *index, LLPolyMesh **poly_mesh)	{ index = 0; poly_mesh = NULL; return NULL;};
+	/*virtual*/ F32					getTotalDistortion() override { return 1.f; }
+	/*virtual*/ const LLVector4a&	getAvgDistortion() override { return mAvgDistortionVec; }
+	/*virtual*/ F32					getMaxDistortion() override { return 3.f; }
+	/*virtual*/ LLVector4a			getVertexDistortion(S32 index, LLPolyMesh *poly_mesh) override { return LLVector4a(1.f, 1.f, 1.f);}
+	/*virtual*/ const LLVector4a*	getFirstDistortion(U32 *index, LLPolyMesh **poly_mesh) override
+	{ index = nullptr; poly_mesh = nullptr; return &mAvgDistortionVec;};
+	/*virtual*/ const LLVector4a*	getNextDistortion(U32 *index, LLPolyMesh **poly_mesh) override
+	{ index = nullptr; poly_mesh = nullptr; return nullptr;};
 
 	// New functions
 	BOOL					render( S32 x, S32 y, S32 width, S32 height );
@@ -130,7 +132,7 @@ public:
 	LLTexLayerParamAlphaInfo();
 	/*virtual*/ ~LLTexLayerParamAlphaInfo() {};
 
-	/*virtual*/ BOOL parseXml(LLXmlTreeNode* node);
+	/*virtual*/ BOOL parseXml(LLXmlTreeNode* node) override;
 
 private:
 	std::string				mStaticImageFileName;
@@ -174,23 +176,26 @@ public:
 
 	/* virtual */ ~LLTexLayerParamColor();
 
-	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable = NULL) const;
+	/*virtual*/ LLViewerVisualParam* cloneParam(LLWearable* wearable = nullptr) const override;
 
 	// LLVisualParam Virtual functions
 	///*virtual*/ BOOL			parseData(LLXmlTreeNode* node);
-	/*virtual*/ void			apply( ESex avatar_sex ) {}
-	/*virtual*/ void			setWeight(F32 weight, bool upload_bake = false);
-	/*virtual*/ void			setAnimationTarget(F32 target_value, bool upload_bake = false);
-	/*virtual*/ void			animate(F32 delta, bool upload_bake = false);
+	/*virtual*/ void			apply( ESex avatar_sex ) override {}
+	/*virtual*/ void			setWeight(F32 weight, BOOL upload_bake = false) override;
+	/*virtual*/ void			setAnimationTarget(F32 target_value, BOOL upload_bake = false) override;
+	/*virtual*/ void			animate(F32 delta, BOOL upload_bake = false) override;
+
 	/*virtual*/ char const* getTypeString(void) const { return "param_color"; }
 
 	// LLViewerVisualParam Virtual functions
-	/*virtual*/ F32					getTotalDistortion()									{ return 1.f; }
-	/*virtual*/ const LLVector4a&	getAvgDistortion()										{ return mAvgDistortionVec; }
-	/*virtual*/ F32					getMaxDistortion()										{ return 3.f; }
-	/*virtual*/ LLVector4a			getVertexDistortion(S32 index, LLPolyMesh *poly_mesh)	{ return LLVector4a(1.f, 1.f, 1.f); }
-	/*virtual*/ const LLVector4a*	getFirstDistortion(U32 *index, LLPolyMesh **poly_mesh)	{ index = 0; poly_mesh = NULL; return &mAvgDistortionVec;};
-	/*virtual*/ const LLVector4a*	getNextDistortion(U32 *index, LLPolyMesh **poly_mesh)	{ index = 0; poly_mesh = NULL; return NULL;};
+	/*virtual*/ F32					getTotalDistortion() override { return 1.f; }
+	/*virtual*/ const LLVector4a&	getAvgDistortion() override { return mAvgDistortionVec; }
+	/*virtual*/ F32					getMaxDistortion() override { return 3.f; }
+	/*virtual*/ LLVector4a			getVertexDistortion(S32 index, LLPolyMesh *poly_mesh) override { return LLVector4a(1.f, 1.f, 1.f); }
+	/*virtual*/ const LLVector4a*	getFirstDistortion(U32 *index, LLPolyMesh **poly_mesh) override
+	{ index = nullptr; poly_mesh = nullptr; return &mAvgDistortionVec;};
+	/*virtual*/ const LLVector4a*	getNextDistortion(U32 *index, LLPolyMesh **poly_mesh) override
+	{ index = nullptr; poly_mesh = nullptr; return nullptr;};
 
 	// New functions
 	LLColor4				getNetColor() const;
@@ -209,7 +214,7 @@ class LLTexLayerParamColorInfo : public LLViewerVisualParamInfo
 public:
 	LLTexLayerParamColorInfo();
 	virtual ~LLTexLayerParamColorInfo() {};
-	BOOL parseXml( LLXmlTreeNode* node );
+	BOOL parseXml( LLXmlTreeNode* node ) override;
 	LLTexLayerParamColor::EColorOperation getOperation() const { return mOperation; }
 private:
 	enum { MAX_COLOR_VALUES = 20 };

@@ -29,7 +29,6 @@
 #define LL_LLHOST_H
 
 #include <iostream>
-#include <string>
 
 #include "net.h"
 
@@ -39,7 +38,6 @@ const U32 INVALID_HOST_IP_ADDRESS = 0x0;
 class LLHost {
 protected:
 	U32			mPort;
-	mutable bool	mHostNotFound = false;			// Singularity addition; caches a failed IP -> hostname lookup.
 	U32         mIP;
     std::string mUntrustedSimCap;
 public:
@@ -47,9 +45,13 @@ public:
 	// CREATORS
 	LLHost()
 	:	mPort(INVALID_PORT),
-		mHostNotFound(true),
 		mIP(INVALID_HOST_IP_ADDRESS)
 	{ } // STL's hash_map expect this T()
+
+	LLHost(const LLHost& rhs)
+	{
+		set(rhs.getAddress(), rhs.getPort());
+	}
 
 	LLHost( U32 ipv4_addr, U32 port )
 	:	mPort( port ) 
@@ -77,26 +79,27 @@ public:
 	{ }
 
 	// MANIPULATORS
-	void	set( U32 ip, U32 port )				{ mIP = ip; mPort = port; mHostNotFound = false; }
-	void	set( const std::string& ipstr, U32 port )	{ mIP = ip_string_to_u32(ipstr.c_str()); mPort = port; mHostNotFound = false; }
-	void	setAddress( const std::string& ipstr )		{ mIP = ip_string_to_u32(ipstr.c_str()); mHostNotFound = false; }
-	void	setAddress( U32 ip )				{ mIP = ip; mHostNotFound = false; }
+	void	set( U32 ip, U32 port )				{ mIP = ip; mPort = port; }
+	void	set( const std::string& ipstr, U32 port )	{ mIP = ip_string_to_u32(ipstr.c_str()); mPort = port; }
+	void	setAddress( const std::string& ipstr )		{ mIP = ip_string_to_u32(ipstr.c_str()); }
+	void	setAddress( U32 ip )				{ mIP = ip; }
 	void	setPort( U32 port )					{ mPort = port; }
 	BOOL    setHostByName(const std::string& hname);
 
 	LLHost&	operator=(const LLHost &rhs);
-	void    invalidate()                        { mIP = INVALID_HOST_IP_ADDRESS; mPort = INVALID_PORT; mHostNotFound = true; }
+	void    invalidate()                        { mIP = INVALID_HOST_IP_ADDRESS; mPort = INVALID_PORT;};
 
 	// READERS
 	U32		getAddress() const							{ return mIP; }
 	U32		getPort() const								{ return mPort; }
-	bool	isOk() const								{ return (!mHostNotFound && mIP != INVALID_HOST_IP_ADDRESS) && (mPort != INVALID_PORT); }
-    bool    isInvalid()                                 { return (mHostNotFound || mIP == INVALID_HOST_IP_ADDRESS) || (mPort == INVALID_PORT); }
+	bool	isOk() const								{ return (mIP != INVALID_HOST_IP_ADDRESS) && (mPort != INVALID_PORT); }
+    bool    isInvalid()                                 { return (mIP == INVALID_HOST_IP_ADDRESS) || (mPort == INVALID_PORT); }
 	size_t	hash() const								{ return (mIP << 16) | (mPort & 0xffff); }
 	std::string getString() const;
 	std::string getIPString() const;
 	std::string getHostName() const;
 	std::string getIPandPort() const;
+
     std::string getUntrustedSimulatorCap() const        { return mUntrustedSimCap; }
     void setUntrustedSimulatorCap(const std::string &capurl) { mUntrustedSimCap = capurl; }
 

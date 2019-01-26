@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lleditingmotion.cpp
  * @brief Implementation of LLEditingMotion class.
@@ -49,9 +51,9 @@ S32 LLEditingMotion::sHandPosePriority = 3;
 // LLEditingMotion()
 // Class Constructor
 //-----------------------------------------------------------------------------
-LLEditingMotion::LLEditingMotion(LLUUID const& id, LLMotionController* controller) : AIMaskedMotion(id, controller, ANIM_AGENT_EDITING)
+LLEditingMotion::LLEditingMotion( const LLUUID &id) : LLMotion(id)
 {
-	mCharacter = NULL;
+	mCharacter = nullptr;
 
 	// create kinematic chain
 	mParentJoint.addChild( &mShoulderJoint );
@@ -119,6 +121,7 @@ LLMotion::LLMotionInitStatus LLEditingMotion::onInitialize(LLCharacter *characte
 	addJointState( mWristState );
 
 	// propagate joint positions to kinematic chain
+    // SL-315
 	mParentJoint.setPosition(	mParentState->getJoint()->getWorldPosition() );
 	mShoulderJoint.setPosition(	mShoulderState->getJoint()->getPosition() );
 	mElbowJoint.setPosition(	mElbowState->getJoint()->getPosition() );
@@ -145,6 +148,7 @@ LLMotion::LLMotionInitStatus LLEditingMotion::onInitialize(LLCharacter *characte
 BOOL LLEditingMotion::onActivate()
 {
 	// propagate joint positions to kinematic chain
+    // SL-315
 	mParentJoint.setPosition(	mParentState->getJoint()->getWorldPosition() );
 	mShoulderJoint.setPosition(	mShoulderState->getJoint()->getPosition() );
 	mElbowJoint.setPosition(	mElbowState->getJoint()->getPosition() );
@@ -155,7 +159,7 @@ BOOL LLEditingMotion::onActivate()
 	mShoulderJoint.setRotation(	mShoulderState->getJoint()->getRotation() );
 	mElbowJoint.setRotation(	mElbowState->getJoint()->getRotation() );
 
-	return AIMaskedMotion::onActivate();
+	return TRUE;
 }
 
 //-----------------------------------------------------------------------------
@@ -183,6 +187,7 @@ BOOL LLEditingMotion::onUpdate(F32 time, U8* joint_mask)
 	focus_pt += mCharacter->getCharacterPosition();
 
 	// propagate joint positions to kinematic chain
+    // SL-315
 	mParentJoint.setPosition(	mParentState->getJoint()->getWorldPosition() );
 	mShoulderJoint.setPosition(	mShoulderState->getJoint()->getPosition() );
 	mElbowJoint.setPosition(	mElbowState->getJoint()->getPosition() );
@@ -214,6 +219,7 @@ BOOL LLEditingMotion::onUpdate(F32 time, U8* joint_mask)
 	target = target * target_dist;
 	if (!target.isFinite())
 	{
+		// Don't error out here, set a fail-safe target vector
 		LL_WARNS() << "Non finite target in editing motion with target distance of " << target_dist << 
 			" and focus point " << focus_pt << " and pointAtPt: ";
 		if (pointAtPt)
@@ -227,7 +233,8 @@ BOOL LLEditingMotion::onUpdate(F32 time, U8* joint_mask)
 		LL_CONT << LL_ENDL;
 		target.setVec(1.f, 1.f, 1.f);
 	}
-	
+
+    // SL-315
 	mTarget.setPosition( target + mParentJoint.getPosition());
 
 //	LL_INFOS() << "Point At: " << mTarget.getPosition() << LL_ENDL;
@@ -240,7 +247,7 @@ BOOL LLEditingMotion::onUpdate(F32 time, U8* joint_mask)
 		mIKSolver.solve();
 
 		// use blending...
-		F32 slerp_amt = LLCriticalDamp::getInterpolant(TARGET_LAG_HALF_LIFE);
+		F32 slerp_amt = LLSmoothInterpolation::getInterpolant(TARGET_LAG_HALF_LIFE);
 		shoulderRot = slerp(slerp_amt, mShoulderJoint.getRotation(), shoulderRot);
 		elbowRot = slerp(slerp_amt, mElbowJoint.getRotation(), elbowRot);
 
@@ -256,5 +263,13 @@ BOOL LLEditingMotion::onUpdate(F32 time, U8* joint_mask)
 	mCharacter->setAnimationData("Hand Pose Priority", &sHandPosePriority);
 	return result;
 }
+
+//-----------------------------------------------------------------------------
+// LLEditingMotion::onDeactivate()
+//-----------------------------------------------------------------------------
+void LLEditingMotion::onDeactivate()
+{
+}
+
 
 // End

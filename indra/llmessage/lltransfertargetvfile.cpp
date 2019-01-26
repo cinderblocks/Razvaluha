@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltransfertargetvfile.cpp
  * @brief Transfer system for receiving a vfile.
@@ -41,8 +43,8 @@ void LLTransferTargetVFile::updateQueue(bool shutdown)
 LLTransferTargetParamsVFile::LLTransferTargetParamsVFile() :
 	LLTransferTargetParams(LLTTT_VFILE),
 	mAssetType(LLAssetType::AT_NONE),
-	mCompleteCallback(NULL),
-	mRequestDatap(NULL),
+	mCompleteCallback(nullptr),
+	mRequestDatap(nullptr),
 	mErrCode(0)
 {
 }
@@ -106,7 +108,7 @@ LLTransferTargetVFile::~LLTransferTargetVFile()
     {
         // TODO: Consider doing it in LLTransferTargetParamsVFile's destructor
         delete mParams.mRequestDatap;
-        mParams.mRequestDatap = NULL;
+        mParams.mRequestDatap = nullptr;
     }
 }
 
@@ -221,15 +223,15 @@ void LLTransferTargetVFile::completionCallback(const LLTSCode status)
 
     if (mParams.mRequestDatap)
     {
-		if (mParams.mCompleteCallback)
-		{
-			mParams.mCompleteCallback(err_code,
+        if (mParams.mCompleteCallback)
+        {
+            mParams.mCompleteCallback(err_code,
                 mParams.getAssetID(),
                 mParams.getAssetType(),
                 mParams.mRequestDatap,
                 LL_EXSTAT_NONE);
-		}
+        }
         delete mParams.mRequestDatap;
-        mParams.mRequestDatap = NULL;
+        mParams.mRequestDatap = nullptr;
     }
 }

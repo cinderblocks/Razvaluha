@@ -30,6 +30,7 @@ class LLParcel;
 
 class LLMediaFilter : public LLSingleton<LLMediaFilter>
 {
+	LLSINGLETON(LLMediaFilter);
 public:
 	typedef enum e_media_list {
 		WHITELIST,
@@ -44,7 +45,6 @@ public:
 		return mMediaListUpdate.connect(cb);
 	}
 
-	LLMediaFilter();
 	void filterMediaUrl(LLParcel* parcel);
 	void filterAudioUrl(const std::string& url);
 	//void filterSharedMediaUrl

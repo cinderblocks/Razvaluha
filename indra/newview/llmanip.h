@@ -27,6 +27,7 @@
 #ifndef LL_MANIP_H
 #define LL_MANIP_H
 
+#include "llsafehandle.h"
 #include "lltool.h"
 //#include "v3math.h"
 

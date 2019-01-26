@@ -30,9 +30,7 @@
 #define LL_LLIOPIPE_H
 
 #include <boost/intrusive_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-#include "llwin32headerslean.h"
-#include "apr_poll.h"
+#include "llapr.h"
 
 #include "llsd.h"
 
@@ -89,7 +87,7 @@ public:
 	/** 
 	 * @brief Scattered memory container.
 	 */
-	typedef boost::shared_ptr<LLBufferArray> buffer_ptr_t;
+	typedef std::shared_ptr<LLBufferArray> buffer_ptr_t;
 
 	/** 
 	 * @brief Enumeration for IO return codes
@@ -147,7 +145,7 @@ public:
 		// The connection was lost.
 		STATUS_LOST_CONNECTION = -5,
 
-		// The total process time has exceeded the timeout.
+		// The totoal process time has exceeded the timeout.
 		STATUS_EXPIRED = -6,
 
 		// Keep track of the count of codes here.

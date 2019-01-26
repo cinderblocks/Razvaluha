@@ -1,36 +1,33 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llsd_new_tut.cpp
  * @date   February 2006
  * @brief LLSD unit tests
  *
- * $LicenseInfo:firstyear=2006&license=viewergpl$
- * 
- * Copyright (c) 2006-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2006&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2006-2011, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
+#define LLSD_DEBUG_INFO
 #include <tut/tut.hpp>
 #include "linden_common.h"
 #include "lltut.h"
@@ -38,18 +35,7 @@
 #include "llsdtraits.h"
 #include "llstring.h"
 
-#if LL_WINDOWS
-#include <float.h>
-namespace
-{
-	int fpclassify(double x)
-	{
-		return _fpclass(x);
-	}
-}
-#else
 using std::fpclassify;
-#endif
 
 namespace tut
 {
@@ -58,11 +44,11 @@ namespace tut
 	private:
 		U32	mOutstandingAtStart;
 	public:
-		SDCleanupCheck() : mOutstandingAtStart(LLSD::outstandingCount()) { }
+		SDCleanupCheck() : mOutstandingAtStart(llsd::outstandingCount()) { }
 		~SDCleanupCheck()
 		{
 			ensure_equals("SDCleanupCheck",
-				LLSD::outstandingCount(), mOutstandingAtStart);
+				llsd::outstandingCount(), mOutstandingAtStart);
 		}
 	};
 
@@ -76,12 +62,12 @@ namespace tut
 		SDAllocationCheck(const std::string& message, int expectedAllocations)
 			: mMessage(message),
 			mExpectedAllocations(expectedAllocations),
-			mAllocationAtStart(LLSD::allocationCount())
+			mAllocationAtStart(llsd::allocationCount())
 			{ }
 		~SDAllocationCheck()
 		{
 			ensure_equals(mMessage + " SDAllocationCheck",
-				LLSD::allocationCount() - mAllocationAtStart,
+				llsd::allocationCount() - mAllocationAtStart,
 				mExpectedAllocations);
 		}
 	};
@@ -98,6 +84,18 @@ namespace tut
 			ensure(			s + " type",	traits.checkType(actual));
 			ensure_equals(	s + " value",	traits.get(actual), expectedValue);
 		}
+
+		template<class T>
+		static void ensureTypeAndRefValue(const char* msg, const LLSD& actual,
+			const T& expectedValue)
+		{
+			LLSDTraits<const T&> traits;
+			
+			std::string s(msg);
+			
+			ensure(			s + " type",	traits.checkType(actual));
+			ensure_equals(	s + " value",	traits.get(actual), expectedValue);
+		}
 	};
 	
 	typedef test_group<SDTestData>	SDTestGroup;
@@ -105,15 +103,15 @@ namespace tut
 
 	SDTestGroup sdTestGroup("LLSD(new)");
 	
-	template<> template<>
-	void SDTestObject::test<1>()
-		// construction and test of undefined
-	{
-		SDCleanupCheck check;
+	// template<> template<>
+	// void SDTestObject::test<1>()
+	// 	// construction and test of undefined
+	// {
+	// 	SDCleanupCheck check;
 		
-		LLSD u;
-		ensure("is undefined", u.isUndefined());
-	}
+	// 	LLSD u;
+	// 	ensure("is undefined", u.isUndefined());
+	// }
 	
 	template<> template<>
 	void SDTestObject::test<2>()
@@ -167,7 +165,7 @@ namespace tut
 		std::vector<U8> data;
 		copy(&source[0], &source[sizeof(source)], back_inserter(data));
 		
-		v = data;		ensureTypeAndValue("set to data", v, data);
+		v = data;		ensureTypeAndRefValue("set to data", v, data);
 		
 		v.clear();
 		ensure("reset to undefined", v.type() == LLSD::TypeUndefined);
@@ -218,8 +216,8 @@ namespace tut
 		const char source[] = "once in a blue moon";
 		std::vector<U8> data;
 		copy(&source[0], &source[sizeof(source)], back_inserter(data));
-		LLSD x1(data);	ensureTypeAndValue("construct vector<U8>", x1, data);
-		LLSD x2 = data;	ensureTypeAndValue("initialize vector<U8>", x2, data);
+		LLSD x1(data);	ensureTypeAndRefValue("construct vector<U8>", x1, data);
+		LLSD x2 = data;	ensureTypeAndRefValue("initialize vector<U8>", x2, data);
 	}
 	
 	void checkConversions(const char* msg, const LLSD& v,
@@ -237,8 +235,8 @@ namespace tut
 		}
 		else
 		{
-			int left  = fpclassify(v.asReal());
-			int right = fpclassify(eReal);
+			int left  = ::fpclassify(v.asReal());
+			int right = ::fpclassify(eReal);
 
 			ensure_equals(s+" to real", 	left, 			right);
 			// ensure_equals(s+" to string", v.asString(), eString);
@@ -270,8 +268,18 @@ namespace tut
 		v = 0.5;		checkConversions("point5", v, true, 0, 0.5, "0.5");
 		v = 0.9;		checkConversions("point9", v, true, 0, 0.9, "0.9");
 		v = -3.9;		checkConversions("neg3dot9", v, true, -3, -3.9, "-3.9");
-		v = sqrt(-1.0);	checkConversions("NaN", v, false, 0, sqrt(-1.0), "nan");
-		
+		// Get rid of NaN test. First, some libraries don't reliably return
+		// NaN for sqrt(-1.0) -- meaning that I don't even know how to
+		// portably, reliably produce a NaN value. Second, we observe failures
+		// on different platforms in the asString() test. But LLSD's
+		// ImplReal::asString() does not itself recognize NaN! It merely
+		// passes the value through to llformat(), which passes it through to
+		// the library vsnprintf(). That is, even when we do produce NaN,
+		// we're not testing any LLSD code: we're testing the local library's
+		// vsnprintf() function, which (empirically) produces idiosyncratic
+		// results. This is just not a good test case.
+//		v = sqrt(-1.0);	checkConversions("NaN", v, false, 0, sqrt(-1.0), "nan");
+
 		v = "";			checkConversions("empty", v, false, 0, 0.0, "");
 		v = "0";		checkConversions("digit0", v, true, 0, 0.0, "0");
 		v = "10";		checkConversions("digit10", v, true, 10, 10.0, "10");
@@ -758,6 +766,42 @@ namespace tut
 			LLSD w = v;
 			w = "nice day";
 		}
+
+		{
+			SDAllocationCheck check("shared values test for threaded work", 9);
+
+			//U32 start_llsd_count = LLSD::outstandingCount();
+
+			LLSD m = LLSD::emptyMap();
+
+			m["one"] = 1;
+			m["two"] = 2;
+			m["one_copy"] = m["one"];			// 3 (m, "one" and "two")
+
+			m["undef_one"] = LLSD();
+			m["undef_two"] = LLSD();
+			m["undef_one_copy"] = m["undef_one"];
+
+			{	// Ensure first_array gets freed to avoid counting it
+				LLSD first_array = LLSD::emptyArray();
+				first_array.append(1.0f);
+				first_array.append(2.0f);			
+				first_array.append(3.0f);			// 7
+
+				m["array"] = first_array;
+				m["array_clone"] = first_array;
+				m["array_copy"] = m["array"];		// 7
+			}
+
+			m["string_one"] = "string one value";
+			m["string_two"] = "string two value";
+			m["string_one_copy"] = m["string_one"];		// 9
+
+			//U32 llsd_object_count = LLSD::outstandingCount();
+			//std::cout << "Using " << (llsd_object_count - start_llsd_count) << " LLSD objects" << std::endl;
+
+			//m.dumpStats();
+		}
 	}
 
 	template<> template<>
@@ -785,3 +829,4 @@ namespace tut
 		test serializations
 	*/
 }
+

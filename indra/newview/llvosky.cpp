@@ -28,7 +28,6 @@
 
 #include "llvosky.h"
 
-#include "imageids.h"
 #include "llfeaturemanager.h"
 #include "llviewercontrol.h"
 #include "llframetimer.h"
@@ -2151,7 +2150,7 @@ void LLVOSky::updateFog(const F32 distance)
 		
 		// get the water param manager variables
 		float water_fog_density = LLWaterParamManager::getInstance()->getFogDensity();
-		LLColor4 water_fog_color = LLDrawPoolWater::sWaterFogColor.mV;
+		LLColor4& water_fog_color = LLDrawPoolWater::sWaterFogColor;
 		
 		// adjust the color based on depth.  We're doing linear approximations
 		float depth_scale = gSavedSettings.getF32("WaterGLFogDepthScale");

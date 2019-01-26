@@ -1,31 +1,27 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltextparser.cpp
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -52,11 +48,9 @@ LLTextParser::LLTextParser()
 {}
 
 
-// Moved triggerAlerts() to llfloaterchat.cpp to break llui/llaudio library dependency.
-
-S32 LLTextParser::findPattern(const std::string &text, LLSD highlight)
+std::string::size_type LLTextParser::findPattern(const std::string &text, LLSD highlight) // <alchemy/>
 {
-	if (!highlight.has("pattern")) return -1;
+	if (!highlight.has("pattern")) return std::string::npos;
 	
 	std::string pattern=std::string(highlight["pattern"]);
 	std::string ltext=text;
@@ -67,7 +61,7 @@ S32 LLTextParser::findPattern(const std::string &text, LLSD highlight)
 		pattern= utf8str_tolower(pattern);
 	}
 
-	size_t found=std::string::npos;
+	std::string::size_type found = std::string::npos;
 	
 	switch ((S32)highlight["condition"])
 	{
@@ -81,8 +75,8 @@ S32 LLTextParser::findPattern(const std::string &text, LLSD highlight)
 			found = (! ltext.find(pattern) ? 0 : std::string::npos);
 			break;
 		case ENDS_WITH:
-			S32 pos = ltext.rfind(pattern); 
-			if (pos >= 0 && (ltext.length()-pattern.length()==pos)) found = pos;
+			std::string::size_type pos = ltext.rfind(pattern);
+			if (ltext.length()-pattern.length() == pos) found = pos;
 			break;
 	}
 	return found;
@@ -104,11 +98,11 @@ LLSD LLTextParser::parsePartialLineHighlights(const std::string &text, const LLC
 			     (condition==ENDS_WITH   && part==END)   ||
 				  condition==CONTAINS    || part==WHOLE )
 			{
-				S32 start = findPattern(text,mHighlights[i]);
-				if (start >= 0 )
+				size_t start = findPattern(text,mHighlights[i]);
+				if (start != std::string::npos )
 				{
-					S32 end =  std::string(mHighlights[i]["pattern"]).length();
-					S32 len = text.length();
+					size_t end =  std::string(mHighlights[i]["pattern"]).length();
+					size_t len = text.length();
 					EHighlightPosition newpart;
 					if (start==0)
 					{
@@ -188,7 +182,7 @@ bool LLTextParser::parseFullLineHighlights(const std::string &text, LLColor4 *co
 	{
 		if ((S32)mHighlights[i]["highlight"]==ALL || (S32)mHighlights[i]["condition"]==MATCHES)
 		{
-			if (findPattern(text,mHighlights[i]) >= 0 )
+			if (findPattern(text,mHighlights[i]) != std::string::npos)
 			{
 				LLSD color_llsd = mHighlights[i]["color"];
 				color->setValue(color_llsd);
@@ -233,14 +227,15 @@ void LLTextParser::loadKeywords()
 bool LLTextParser::saveToDisk(LLSD highlights)
 {
 	mHighlights=highlights;
-	if (gDirUtilp->getLindenUserDir(true).empty())
+	std::string filename=getFileName();
+	if (filename.empty())
 	{
-		// User didn't login, so nothing to save.
-		return false;
+		LL_WARNS() << "LLTextParser::saveToDisk() no valid user directory." << LL_ENDL; 
+		return FALSE;
 	}	
 	llofstream file;
-	file.open(getFileName().c_str());
+	file.open(filename.c_str());
 	LLSDSerialize::toPrettyXML(mHighlights, file);
 	file.close();
-	return true;
+	return TRUE;
 }

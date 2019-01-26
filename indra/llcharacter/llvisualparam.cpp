@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llvisualparam.cpp
  * @brief Implementation of LLPolyMesh class.
@@ -84,9 +86,12 @@ BOOL LLVisualParamInfo::parseXml(LLXmlTreeNode *node)
 	}
 	
 	// attribute: sex
-	std::string sex = "both";
+	std::string sex;
 	static LLStdStringHandle sex_string = LLXmlTree::addAttributeString("sex");
-	node->getFastAttributeString( sex_string, sex ); // optional
+	if (!node->getFastAttributeString(sex_string, sex)) // optional
+	{
+		sex = "both";
+	}
 	if( sex == "both" )
 	{
 		mSex = SEX_BOTH;
@@ -162,12 +167,12 @@ void LLVisualParamInfo::toStream(std::ostream &out)
 LLVisualParam::LLVisualParam()
 	: mCurWeight( 0.f ),
 	mLastWeight( 0.f ),
-	mNext( NULL ),
+	mNext(nullptr ),
 	mTargetWeight( 0.f ),
 	mIsAnimating( FALSE ),
 	mIsDummy(FALSE),
 	mID( -1 ),
-	mInfo( 0 ),
+	mInfo( nullptr ),
 	mParamLocation(LOC_UNKNOWN)
 {
 }
@@ -194,7 +199,7 @@ LLVisualParam::LLVisualParam(const LLVisualParam& pOther)
 LLVisualParam::~LLVisualParam()
 {
 	delete mNext;
-	mNext = NULL;
+	mNext = nullptr;
 }
 
 /*
@@ -236,7 +241,7 @@ BOOL LLVisualParam::parseData(LLXmlTreeNode *node)
 //-----------------------------------------------------------------------------
 // setWeight()
 //-----------------------------------------------------------------------------
-void LLVisualParam::setWeight(F32 weight, bool upload_bake)
+void LLVisualParam::setWeight(F32 weight, BOOL upload_bake)
 {
 	if (mIsAnimating)
 	{
@@ -261,7 +266,7 @@ void LLVisualParam::setWeight(F32 weight, bool upload_bake)
 //-----------------------------------------------------------------------------
 // setAnimationTarget()
 //-----------------------------------------------------------------------------
-void LLVisualParam::setAnimationTarget(F32 target_value, bool upload_bake)
+void LLVisualParam::setAnimationTarget(F32 target_value, BOOL upload_bake)
 {
 	// don't animate dummy parameters
 	if (mIsDummy)
@@ -305,13 +310,13 @@ void LLVisualParam::setNextParam( LLVisualParam *next )
 //-----------------------------------------------------------------------------
 void LLVisualParam::clearNextParam()
 {
-	mNext = NULL;
+	mNext = nullptr;
 }
 
 //-----------------------------------------------------------------------------
 // animate()
 //-----------------------------------------------------------------------------
-void LLVisualParam::animate( F32 delta, bool upload_bake )
+void LLVisualParam::animate( F32 delta, BOOL upload_bake)
 {
 	if (mIsAnimating)
 	{
@@ -323,7 +328,7 @@ void LLVisualParam::animate( F32 delta, bool upload_bake )
 //-----------------------------------------------------------------------------
 // stopAnimating()
 //-----------------------------------------------------------------------------
-void LLVisualParam::stopAnimating(bool upload_bake)
+void LLVisualParam::stopAnimating(BOOL upload_bake)
 { 
 	if (mIsAnimating && isTweakable())
 	{

@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llkeyframestandmotion.cpp
  * @brief Implementation of LLKeyframeStandMotion class.
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -37,6 +33,7 @@
 
 #include "llkeyframestandmotion.h"
 #include "llcharacter.h"
+#include "v4math.h"
 
 //-----------------------------------------------------------------------------
 // Macros and consts
@@ -50,10 +47,10 @@ const F32 POSITION_THRESHOLD = 0.1f;
 // LLKeyframeStandMotion()
 // Class Constructor
 //-----------------------------------------------------------------------------
-LLKeyframeStandMotion::LLKeyframeStandMotion(LLUUID const& id, LLMotionController* controller) : LLKeyframeMotion(id, controller)
+LLKeyframeStandMotion::LLKeyframeStandMotion(const LLUUID &id) : LLKeyframeMotion(id)
 {
 	mFlipFeet = FALSE;
-	mCharacter = NULL;
+	mCharacter = nullptr;
 
 	// create kinematic hierarchy
 	mPelvisJoint.addChild( &mHipLeftJoint );
@@ -63,15 +60,15 @@ LLKeyframeStandMotion::LLKeyframeStandMotion(LLUUID const& id, LLMotionControlle
 		mHipRightJoint.addChild( &mKneeRightJoint );
 			mKneeRightJoint.addChild( &mAnkleRightJoint );
 
-	mPelvisState = NULL;
+	mPelvisState = nullptr;
 
-	mHipLeftState =  NULL;
-	mKneeLeftState =  NULL;
-	mAnkleLeftState =  NULL;
+	mHipLeftState = nullptr;
+	mKneeLeftState = nullptr;
+	mAnkleLeftState = nullptr;
 
-	mHipRightState =  NULL;
-	mKneeRightState =  NULL;
-	mAnkleRightState =  NULL;
+	mHipRightState = nullptr;
+	mKneeRightState = nullptr;
+	mAnkleRightState = nullptr;
 
 	mTrackAnkles = TRUE;
 
@@ -175,7 +172,8 @@ BOOL LLKeyframeStandMotion::onUpdate(F32 time, U8* joint_mask)
 		return FALSE;
 	}
 
-	LLVector3 root_world_pos = mPelvisState->getJoint()->getParent()->getWorldPosition();
+	auto pelvis_state_joint = mPelvisState->getJoint();
+	LLVector3 root_world_pos = pelvis_state_joint->getParent()->getWorldPosition();
 
 	// have we received a valid world position for this avatar?
 	if (root_world_pos.isExactlyZero())
@@ -187,9 +185,9 @@ BOOL LLKeyframeStandMotion::onUpdate(F32 time, U8* joint_mask)
 	// Stop tracking (start locking) ankles once ease in is done.
 	// Setting this here ensures we track until we get valid foot position.
 	//-------------------------------------------------------------------------
-	if (dot(mPelvisState->getJoint()->getWorldRotation(), mLastGoodPelvisRotation) < ROTATION_THRESHOLD)
+	if (dot(pelvis_state_joint->getWorldRotation(), mLastGoodPelvisRotation) < ROTATION_THRESHOLD)
 	{
-		mLastGoodPelvisRotation = mPelvisState->getJoint()->getWorldRotation();
+		mLastGoodPelvisRotation = pelvis_state_joint->getWorldRotation();
 		mLastGoodPelvisRotation.normalize();
 		mTrackAnkles = TRUE;
 	}
@@ -207,10 +205,12 @@ BOOL LLKeyframeStandMotion::onUpdate(F32 time, U8* joint_mask)
 	//-------------------------------------------------------------------------
 	// propagate joint positions to internal versions
 	//-------------------------------------------------------------------------
+    // SL-315
 	mPelvisJoint.setPosition(
 			root_world_pos +
 			mPelvisState->getPosition() );
 
+    // SL-315
 	mHipLeftJoint.setPosition( mHipLeftState->getJoint()->getPosition() );
 	mKneeLeftJoint.setPosition( mKneeLeftState->getJoint()->getPosition() );
 	mAnkleLeftJoint.setPosition( mAnkleLeftState->getJoint()->getPosition() );
@@ -219,6 +219,7 @@ BOOL LLKeyframeStandMotion::onUpdate(F32 time, U8* joint_mask)
 	mKneeLeftJoint.setScale( mKneeLeftState->getJoint()->getScale() );
 	mAnkleLeftJoint.setScale( mAnkleLeftState->getJoint()->getScale() );
 
+    // SL-315
 	mHipRightJoint.setPosition( mHipRightState->getJoint()->getPosition() );
 	mKneeRightJoint.setPosition( mKneeRightState->getJoint()->getPosition() );
 	mAnkleRightJoint.setPosition( mAnkleRightState->getJoint()->getPosition() );
@@ -271,6 +272,7 @@ BOOL LLKeyframeStandMotion::onUpdate(F32 time, U8* joint_mask)
 		mCharacter->getGround( mAnkleLeftJoint.getWorldPosition(), mPositionLeft, mNormalLeft);
 		mCharacter->getGround( mAnkleRightJoint.getWorldPosition(), mPositionRight, mNormalRight);
 
+        // SL-315
 		mTargetLeft.setPosition( mPositionLeft );
 		mTargetRight.setPosition( mPositionRight );
 	}

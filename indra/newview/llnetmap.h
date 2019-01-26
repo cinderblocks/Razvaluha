@@ -69,29 +69,28 @@ public:
 	static const F32 MAP_SCALE_MID;
 	static const F32 MAP_SCALE_MAX;
 
-	/*virtual*/ void	draw();
-	/*virtual*/ BOOL	handleScrollWheel(S32 x, S32 y, S32 clicks);
-	/*virtual*/ BOOL	handleMouseDown( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL	handleMouseUp( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL	handleHover( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL	handleToolTip( S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen );
-	/*virtual*/ void	reshape(S32 width, S32 height, BOOL called_from_parent = TRUE);
+	/*virtual*/ void	draw() override;
+	/*virtual*/ BOOL	handleScrollWheel(S32 x, S32 y, S32 clicks) override;
+	/*virtual*/ BOOL	handleMouseDown(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ BOOL	handleMouseUp(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ BOOL	handleHover( S32 x, S32 y, MASK mask ) override;
+	/*virtual*/ BOOL	handleToolTip( S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen ) override;
+	/*virtual*/ void	reshape(S32 width, S32 height, BOOL called_from_parent = TRUE) override;
 
-	/*virtual*/ BOOL 	postBuild();
-	/*virtual*/ BOOL	handleRightMouseDown( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL	handleDoubleClick( S32 x, S32 y, MASK mask );
+	/*virtual*/ BOOL 	postBuild() override;
+	/*virtual*/ BOOL	handleRightMouseDown( S32 x, S32 y, MASK mask ) override;
+	/*virtual*/ BOOL	handleDoubleClick( S32 x, S32 y, MASK mask ) override;
 
 	static void mm_setcolor(LLUUID key,LLColor4 col); //moymod
 
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 	void			refreshParcelOverlay() { mUpdateParcelImage = true; }
-// [/SL:KB]
+
 	void			setScale( F32 scale );
 	void			renderScaledPointGlobal( const LLVector3d& pos, const LLColor4U &color, F32 radius );
 
 private:
-	const LLVector3d& getObjectImageCenterGlobal()	{ return mObjectImageCenterGlobal; }
+	const LLVector3d& getObjectImageCenterGlobal() const { return mObjectImageCenterGlobal; }
 	void renderPoint(const LLVector3 &pos, const LLColor4U &color, 
 					 S32 diameter, S32 relative_height = 0);
 
@@ -106,14 +105,11 @@ private:
 
 	void			setDirectionPos( LLTextBox* text_box, F32 rotation );
 	void			updateMinorDirections();
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 	bool			createImage(LLPointer<LLImageRaw>& rawimagep) const;
 	void			createObjectImage();
 	void			createParcelImage();
-
 	void			renderPropertyLinesForRegion(const LLViewerRegion* pRegion, const LLColor4U& clrOverlay);
-// [/SL:KB]
-//	void			createObjectImage();
+
 
 	static bool		outsideSlop(S32 x, S32 y, S32 start_x, S32 start_y, S32 slop);
 
@@ -145,11 +141,10 @@ private:
 	LLVector3d		mObjectImageCenterGlobal;
 	LLPointer<LLImageRaw> mObjectRawImagep;
 	LLPointer<LLViewerTexture>	mObjectImagep;
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
+
 	LLVector3d		mParcelImageCenterGlobal;
 	LLPointer<LLImageRaw> mParcelRawImagep;
 	LLPointer<LLViewerTexture>	mParcelImagep;
-// [/SL:KB]
 
 	static std::map<LLUUID, LLVector3d> mClosestAgentsToCursor; // <exodus/>
 
@@ -162,112 +157,94 @@ private:
 	class LLScaleMap : public LLMemberListener<LLNetMap>
 	{
 	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
-	class LLCenterMap : public LLMemberListener<LLNetMap>
+	struct LLCenterMap : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
-	class LLCheckCenterMap : public LLMemberListener<LLNetMap>
+	struct LLCheckCenterMap : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
-	class LLChatRings : public LLMemberListener<LLNetMap>
+	struct LLChatRings : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
-	class LLCheckChatRings : public LLMemberListener<LLNetMap>
+	struct LLCheckChatRings : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
-	class LLStopTracking : public LLMemberListener<LLNetMap>
+	struct LLStopTracking : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
-	class LLEnableTracking : public LLMemberListener<LLNetMap>
+	struct LLEnableTracking : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
-	class LLShowAgentProfile : public LLMemberListener<LLNetMap>
+	struct LLShowAgentProfile : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
-	class LLCamFollow : public LLMemberListener<LLNetMap> //moymod
+	struct LLCamFollow : public LLMemberListener<LLNetMap> //moymod
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
 	//moymod - Custom minimap markers :o
-	class mmsetred : public LLMemberListener<LLNetMap> //moymod
+	struct mmsetred : public LLMemberListener<LLNetMap> //moymod
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
-	class mmsetgreen : public LLMemberListener<LLNetMap> //moymod
+	struct mmsetgreen : public LLMemberListener<LLNetMap> //moymod
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
-	class mmsetblue : public LLMemberListener<LLNetMap> //moymod
+	struct mmsetblue : public LLMemberListener<LLNetMap> //moymod
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
-	class mmsetyellow : public LLMemberListener<LLNetMap> //moymod
+	struct mmsetyellow : public LLMemberListener<LLNetMap> //moymod
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
-	class mmsetcustom : public LLMemberListener<LLNetMap> //moymod
+	struct mmsetcustom : public LLMemberListener<LLNetMap> //moymod
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
-	class mmsetunmark : public LLMemberListener<LLNetMap> //moymod
+	struct mmsetunmark : public LLMemberListener<LLNetMap> //moymod
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
-	class mmenableunmark : public LLMemberListener<LLNetMap> //moymod
+	struct mmenableunmark : public LLMemberListener<LLNetMap> //moymod
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
 
-	class LLEnableProfile : public LLMemberListener<LLNetMap>
+	struct LLEnableProfile : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 	
-	class LLToggleControl : public LLMemberListener<LLNetMap>
+	struct LLToggleControl : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 
 // [SL:KB] - Patch: World-MiniMap | Checked: 2012-07-08 (Catznip-3.3.0)
-	class OverlayToggle : public LLMemberListener<LLNetMap>
+	struct OverlayToggle : public LLMemberListener<LLNetMap>
 	{
-	public:
-		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata);
+		/*virtual*/ bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata) override;
 	};
 // [/SL:KB]
 

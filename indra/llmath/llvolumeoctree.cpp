@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 
  * @file llvolumeoctree.cpp
@@ -115,7 +117,7 @@ void LLOctreeTriangleRayIntersect::traverse(const LLOctreeNode<LLVolumeTriangle>
 	if (LLLineSegmentBoxIntersect(mStart, mEnd, vl->mBounds[0], vl->mBounds[1]))
 	{
 		node->accept(this);
-		for (U32 i = 0; i < node->getChildCount(); ++i)
+		for (S32 i = 0; i < node->getChildCount(); ++i)
 		{
 			traverse(node->getChild(i));
 		}
@@ -141,7 +143,7 @@ void LLOctreeTriangleRayIntersect::visit(const LLOctreeNode<LLVolumeTriangle>* n
 				*mClosestT = t;
 				mHitFace = true;
 
-				if (mIntersection != NULL)
+				if (mIntersection != nullptr)
 				{
 					LLVector4a intersect = mDir;
 					intersect.mul(*mClosestT);
@@ -153,7 +155,7 @@ void LLOctreeTriangleRayIntersect::visit(const LLOctreeNode<LLVolumeTriangle>* n
 				U32 idx1 = tri->mIndex[1];
 				U32 idx2 = tri->mIndex[2];
 
-				if (mTexCoord != NULL)
+				if (mTexCoord != nullptr)
 				{
 					LLVector2* tc = (LLVector2*) mFace->mTexCoords;
 					*mTexCoord = ((1.f - a - b)  * tc[idx0] +
@@ -162,7 +164,7 @@ void LLOctreeTriangleRayIntersect::visit(const LLOctreeNode<LLVolumeTriangle>* n
 
 				}
 
-				if (mNormal != NULL)
+				if (mNormal != nullptr)
 				{
 					LLVector4a* norm = mFace->mNormals;
 								
@@ -182,7 +184,7 @@ void LLOctreeTriangleRayIntersect::visit(const LLOctreeNode<LLVolumeTriangle>* n
 					*mNormal		= n1; 
 				}
 
-				if (mTangent != NULL)
+				if (mTangent != nullptr)
 				{
 					LLVector4a* tangents = mFace->mTangents;
 								

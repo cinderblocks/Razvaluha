@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llbufferstream.cpp
  * @author Phoenix
@@ -203,7 +205,7 @@ int LLBufferStreamBuf::sync()
 	// set the put pointer so that we force an overflow on the next
 	// write.
 	U8* address = (U8*)pptr();
-	setp(NULL, NULL);
+	setp(nullptr, nullptr);
 
 	// *NOTE: I bet we could just --address if address is not NULL.
 	// Need to think about that.
@@ -233,10 +235,17 @@ int LLBufferStreamBuf::sync()
 }
 
 // virtual
+#if( LL_WINDOWS || __GNUC__ > 2)
 LLBufferStreamBuf::pos_type LLBufferStreamBuf::seekoff(
 	LLBufferStreamBuf::off_type off,
 	std::ios::seekdir way,
 	std::ios::openmode which)
+#else
+streampos LLBufferStreamBuf::seekoff(
+	streamoff off,
+	std::ios::seekdir way,
+	std::ios::openmode which)
+#endif
 {
 	if(!mBuffer
 	   || ((way == std::ios::beg) && (off < 0))
@@ -244,10 +253,10 @@ LLBufferStreamBuf::pos_type LLBufferStreamBuf::seekoff(
 	{
 		return -1;
 	}
-	U8* address = NULL;
+	U8* address = nullptr;
 	if(which & std::ios::in)
 	{
-		U8* base_addr = NULL;
+		U8* base_addr = nullptr;
 		switch(way)
 		{
 		case std::ios::end:
@@ -280,7 +289,7 @@ LLBufferStreamBuf::pos_type LLBufferStreamBuf::seekoff(
 	}
 	if(which & std::ios::out)
 	{
-		U8* base_addr = NULL;
+		U8* base_addr = nullptr;
 		switch(way)
 		{
 		case std::ios::end:
@@ -311,8 +320,12 @@ LLBufferStreamBuf::pos_type LLBufferStreamBuf::seekoff(
 		}
 	}
 
+#if( LL_WINDOWS || __GNUC__ > 2 )
 	S32 rv = (S32)(intptr_t)address;
 	return (pos_type)rv;
+#else
+	return (streampos)address;
+#endif
 }
 
 

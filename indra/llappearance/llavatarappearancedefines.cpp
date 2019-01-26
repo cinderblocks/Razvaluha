@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llavatarappearancedefines.cpp
  * @brief Implementation of LLAvatarAppearanceDefines::LLAvatarAppearanceDictionary 
@@ -140,7 +142,7 @@ LLAvatarAppearanceDictionary::~LLAvatarAppearanceDictionary()
 // map it to the baked texture.
 void LLAvatarAppearanceDictionary::createAssociations()
 {
-	for (BakedTextures::const_iterator iter = mBakedTextures.begin(); iter != mBakedTextures.end(); iter++)
+	for (BakedTextures::const_iterator iter = mBakedTextures.begin(); iter != mBakedTextures.end(); ++iter)
 	{
 		const EBakedTextureIndex baked_index = (iter->first);
 		const BakedEntry *dict = (iter->second);
@@ -149,7 +151,7 @@ void LLAvatarAppearanceDictionary::createAssociations()
 		// with this baked texture index.
 		for (texture_vec_t::const_iterator local_texture_iter = dict->mLocalTextures.begin();
 			 local_texture_iter != dict->mLocalTextures.end();
-			 local_texture_iter++)
+			 ++local_texture_iter)
 		{
 			const ETextureIndex local_texture_index = (ETextureIndex) *local_texture_iter;
 			mTextures[local_texture_index]->mIsUsedByBakedTexture = true;
@@ -165,12 +167,12 @@ LLAvatarAppearanceDictionary::TextureEntry::TextureEntry(const std::string &name
 												 const std::string &default_image_name,
 												 LLWearableType::EType wearable_type) :
 	LLDictionaryEntry(name),
+	mDefaultImageName(default_image_name),
+	mWearableType(wearable_type),
 	mIsLocalTexture(is_local_texture),
 	mIsBakedTexture(!is_local_texture),
 	mIsUsedByBakedTexture(baked_texture_index != BAKED_NUM_INDICES),
-	mBakedTextureIndex(baked_texture_index),
-	mDefaultImageName(default_image_name),
-	mWearableType(wearable_type)
+	mBakedTextureIndex(baked_texture_index)
 {
 }
 
@@ -179,8 +181,8 @@ LLAvatarAppearanceDictionary::MeshEntry::MeshEntry(EBakedTextureIndex baked_inde
 										   U8 level,
 										   LLJointPickName pick) :
 	LLDictionaryEntry(name),
-	mBakedID(baked_index),
 	mLOD(level),
+	mBakedID(baked_index),
 	mPickName(pick)
 {
 }
@@ -190,8 +192,8 @@ LLAvatarAppearanceDictionary::BakedEntry::BakedEntry(ETextureIndex tex_index,
 											 U32 num_local_textures,
 											 ... ) :
 	LLDictionaryEntry(name),
-	mWearablesHashID(LLUUID(hash_name)),
-	mTextureIndex(tex_index)
+	mTextureIndex(tex_index),
+	mWearablesHashID(LLUUID(hash_name))
 {
 	va_list argp;
 
@@ -222,7 +224,7 @@ ETextureIndex LLAvatarAppearanceDictionary::bakedToLocalTextureIndex(EBakedTextu
 }
 
 // static
-EBakedTextureIndex LLAvatarAppearanceDictionary::findBakedByRegionName(std::string name)
+EBakedTextureIndex LLAvatarAppearanceDictionary::findBakedByRegionName(const std::string& name)
 {
 	U8 index = 0;
 	while (index < BAKED_NUM_INDICES)
@@ -240,7 +242,7 @@ EBakedTextureIndex LLAvatarAppearanceDictionary::findBakedByRegionName(std::stri
 }
 
 // static 
-EBakedTextureIndex LLAvatarAppearanceDictionary::findBakedByImageName(std::string name)
+EBakedTextureIndex LLAvatarAppearanceDictionary::findBakedByImageName(const std::string& name)
 {
 	U8 index = 0;
 	while (index < BAKED_NUM_INDICES)

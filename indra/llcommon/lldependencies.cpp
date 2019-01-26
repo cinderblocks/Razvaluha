@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file   lldependencies.cpp
  * @author Nat Goodspeed
@@ -31,7 +33,6 @@
 // associated header
 #include "lldependencies.h"
 // STL headers
-#include <map>
 #include <sstream>
 // std headers
 // external library headers
@@ -40,8 +41,9 @@
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/exception.hpp>
 // other Linden headers
+#include "llexception.h"
 
-LLDependenciesBase::VertexList LLDependenciesBase::topo_sort(int vertices, const EdgeList& edges) const
+LLDependenciesBase::VertexList LLDependenciesBase::topo_sort(std::size_t vertices, const EdgeList& edges) const
 {
     // Construct a Boost Graph Library graph according to the constraints
     // we've collected. It seems as though we ought to be able to capture
@@ -76,7 +78,7 @@ LLDependenciesBase::VertexList LLDependenciesBase::topo_sort(int vertices, const
         // Omit independent nodes: display only those that might contribute to
         // the cycle.
         describe(out, false);
-        throw Cycle(out.str());
+        LLTHROW(Cycle(out.str()));
     }
     // A peculiarity of boost::topological_sort() is that it emits results in
     // REVERSE topological order: to get the result you want, you must

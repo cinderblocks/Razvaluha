@@ -29,12 +29,10 @@
 
 #include "linden_common.h"
 
-#include "llwin32headerslean.h"
-
 #include <boost/chrono.hpp>
-
 #include <boost/thread.hpp>
-#include <boost/function.hpp>
+
+#include "llwin32headerslean.h"
 
 #include "_refcounted.h"
 
@@ -44,8 +42,8 @@ namespace LLCoreInt
 class HttpThread : public RefCounted
 {
 private:
-	HttpThread();							// Not defined
-	void operator=(const HttpThread &);		// Not defined
+	HttpThread() = delete;								// Not defined
+	HttpThread& operator=(const HttpThread &) = delete;	// Not defined
 
 	void at_exit()
 		{
@@ -69,6 +67,32 @@ private:
 protected:
 	virtual ~HttpThread()
 		{
+			if(joinable())
+			{
+				bool joined = false;
+				S32 counter = 0;
+				const S32 MAX_WAIT = 600;
+				while (counter < MAX_WAIT)
+				{
+					// Try to join for a tenth of a second
+					if (timedJoin(100))
+					{
+						joined = true;
+						break;
+					}
+					yield();
+					counter++;
+				}
+
+				if (!joined)
+				{
+					// Failed to join, expect problems ahead so do a hard termination.
+					cancel();
+
+					LL_WARNS() << "Destroying HttpThread with running thread.  Expect problems."
+									   << LL_ENDL;
+				}
+			}
 			delete mThread;
 		}
 
@@ -77,13 +101,13 @@ public:
 	/// not start running.  Caller receives on refcount on the thread
 	/// instance.  If the thread is started, another will be taken
 	/// out for the exit handler.
-	explicit HttpThread(boost::function<void (HttpThread *)> threadFunc)
+	explicit HttpThread(std::function<void (HttpThread *)> threadFunc)
 		: RefCounted(true), // implicit reference
 		  mThreadFunc(threadFunc)
 		{
 			// this creates a boost thread that will call HttpThread::run on this instance
 			// and pass it the threadfunc callable...
-			boost::function<void()> f = boost::bind(&HttpThread::run, this);
+			std::function<void()> f = std::bind(&HttpThread::run, this);
 
 			mThread = new boost::thread(f);
 		}
@@ -103,6 +127,11 @@ public:
 			return mThread->joinable();
 		}
 
+	inline void yield()
+		{
+			boost::this_thread::yield();
+		}
+
 	// A very hostile method to force a thread to quit
 	inline void cancel()
 		{
@@ -115,7 +144,7 @@ public:
 		}
 	
 private:
-	boost::function<void(HttpThread *)> mThreadFunc;
+	std::function<void(HttpThread *)> mThreadFunc;
 	boost::thread * mThread;
 }; // end class HttpThread
 

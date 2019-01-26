@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llrun.cpp
  * @author Phoenix
@@ -47,7 +49,7 @@ LLRunner::~LLRunner()
 	mRunEvery.clear();
 }
 
-S32 LLRunner::run()
+size_t LLRunner::run()
 {
 	// We collect all of the runnables which should be run. Since the
 	// runnables are allowed to adjust the run list, we need to copy

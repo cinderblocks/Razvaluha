@@ -34,7 +34,6 @@
 
 #include "llchatbar.h"
 
-#include "imageids.h"
 #include "llfontgl.h"
 #include "llrect.h"
 #include "llerror.h"
@@ -44,6 +43,7 @@
 #include "llfocusmgr.h"
 
 #include "llagent.h"
+#include "llanimationstates.h"
 #include "llautoreplace.h"
 #include "llbutton.h"
 #include "llcombobox.h"

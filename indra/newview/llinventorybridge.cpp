@@ -100,6 +100,8 @@
 typedef std::pair<LLUUID, LLUUID> two_uuids_t;
 typedef std::list<two_uuids_t> two_uuids_list_t;
 
+const F32 SOUND_GAIN = 1.0f;
+
 struct LLMoveInv
 {
 	LLUUID mObjectID;
@@ -273,12 +275,14 @@ BOOL LLInvFVBridge::isLibraryItem() const
 /**
  * @brief Adds this item into clipboard storage
  */
-void LLInvFVBridge::cutToClipboard()
+BOOL LLInvFVBridge::cutToClipboard()
 {
 	if(isItemMovable())
 	{
 		LLInventoryClipboard::instance().cut(mUUID);
+		return true;
 	}
+	return false;
 }
 
 BOOL LLInvFVBridge::copyToClipboard() const
@@ -1448,7 +1452,7 @@ bool LLInvFVBridge::canListOnMarketplaceNow() const
 // +=================================================+
 // |        InventoryFVBridgeBuilder                 |
 // +=================================================+
-LLInvFVBridge* LLInventoryFVBridgeBuilder::createBridge(LLAssetType::EType asset_type,
+LLInvFVBridge* LLInventoryFolderViewModelBuilder::createBridge(LLAssetType::EType asset_type,
 														LLAssetType::EType actual_asset_type,
 														LLInventoryType::EType inv_type,
 														LLInventoryPanel* inventory,
@@ -1829,13 +1833,15 @@ BOOL LLItemBridge::removeItem()
 	}
 
 	// move it to the trash
-	LLPreview::hide(mUUID, TRUE);
 	LLInventoryModel* model = getInventoryModel();
 	if(!model) return FALSE;
 	const LLUUID& trash_id = model->findCategoryUUIDForType(LLFolderType::FT_TRASH);
 	LLViewerInventoryItem* item = getItem();
 	if (!item) return FALSE;
-
+	if (item->getType() != LLAssetType::AT_LSL_TEXT)
+	{
+		LLPreview::hide(mUUID, TRUE);
+	}
 	// Already in trash
 	if (model->isObjectDescendentOf(mUUID, trash_id)) return FALSE;
 
@@ -2446,6 +2452,7 @@ BOOL LLFolderBridge::dragCategoryIntoFolder(LLInventoryCategory* inv_cat,
 					}
 				}
 			}
+
 			// if target is an outfit or current outfit folder we use link
 			if (move_is_into_current_outfit || move_is_into_outfit)
 			{
@@ -3234,18 +3241,18 @@ void LLFolderBridge::pasteFromClipboard(bool only_copies)
 							NULL);
 					}
 // [/SL:KB]
-					else
-					{
-						copy_inventory_item(
-							gAgent.getID(),
-							item->getPermissions().getOwner(),
-						item->getUUID(),
-						parent_id,
-						std::string(),
-						LLPointer<LLInventoryCallback>(NULL));
+							else
+							{
+								copy_inventory_item(
+									gAgent.getID(),
+									item->getPermissions().getOwner(),
+								item->getUUID(),
+								parent_id,
+								std::string(),
+								LLPointer<LLInventoryCallback>(NULL));
+							}
+						}
 					}
-				}
-			}
 		}
 		// Change mode to copy for next paste
 		LLInventoryClipboard::instance().setCutMode(false);
@@ -4448,7 +4455,7 @@ void LLSoundBridge::previewItem()
 	LLViewerInventoryItem* item = getItem();
 	if(item)
 	{
-		send_sound_trigger(item->getAssetUUID(), 1.0);
+		send_sound_trigger(item->getAssetUUID(), SOUND_GAIN);
 	}
 }
 
@@ -4514,7 +4521,7 @@ void LLSoundBridge::performAction(LLInventoryModel* model, std::string action)
 		LLViewerInventoryItem* item = getItem();
 		if(item)
 		{
-			send_sound_trigger(item->getAssetUUID(), 1.f);
+			send_sound_trigger(item->getAssetUUID(), SOUND_GAIN);
 		}
 	}
 	else if ("open" == action)
@@ -6752,7 +6759,7 @@ LLInvFVBridge* LLRecentInventoryBridgeBuilder::createBridge(
 	}
 	else
 	{
-		new_listener = LLInventoryFVBridgeBuilder::createBridge(asset_type,
+		new_listener = LLInventoryFolderViewModelBuilder::createBridge(asset_type,
 			actual_asset_type,
 			inv_type,
 			inventory,

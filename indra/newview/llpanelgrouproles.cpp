@@ -34,12 +34,12 @@
 #include "llcheckboxctrl.h"
 
 #include "llagent.h"
-#include "llavataractions.h"
 #include "llavatarnamecache.h"
 #include "llbutton.h"
 #include "llfiltereditor.h"
 #include "llfloatergroupbulkban.h"
 #include "llfloatergroupinvite.h"
+#include "llavataractions.h"
 #include "lliconctrl.h"
 #include "lllineeditor.h"
 #include "llnamelistctrl.h"
@@ -48,12 +48,16 @@
 #include "llpanelgrouproles.h"
 #include "llscrolllistctrl.h"
 #include "llscrolllistitem.h"
+#include "llscrolllistcell.h"
+#include "llslurl.h"
 #include "lltabcontainer.h"
 #include "lltextbox.h"
 #include "lltexteditor.h"
+#include "lltrans.h"
 #include "llviewertexturelist.h"
 #include "llviewerwindow.h"
 #include "llfocusmgr.h"
+#include "llviewercontrol.h"
 
 #include "roles_constants.h"
 
@@ -1026,8 +1030,8 @@ void LLPanelGroupMembersSubTab::handleMemberSelect()
 				LLRoleMemberChangeType type;
 				if ( getRoleChangeType(*sel_mem_iter, role_id, type) )
 				{
-					if ( type == RMC_ADD ) count++;
-					else if ( type == RMC_REMOVE ) count--;
+					if ( type == LLRoleMemberChangeType::RMC_ADD ) count++;
+					else if ( type == LLRoleMemberChangeType::RMC_REMOVE ) count--;
 				}
 			}
 			
@@ -1286,7 +1290,7 @@ void LLPanelGroupMembersSubTab::handleRoleCheck(const LLUUID& role_id,
 		{
 			//a previously unchanged role is being changed
 			(*role_change_datap)[role_id] = type;
-			if ( is_owner_role && type == RMC_ADD ) mNumOwnerAdditions++;
+			if ( is_owner_role && type == LLRoleMemberChangeType::RMC_ADD ) mNumOwnerAdditions++;
 		}
 
 		//we need to calculate what powers the selected members
@@ -1327,8 +1331,8 @@ void LLPanelGroupMembersSubTab::onRoleCheck(LLUICtrl* ctrl, void* user_data)
 	{
 		LLUUID role_id = first_selected->getUUID();
 		LLRoleMemberChangeType change_type = (check_box->get() ? 
-						      RMC_ADD : 
-						      RMC_REMOVE);
+						      LLRoleMemberChangeType::RMC_ADD : 
+						      LLRoleMemberChangeType::RMC_REMOVE);
 		
 		self->handleRoleCheck(role_id, change_type);
 	}
@@ -1545,7 +1549,7 @@ U64 LLPanelGroupMembersSubTab::getAgentPowersBasedOnRoleChanges(const LLUUID& ag
 		for (role_change_data_map_t::iterator role = role_change_datap->begin();
 			 role != role_change_datap->end(); ++ role)
 		{
-			if ( role->second == RMC_ADD )
+			if ( role->second == LLRoleMemberChangeType::RMC_ADD )
 			{
 				new_powers |= gdatap->getRolePowers(role->first);
 			}

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 * @file llpathfindingmanager.cpp
 * @brief Implementation of llpathfindingmanager
@@ -29,14 +31,6 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llpathfindingmanager.h"
-
-#include <string>
-#include <map>
-
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/signals2.hpp>
 
 #include "llagent.h"
 #include "llhttpnode.h"
@@ -81,7 +75,7 @@
 class LLNavMeshSimStateChangeNode : public LLHTTPNode
 {
 public:
-	virtual void post(ResponsePtr pResponse, const LLSD &pContext, const LLSD &pInput) const;
+	void post(ResponsePtr pResponse, const LLSD &pContext, const LLSD &pInput) const override;
 };
 
 LLHTTPRegistration<LLNavMeshSimStateChangeNode> gHTTPRegistrationNavMeshSimStateChangeNode(SIM_MESSAGE_NAVMESH_STATUS_UPDATE);
@@ -93,7 +87,7 @@ LLHTTPRegistration<LLNavMeshSimStateChangeNode> gHTTPRegistrationNavMeshSimState
 class LLAgentStateChangeNode : public LLHTTPNode
 {
 public:
-	virtual void post(ResponsePtr pResponse, const LLSD &pContext, const LLSD &pInput) const;
+	void post(ResponsePtr pResponse, const LLSD &pContext, const LLSD &pInput) const override;
 };
 
 LLHTTPRegistration<LLAgentStateChangeNode> gHTTPRegistrationAgentStateChangeNode(SIM_MESSAGE_AGENT_STATE_UPDATE);
@@ -138,14 +132,13 @@ private:
 	LLPathfindingObjectPtr                          mTerrainLinksetPtr;
 };
 
-typedef boost::shared_ptr<LinksetsResponder> LinksetsResponderPtr;
+typedef std::shared_ptr<LinksetsResponder> LinksetsResponderPtr;
 
 //---------------------------------------------------------------------------
 // LLPathfindingManager
 //---------------------------------------------------------------------------
 
-LLPathfindingManager::LLPathfindingManager()
-	: LLSingleton<LLPathfindingManager>(),
+LLPathfindingManager::LLPathfindingManager():
 	mNavMeshMap(),
 	mAgentStateSignal()
 {
@@ -158,7 +151,7 @@ LLPathfindingManager::~LLPathfindingManager()
 
 void LLPathfindingManager::initSystem()
 {
-	if (LLPathingLib::getInstance() == NULL)
+	if (LLPathingLib::getInstance() == nullptr)
 	{
 		LLPathingLib::initSystem();
 	}
@@ -166,7 +159,7 @@ void LLPathfindingManager::initSystem()
 
 void LLPathfindingManager::quitSystem()
 {
-	if (LLPathingLib::getInstance() != NULL)
+	if (LLPathingLib::getInstance() != nullptr)
 	{
 		LLPathingLib::quitSystem();
 	}
@@ -174,24 +167,26 @@ void LLPathfindingManager::quitSystem()
 
 bool LLPathfindingManager::isPathfindingViewEnabled() const
 {
-	return (LLPathingLib::getInstance() != NULL);
+	return (LLPathingLib::getInstance() != nullptr);
 }
 
 bool LLPathfindingManager::isPathfindingEnabledForCurrentRegion() const
 {
-	return isPathfindingEnabledForRegion(getCurrentRegion());
+	return isPathfindingEnabledForRegion(gAgent.getRegion());
 }
 
 bool LLPathfindingManager::isPathfindingEnabledForRegion(LLViewerRegion *pRegion) const
 {
-	std::string retrieveNavMeshURL = getRetrieveNavMeshURLForRegion(pRegion);
-	return !retrieveNavMeshURL.empty();
+	bool ret = false;
+	if (pRegion)
+		ret = pRegion->isCapabilityAvailable(CAP_SERVICE_RETRIEVE_NAVMESH);
+	return ret;
 }
 
 bool LLPathfindingManager::isAllowViewTerrainProperties() const
 {
 	LLViewerRegion* region = getCurrentRegion();
-	return (gAgent.isGodlike() || ((region != NULL) && region->canManageEstate()));
+	return (gAgent.isGodlike() || ((region != nullptr) && region->canManageEstate()));
 }
 
 LLPathfindingNavMesh::navmesh_slot_t LLPathfindingManager::registerNavMeshListenerForRegion(LLViewerRegion *pRegion, LLPathfindingNavMesh::navmesh_callback_t pNavMeshCallback)
@@ -204,7 +199,7 @@ void LLPathfindingManager::requestGetNavMeshForRegion(LLViewerRegion *pRegion, b
 {
 	LLPathfindingNavMeshPtr navMeshPtr = getNavMeshForRegion(pRegion);
 
-	if (pRegion == NULL)
+	if (pRegion == nullptr)
 	{
 		navMeshPtr->handleNavMeshNotEnabled();
 	}
@@ -224,7 +219,7 @@ void LLPathfindingManager::requestGetNavMeshForRegion(LLViewerRegion *pRegion, b
 		navMeshPtr->handleNavMeshCheckVersion();
 
         U64 regionHandle = pRegion->getHandle();
-        std::string coroname = LLCoros::instance().launch("LLPathfindingManager::navMeshStatusRequestCoro",
+        LLCoros::instance().launch("LLPathfindingManager::navMeshStatusRequestCoro",
             boost::bind(&LLPathfindingManager::navMeshStatusRequestCoro, this, navMeshStatusURL, regionHandle, pIsGetStatusOnly));
 	}
 }
@@ -234,7 +229,7 @@ void LLPathfindingManager::requestGetLinksets(request_id_t pRequestId, object_re
 	LLPathfindingObjectListPtr emptyLinksetListPtr;
 	LLViewerRegion *currentRegion = getCurrentRegion();
 
-	if (currentRegion == NULL)
+	if (currentRegion == nullptr)
 	{
 		pLinksetsCallback(pRequestId, kRequestNotEnabled, emptyLinksetListPtr);
 	}
@@ -258,12 +253,12 @@ void LLPathfindingManager::requestGetLinksets(request_id_t pRequestId, object_re
 			bool doRequestTerrain = isAllowViewTerrainProperties();
 			LinksetsResponder::ptr_t linksetsResponderPtr(new LinksetsResponder(pRequestId, pLinksetsCallback, true, doRequestTerrain));
 
-            std::string coroname = LLCoros::instance().launch("LLPathfindingManager::linksetObjectsCoro",
+            LLCoros::instance().launch("LLPathfindingManager::linksetObjectsCoro",
                 boost::bind(&LLPathfindingManager::linksetObjectsCoro, this, objectLinksetsURL, linksetsResponderPtr, LLSD()));
 
 			if (doRequestTerrain)
 			{
-                std::string coroname = LLCoros::instance().launch("LLPathfindingManager::linksetTerrainCoro",
+                LLCoros::instance().launch("LLPathfindingManager::linksetTerrainCoro",
                     boost::bind(&LLPathfindingManager::linksetTerrainCoro, this, terrainLinksetsURL, linksetsResponderPtr, LLSD()));
 			}
 		}
@@ -280,7 +275,7 @@ void LLPathfindingManager::requestSetLinksets(request_id_t pRequestId, const LLP
 	{
 		pLinksetsCallback(pRequestId, kRequestNotEnabled, emptyLinksetListPtr);
 	}
-	else if ((pLinksetListPtr == NULL) || pLinksetListPtr->isEmpty())
+	else if ((pLinksetListPtr == nullptr) || pLinksetListPtr->isEmpty())
 	{
 		pLinksetsCallback(pRequestId, kRequestCompleted, emptyLinksetListPtr);
 	}
@@ -307,13 +302,13 @@ void LLPathfindingManager::requestSetLinksets(request_id_t pRequestId, const LLP
 
 			if (!objectPostData.isUndefined())
 			{
-                std::string coroname = LLCoros::instance().launch("LLPathfindingManager::linksetObjectsCoro",
+                LLCoros::instance().launch("LLPathfindingManager::linksetObjectsCoro",
                     boost::bind(&LLPathfindingManager::linksetObjectsCoro, this, objectLinksetsURL, linksetsResponderPtr, objectPostData));
 			}
 
 			if (!terrainPostData.isUndefined())
 			{
-                std::string coroname = LLCoros::instance().launch("LLPathfindingManager::linksetTerrainCoro",
+                LLCoros::instance().launch("LLPathfindingManager::linksetTerrainCoro",
                     boost::bind(&LLPathfindingManager::linksetTerrainCoro, this, terrainLinksetsURL, linksetsResponderPtr, terrainPostData));
 			}
 		}
@@ -326,7 +321,7 @@ void LLPathfindingManager::requestGetCharacters(request_id_t pRequestId, object_
 
 	LLViewerRegion *currentRegion = getCurrentRegion();
 
-	if (currentRegion == NULL)
+	if (currentRegion == nullptr)
 	{
 		pCharactersCallback(pRequestId, kRequestNotEnabled, emptyCharacterListPtr);
 	}
@@ -346,7 +341,7 @@ void LLPathfindingManager::requestGetCharacters(request_id_t pRequestId, object_
 		{
 			pCharactersCallback(pRequestId, kRequestStarted, emptyCharacterListPtr);
 
-            std::string coroname = LLCoros::instance().launch("LLPathfindingManager::charactersCoro",
+            LLCoros::instance().launch("LLPathfindingManager::charactersCoro",
                 boost::bind(&LLPathfindingManager::charactersCoro, this, charactersURL, pRequestId, pCharactersCallback));
 		}
 	}
@@ -361,7 +356,7 @@ void LLPathfindingManager::requestGetAgentState()
 {
 	LLViewerRegion *currentRegion = getCurrentRegion();
 
-	if (currentRegion == NULL)
+	if (currentRegion == nullptr)
 	{
 		mAgentStateSignal(FALSE);
 	}
@@ -380,7 +375,7 @@ void LLPathfindingManager::requestGetAgentState()
 			std::string agentStateURL = getAgentStateURLForRegion(currentRegion);
 			llassert(!agentStateURL.empty());
 
-            std::string coroname = LLCoros::instance().launch("LLPathfindingManager::navAgentStateRequestCoro",
+            LLCoros::instance().launch("LLPathfindingManager::navAgentStateRequestCoro",
                 boost::bind(&LLPathfindingManager::navAgentStateRequestCoro, this, agentStateURL));
 		}
 	}
@@ -390,7 +385,7 @@ void LLPathfindingManager::requestRebakeNavMesh(rebake_navmesh_callback_t pRebak
 {
 	LLViewerRegion *currentRegion = getCurrentRegion();
 
-	if (currentRegion == NULL)
+	if (currentRegion == nullptr)
 	{
 		pRebakeNavMeshCallback(false);
 	}
@@ -403,7 +398,7 @@ void LLPathfindingManager::requestRebakeNavMesh(rebake_navmesh_callback_t pRebak
 		std::string navMeshStatusURL = getNavMeshStatusURLForCurrentRegion();
 		llassert(!navMeshStatusURL.empty());
 
-        std::string coroname = LLCoros::instance().launch("LLPathfindingManager::navMeshRebakeCoro",
+        LLCoros::instance().launch("LLPathfindingManager::navMeshRebakeCoro",
                 boost::bind(&LLPathfindingManager::navMeshRebakeCoro, this, navMeshStatusURL, pRebakeNavMeshCallback));
 	}
 }
@@ -412,7 +407,7 @@ void LLPathfindingManager::handleDeferredGetAgentStateForRegion(const LLUUID &pR
 {
 	LLViewerRegion *currentRegion = getCurrentRegion();
 
-	if ((currentRegion != NULL) && (currentRegion->getRegionID() == pRegionUUID))
+	if ((currentRegion != nullptr) && (currentRegion->getRegionID() == pRegionUUID))
 	{
 		requestGetAgentState();
 	}
@@ -422,7 +417,7 @@ void LLPathfindingManager::handleDeferredGetNavMeshForRegion(const LLUUID &pRegi
 {
 	LLViewerRegion *currentRegion = getCurrentRegion();
 
-	if ((currentRegion != NULL) && (currentRegion->getRegionID() == pRegionUUID))
+	if ((currentRegion != nullptr) && (currentRegion->getRegionID() == pRegionUUID))
 	{
 		requestGetNavMeshForRegion(currentRegion, pIsGetStatusOnly);
 	}
@@ -432,7 +427,7 @@ void LLPathfindingManager::handleDeferredGetLinksetsForRegion(const LLUUID &pReg
 {
 	LLViewerRegion *currentRegion = getCurrentRegion();
 
-	if ((currentRegion != NULL) && (currentRegion->getRegionID() == pRegionUUID))
+	if ((currentRegion != nullptr) && (currentRegion->getRegionID() == pRegionUUID))
 	{
 		requestGetLinksets(pRequestId, pLinksetsCallback);
 	}
@@ -442,7 +437,7 @@ void LLPathfindingManager::handleDeferredGetCharactersForRegion(const LLUUID &pR
 {
 	LLViewerRegion *currentRegion = getCurrentRegion();
 
-	if ((currentRegion != NULL) && (currentRegion->getRegionID() == pRegionUUID))
+	if ((currentRegion != nullptr) && (currentRegion->getRegionID() == pRegionUUID))
 	{
 		requestGetCharacters(pRequestId, pCharactersCallback);
 	}
@@ -463,7 +458,7 @@ void LLPathfindingManager::navMeshStatusRequestCoro(std::string url, U64 regionH
     }
     LLUUID regionUUID = region->getRegionID();
 
-    region = NULL;
+    region = nullptr;
     LLSD result = httpAdapter->getAndSuspend(httpRequest, url);
 
     region = LLWorld::getInstance()->getRegionFromHandle(regionHandle);
@@ -683,13 +678,13 @@ void LLPathfindingManager::charactersCoro(std::string url, request_id_t requestI
         LL_WARNS("PathfindingManager") << "HTTP status, " << status.toTerseString() <<
             ". characters failed." << LL_ENDL;
 
-        LLPathfindingObjectListPtr characterListPtr = LLPathfindingObjectListPtr(new LLPathfindingCharacterList());
+        LLPathfindingObjectListPtr characterListPtr = std::static_pointer_cast<LLPathfindingObjectList>(std::make_shared<LLPathfindingCharacterList>());
         callback(requestId, LLPathfindingManager::kRequestError, characterListPtr);
     }
     else
     {
         result.erase(LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS);
-        LLPathfindingObjectListPtr characterListPtr = LLPathfindingObjectListPtr(new LLPathfindingCharacterList(result));
+        LLPathfindingObjectListPtr characterListPtr = std::static_pointer_cast<LLPathfindingObjectList>(std::make_shared<LLPathfindingCharacterList>(result));
         callback(requestId, LLPathfindingManager::kRequestCompleted, characterListPtr);
 	}
 }
@@ -719,7 +714,7 @@ LLPathfindingNavMeshPtr LLPathfindingManager::getNavMeshForRegion(const LLUUID &
 	NavMeshMap::iterator navMeshIter = mNavMeshMap.find(pRegionUUID);
 	if (navMeshIter == mNavMeshMap.end())
 	{
-		navMeshPtr = LLPathfindingNavMeshPtr(new LLPathfindingNavMesh(pRegionUUID));
+		navMeshPtr = std::make_shared<LLPathfindingNavMesh>(pRegionUUID);
 		mNavMeshMap.insert(std::pair<LLUUID, LLPathfindingNavMeshPtr>(pRegionUUID, navMeshPtr));
 	}
 	else
@@ -733,7 +728,7 @@ LLPathfindingNavMeshPtr LLPathfindingManager::getNavMeshForRegion(const LLUUID &
 LLPathfindingNavMeshPtr LLPathfindingManager::getNavMeshForRegion(LLViewerRegion *pRegion)
 {
 	LLUUID regionUUID;
-	if (pRegion != NULL)
+	if (pRegion != nullptr)
 	{
 		regionUUID = pRegion->getRegionID();
 	}
@@ -785,7 +780,7 @@ std::string LLPathfindingManager::getCapabilityURLForRegion(LLViewerRegion *pReg
 {
 	std::string capabilityURL("");
 
-	if (pRegion != NULL)
+	if (pRegion != nullptr)
 	{
 		capabilityURL = pRegion->getCapability(pCapabilityName);
 	}
@@ -793,7 +788,7 @@ std::string LLPathfindingManager::getCapabilityURLForRegion(LLViewerRegion *pReg
 	if (capabilityURL.empty())
 	{
 		LL_WARNS() << "cannot find capability '" << pCapabilityName << "' for current region '"
-			<< ((pRegion != NULL) ? pRegion->getName() : "<null>") << "'" << LL_ENDL;
+			<< ((pRegion != nullptr) ? pRegion->getName() : "<null>") << "'" << LL_ENDL;
 	}
 
 	return capabilityURL;
@@ -850,7 +845,7 @@ LinksetsResponder::~LinksetsResponder()
 
 void LinksetsResponder::handleObjectLinksetsResult(const LLSD &pContent)
 {
-	mObjectLinksetListPtr = LLPathfindingObjectListPtr(new LLPathfindingLinksetList(pContent));
+	mObjectLinksetListPtr = std::static_pointer_cast<LLPathfindingObjectList>(std::make_shared<LLPathfindingLinksetList>(pContent));
 
 	mObjectMessagingState = kReceivedGood;
 	if (mTerrainMessagingState != kWaiting)
@@ -871,7 +866,7 @@ void LinksetsResponder::handleObjectLinksetsError()
 
 void LinksetsResponder::handleTerrainLinksetsResult(const LLSD &pContent)
 {
-	mTerrainLinksetPtr = LLPathfindingObjectPtr(new LLPathfindingLinkset(pContent));
+	mTerrainLinksetPtr = std::static_pointer_cast<LLPathfindingObject>(std::make_shared<LLPathfindingLinkset>(pContent));
 
 	mTerrainMessagingState = kReceivedGood;
 	if (mObjectMessagingState != kWaiting)
@@ -901,7 +896,7 @@ void LinksetsResponder::sendCallback()
 
 	if (mObjectMessagingState != kReceivedGood)
 	{
-		mObjectLinksetListPtr = LLPathfindingObjectListPtr(new LLPathfindingLinksetList());
+		mObjectLinksetListPtr = std::static_pointer_cast<LLPathfindingObjectList>(std::make_shared<LLPathfindingLinksetList>());
 	}
 
 	if (mTerrainMessagingState == kReceivedGood)

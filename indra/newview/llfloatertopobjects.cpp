@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfloatertopobjects.cpp
  * @brief Shows top colliders, top scripts, etc.
  *
- * $LicenseInfo:firstyear=2005&license=viewergpl$
- * 
- * Copyright (c) 2005-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2005&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -36,6 +32,7 @@
 
 // library includes
 #include "message.h"
+#include "llavatarnamecache.h"
 #include "llfontgl.h"
 
 #include "llagent.h"
@@ -45,12 +42,14 @@
 #include "llparcel.h"
 #include "llscrolllistctrl.h"
 #include "llscrolllistitem.h"
+#include "llscrolllistcell.h"
 #include "lllineeditor.h"
 #include "lltextbox.h"
 #include "lltracker.h"
 #include "llviewermessage.h"
 #include "llviewerparcelmgr.h"
 #include "llviewerregion.h"
+#include "llfloaterregioninfo.h"
 #include "lluictrlfactory.h"
 #include "llviewerwindow.h"
 #include "llagentcamera.h"
@@ -58,24 +57,6 @@
 
 #include "llavataractions.h"
 
-//LLFloaterTopObjects* LLFloaterTopObjects::sInstance = NULL;
-
-// Globals
-// const U32 TIME_STR_LENGTH = 30;
-/*
-// static
-void LLFloaterTopObjects::show()
-{
-	if (sInstance)
-	{
-		sInstance->setVisibleAndFrontmost();
-		return;
-	}
-
-	sInstance = new LLFloaterTopObjects();
-	sInstance->center();
-}
-*/
 LLFloaterTopObjects::LLFloaterTopObjects()
 :	LLFloater(std::string("top_objects")),
 	mInitialized(FALSE),
@@ -123,7 +104,7 @@ BOOL LLFloaterTopObjects::postBuild()
 // static
 void LLFloaterTopObjects::setMode(U32 mode)
 {
-	LLFloaterTopObjects* instance = instanceExists() ? getInstance() : NULL;
+	LLFloaterTopObjects* instance = instanceExists() ? getInstance() : nullptr;
 	if(!instance) return;
 	instance->mCurrentMode = mode;
 }
@@ -131,26 +112,27 @@ void LLFloaterTopObjects::setMode(U32 mode)
 // static
 void LLFloaterTopObjects::handle_land_reply(LLMessageSystem* msg, void** data)
 {
-	LLFloaterTopObjects* instance = instanceExists() ? getInstance() : NULL;
-	if(!instance) return;
-	// Make sure dialog is on screen
-	instance->open();
-	instance->handleReply(msg, data);
-
-	//HACK: for some reason sometimes top scripts originally comes back
-	//with no results even though they're there
-	if (!instance->mObjectListIDs.size() && !instance->mInitialized)
+	LLFloaterTopObjects* instance = instanceExists() ? getInstance() : nullptr;
+	if (instance)
 	{
-		instance->onRefresh();
-		instance->mInitialized = TRUE;
+		// Make sure dialog is on screen
+		instance->open();
+		instance->handleReply(msg, data);
+		//HACK: for some reason sometimes top scripts originally comes back
+		//with no results even though they're there
+	    if (instance->mObjectListIDs.empty() && !instance->mInitialized)
+		{
+			instance->onRefresh();
+			instance->mInitialized = TRUE;
+		}
 	}
-
 }
 
 void LLFloaterTopObjects::handleReply(LLMessageSystem *msg, void** data)
 {
 	U32 request_flags;
 	U32 total_count;
+	F64 total_script_memory = 0.0;;
 
 	msg->getU32Fast(_PREHASH_RequestData, _PREHASH_RequestFlags, request_flags);
 	msg->getU32Fast(_PREHASH_RequestData, _PREHASH_TotalObjectCount, total_count);
@@ -169,7 +151,7 @@ void LLFloaterTopObjects::handleReply(LLMessageSystem *msg, void** data)
 		std::string name_buf;
 		std::string owner_buf;
 		std::string parcel_buf("unknown");
-		F32 mono_score = 0.f;
+		//F32 mono_score = 0.f;
 		bool have_extended_data = false;
 		S32 public_urls = 0;
 		F32 script_memory = 0.f;
@@ -187,14 +169,24 @@ void LLFloaterTopObjects::handleReply(LLMessageSystem *msg, void** data)
 		{
 			have_extended_data = true;
 			msg->getU32("DataExtended", "TimeStamp", time_stamp, block);
-			msg->getF32("DataExtended", "MonoScore", mono_score, block);
-			msg->getS32("DataExtended", "PublicURLs", public_urls, block);
-			if (msg->getSize("DataExtended", "ParcelName") > 0)
+			//msg->getF32("DataExtended", "MonoScore", mono_score, block);
+			if (mCurrentMode == STAT_REPORT_TOP_SCRIPTS)
 			{
-				msg->getString("DataExtended", "ParcelName", parcel_buf, block);
-				msg->getF32("DataExtended", "Size", script_memory, block);
+				msg->getS32("DataExtended", "PublicURLs", public_urls, block);
+			}
+
+			std::string parcel_name;
+			F32 script_size = 0.f;
+			msg->getString("DataExtended", "ParcelName", parcel_name, block);
+			msg->getF32("DataExtended", "Size", script_size, block);
+			if (parcel_name.size() > 0 || script_size > 0)
+			{
+				parcel_buf = parcel_name;
+				script_memory = script_size;
 			}
 		}
+
+		total_script_memory += script_memory;
 
 		LLSD element;
 
@@ -210,6 +202,12 @@ void LLFloaterTopObjects::handleReply(LLMessageSystem *msg, void** data)
 		columns[column_num]["value"] = name_buf;
 		columns[column_num++]["font"] = "SANSSERIF";
 
+		// Owner names can have trailing spaces sent from server
+		LLStringUtil::trim(owner_buf);
+		
+		// *TODO: Send owner_id from server and look up display name
+		owner_buf = LLCacheName::buildUsername(owner_buf);
+
 		columns[column_num]["column"] = "owner";
 		columns[column_num]["value"] = owner_buf;
 		columns[column_num++]["font"] = "SANSSERIF";
@@ -223,14 +221,15 @@ void LLFloaterTopObjects::handleReply(LLMessageSystem *msg, void** data)
 		columns[column_num++]["font"] = "SANSSERIF";
 
 		columns[column_num]["column"] = "time";
-		columns[column_num]["value"] = formatted_time((time_t)time_stamp);
+		columns[column_num]["type"] = "date";
+		columns[column_num]["value"] = LLDate((time_t)time_stamp);
 		columns[column_num++]["font"] = "SANSSERIF";
 
 		if (mCurrentMode == STAT_REPORT_TOP_SCRIPTS
 			&& have_extended_data)
 		{
 			columns[column_num]["column"] = "memory";
-			columns[column_num]["value"] = llformat("%0.0f", (script_memory / 1000.f));
+			columns[column_num]["value"] = llformat("%0.0f", (script_memory / 1024.f));
 			columns[column_num++]["font"] = "SANSSERIF";
 
 			columns[column_num]["column"] = "URLs";
@@ -266,7 +265,10 @@ void LLFloaterTopObjects::handleReply(LLMessageSystem *msg, void** data)
 		LLUIString format = getString("top_scripts_text");
 		format.setArg("[COUNT]", llformat("%d", total_count));
 		format.setArg("[TIME]", llformat("%0.3f", mtotalScore));
+		format.setArg("[MEMORY]", llformat("%0.0f", (total_script_memory / 1024.f)));
 		getChild<LLUICtrl>("title_text")->setValue(LLSD(format));
+		list->setColumnLabel("URLs", getString("URLs"));
+		list->setColumnLabel("memory", getString("memory"));
 	}
 	else
 	{
@@ -381,7 +383,7 @@ void LLFloaterTopObjects::doToObjects(int action, bool all)
 bool LLFloaterTopObjects::callbackReturnAll(const LLSD& notification, const LLSD& response)
 {
 	S32 option = LLNotificationsUtil::getSelectedOption(notification, response);
-	LLFloaterTopObjects* instance = instanceExists() ? getInstance() : NULL;
+	LLFloaterTopObjects* instance = instanceExists() ? getInstance() : nullptr;
 	if(!instance) return false;
 	if (option == 0)
 	{
@@ -406,7 +408,7 @@ void LLFloaterTopObjects::onReturnSelected()
 bool LLFloaterTopObjects::callbackDisableAll(const LLSD& notification, const LLSD& response)
 {
 	S32 option = LLNotificationsUtil::getSelectedOption(notification, response);
-	LLFloaterTopObjects* instance = instanceExists() ? getInstance() : NULL;
+	LLFloaterTopObjects* instance = instanceExists() ? getInstance() : nullptr;
 	if(!instance) return false;
 	if (option == 0)
 	{
@@ -510,7 +512,7 @@ void LLFloaterTopObjects::showBeacon()
 	LLVector3 pos_agent(x, y, z);
 	LLVector3d pos_global = gAgent.getPosGlobalFromAgent(pos_agent);
 	std::string tooltip("");
-	LLTracker::trackLocation(pos_global, name, tooltip, LLTracker::LOCATION_ITEM);
+	LLTracker::getInstance()->trackLocation(pos_global, name, tooltip, LLTracker::LOCATION_ITEM);
 
 	const LLUUID& taskid = first_selected->getUUID();
 	if(LLVOAvatar* voavatar = gObjectList.findAvatar(taskid))
@@ -545,7 +547,7 @@ void LLFloaterTopObjects::onTeleportToObject()
 void LLFloaterTopObjects::onKick()
 {
 	LLScrollListCtrl* list = getChild<LLScrollListCtrl>("objects_list");
-		if (!list) return;
+	if (!list) return;
 
 	LLScrollListItem* first_selected = list->getFirstSelected();
 	if (!first_selected) return;
@@ -567,12 +569,7 @@ void LLFloaterTopObjects::onKick()
 
 void LLFloaterTopObjects::onProfile()
 {
-	LLScrollListCtrl* list = getChild<LLScrollListCtrl>("objects_list");
-		if (!list) return;
-
-	LLScrollListItem* first_selected = list->getFirstSelected();
-	if (!first_selected) return;
-
-	const LLUUID& objectId = first_selected->getUUID();
-	LLAvatarActions::showProfile(objectId);
+	if (LLScrollListCtrl* list = getChild<LLScrollListCtrl>("objects_list"))
+		if (LLScrollListItem* first_selected = list->getFirstSelected())
+			LLAvatarActions::showProfile(first_selected->getUUID());
 }

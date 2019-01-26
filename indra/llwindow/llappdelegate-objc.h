@@ -27,7 +27,12 @@
 #import <Cocoa/Cocoa.h>
 #import "llopenglview-objc.h"
 
-@interface LLAppDelegate : NSObject <NSApplicationDelegate> {
+@interface LLNSApplication : NSApplication
+@end
+
+@interface LLAppDelegate
+: NSObject <NSApplicationDelegate, NSUserNotificationCenterDelegate>
+{
 	LLNSWindow *window;
 	NSWindow *inputWindow;
 	LLNonInlineTextView *inputView;
@@ -41,7 +46,7 @@
 
 @property (retain) NSString *currentInputLanguage;
 
-- (void) mainLoop;
+- (void) oneFrame;
 - (void) showInputWindow:(bool)show withEvent:(NSEvent*)textEvent;
 - (void) languageUpdated;
 - (bool) romanScript;

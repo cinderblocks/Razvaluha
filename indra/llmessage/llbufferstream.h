@@ -48,8 +48,10 @@ public:
 	virtual ~LLBufferStreamBuf();
 
 protected:
+#if( LL_WINDOWS || __GNUC__ > 2 )
 	typedef std::streambuf::pos_type pos_type;
 	typedef std::streambuf::off_type off_type;
+#endif
 
 	/* @name streambuf vrtual implementations
 	 */
@@ -59,7 +61,7 @@ protected:
 	 *
 	 * @return Returns the character at the current position or EOF.
 	 */
-	virtual int underflow();
+	int underflow() override;
 
 	/*
 	 * @brief called when we hit the end of output
@@ -67,14 +69,14 @@ protected:
 	 * @param c The character to store at the current put position
 	 * @return Returns EOF if the function failed. Any other value on success.
 	 */
-	virtual int overflow(int c);
+	int overflow(int c) override;
 
 	/*
 	 * @brief synchronize the buffer
 	 *
 	 * @return Returns 0 on success or -1 on failure.
 	 */
-	virtual int sync();
+	int sync() override;
 
 	/*
 	 * @brief Seek to an offset position in a stream.
@@ -85,10 +87,17 @@ protected:
 	 * or both masked together.
 	 * @return Returns the new position or an invalid position on failure.
 	 */
-	virtual pos_type seekoff(
+#if( LL_WINDOWS || __GNUC__ > 2)
+	pos_type seekoff(
 		off_type off,
 		std::ios::seekdir way,
+		std::ios::openmode which) override;
+#else
+	virtual streampos seekoff(
+		streamoff off,
+		std::ios::seekdir way,
 		std::ios::openmode which);
+#endif
 
 	/*
 	 * @brief Get s sequence of characters from the input
@@ -109,17 +118,6 @@ protected:
 	//virtual streamsize xsputn(char* src, streamsize length);
 	//@}
 
-public:
-	/*
-	 * @brief Return number of bytes in input channel.
-	 */
-	S32 count_in(void) const { return mBuffer->count(mChannels.in()); }
-
-	/*
-	 * @brief Return number of bytes in output channel.
-	 */
-	S32 count_out(void) const { return mBuffer->count(mChannels.out()); }
-
 protected:
 	// This channels we are working on.
 	LLChannelDescriptors mChannels;
@@ -128,6 +126,10 @@ protected:
 	LLBufferArray* mBuffer;
 };
 
+#if LL_WINDOWS // VS2012: Disable warning related to inheriting std::basic_iostream
+#pragma warning(push)
+#pragma warning( disable : 4250 )
+#endif
 
 /** 
  * @class LLBufferStream
@@ -146,12 +148,12 @@ public:
 		LLBufferArray* buffer);
 	~LLBufferStream();
 
-	S32 count_in(void) const { return mStreamBuf.count_in(); }
-	S32 count_out(void) const { return mStreamBuf.count_out(); }
-
 protected:
 	LLBufferStreamBuf mStreamBuf;
 };
 
+#if LL_WINDOWS
+#pragma warning(pop)
+#endif
 
 #endif // LL_LLBUFFERSTREAM_H

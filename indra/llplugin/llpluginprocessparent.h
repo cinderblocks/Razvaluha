@@ -58,7 +58,7 @@ class LLPluginProcessParent : public LLPluginMessagePipeOwner
 {
 	LOG_CLASS(LLPluginProcessParent);
 
-	LLPluginProcessParent(LLPluginProcessParentOwner *owner);
+    LLPluginProcessParent(LLPluginProcessParentOwner *owner);
 public:
     typedef boost::shared_ptr<LLPluginProcessParent> ptr_t;
 
@@ -94,14 +94,14 @@ public:
 	void sendMessage(const LLPluginMessage &message);
 	
 	void receiveMessage(const LLPluginMessage &message);
-	
+
     static ptr_t create(LLPluginProcessParentOwner *owner);
     void requestShutdown();
 
 	// Inherited from LLPluginMessagePipeOwner
-	/*virtual*/ void receiveMessageRaw(const std::string &message);
+	/*virtual*/ void receiveMessageRaw(const std::string &message) override;
 	/*virtual*/ void receiveMessageEarly(const LLPluginMessage &message);
-	/*virtual*/ void setMessagePipe(LLPluginMessagePipe *message_pipe) ;
+	/*virtual*/ void setMessagePipe(LLPluginMessagePipe *message_pipe) override;
 	
 	// This adds a memory segment shared with the client, generating a name for the segment.  The name generated is guaranteed to be unique on the host.
 	// The caller must call removeSharedMemory first (and wait until getSharedMemorySize returns 0 for the indicated name) before re-adding a segment with the same name.
@@ -157,19 +157,19 @@ private:
 
     bool wantsPolling() const;
     void removeFromProcessing();
-	
+
 	bool pluginLockedUp();
 	bool pluginLockedUpOrQuit();
 
 	bool accept();
-		
+
 	LLSocket::ptr_t mListenSocket;
 	LLSocket::ptr_t mSocket;
 	U32 mBoundPort;
-	
+
 	LLProcess::Params mProcessParams;
 	LLProcessPtr mProcess;
-	
+
 	std::string mPluginFile;
 	std::string mPluginDir;
 
@@ -205,7 +205,7 @@ private:
 	static void updatePollset();
 	void servicePoll();
 	static LLThread *sReadThread;
-	
+
     LLTempBoundListener mPolling;
     bool pollTick();
 

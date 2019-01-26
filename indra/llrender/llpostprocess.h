@@ -35,6 +35,7 @@
 
 #include <map>
 #include "llsd.h"
+#include "llsingleton.h"
 #include "llrendertarget.h"
 
 class LLSD;
@@ -82,6 +83,7 @@ public:
 class LLPostProcessShader;
 class LLPostProcess : public LLSingleton<LLPostProcess>
 {
+	LLSINGLETON(LLPostProcess);
 private:
 	std::list<LLPointer<LLPostProcessShader> > mShaders;	//List of all registered LLPostProcessShader instances.
 
@@ -103,10 +105,6 @@ private:
 	//  The map of all availible effects
 	LLSD mAllEffectInfo;
 
-public:
-	LLPostProcess(void);
-	~LLPostProcess(void);
-private:
 	// OpenGL initialization
 	void initialize(unsigned int width, unsigned int height);	//Sets mScreenWidth and mScreenHeight
 																// calls createScreenTextures and createNoiseTexture
@@ -115,6 +113,7 @@ private:
 	void createNoiseTexture();									//Creates 'random' noise texture.
 
 public:
+	~LLPostProcess();
 	// Teardown
 	//  Called on destroyGL or cleanupClass. Releases VBOs, rendertargets and textures.
 	void destroyGL();

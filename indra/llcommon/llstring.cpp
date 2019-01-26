@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llstring.cpp
  * @brief String utility functions and the std::string class.
@@ -107,7 +109,7 @@ bool iswindividual(llwchar elem)
 
 bool _read_file_into_string(std::string& str, const std::string& filename)
 {
-	llifstream ifs(filename, llifstream::binary);
+	llifstream ifs(filename.c_str(), llifstream::binary);
 	if (!ifs.is_open())
 	{
 		LL_INFOS() << "Unable to open file " << filename << LL_ENDL;
@@ -394,12 +396,12 @@ S32 wstring_utf8_length(const LLWString& wstr)
 
 LLWString utf8str_to_wstring(const std::string& utf8str, S32 len)
 {
+	llwchar unichar;
 	LLWString wout;
+	wout.reserve(len);
 
-	S32 i = 0;
-	while (i < len)
+	for (S32 i = 0; i < len; i++)
 	{
-		llwchar unichar;
 		U8 cur_char = utf8str[i];
 
 		if (cur_char < 0x80)
@@ -475,7 +477,6 @@ LLWString utf8str_to_wstring(const std::string& utf8str, S32 len)
 		}
 
 		wout += unichar;
-		++i;
 	}
 	return wout;
 }
@@ -488,16 +489,15 @@ LLWString utf8str_to_wstring(const std::string& utf8str)
 
 std::string wstring_to_utf8str(const LLWString& utf32str, S32 len)
 {
+	char tchars[8];		/* Flawfinder: ignore */
 	std::string out;
+	out.reserve(len);
 
-	S32 i = 0;
-	while (i < len)
+	for (S32 i = 0; i < len; i++)
 	{
-		char tchars[8];		/* Flawfinder: ignore */
 		S32 n = wchar_to_utf8chars(utf32str[i], tchars);
 		tchars[n] = 0;
 		out += tchars;
-		i++;
 	}
 	return out;
 }
@@ -576,6 +576,33 @@ std::string utf8str_truncate(const std::string& utf8str, const S32 max_len)
 	}
 }
 
+std::string utf8str_symbol_truncate(const std::string& utf8str, const S32 symbol_len)
+{
+    if (0 == symbol_len)
+    {
+        return std::string();
+    }
+    if ((S32)utf8str.length() <= symbol_len)
+    {
+        return utf8str;
+    }
+    else
+    {
+        int len = 0, byteIndex = 0;
+        const char* aStr = utf8str.c_str();
+        size_t origSize = utf8str.size();
+
+        for (byteIndex = 0; len < symbol_len && byteIndex < origSize; byteIndex++)
+        {
+            if ((aStr[byteIndex] & 0xc0) != 0x80)
+            {
+                len += 1;
+            }
+        }
+        return utf8str.substr(0, byteIndex);
+    }
+}
+
 std::string utf8str_substChar(
 	const std::string& utf8str,
 	const llwchar target_char,
@@ -652,10 +679,10 @@ std::string ll_convert_wide_to_string(const wchar_t* in, unsigned int code_page)
 			0,
 			in,
 			len_in,
-			NULL,
+			nullptr,
 			0,
-			0,
-			0);
+			nullptr,
+			nullptr);
 		// We will need two more bytes for the double NULL ending
 		// created in WideCharToMultiByte().
 		char* pout = new char [len_out + 2];
@@ -669,8 +696,8 @@ std::string ll_convert_wide_to_string(const wchar_t* in, unsigned int code_page)
 				len_in,
 				pout,
 				len_out,
-				0,
-				0);
+				nullptr,
+				nullptr);
 			out.assign(pout);
 			delete[] pout;
 		}
@@ -691,8 +718,8 @@ wchar_t* ll_convert_string_to_wide(const std::string& in, unsigned int code_page
 	// reserve place to NULL terminator
 	int output_str_len = in.length();
 	wchar_t* w_out = new wchar_t[output_str_len + 1];
-
 	memset(w_out, 0, output_str_len + 1);
+
 	int real_output_str_len = MultiByteToWideChar (code_page, 0, in.c_str(), in.length(), w_out, output_str_len);
 
 	//looks like MultiByteToWideChar didn't add null terminator to converted string, see EXT-4858.
@@ -713,7 +740,7 @@ std::string ll_convert_string_to_utf8_string(const std::string& in)
 
 long LLStringOps::sPacificTimeOffset = 0;
 long LLStringOps::sLocalTimeOffset = 0;
-bool LLStringOps::sPacificDaylightTime = 0;
+bool LLStringOps::sPacificDaylightTime = false;
 std::map<std::string, std::string> LLStringOps::datetimeToCodes;
 
 std::vector<std::string> LLStringOps::sWeekDayList;
@@ -732,7 +759,7 @@ S32	LLStringOps::collate(const llwchar* a, const llwchar* b)
 	#if LL_WINDOWS
 		// in Windows, wide string functions operator on 16-bit strings, 
 		// not the proper 32 bit wide string
-		return strcmp(wstring_to_utf8str(LLWString(a)).c_str(), wstring_to_utf8str(LLWString(b)).c_str());
+		return strcoll(wstring_to_utf8str(LLWString(a)).c_str(), wstring_to_utf8str(LLWString(b)).c_str());
 	#else
 		return wcscoll(a, b);
 	#endif
@@ -743,7 +770,7 @@ void LLStringOps::setupDatetimeInfo (bool daylight)
 	time_t nowT, localT, gmtT;
 	struct tm * tmpT;
 
-	nowT = time (NULL);
+	nowT = time (nullptr);
 
 	tmpT = gmtime (&nowT);
 	gmtT = mktime (tmpT);
@@ -823,18 +850,18 @@ void LLStringOps::setupDayFormat(const std::string& data)
 }
 
 
-std::string LLStringOps::getDatetimeCode (std::string key)
+std::string LLStringOps::getDatetimeCode(const std::string& key)
 {
 	std::map<std::string, std::string>::iterator iter;
 
-	iter = datetimeToCodes.find (key);
+	iter = datetimeToCodes.find(key);
 	if (iter != datetimeToCodes.end())
 	{
 		return iter->second;
 	}
 	else
 	{
-		return std::string("");
+		return std::string();
 	}
 }
 
@@ -1105,7 +1132,7 @@ bool LLStringUtil::formatDatetime(std::string& replacement, std::string token,
 		}
 		else if (param == "local")
 		{
-			replacement = "";		// user knows their own timezone
+			replacement.clear();		// user knows their own timezone
 		}
 		else
 		{
@@ -1393,7 +1420,7 @@ void LLStringUtilBase<T>::testHarness()
 	
 	s2.erase( 4, 1 );
 	llassert( s2 == "hell");
-	s2.insert( 0, 1, 'y' );
+	s2.insert( s2.begin(), 'y' );
 	llassert( s2 == "yhell");
 	s2.erase( 1, 3 );
 	llassert( s2 == "yl");

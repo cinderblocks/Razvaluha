@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llqueuedthread.cpp
  *
@@ -28,7 +30,7 @@
 
 #include "llstl.h"
 #include "lltimer.h"	// ms_sleep()
-#include "lltracethreadrecorder.h"
+//#include "lltracethreadrecorder.h"
 
 //============================================================================
 
@@ -36,9 +38,9 @@
 LLQueuedThread::LLQueuedThread(const std::string& name, bool threaded, bool should_pause) :
 	LLThread(name),
 	mThreaded(threaded),
+    mStarted(false),
 	mIdleThread(true),
-	mNextHandle(0),
-	mStarted(FALSE)
+    mNextHandle(0)
 {
 	if (mThreaded)
 	{
@@ -117,7 +119,7 @@ S32 LLQueuedThread::update(F32 max_time_ms)
 		if (!mThreaded)
 		{
 			startThread();
-			mStarted = TRUE;
+			mStarted = true;
 		}
 	}
 	return updateQueue(max_time_ms);
@@ -135,8 +137,8 @@ S32 LLQueuedThread::updateQueue(F32 max_time_ms)
 		pending = getPending();
 		if(pending > 0)
 		{
-			unpause();
-		}
+		unpause();
+	}
 	}
 	else
 	{
@@ -176,7 +178,7 @@ S32 LLQueuedThread::getPending()
 // MAIN thread
 void LLQueuedThread::waitOnPending()
 {
-	while(1)
+	while(true)
 	{
 		update(0);
 
@@ -259,7 +261,7 @@ bool LLQueuedThread::waitForResult(LLQueuedThread::handle_t handle, bool auto_co
 		{
 			done = true; // request does not exist
 		}
-		else if (req->getStatus() == STATUS_COMPLETE && !(req->getFlags() & FLAG_LOCKED))
+		else if (req->getStatus() == STATUS_COMPLETE)
 		{
 			res = true;
 			if (auto_complete)
@@ -289,7 +291,7 @@ LLQueuedThread::QueuedRequest* LLQueuedThread::getRequest(handle_t handle)
 {
 	if (handle == nullHandle())
 	{
-		return 0;
+		return nullptr;
 	}
 	lockData();
 	QueuedRequest* res = (QueuedRequest*)mRequestHash.find(handle);
@@ -367,17 +369,9 @@ bool LLQueuedThread::completeRequest(handle_t handle)
 #if _DEBUG
 // 		LL_INFOS() << llformat("LLQueuedThread::Completed req [%08d]",handle) << LL_ENDL;
 #endif
-		if (!(req->getFlags() & FLAG_LOCKED))
-		{
-			mRequestHash.erase(handle);
-			req->deleteRequest();
-// 			check();
- 		}
- 		else
- 		{
-			// Cause deletion immediately after FLAG_LOCKED is released.
- 			req->setFlags(FLAG_AUTO_COMPLETE);
- 		}
+		mRequestHash.erase(handle);
+		req->deleteRequest();
+// 		check();
 		res = true;
 	}
 	unlockData();
@@ -413,9 +407,9 @@ S32 LLQueuedThread::processNextRequest()
 	// Get next request from pool
 	lockData();
 	
-	while(1)
+	while(true)
 	{
-		req = NULL;
+		req = nullptr;
 		if (mRequestQueue.empty())
 		{
 			break;
@@ -425,44 +419,12 @@ S32 LLQueuedThread::processNextRequest()
 		if ((req->getFlags() & FLAG_ABORT) || (mStatus == QUITTING))
 		{
 			req->setStatus(STATUS_ABORTED);
-			// Unlock, because we can't call finishRequest() while keeping this lock:
-			// generateHandle() takes this lock too and is called while holding a lock
-			// (ie LLTextureFetchWorker::mWorkMutex) that finishRequest will lock too,
-			// causing a dead lock.
-			// Although a complete rewrite of LLQueuedThread is in order because it's
-			// far from robust the way it handles it's locking; the following rationale
-			// at least makes plausible that releasing the lock here SHOULD work if
-			// the original coder didn't completely fuck up: if before the QueuedRequest
-			// req was only accessed while keeping the lock, then it still should
-			// never happen that another thread is waiting for this lock in order to
-			// access the QueuedRequest: a few lines lower we delete it.
-			// In other words, if directly after releasing this lock another thread
-			// would access req, then that can only happen by finding it again in
-			// either mRequestQueue or mRequestHash. We already deleted it from the
-			// first, so this access would have to happen by finding it in mRequestHash.
-			// Such access happens in the following functions:
-			// 1) LLQueuedThread::shutdown -- but it does that anyway, as it doesn't use any locking.
-			// 2) LLQueuedThread::generateHandle -- might skip our handle while before it would block until we deleted it. Skipping it is actually better.
-			// 3) LLQueuedThread::waitForResult -- this now doesn't touch the req when it has the flag FLAG_LOCKED set.
-			// 4) LLQueuedThread::getRequest -- whereever this is used, FLAG_LOCKED is tested before using the req.
-			// 5) LLQueuedThread::getRequestStatus -- this is a read-only operation on the status, which should never be changed from finishRequest().
-			// 6) LLQueuedThread::abortRequest -- it doesn't seem to hurt to add flags (if this happens at all), while calling finishRequest().
-			// 7) LLQueuedThread::setFlags -- same.
-			// 8) LLQueuedThread::setPriority -- doesn't access req with status STATUS_ABORTED, STATUS_COMPLETE or STATUS_INPROGRESS.
-			// 9) LLQueuedThread::completeRequest -- now sets FLAG_AUTO_COMPLETE instead of deleting the req, if FLAG_LOCKED is set, so that deletion happens here when finishRequest returns.
-			req->setFlags(FLAG_LOCKED);
-			unlockData();
 			req->finishRequest(false);
-			lockData();
-			req->resetFlags(FLAG_LOCKED);
-			if ((req->getFlags() & FLAG_AUTO_COMPLETE))
+			if (req->getFlags() & FLAG_AUTO_COMPLETE)
 			{
-				req->resetFlags(FLAG_AUTO_COMPLETE);
 				mRequestHash.erase(req);
-// 				check();
-				unlockData();
 				req->deleteRequest();
-				lockData();
+// 				check();
 			}
 			continue;
 		}
@@ -482,30 +444,21 @@ S32 LLQueuedThread::processNextRequest()
 	// safe to access req.
 	if (req)
 	{
-		// process request
+		// process request		
 		bool complete = req->processRequest();
 
 		if (complete)
 		{
 			lockData();
 			req->setStatus(STATUS_COMPLETE);
-			req->setFlags(FLAG_LOCKED);
-			unlockData();
 			req->finishRequest(true);
 			if (req->getFlags() & FLAG_AUTO_COMPLETE)
 			{
-				lockData();
-				req->resetFlags(FLAG_AUTO_COMPLETE);
 				mRequestHash.erase(req);
-// 				check();
-				req->resetFlags(FLAG_LOCKED);
-				unlockData();
 				req->deleteRequest();
+// 				check();
 			}
-			else
-			{
-				req->resetFlags(FLAG_LOCKED);
-			}
+			unlockData();
 		}
 		else
 		{
@@ -519,7 +472,7 @@ S32 LLQueuedThread::processNextRequest()
 			}
 		}
 		
-		LLTrace::get_thread_recorder()->pushToParent();
+		//LLTrace::get_thread_recorder()->pushToParent();
 	}
 
 	S32 pending = getPending();
@@ -543,16 +496,16 @@ void LLQueuedThread::run()
 	// call checPause() immediately so we don't try to do anything before the class is fully constructed
 	checkPause();
 	startThread();
-	mStarted = TRUE;
+	mStarted = true;
 	
-	while (1)
+	while (true)
 	{
 		// this will block on the condition until runCondition() returns true, the thread is unpaused, or the thread leaves the RUNNING state.
 		checkPause();
 		
 		if (isQuitting())
 		{
-			LLTrace::get_thread_recorder()->pushToParent();
+			//LLTrace::get_thread_recorder()->pushToParent();
 			endThread();
 			break;
 		}

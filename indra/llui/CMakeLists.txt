@@ -46,10 +46,10 @@ set(llui_SOURCE_FILES
     lldraghandle.cpp
     lleditmenuhandler.cpp
     llfiltereditor.cpp
+    llflatlistview.cpp
     llfloater.cpp
     llflyoutbutton.cpp
     llfocusmgr.cpp
-    llfunctorregistry.cpp
     lliconctrl.cpp
     llkeywords.cpp
     lllayoutstack.cpp
@@ -116,6 +116,7 @@ set(llui_HEADER_FILES
     llalertdialog.h
     llbutton.h
     llcallbackmap.h
+    llchat.h
     llcheckboxctrl.h
     llclipboard.h
     llcombobox.h
@@ -124,6 +125,7 @@ set(llui_HEADER_FILES
     lldraghandle.h
     lleditmenuhandler.h
     llfiltereditor.h 
+    llflatlistview.h
     llfloater.h
     llflyoutbutton.h
     llfocusmgr.h

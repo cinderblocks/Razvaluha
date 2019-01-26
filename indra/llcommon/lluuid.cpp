@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lluuid.cpp
  *
@@ -28,6 +30,9 @@
 // We can't use WIN32_LEAN_AND_MEAN here, needs lots of includes.
 #if LL_WINDOWS
 #include "llwin32headers.h"
+// ugh, this is ugly.  We need to straighten out our linking for this library
+#pragma comment(lib, "IPHLPAPI.lib")
+#include <iphlpapi.h>
 #endif
 
 #include "lldefs.h"
@@ -45,8 +50,9 @@ const LLUUID LLUUID::null;
 const LLTransactionID LLTransactionID::tnull;
 
 // static 
-LLMutex * LLUUID::mMutex = NULL;
+LLMutex * LLUUID::mMutex = nullptr;
 
+static const U8 nullUUID[UUID_BYTES] = {}; // <alchemy/>
 
 /*
 
@@ -79,7 +85,7 @@ unsigned int decode( char const * fiveChars ) throw( bad_input_data )
 unsigned int ret = 0;
 for( int ix = 0; ix < 5; ++ix ) {
 char * s = strchr( encodeTable, fiveChars[ ix ] );
-if( s == 0 ) throw bad_input_data();
+if( s == 0 ) LLTHROW(bad_input_data());
 ret = ret * 85 + (s-encodeTable);
 }
 return ret;
@@ -169,12 +175,27 @@ void LLUUID::toString(std::string& out) const
 		(U8)(mData[15]));
 }
 
+// *TODO: deprecate
+void LLUUID::toString(char *out) const
+{
+	std::string buffer;
+	toString(buffer);
+	strcpy(out,buffer.c_str()); /* Flawfinder: ignore */
+}
+
 void LLUUID::toCompressedString(std::string& out) const
 {
 	char bytes[UUID_BYTES+1];
 	memcpy(bytes, mData, UUID_BYTES);		/* Flawfinder: ignore */
 	bytes[UUID_BYTES] = '\0';
 	out.assign(bytes, UUID_BYTES);
+}
+
+// *TODO: deprecate
+void LLUUID::toCompressedString(char *out) const
+{
+	memcpy(out, mData, UUID_BYTES);		/* Flawfinder: ignore */
+	out[UUID_BYTES] = '\0';
 }
 
 std::string LLUUID::getString() const
@@ -440,42 +461,72 @@ typedef struct _ASTAT_
 // static
 S32	LLUUID::getNodeID(unsigned char	*node_id)
 {
-	ASTAT Adapter;
-	NCB Ncb;
-	UCHAR uRetCode;
-	LANA_ENUM   lenum;
-	int      i;
-	int retval = 0;
+	S32 retval = 0;
 
-	memset( &Ncb, 0, sizeof(Ncb) );
-	Ncb.ncb_command = NCBENUM;
-	Ncb.ncb_buffer = (UCHAR *)&lenum;
-	Ncb.ncb_length = sizeof(lenum);
-	uRetCode = Netbios( &Ncb );
+	PIP_ADAPTER_ADDRESSES pAddresses = nullptr;
+	ULONG outBufLen = 0U;
+	DWORD dwRetVal = 0U;
 
-	for(i=0; i < lenum.length ;i++)
-	{
-		memset( &Ncb, 0, sizeof(Ncb) );
-		Ncb.ncb_command = NCBRESET;
-		Ncb.ncb_lana_num = lenum.lana[i];
+	ULONG family = AF_INET;
+	ULONG flags = GAA_FLAG_INCLUDE_PREFIX | GAA_FLAG_INCLUDE_GATEWAYS;
 
-		uRetCode = Netbios( &Ncb );
+	GetAdaptersAddresses(
+		AF_INET,
+		flags,
+		nullptr,
+		nullptr,
+		&outBufLen);
 
-		memset( &Ncb, 0, sizeof (Ncb) );
-		Ncb.ncb_command = NCBASTAT;
-		Ncb.ncb_lana_num = lenum.lana[i];
+	constexpr U32 MAX_TRIES = 3U;
+	U32 iteration = 0U;
+	do {
 
-		strcpy( (char *)Ncb.ncb_callname,  "*              " );		/* Flawfinder: ignore */
-		Ncb.ncb_buffer = (unsigned char *)&Adapter;
-		Ncb.ncb_length = sizeof(Adapter);
-
-		uRetCode = Netbios( &Ncb );
-		if ( uRetCode == 0 )
-		{
-			memcpy(node_id,Adapter.adapt.adapter_address,6);		/* Flawfinder: ignore */
-			retval = 1;
+		pAddresses = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(malloc(outBufLen));
+		if (pAddresses == nullptr) {
+			return 0;
 		}
+
+		dwRetVal =
+			GetAdaptersAddresses(family, flags, nullptr, pAddresses, &outBufLen);
+
+		if (dwRetVal == ERROR_BUFFER_OVERFLOW) {
+			free(pAddresses);
+			pAddresses = nullptr;
+		}
+		else {
+			break;
+		}
+
+		++iteration;
+
+	} while ((dwRetVal == ERROR_BUFFER_OVERFLOW) && (iteration < MAX_TRIES));
+
+	if (dwRetVal == NO_ERROR)
+	{
+		PIP_ADAPTER_ADDRESSES pCurrAddresses = pAddresses;
+		PIP_ADAPTER_GATEWAY_ADDRESS pFirstGateway = nullptr;
+		do {
+			pFirstGateway = pCurrAddresses->FirstGatewayAddress;
+			if (pFirstGateway)
+			{
+				if ((pCurrAddresses->IfType == IF_TYPE_ETHERNET_CSMACD || pCurrAddresses->IfType == IF_TYPE_IEEE80211) && pCurrAddresses->ConnectionType == NET_IF_CONNECTION_DEDICATED
+					&& pCurrAddresses->OperStatus == IfOperStatusUp)
+				{
+					if (pCurrAddresses->PhysicalAddressLength == 6) 
+					{
+							memcpy(node_id, pCurrAddresses->PhysicalAddress, 6);
+							retval = 1;
+							break;
+					}
+				}
+			}
+			pCurrAddresses = pCurrAddresses->Next;
+		} while (pCurrAddresses);                    // Terminate if last adapter
 	}
+
+	free(pAddresses);
+	pAddresses = nullptr;
+
 	return retval;
 }
 
@@ -719,7 +770,7 @@ void LLUUID::getCurrentTime(uuid_time_t *timestamp)
 
    uuid_time_t time_now = {0,0};
 
-   while (1) {
+   while (true) {
       getSystemTime(&time_now);
 
       // if clock reading changed since last UUID generated
@@ -872,7 +923,7 @@ U32 LLUUID::getRandomSeed()
 
 BOOL LLUUID::parseUUID(const std::string& buf, LLUUID* value)
 {
-	if( buf.empty() || value == NULL)
+	if( buf.empty() || value == nullptr)
 	{
 		return FALSE;
 	}

@@ -29,23 +29,29 @@
 
 #include "stdtypes.h"
 
-#define LL_BOOST_MUTEX 1
+#define AL_BOOST_MUTEX 1
 
-#if LL_BOOST_MUTEX
+#if AL_BOOST_MUTEX
 #include "fix_macros.h"
 #define BOOST_SYSTEM_NO_DEPRECATED
-#include <boost/thread.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 typedef boost::recursive_mutex LLMutexImpl;
 typedef boost::condition_variable_any LLConditionImpl;
-#elif LL_STD_MUTEX
+#elif AL_STD_MUTEX
 #include <mutex>
 #include <condition_variable>
 typedef std::recursive_mutex LLMutexImpl;
 typedef std::condition_variable_any LLConditionImpl;
 #else
 #error Mutex definition required.
+#endif
+
+#define MUTEX_DEBUG (LL_DEBUG || LL_RELEASE_WITH_DEBUG_INFO)
+
+#if MUTEX_DEBUG
+#include <map>
 #endif
 
 class LL_COMMON_API LLMutex : public LLMutexImpl
@@ -56,26 +62,28 @@ public:
 
 	void lock();	// blocks
 
-	void unlock();
+	void unlock();		// undefined behavior when called on mutex not being held
+	
+	bool try_lock();		// non-blocking, returns true if lock held.
 
-	// Returns true if lock was obtained successfully.
-	bool try_lock();
-
-	// Returns true if locked not by this thread
-	bool isLocked();
+	bool isLocked(); 	// non-blocking, but does do a lock/unlock so not free
 
 	// Returns true if locked by this thread.
 	bool isSelfLocked() const;
 
 private:
-	mutable boost::thread::id mLockingThread;
+	mutable boost::thread::id			mLockingThread;
+	
+#if MUTEX_DEBUG
+	std::map<uintptr_t, BOOL> mIsLocked;
+#endif
 };
 
 // Actually a condition/mutex pair (since each condition needs to be associated with a mutex).
 class LL_COMMON_API LLCondition : public LLConditionImpl, public LLMutex
 {
 public:
-	LLCondition() : LLMutex(), LLConditionImpl() {}
+	LLCondition() : LLConditionImpl(), LLMutex() {}
 	~LLCondition() {}
 
 	void wait() { LLConditionImpl::wait(*this); }

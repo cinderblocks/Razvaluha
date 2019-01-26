@@ -2,55 +2,47 @@
  * @file llcallingcard.h
  * @brief Definition of the LLPreviewCallingCard class
  *
- * $LicenseInfo:firstyear=2002&license=viewergpl$
- * 
- * Copyright (c) 2002-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2002&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
 #ifndef LL_LLCALLINGCARD_H
 #define LL_LLCALLINGCARD_H
 
-#include <map>
-#include <set>
-#include <string>
-#include <vector>
+#include "llsingleton.h"
 #include "lluserrelations.h"
 #include "lluuid.h"
 #include "v3dmath.h"
 
-//class LLInventoryModel;
-//class LLInventoryObserver;
 class LLMessageSystem;
 class LLTrackingData;
+
+struct LLDictionaryLess;
+
 class LLFriendObserver
 {
 public:
 	// This enumeration is a way to refer to what changed in a more
 	// human readable format. You can mask the value provided by
-	// chaged() to see if the observer is interested in the change.
+	// changed() to see if the observer is interested in the change.
 	enum 
 	{
 		NONE = 0,
@@ -82,30 +74,30 @@ public:
 };
 	
 
-class LLAvatarTracker
+class LLAvatarTracker : public LLSingleton<LLAvatarTracker>
 {
+	LLSINGLETON(LLAvatarTracker);
+	~LLAvatarTracker();
 public:
-	static LLAvatarTracker& instance() { return sInstance; }
-	
 	void track(const LLUUID& avatar_id, const std::string& name);
 	void untrack(const LLUUID& avatar_id);
-	bool isTrackedAgentValid() { return mTrackedAgentValid; }
+	bool isTrackedAgentValid() const { return mTrackedAgentValid; }
 	void setTrackedAgentValid(bool valid) { mTrackedAgentValid = valid; }
-	void findAgent();
+	void findAgent() const;
 
 	// coarse update information
 	void setTrackedCoarseLocation(const LLVector3d& global_pos);
 
 	// dealing with the tracked agent location
-	bool haveTrackingInfo();
-	void getDegreesAndDist(F32& rot, F64& horiz_dist, F64& vert_dist);
-	LLVector3d getGlobalPos();
+	bool haveTrackingInfo() const;
+	void getDegreesAndDist(F32& rot, F64& horiz_dist, F64& vert_dist) const;
+	LLVector3d getGlobalPos() const;
 
 	// Get the name passed in, returns null string if uninitialized.
-	const std::string& getName();
+	const std::string& getName() const;
 
 	// Get the avatar being tracked, returns LLUUID::null if uninitialized
-	const LLUUID& getAvatarID();
+	const LLUUID& getAvatarID() const;
 
 	// Deal with inventory
 	//void observe(LLInventoryModel* model);
@@ -148,6 +140,7 @@ public:
 	// observers left behind.
 	void addObserver(LLFriendObserver* observer);
 	void removeObserver(LLFriendObserver* observer);
+	void idleNotifyObservers();
 	void notifyObservers();
 
 	// Observers interested in updates of a particular avatar.
@@ -165,13 +158,13 @@ public:
 	 */
 	void addChangedMask(U32 mask, const LLUUID& referent);
 
-	const std::set<LLUUID>& getChangedIDs() { return mChangedBuddyIDs; }
+	const std::set<LLUUID>& getChangedIDs() const { return mChangedBuddyIDs; }
 
 	// Apply the functor to every buddy. Do not actually modify the
 	// buddy list in the functor or bad things will happen.
 	void applyFunctor(LLRelationshipFunctor& f);
 
-	static void formFriendship(const LLUUID& friend_id);
+	void formFriendship(const LLUUID& friend_id);
 
 	void updateFriends();
 	
@@ -192,12 +185,9 @@ protected:
 	void processChange(LLMessageSystem* msg);
 
 protected:
-	static LLAvatarTracker sInstance;
 	LLTrackingData* mTrackingData;
 	bool mTrackedAgentValid;
 	U32 mModifyMask;
-	//LLInventoryModel* mInventory;
-	//LLInventoryObserver* mInventoryObserver;
 
 	buddy_map_t mBuddyInfo;
 
@@ -212,14 +202,7 @@ protected:
     observer_map_t mParticularFriendObserverMap;
 
 private:
-	// do not implement
-	LLAvatarTracker(const LLAvatarTracker&);
-	bool operator==(const LLAvatarTracker&);
-
-public:
-	// don't you dare create or delete this object
-	LLAvatarTracker();
-	~LLAvatarTracker();
+	BOOL mIsNotifyObservers;
 };
 
 // collect set of LLUUIDs we're a proxy for
@@ -228,7 +211,7 @@ class LLCollectProxyBuddies : public LLRelationshipFunctor
 public:
 	LLCollectProxyBuddies() {}
 	virtual ~LLCollectProxyBuddies() {}
-	virtual bool operator()(const LLUUID& buddy_id, LLRelationship* buddy);
+	bool operator()(const LLUUID& buddy_id, LLRelationship* buddy) override;
 	typedef std::set<LLUUID> buddy_list_t;
 	buddy_list_t mProxy;
 };
@@ -239,7 +222,7 @@ class LLCollectMappableBuddies : public LLRelationshipFunctor
 public:
 	LLCollectMappableBuddies() {}
 	virtual ~LLCollectMappableBuddies() {}
-	virtual bool operator()(const LLUUID& buddy_id, LLRelationship* buddy);
+	bool operator()(const LLUUID& buddy_id, LLRelationship* buddy) override;
 	typedef std::map<std::string, LLUUID, LLDictionaryLess> buddy_map_t;
 	buddy_map_t mMappable;
 	std::string mFullName;
@@ -251,7 +234,7 @@ class LLCollectOnlineBuddies : public LLRelationshipFunctor
 public:
 	LLCollectOnlineBuddies() {}
 	virtual ~LLCollectOnlineBuddies() {}
-	virtual bool operator()(const LLUUID& buddy_id, LLRelationship* buddy);
+	bool operator()(const LLUUID& buddy_id, LLRelationship* buddy) override;
 	typedef std::map<std::string, LLUUID, LLDictionaryLess> buddy_map_t;
 	buddy_map_t mOnline;
 	std::string mFullName;
@@ -264,7 +247,7 @@ class LLCollectAllBuddies : public LLRelationshipFunctor
 public:
 	LLCollectAllBuddies() {}
 	virtual ~LLCollectAllBuddies() {}
-	virtual bool operator()(const LLUUID& buddy_id, LLRelationship* buddy);
+	bool operator()(const LLUUID& buddy_id, LLRelationship* buddy) override;
 	typedef std::map<std::string, LLUUID, LLDictionaryLess> buddy_map_t;
 	buddy_map_t mOnline;
 	buddy_map_t mOffline;

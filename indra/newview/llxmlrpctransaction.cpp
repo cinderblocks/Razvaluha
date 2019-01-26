@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llxmlrpctransaction.cpp
  * @brief LLXMLRPCTransaction and related class implementations 
@@ -48,13 +50,6 @@
 #include "llappviewer.h"
 #include "lltrans.h"
 
-#include "boost/move/unique_ptr.hpp"
-
-namespace boost
-{
-	using ::boost::movelib::unique_ptr; // move unique_ptr into the boost namespace.
-}
-
 // Static instance of LLXMLRPCListener declared here so that every time we
 // bring in this code, we instantiate a listener. If we put the static
 // instance of LLXMLRPCListener into llxmlrpclistener.cpp, the linker would
@@ -89,17 +84,17 @@ LLXMLRPCValue LLXMLRPCValue::next()
 
 bool LLXMLRPCValue::isValid() const
 {
-	return mV != NULL;
+	return mV != nullptr;
 }
 
 LLXMLRPCValue LLXMLRPCValue::createArray()
 {
-	return LLXMLRPCValue(XMLRPC_CreateVector(NULL, xmlrpc_vector_array));
+	return LLXMLRPCValue(XMLRPC_CreateVector(nullptr, xmlrpc_vector_array));
 }
 
 LLXMLRPCValue LLXMLRPCValue::createStruct()
 {
-	return LLXMLRPCValue(XMLRPC_CreateVector(NULL, xmlrpc_vector_struct));
+	return LLXMLRPCValue(XMLRPC_CreateVector(nullptr, xmlrpc_vector_struct));
 }
 
 
@@ -110,22 +105,22 @@ void LLXMLRPCValue::append(LLXMLRPCValue& v)
 
 void LLXMLRPCValue::appendString(const std::string& v)
 {
-	XMLRPC_AddValueToVector(mV, XMLRPC_CreateValueString(NULL, v.c_str(), 0));
+	XMLRPC_AddValueToVector(mV, XMLRPC_CreateValueString(nullptr, v.c_str(), 0));
 }
 
 void LLXMLRPCValue::appendInt(int v)
 {
-	XMLRPC_AddValueToVector(mV, XMLRPC_CreateValueInt(NULL, v));
+	XMLRPC_AddValueToVector(mV, XMLRPC_CreateValueInt(nullptr, v));
 }
 
 void LLXMLRPCValue::appendBool(bool v)
 {
-	XMLRPC_AddValueToVector(mV, XMLRPC_CreateValueBoolean(NULL, v));
+	XMLRPC_AddValueToVector(mV, XMLRPC_CreateValueBoolean(nullptr, v));
 }
 
 void LLXMLRPCValue::appendDouble(double v)
 {
-	XMLRPC_AddValueToVector(mV, XMLRPC_CreateValueDouble(NULL, v));
+	XMLRPC_AddValueToVector(mV, XMLRPC_CreateValueDouble(nullptr, v));
 }
 
 
@@ -158,7 +153,7 @@ void LLXMLRPCValue::appendDouble(const char* id, double v)
 void LLXMLRPCValue::cleanup()
 {
 	XMLRPC_CleanupValue(mV);
-	mV = NULL;
+	mV = nullptr;
 }
 
 XMLRPC_VALUE LLXMLRPCValue::getValue() const
@@ -173,7 +168,7 @@ public:
 	Handler(LLCore::HttpRequest::ptr_t &request, LLXMLRPCTransaction::Impl *impl);
 	virtual ~Handler();
 
-	virtual void onCompleted(LLCore::HttpHandle handle, LLCore::HttpResponse * response);
+	void onCompleted(LLCore::HttpHandle handle, LLCore::HttpResponse * response) override;
 
 	typedef boost::shared_ptr<LLXMLRPCTransaction::Handler> ptr_t;
 
@@ -206,9 +201,9 @@ public:
 	std::string			mResponseText;
 	XMLRPC_REQUEST		mResponse;
 	std::string         mCertStore;
-	LLPointer<LLCertificate> mErrorCert;
+	LLSD mErrorCertData;
 
-	Impl(const std::string& uri, XMLRPC_REQUEST request, bool useGzip);
+	Impl(const std::string& uri, XMLRPC_REQUEST request, bool useGzip, const LLSD& httpParams);
 	Impl(const std::string& uri,
 		const std::string& method, LLXMLRPCValue params, bool useGzip);
 	~Impl();
@@ -219,7 +214,7 @@ public:
 	void setHttpStatus(const LLCore::HttpStatus &status);
 
 private:
-	void init(XMLRPC_REQUEST request, bool useGzip);
+	void init(XMLRPC_REQUEST request, bool useGzip, const LLSD& httpParams);
 };
 
 LLXMLRPCTransaction::Handler::Handler(LLCore::HttpRequest::ptr_t &request, 
@@ -247,14 +242,8 @@ void LLXMLRPCTransaction::Handler::onCompleted(LLCore::HttpHandle handle,
 			// (a non cert error), then generate the error message as
 			// appropriate
 			mImpl->setHttpStatus(status);
-			LLCertificate *errordata = static_cast<LLCertificate *>(status.getErrorData());
-
-			if (errordata)
-			{
-				mImpl->mErrorCert = LLPointer<LLCertificate>(errordata);
-				status.setErrorData(NULL);
-				errordata->unref();
-			}
+			LLSD errordata = status.getErrorData();
+            mImpl->mErrorCertData = errordata;
 
 			LL_WARNS() << "LLXMLRPCTransaction error "
 				<< status.toHex() << ": " << status.toString() << LL_ENDL;
@@ -271,13 +260,20 @@ void LLXMLRPCTransaction::Handler::onCompleted(LLCore::HttpHandle handle,
 	// the contents of a buffer array are potentially noncontiguous, so we
 	// will need to copy them into an contiguous block of memory for XMLRPC.
 	LLCore::BufferArray *body = response->getBody();
-	char * bodydata = new char[body->size()];
+    if (!body)
+    {
+        mImpl->setStatus(LLXMLRPCTransaction::StatusXMLRPCError);
+        LL_WARNS() << "LLXMLRPCTransaction XMLRPC error:"
+            << "Response has no body! OpenSim grid admins screw the pooch again!" << LL_ENDL;
+        LL_WARNS() << "LLXMLRPCTransaction request URI: "
+            << mImpl->mURI << LL_ENDL;
+        return;
+    }
+	auto bodydata = std::make_unique<char[]>(body->size());
 
-	body->read(0, bodydata, body->size());
+	body->read(0, bodydata.get(), body->size());
 
-	mImpl->mResponse = XMLRPC_REQUEST_FromXML(bodydata, body->size(), 0);
-
-	delete[] bodydata;
+	mImpl->mResponse = XMLRPC_REQUEST_FromXML(bodydata.get(), body->size(), nullptr);
 
 	bool		hasError = false;
 	bool		hasFault = false;
@@ -315,13 +311,13 @@ void LLXMLRPCTransaction::Handler::onCompleted(LLCore::HttpHandle handle,
 //=========================================================================
 
 LLXMLRPCTransaction::Impl::Impl(const std::string& uri,
-		XMLRPC_REQUEST request, bool useGzip)
+		XMLRPC_REQUEST request, bool useGzip, const LLSD& httpParams)
 	: mHttpRequest(),
 	  mStatus(LLXMLRPCTransaction::StatusNotStarted),
 	  mURI(uri),
-	  mResponse(0)
+	  mResponse(nullptr)
 {
-	init(request, useGzip);
+	init(request, useGzip, httpParams);
 }
 
 
@@ -330,14 +326,14 @@ LLXMLRPCTransaction::Impl::Impl(const std::string& uri,
 	: mHttpRequest(),
 	  mStatus(LLXMLRPCTransaction::StatusNotStarted),
 	  mURI(uri),
-	  mResponse(0)
+	  mResponse(nullptr)
 {
 	XMLRPC_REQUEST request = XMLRPC_RequestNew();
 	XMLRPC_RequestSetMethodName(request, method.c_str());
 	XMLRPC_RequestSetRequestType(request, xmlrpc_request_call);
 	XMLRPC_RequestSetData(request, params.getValue());
 	
-	init(request, useGzip);
+	init(request, useGzip, LLSD());
     // DEV-28398: without this XMLRPC_RequestFree() call, it looks as though
     // the 'request' object is simply leaked. It's less clear to me whether we
     // should also ask to free request value data (second param 1), since the
@@ -345,7 +341,7 @@ LLXMLRPCTransaction::Impl::Impl(const std::string& uri,
     XMLRPC_RequestFree(request, 1);
 }
 
-void LLXMLRPCTransaction::Impl::init(XMLRPC_REQUEST request, bool useGzip)
+void LLXMLRPCTransaction::Impl::init(XMLRPC_REQUEST request, bool useGzip, const LLSD& httpParams)
 {
 	LLCore::HttpOptions::ptr_t httpOpts;
 	LLCore::HttpHeaders::ptr_t httpHeaders;
@@ -353,22 +349,29 @@ void LLXMLRPCTransaction::Impl::init(XMLRPC_REQUEST request, bool useGzip)
 
 	if (!mHttpRequest)
 	{
-		mHttpRequest = LLCore::HttpRequest::ptr_t(new LLCore::HttpRequest);
+		mHttpRequest = boost::make_shared<LLCore::HttpRequest>();
 	}
 
 	// LLRefCounted starts with a 1 ref, so don't add a ref in the smart pointer
-	httpOpts = LLCore::HttpOptions::ptr_t(new LLCore::HttpOptions()); 
+	httpOpts = boost::make_shared<LLCore::HttpOptions>(); 
 
-	httpOpts->setTimeout(40L);
+	httpOpts->setMinBackoff(5E6L);
+	httpOpts->setMaxBackoff(20E6L);
+
+	httpOpts->setTimeout(httpParams.has("timeout") ? httpParams["timeout"].asInteger() : 40L);
+	if (httpParams.has("retries"))
+	{
+		httpOpts->setRetries(httpParams["retries"].asInteger());
+	}
 
 	bool vefifySSLCert = !gSavedSettings.getBOOL("NoVerifySSLCert");
 	mCertStore = gSavedSettings.getString("CertStore");
 
 	httpOpts->setSSLVerifyPeer( vefifySSLCert );
-	httpOpts->setSSLVerifyHost( vefifySSLCert ? 2 : 0);
+	httpOpts->setSSLVerifyHost(vefifySSLCert);
 
 	// LLRefCounted starts with a 1 ref, so don't add a ref in the smart pointer
-	httpHeaders = LLCore::HttpHeaders::ptr_t(new LLCore::HttpHeaders());
+	httpHeaders = boost::make_shared<LLCore::HttpHeaders>();
 
 	httpHeaders->append(HTTP_OUT_HEADER_CONTENT_TYPE, HTTP_CONTENT_TEXT_XML);
 
@@ -387,7 +390,7 @@ void LLXMLRPCTransaction::Impl::init(XMLRPC_REQUEST request, bool useGzip)
 	
 	XMLRPC_Free(requestText);
 
-	mHandler = LLXMLRPCTransaction::Handler::ptr_t(new Handler( mHttpRequest, this ));
+	mHandler = boost::make_shared<Handler>(mHttpRequest, this);
 
 	mPostH = mHttpRequest->requestPost(LLCore::HttpRequest::DEFAULT_POLICY_ID, 0, 
 		mURI, body.get(), httpOpts, httpHeaders, mHandler);
@@ -532,8 +535,8 @@ void LLXMLRPCTransaction::Impl::setHttpStatus(const LLCore::HttpStatus &status)
 
 
 LLXMLRPCTransaction::LLXMLRPCTransaction(
-	const std::string& uri, XMLRPC_REQUEST request, bool useGzip)
-: impl(* new Impl(uri, request, useGzip))
+	const std::string& uri, XMLRPC_REQUEST request, bool useGzip, const LLSD& httpParams)
+: impl(* new Impl(uri, request, useGzip, httpParams))
 { }
 
 
@@ -571,9 +574,9 @@ std::string LLXMLRPCTransaction::statusMessage()
 	return impl.mStatusMessage;
 }
 
-LLPointer<LLCertificate> LLXMLRPCTransaction::getErrorCert()
+LLSD LLXMLRPCTransaction::getErrorCertData()
 {
-	return impl.mErrorCert;
+	return impl.mErrorCertData;
 }
 
 std::string LLXMLRPCTransaction::statusURI()
@@ -604,7 +607,7 @@ F64 LLXMLRPCTransaction::transferRate()
 	LL_INFOS("AppInit") << "Buffer size:   " << impl.mResponseText.size() << " B" << LL_ENDL;
 	LL_DEBUGS("AppInit") << "Transfer size: " << impl.mTransferStats->mSizeDownload << " B" << LL_ENDL;
 	LL_DEBUGS("AppInit") << "Transfer time: " << impl.mTransferStats->mTotalTime << " s" << LL_ENDL;
-	LL_INFOS("AppInit") << "Transfer rate: " << rate_bits_per_sec / 1000.0 << " Kb/s" << LL_ENDL;
+	LL_INFOS("AppInit") << "Transfer rate: " << rate_bits_per_sec / 1024.0 << " Kb/s" << LL_ENDL;
 
 	return rate_bits_per_sec;
 }

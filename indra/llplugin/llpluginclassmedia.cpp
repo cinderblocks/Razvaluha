@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llpluginclassmedia.cpp
  * @brief LLPluginClassMedia handles a plugin which knows about the "media" message class.
@@ -73,6 +75,7 @@ bool LLPluginClassMedia::init(const std::string &launcher_filename, const std::s
 	// Queue up the media init message -- it will be sent after all the currently queued messages.
 	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "init");
 	message.setValue("target", mTarget);
+	message.setValueReal("factor", mZoomFactor);
 	sendMessage(message);
 
 	mPlugin->init(launcher_filename, plugin_dir, plugin_filename, debug);
@@ -116,7 +119,7 @@ void LLPluginClassMedia::reset()
 	mMediaHeight = 0;
 	mDirtyRect = LLRect::null;
 	mAutoScaleMedia = false;
-	mRequestedVolume = 1.0f;
+	mRequestedVolume = 0.0f;
 	mPriority = PRIORITY_NORMAL;
 	mLowPrioritySizeLimit = LOW_PRIORITY_TEXTURE_SIZE_DEFAULT;
 	mAllowDownsample = false;
@@ -162,7 +165,7 @@ void LLPluginClassMedia::idle(void)
 		mPlugin->idle();
 	}
 
-	if((mMediaWidth == -1) || (!mTextureParamsReceived) || (mPlugin == NULL) || (mPlugin->isBlocked()) || (mOwner == NULL))
+	if((mMediaWidth == -1) || (!mTextureParamsReceived) || (mPlugin == nullptr) || (mPlugin->isBlocked()) || (mOwner == nullptr))
 	{
 		// Can't process a size change at this time
 	}
@@ -223,7 +226,14 @@ void LLPluginClassMedia::idle(void)
 				void *addr = mPlugin->getSharedMemoryAddress(mTextureSharedMemoryName);
 
 				// clear texture memory to avoid random screen visual fuzz from uninitialized texture data
-				memset( addr, 0x00, newsize );
+				if (addr)
+				{
+					memset( addr, 0x00, newsize );
+				}
+				else
+				{
+					LL_WARNS("Plugin") << "Failed to get previously created shared memory address: " << mTextureSharedMemoryName << " size: " << mTextureSharedMemorySize << LL_ENDL;
+				}
 
 				// We could do this to force an update, but textureValid() will still be returning false until the first roundtrip to the plugin,
 				// so it may not be worthwhile.
@@ -282,8 +292,8 @@ int LLPluginClassMedia::getTextureHeight() const
 
 unsigned char* LLPluginClassMedia::getBitsData()
 {
-	unsigned char *result = NULL;
-	if((mPlugin != NULL) && !mTextureSharedMemoryName.empty())
+	unsigned char *result = nullptr;
+	if((mPlugin != nullptr) && !mTextureSharedMemoryName.empty())
 	{
 		result = (unsigned char*)mPlugin->getSharedMemoryAddress(mTextureSharedMemoryName);
 	}
@@ -353,12 +363,6 @@ void LLPluginClassMedia::setSizeInternal(void)
 		mRequestedMediaWidth = nextPowerOf2(mRequestedMediaWidth);
 		mRequestedMediaHeight = nextPowerOf2(mRequestedMediaHeight);
 	}
-
-	if(mRequestedMediaWidth > 2048)
-		mRequestedMediaWidth = 2048;
-
-	if(mRequestedMediaHeight > 2048)
-		mRequestedMediaHeight = 2048;
 }
 
 void LLPluginClassMedia::setAutoScale(bool auto_scale)
@@ -380,7 +384,7 @@ bool LLPluginClassMedia::textureValid(void)
 		mMediaHeight <= 0 ||
 		mRequestedMediaWidth != mMediaWidth ||
 		mRequestedMediaHeight != mMediaHeight ||
-		getBitsData() == NULL
+		getBitsData() == nullptr
 	)
 		return false;
 
@@ -391,7 +395,7 @@ bool LLPluginClassMedia::getDirty(LLRect *dirty_rect)
 {
 	bool result = !mDirtyRect.isEmpty();
 
-	if(dirty_rect != NULL)
+	if(dirty_rect != nullptr)
 	{
 		*dirty_rect = mDirtyRect;
 	}
@@ -784,15 +788,22 @@ F64 LLPluginClassMedia::getCPUUsage()
 	return result;
 }
 
-void LLPluginClassMedia::sendPickFileResponse(const std::string &file)
+void LLPluginClassMedia::sendPickFileResponse(const std::vector<std::string> files)
 {
 	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "pick_file_response");
-	message.setValue("file", file);
 	if(mPlugin && mPlugin->isBlocked())
 	{
 		// If the plugin sent a blocking pick-file request, the response should unblock it.
 		message.setValueBoolean("blocking_response", true);
 	}
+
+	LLSD file_list = LLSD::emptyArray();
+	for (std::vector<std::string>::const_iterator in_iter = files.begin(); in_iter != files.end(); ++in_iter)
+	{
+		file_list.append(LLSD::String(*in_iter));
+	}
+	message.setValueLLSD("file_list", file_list);
+
 	sendMessage(message);
 }
 
@@ -1028,7 +1039,6 @@ void LLPluginClassMedia::receivePluginMessage(const LLPluginMessage &message)
 		{
 			S32 width = message.getValueS32("width");
 			S32 height = message.getValueS32("height");
-			std::string name = message.getValue("name");
 
 			// TODO: check that name matches?
 			mNaturalMediaWidth = width;
@@ -1038,10 +1048,7 @@ void LLPluginClassMedia::receivePluginMessage(const LLPluginMessage &message)
 		}
 		else if(message_name == "size_change_response")
 		{
-			std::string name = message.getValue("name");
-
 			// TODO: check that name matches?
-
 			mTextureWidth = message.getValueS32("texture_width");
 			mTextureHeight = message.getValueS32("texture_height");
 			mMediaWidth = message.getValueS32("width");
@@ -1083,6 +1090,7 @@ void LLPluginClassMedia::receivePluginMessage(const LLPluginMessage &message)
 		}
 		else if(message_name == "pick_file")
 		{
+			mIsMultipleFilePick = message.getValueBoolean("multiple_files");
 			mediaEvent(LLPluginClassMediaOwner::MEDIA_EVENT_PICK_FILE_REQUEST);
 		}
 		else if(message_name == "auth_request")
@@ -1144,7 +1152,12 @@ void LLPluginClassMedia::receivePluginMessage(const LLPluginMessage &message)
 		{
 			mClickURL = message.getValue("uri");
 			mClickTarget = message.getValue("target");
-			mClickUUID = message.getValue("uuid");
+
+			// need a link to have a UUID that identifies it to a system further
+			// upstream - plugin could make it but we have access to LLUUID here
+			// so why don't we use it
+			mClickUUID = LLUUID::generateNewID().asString();
+
 			mediaEvent(LLPluginClassMediaOwner::MEDIA_EVENT_CLICK_LINK_HREF);
 		}
 		else if(message_name == "click_nofollow")
@@ -1260,7 +1273,7 @@ void LLPluginClassMedia::focus(bool focused)
 	sendMessage(message);
 }
 
-void LLPluginClassMedia::set_page_zoom_factor( double factor )
+void LLPluginClassMedia::set_page_zoom_factor( F64 factor )
 {
 	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER, "set_page_zoom_factor");
 

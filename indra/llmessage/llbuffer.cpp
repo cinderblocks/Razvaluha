@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llbuffer.cpp
  * @author Phoenix
@@ -32,23 +34,24 @@
 #include "llmath.h"
 #include "llstl.h"
 #include "llthread.h"
+#include <iterator>
 
-#define ASSERT_LLBUFFERARRAY_MUTEX_LOCKED llassert(!mMutexp || mMutexp->isSelfLocked());
+#define ASSERT_LLBUFFERARRAY_MUTEX_LOCKED() llassert(!mMutexp || mMutexp->isSelfLocked())
 
 /** 
  * LLSegment
  */
 LLSegment::LLSegment() :
-	mChannel(0),
-	mData(NULL),
-	mSize(0)
+	mData(nullptr),
+	mSize(0),
+	mChannel(0)
 {
 }
 
 LLSegment::LLSegment(S32 channel, U8* data, S32 data_len) :
-	mChannel(channel),
 	mData(data),
-	mSize(data_len)
+	mSize(data_len),
+	mChannel(channel)
 {
 }
 
@@ -95,9 +98,9 @@ bool LLSegment::operator==(const LLSegment& rhs) const
  * LLHeapBuffer
  */
 LLHeapBuffer::LLHeapBuffer() :
-	mBuffer(NULL),
+	mBuffer(nullptr),
 	mSize(0),
-	mNextFree(NULL),
+	mNextFree(nullptr),
 	mReclaimedBytes(0)
 {
 	const S32 DEFAULT_HEAP_BUFFER_SIZE = 16384;
@@ -105,18 +108,18 @@ LLHeapBuffer::LLHeapBuffer() :
 }
 
 LLHeapBuffer::LLHeapBuffer(S32 size) :
-	mBuffer(NULL),
+	mBuffer(nullptr),
 	mSize(0),
-	mNextFree(NULL),
+	mNextFree(nullptr),
 	mReclaimedBytes(0)
 {
 	allocate(size);
 }
 
 LLHeapBuffer::LLHeapBuffer(const U8* src, S32 len) :
-	mBuffer(NULL),
+	mBuffer(nullptr),
 	mSize(0),
-	mNextFree(NULL),
+	mNextFree(nullptr),
 	mReclaimedBytes(0)
 {
 	if((len > 0) && src)
@@ -133,9 +136,9 @@ LLHeapBuffer::LLHeapBuffer(const U8* src, S32 len) :
 LLHeapBuffer::~LLHeapBuffer()
 {
 	delete[] mBuffer;
-	mBuffer = NULL;
+	mBuffer = nullptr;
 	mSize = 0;
-	mNextFree = NULL;
+	mNextFree = nullptr;
 }
 
 S32 LLHeapBuffer::bytesLeft() const
@@ -203,12 +206,15 @@ bool LLHeapBuffer::containsSegment(const LLSegment& segment) const
 
 void LLHeapBuffer::allocate(S32 size)
 {
-	mReclaimedBytes = 0;	
-	mBuffer = new U8[size];
-	if(mBuffer)
+	mReclaimedBytes = 0;
+	try
 	{
+		mBuffer = new U8[size];
 		mSize = size;
 		mNextFree = mBuffer;
+	}
+	catch (...)
+	{
 	}
 }
 
@@ -218,14 +224,14 @@ void LLHeapBuffer::allocate(S32 size)
  */
 LLBufferArray::LLBufferArray() :
 	mNextBaseChannel(0),
-	mMutexp(NULL)
+	mMutexp(nullptr)
 {
 }
 
 LLBufferArray::~LLBufferArray()
 {
 	std::for_each(mBuffers.begin(), mBuffers.end(), DeletePointer());
-
+	mBuffers.clear();
 	delete mMutexp;
 }
 
@@ -272,7 +278,7 @@ void LLBufferArray::setThreaded(bool threaded)
 		if(mMutexp)
 		{
 			delete mMutexp ;
-			mMutexp = NULL ;
+			mMutexp = nullptr ;
 		}
 	}
 }
@@ -286,7 +292,7 @@ LLChannelDescriptors LLBufferArray::nextChannel()
 //mMutexp should be locked before calling this.
 S32 LLBufferArray::capacity() const
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 
 	S32 total = 0;
 	const_buffer_iterator_t iter = mBuffers.begin();
@@ -314,7 +320,7 @@ bool LLBufferArray::append(S32 channel, const U8* src, S32 len)
 //mMutexp should be locked before calling this.
 bool LLBufferArray::prepend(S32 channel, const U8* src, S32 len)
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 
 	std::vector<LLSegment> segments;
 	if(copyIntoBuffers(channel, src, len, segments))
@@ -349,7 +355,7 @@ bool LLBufferArray::insertAfter(
 //mMutexp should be locked before calling this.
 LLBufferArray::segment_iterator_t LLBufferArray::splitAfter(U8* address)
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 
 	segment_iterator_t end = mSegments.end();
 	segment_iterator_t it = getSegment(address);
@@ -381,28 +387,28 @@ LLBufferArray::segment_iterator_t LLBufferArray::splitAfter(U8* address)
 //mMutexp should be locked before calling this.
 LLBufferArray::const_segment_iterator_t LLBufferArray::beginSegment() const
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 	return mSegments.begin();
 }
 
 //mMutexp should be locked before calling this.
 LLBufferArray::segment_iterator_t LLBufferArray::beginSegment()
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 	return mSegments.begin();
 }
 
 //mMutexp should be locked before calling this.
 LLBufferArray::const_segment_iterator_t LLBufferArray::endSegment() const
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 	return mSegments.end();
 }
 
 //mMutexp should be locked before calling this.
 LLBufferArray::segment_iterator_t LLBufferArray::endSegment()
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 	return mSegments.end();
 }
 
@@ -411,7 +417,7 @@ LLBufferArray::segment_iterator_t LLBufferArray::constructSegmentAfter(
 	U8* address,
 	LLSegment& segment)
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 	segment_iterator_t rv = mSegments.begin();
 	segment_iterator_t end = mSegments.end();
 	if(!address)
@@ -460,7 +466,7 @@ LLBufferArray::segment_iterator_t LLBufferArray::constructSegmentAfter(
 //mMutexp should be locked before calling this.
 LLBufferArray::segment_iterator_t LLBufferArray::getSegment(U8* address)
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 	segment_iterator_t end = mSegments.end();
 	if(!address)
 	{
@@ -482,7 +488,7 @@ LLBufferArray::segment_iterator_t LLBufferArray::getSegment(U8* address)
 LLBufferArray::const_segment_iterator_t LLBufferArray::getSegment(
 	U8* address) const
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 	const_segment_iterator_t end = mSegments.end();
 	if(!address)
 	{
@@ -634,13 +640,12 @@ U8* LLBufferArray::readAfter(
 
 void LLBufferArray::writeChannelTo(std::ostream& ostr, S32 channel) const
 {
-	LLMutexLock lock(mMutexp) ;
-	const_segment_iterator_t const end = mSegments.end();
-	for (const_segment_iterator_t it = mSegments.begin(); it != end; ++it)
+	LLMutexLock lock(mMutexp);
+	for (const auto& seg : mSegments)
 	{
-		if (it->isOnChannel(channel))
+		if (seg.isOnChannel(channel))
 		{
-			ostr.write((char*)it->data(), it->size());
+			ostr.write((char*)seg.data(), seg.size());
 		}
 	}
 }
@@ -650,7 +655,7 @@ U8* LLBufferArray::seek(
 	U8* start,
 	S32 delta) const
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 	const_segment_iterator_t it;
 	const_segment_iterator_t end = mSegments.end();
 	U8* rv = start;
@@ -680,7 +685,7 @@ U8* LLBufferArray::seek(
 			it = getSegment(start);
 			if((it == end) || !(*it).isOnChannel(channel))
 			{
-				rv = NULL;
+				rv = nullptr;
 			}
 		}
 		else
@@ -725,7 +730,7 @@ U8* LLBufferArray::seek(
 	{
 		// start is NULL, and delta indicates seeking backwards -
 		// return NULL.
-		return NULL;
+		return nullptr;
 	}
 	else
 	{
@@ -754,7 +759,7 @@ U8* LLBufferArray::seek(
 		if(delta && (it == end))
 		{
 			// Whoops - sought past end.
-			rv = NULL;
+			rv = nullptr;
 		}
 	}
 	else //if(delta < 0)
@@ -785,7 +790,7 @@ U8* LLBufferArray::seek(
 		if(delta && (rit == rend))
 		{
 			// sought past the beginning.
-			rv = NULL;
+			rv = nullptr;
 		}
 	}
 	return rv;
@@ -818,7 +823,7 @@ LLBufferArray::segment_iterator_t LLBufferArray::makeSegment(
 	S32 channel,
 	S32 len)
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 
 	// start at the end of the buffers, because it is the most likely
 	// to have free space.
@@ -857,7 +862,7 @@ LLBufferArray::segment_iterator_t LLBufferArray::makeSegment(
 //mMutexp should be locked before calling this.
 bool LLBufferArray::eraseSegment(const segment_iterator_t& erase_iter)
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 
 	// Find out which buffer contains the segment, and if it is found,
 	// ask it to reclaim the memory.
@@ -889,7 +894,7 @@ bool LLBufferArray::copyIntoBuffers(
 	S32 len,
 	std::vector<LLSegment>& segments)
 {
-	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED
+	ASSERT_LLBUFFERARRAY_MUTEX_LOCKED();
 	if(!src || !len) return false;
 	S32 copied = 0;
 	LLSegment segment;

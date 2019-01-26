@@ -46,6 +46,7 @@ class LLFloaterIMPanel;
 
 class LLIMMgr : public LLSingleton<LLIMMgr>
 {
+	LLSINGLETON(LLIMMgr);
 public:
 	enum EInvitationType
 	{
@@ -54,7 +55,6 @@ public:
 		INVITATION_TYPE_IMMEDIATE = 2
 	};
 
-	LLIMMgr();
 	virtual ~LLIMMgr();
 
 	// Add a message to a session. The session can keyed to sesion id

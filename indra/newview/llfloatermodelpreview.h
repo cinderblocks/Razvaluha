@@ -27,6 +27,7 @@
 #ifndef LL_LLFLOATERMODELPREVIEW_H
 #define LL_LLFLOATERMODELPREVIEW_H
 
+#include "llfloaternamedesc.h"
 
 #include "lldynamictexture.h"
 #include "llquaternion.h"
@@ -66,8 +67,8 @@ public:
 		LLPointer<LLModel> mModel;
 
 		DecompRequest(const std::string& stage, LLModel* mdl);
-		virtual S32 statusCallback(const char* status, S32 p1, S32 p2);
-		virtual void completed();
+		S32 statusCallback(const char* status, S32 p1, S32 p2) override;
+		void completed() override;
 
 	};
 	static LLFloaterModelPreview* sInstance;
@@ -75,22 +76,23 @@ public:
 	LLFloaterModelPreview(const std::string& name);
 	virtual ~LLFloaterModelPreview();
 
-	virtual BOOL postBuild();
+	BOOL postBuild() override;
 
 	void initModelPreview();
 
-	BOOL handleMouseDown(S32 x, S32 y, MASK mask);
-	BOOL handleMouseUp(S32 x, S32 y, MASK mask);
-	BOOL handleHover(S32 x, S32 y, MASK mask);
-	BOOL handleScrollWheel(S32 x, S32 y, S32 clicks); 
+	BOOL handleMouseDown(S32 x, S32 y, MASK mask) override;
+	BOOL handleMouseUp(S32 x, S32 y, MASK mask) override;
+	BOOL handleHover(S32 x, S32 y, MASK mask) override;
+	BOOL handleScrollWheel(S32 x, S32 y, S32 clicks) override; 
 
-	/*virtual*/ void onOpen();
-	/*virtual*/ void onClose(bool app_quitting);
+	/*virtual*/ void onOpen(/*const LLSD& key*/) override;
+	/*virtual*/ void onClose(bool app_quitting) override;
 
 	static void onMouseCaptureLostModelPreview(LLMouseHandler*);
 	static void setUploadAmount(S32 amount) { sUploadAmount = amount; }
 
 	void setDetails(F32 x, F32 y, F32 z, F32 streaming_cost, F32 physics_cost);
+	void setPreviewLOD(S32 lod);
 
 	void onBrowseLOD(S32 lod);
 
@@ -98,7 +100,7 @@ public:
 
 	static void onUpload(void* data);
 
-	void refresh();
+	void refresh() override;
 
 	void			loadModel(S32 lod);
 	void 			loadModel(S32 lod, const std::string& file_name, bool force_disable_slm = false);
@@ -110,24 +112,27 @@ public:
 	void enableViewOption(const std::string& option);
 	void disableViewOption(const std::string& option);
 
+	bool isModelLoading();
+
 	// shows warning message if agent has no permissions to upload model
-	/*virtual*/ void onPermissionsReceived(const LLSD& result);
+	/*virtual*/ void onPermissionsReceived(const LLSD& result) override;
 
 	// called when error occurs during permissions request
-	/*virtual*/ void setPermissonsErrorStatus(S32 status, const std::string& reason);
+	/*virtual*/ void setPermissonsErrorStatus(S32 status, const std::string& reason) override;
 
-	/*virtual*/ void onModelPhysicsFeeReceived(const LLSD& result, std::string upload_url);
+	/*virtual*/ void onModelPhysicsFeeReceived(const LLSD& result, std::string upload_url) override;
 				void handleModelPhysicsFeeReceived();
-	/*virtual*/ void setModelPhysicsFeeErrorStatus(S32 status, const std::string& reason);
+	/*virtual*/ void setModelPhysicsFeeErrorStatus(S32 status, const std::string& reason) override;
 
-	/*virtual*/ void onModelUploadSuccess();
+	/*virtual*/ void onModelUploadSuccess() override;
 
-	/*virtual*/ void onModelUploadFailure();
+	/*virtual*/ void onModelUploadFailure() override;
 
 	bool isModelUploadAllowed();
 
 protected:
 	friend class LLModelPreview;
+	friend class LLMeshFilePicker;
 	friend class LLPhysicsDecomp;
 
 	static void		onImportScaleCommit(LLUICtrl*, void*);
@@ -139,7 +144,7 @@ protected:
 
 	static void		onGenerateNormalsCommit(LLUICtrl*,void*);
 
-	void toggleGenerateNormals();
+	void toggleGenarateNormals();
 
 	static void		onAutoFillCommit(LLUICtrl*,void*);
 
@@ -158,7 +163,7 @@ protected:
 	static void onPhysicsDecomposeBack(LLUICtrl* ctrl, void* userdata);
 	static void onPhysicsSimplifyBack(LLUICtrl* ctrl, void* userdata);
 
-	void		draw();
+	void			draw() override;
 
 	void initDecompControls();
 
@@ -207,6 +212,18 @@ private:
 	LLButton* mCalculateBtn;
 };
 
+class LLMeshFilePicker : public LLFilePickerThread
+{
+public:
+	LLMeshFilePicker(LLModelPreview* mp, S32 lod);
+	void notify(const std::string& filename) override;
+
+private:
+	LLModelPreview* mMP;
+	S32 mLOD;
+};
+
+
 class LLModelPreview : public LLViewerDynamicTexture, public LLMutex
 {
 	typedef boost::signals2::signal<void (F32 x, F32 y, F32 z, F32 streaming_cost, F32 physics_cost)> details_signal_t;
@@ -226,22 +243,12 @@ public:
 	LLModelPreview(S32 width, S32 height, LLFloater* fmp);
 	virtual ~LLModelPreview();
 
-	void* operator new(size_t size)
-	{
-		return ll_aligned_malloc_16(size);
-	}
-
-	void operator delete(void* ptr)
-	{
-		ll_aligned_free_16(ptr);
-	}
-
 	void resetPreviewTarget();
 	void setPreviewTarget(F32 distance);
 	void setTexture(U32 name) { mTextureName = name; }
 
 	void setPhysicsFromLOD(S32 lod);
-	BOOL render();
+	BOOL render() override;
 	void update();
 	void genBuffers(S32 lod, bool skinned);
 	void clearBuffers();
@@ -249,9 +256,10 @@ public:
 	void rotate(F32 yaw_radians, F32 pitch_radians);
 	void zoom(F32 zoom_amt);
 	void pan(F32 right, F32 up);
-	virtual BOOL needsRender() { return mNeedsUpdate; }
+	BOOL needsRender() override { return mNeedsUpdate; }
 	void setPreviewLOD(S32 lod);
 	void clearModel(S32 lod);
+	void getJointAliases(JointMap& joint_map);
 	void loadModel(std::string filename, S32 lod, bool force_disable_slm = false);
 	void loadModelCallback(S32 lod);
     bool lodsReady() { return !mGenLOD && mLodsQuery.empty(); }
@@ -262,8 +270,8 @@ public:
 	void restoreNormals();
 	U32 calcResourceCost();
 	void rebuildUploadData();
-	void saveUploadData(bool save_skinweights, bool save_joint_poisitions);
-	void saveUploadData(const std::string& filename, bool save_skinweights, bool save_joint_poisitions);
+	void saveUploadData(bool save_skinweights, bool save_joint_positions, bool lock_scale_if_joint_position);
+	void saveUploadData(const std::string& filename, bool save_skinweights, bool save_joint_positions, bool lock_scale_if_joint_position);
 	void clearIncompatible(S32 lod);
 	void updateStatusMessages();
 	void updateLodControls(S32 lod);
@@ -300,6 +308,7 @@ public:
 
 	static bool 		sIgnoreLoadedCallback;
     std::vector<S32> mLodsQuery;
+    std::vector<S32> mLodsWithParsingError;
 
 protected:
 
@@ -403,7 +412,7 @@ private:
 
 	bool		mLastJointUpdate;
 
-	JointSet				mJointsFromNode;
+	JointNameSet		mJointsFromNode;
 	JointTransformMap	mJointTransformMap;
 
 	LLPointer<LLVOAvatar>	mPreviewAvatar;

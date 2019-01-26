@@ -2,30 +2,25 @@
  * @file llfloaterworldmap.h
  * @brief LLFloaterWorldMap class definition
  *
- * $LicenseInfo:firstyear=2003&license=viewergpl$
+ * $LicenseInfo:firstyear=2003&license=viewerlgpl$
  * Second Life Viewer Source Code
- * Copyright (c) 2003-2009, Linden Research, Inc.
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -43,11 +38,15 @@
 #include "lltracker.h"
 #include "llslurl.h"
 
+class LLCtrlListInterface;
 class LLFriendObserver;
 class LLInventoryModel;
 class LLInventoryObserver;
 class LLItemInfo;
+class LLLineEditor;
 class LLTabContainer;
+class LLSliderCtrl;
+class LLCheckBoxCtrl;
 
 class LLFloaterWorldMap : public LLFloater
 {
@@ -55,21 +54,24 @@ public:
 	LLFloaterWorldMap();
 	virtual ~LLFloaterWorldMap();
 
-	static void *createWorldMapView(void* data);
-	BOOL postBuild();
+	static LLFloaterWorldMap* getInstance();
 
-	/*virtual*/ void onClose(bool app_quitting);
+	static void *createWorldMapView(void* data);
+	BOOL postBuild() override;
+
+	/*virtual*/ void onClose(bool app_quitting) override;
 
 	static void show(bool center_on_target);
 	static void reloadIcons(void*);
 	static void toggle();
 	static void hide();
 
-	/*virtual*/ void reshape( S32 width, S32 height, BOOL called_from_parent = TRUE );
-	/*virtual*/ BOOL handleHover(S32 x, S32 y, MASK mask);
-	/*virtual*/ BOOL handleScrollWheel(S32 x, S32 y, S32 clicks);
-	/*virtual*/ void setVisible(BOOL visible);
-	/*virtual*/ void draw();
+	/*virtual*/ void reshape( S32 width, S32 height, BOOL called_from_parent = TRUE ) override;
+	/*virtual*/ BOOL handleHover(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ BOOL handleScrollWheel(S32 x, S32 y, S32 clicks) override;
+	/*virtual*/ void setVisible(BOOL visible) override;
+	/*virtual*/ void draw() override;
+
 
 	// methods for dealing with inventory. The observe() method is
 	// called during program startup. inventoryUpdated() will be
@@ -95,7 +97,7 @@ public:
 	// A z_attenuation of 0.0f collapses the distance into the X-Y plane
 	F32				getDistanceToDestination(const LLVector3d& pos_global, F32 z_attenuation = 0.5f) const;
 
-	void			clearLocationSelection(BOOL clear_ui = FALSE);
+	void			clearLocationSelection(BOOL clear_ui = FALSE, BOOL dest_reached = FALSE);
 	void			clearAvatarSelection(BOOL clear_ui = FALSE);
 	void			clearLandmarkSelection(BOOL clear_ui = FALSE);
 
@@ -159,7 +161,7 @@ protected:
 private:
 	LLPanel*			mPanel;		// Panel displaying the map
 	
-	// Sets sMapScale, in pixels per region
+	// Ties to LLWorldMapView::sMapScale, in pixels per region
 	F32						mCurZoomVal;
 	LLFrameTimer			mZoomTimer;
 
@@ -198,9 +200,26 @@ private:
 	LLCtrlListInterface *	mListFriendCombo;
 	LLCtrlListInterface *	mListLandmarkCombo;
 	LLCtrlListInterface *	mListSearchResults;
+
+	LLCheckBoxCtrl*			mGeneralEventsCheck;
+	LLCheckBoxCtrl*			mMatureEventsCheck;
+	LLCheckBoxCtrl*			mAdultEventsCheck;
+	LLCheckBoxCtrl*			mLandSaleCheck;
+	LLCheckBoxCtrl*			mInfoHubCheck;
+	LLCheckBoxCtrl*			mTeleHubCheck;
+	LLCheckBoxCtrl*			mPeopleCheck;
+	LLUICtrl*				mFriendsIcon;
+	LLUICtrl*				mLandmarkIcon;
+	LLUICtrl*				mLocationIcon;
+	LLButton*				mTrackRegionButton;
+	LLButton*				mCopySlurlButton;
+	LLButton*				mShowDestinationButton;
+	LLButton*				mTeleportButton;
+	LLButton*				mTeleportHomeButton;
+	LLSliderCtrl*			mZoomSlider;
 };
 
-extern LLFloaterWorldMap* gFloaterWorldMap;
+extern LLFloaterWorldMap* gFloaterWorldMap; // Singu TODO: Stop using this in favor of getInstance()
 
 #endif
 

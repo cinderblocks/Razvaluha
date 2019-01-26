@@ -28,8 +28,6 @@
 #ifndef LLAVATARNAME_H
 #define LLAVATARNAME_H
 
-#include <string>
-
 const S32& main_name_system();
 
 class LLSD;
@@ -48,14 +46,14 @@ public:
 	// Used only in legacy mode when the display name capability is not provided server side
 	// or to otherwise create a temporary valid item.
 	void fromString(const std::string& full_name);
-
+	
 	// Set the name object to become invalid in "expires" seconds from now
 	void setExpires(F64 expires);
 
 	// Set and get the display name flag set by the user in preferences.
 	static void setUseDisplayNames(bool use);
 	static bool useDisplayNames();
-
+	
 	static void setUseUsernames(bool use);
 	static bool useUsernames();
 
@@ -67,22 +65,22 @@ public:
 	
 	// For normal names, returns "James Linden (james.linden)"
 	// When display names are disabled returns just "James Linden"
-	std::string getCompleteName(bool linefeed = false) const;
-
+	std::string getCompleteName(bool linefeed = false, bool use_parentheses = true, bool force_use_complete_name = false) const;
+	
 	// Returns "James Linden" or "bobsmith123 Resident" for backwards
 	// compatibility with systems like voice and muting
 	// *TODO: Eliminate this in favor of username only
 	std::string getLegacyName() const;
-
+	
 	// "José Sanchez" or "James Linden", UTF-8 encoded Unicode
 	// Takes the display name preference into account. This is truly the name that should 
 	// be used for all UI where an avatar name has to be used unless we truly want something else (rare)
-	std::string getDisplayName() const;
+	std::string getDisplayName(bool force_use_display_name = false) const;
 	
 	// Returns "James Linden" or "bobsmith123 Resident"
 	// Used where we explicitely prefer or need a non UTF-8 legacy (ASCII) name
 	// Also used for backwards compatibility with systems like voice and muting
-	std::string getUserName() const;
+	std::string getUserName(bool lowercase = false) const;
 	
 	// Returns "james.linden" or the legacy name for very old names
 	std::string getAccountName() const { return mUsername; }
@@ -101,7 +99,7 @@ public:
 
 	// Debug print of the object
 	void dump() const;
-
+	
 	// Names can change, so need to keep track of when name was
 	// last checked.
 	// Unix time-from-epoch seconds for efficiency
@@ -111,7 +109,7 @@ public:
 	// when the next update is allowed
 	// Unix time-from-epoch seconds
 	F64 mNextUpdate;
-
+	
 private:
 	// "bobsmith123" or "james.linden", US-ASCII only
 	std::string mUsername;

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfindlocale.cpp
  * @brief Detect system language setting
@@ -61,13 +63,16 @@ lang_country_variant_from_envstring(const char *str,
     int i;
     int len = end - start;
     char *s = (char*)malloc(len + 1);
-    for (i=0; i<len; ++i) {
-      s[i] = tolower(str[start + i]);
-    }
-    s[i] = '\0';
+	if (s)
+	{
+		for (i = 0; i < len; ++i) {
+			s[i] = tolower(str[start + i]);
+		}
+		s[i] = '\0';
+	}
     *lang = s;
   } else {
-    *lang = NULL;
+    *lang = nullptr;
   }
 
   if (str[end] && str[end]!=':') { /* not at end of str */
@@ -83,13 +88,16 @@ lang_country_variant_from_envstring(const char *str,
     int i;
     int len = end - start;
     char *s = (char*)malloc(len + 1);
-    for (i=0; i<len; ++i) {
-      s[i] = toupper(str[start + i]);
-    }
-    s[i] = '\0';
+	if (s)
+	{
+		for (i = 0; i < len; ++i) {
+			s[i] = toupper(str[start + i]);
+		}
+		s[i] = '\0';
+	}
     *country = s;
   } else {
-    *country = NULL;
+    *country = nullptr;
   }
 
   if (str[end] && str[end]!=':') { /* not at end of str */
@@ -105,22 +113,25 @@ lang_country_variant_from_envstring(const char *str,
     int i;
     int len = end - start;
     char *s = (char*)malloc(len + 1);
-    for (i=0; i<len; ++i) {
-      s[i] = str[start + i];
-    }
-    s[i] = '\0';
+	if (s)
+	{
+		for (i = 0; i < len; ++i) {
+			s[i] = str[start + i];
+		}
+		s[i] = '\0';
+	}
     *variant = s;
   } else {
-    *variant = NULL;
+    *variant = nullptr;
   }
 }
 
 
 static int
 accumulate_locstring(const char *str, FL_Locale *l) {
-  char *lang = NULL;
-  char *country = NULL;
-  char *variant = NULL;
+  char *lang = nullptr;
+  char *country = nullptr;
+  char *variant = nullptr;
   if (str) {
     lang_country_variant_from_envstring(str, &lang, &country, &variant);
     if (lang) {
@@ -129,23 +140,24 @@ accumulate_locstring(const char *str, FL_Locale *l) {
       l->variant = variant;
       return 1;
     }
+	if (lang)
+		free(lang); 
+	if(country)
+		free(country); 
+	if(variant)
+		free(variant);
   }
-  free(lang); free(country); free(variant);
+  
   return 0;
 }
 
 
 static int
 accumulate_env(const char *name, FL_Locale *l) {
-  char *env;
-  char *lang = NULL;
-  char *country = NULL;
-  char *variant = NULL;
-  env = getenv(name);
+  char *env = getenv(name);
   if (env) {
     return accumulate_locstring(env, l);
   }
-  free(lang); free(country); free(variant);
   return 0;
 }
 
@@ -157,14 +169,22 @@ canonise_fl(FL_Locale *l) {
   if (l->lang && 0 == strcmp(l->lang, "en")) {
     if (l->country && 0 == strcmp(l->country, "UK")) {
       free((void*)l->country);
+#if LL_WINDOWS
+      l->country = _strdup("GB");
+#else
       l->country = strdup("GB");
+#endif
     }
   }
   /* ja_JA -> ja_JP */
   if (l->lang && 0 == strcmp(l->lang, "ja")) {
     if (l->country && 0 == strcmp(l->country, "JA")) {
       free((void*)l->country);
+#if LL_WINDOWS
+      l->country = _strdup("JP");
+#else
       l->country = strdup("JP");
+#endif
     }
   }
 }
@@ -177,7 +197,7 @@ canonise_fl(FL_Locale *l) {
 #define RML(pn,sn) MAKELANGID(LANG_##pn, SUBLANG_##sn)
 struct IDToCode {
   LANGID id;
-  const char*  code;
+  const char* code;
 };
 static const IDToCode both_to_code[] = {
   {ML(ENGLISH,US),           "en_US.ISO_8859-1"},
@@ -444,9 +464,11 @@ FL_Success
 FL_FindLocale(FL_Locale **locale, FL_Domain domain) {
   FL_Success success = FL_FAILED;
   FL_Locale *rtn = (FL_Locale*)malloc(sizeof(FL_Locale));
-  rtn->lang = NULL;
-  rtn->country = NULL;
-  rtn->variant = NULL;
+  if (!rtn)
+	  return success;
+  rtn->lang = nullptr;
+  rtn->country = nullptr;
+  rtn->variant = nullptr;
 
 #ifdef WIN32
   /* win32 >= mswindows95 */
@@ -512,7 +534,7 @@ FL_FreeLocale(FL_Locale **locale) {
         free((void*)l->variant);
       }
       free(l);
-      *locale = NULL;
+      *locale = nullptr;
     }
   }
 }

@@ -44,8 +44,8 @@ class LLSliderCtrl;
 
 class wlfPanel_AdvSettings : public LLPanel, public LLSingleton<wlfPanel_AdvSettings>
 {
+	LLSINGLETON(wlfPanel_AdvSettings);
 public:
-	wlfPanel_AdvSettings();
 	
 	~wlfPanel_AdvSettings();
 	BOOL postBuild();

@@ -43,11 +43,6 @@
 #include "lluuid.h"
 #include "lluictrlfactory.h"
 
-//-----------------------------------------------------------------------------
-// Globals
-//-----------------------------------------------------------------------------
-
-LLMap< const LLUUID, LLFloaterClassifiedInfo* > gClassifiedInfoInstances;
 ////////////////////////////////////////////////////////////////////////////
 // LLFloaterEventDisplay
 
@@ -79,20 +74,18 @@ public:
 };
 LLClassifiedHandler gClassifiedHandler;
 
-LLFloaterClassifiedInfo::LLFloaterClassifiedInfo(const std::string& name, const LLUUID &id)
-:	LLFloater(name),
-mClassifiedID( id )
+LLFloaterClassifiedInfo::LLFloaterClassifiedInfo(const LLUUID &id)
+:	LLFloater("classifiedinfo"),
+	LLInstanceTracker<LLFloaterClassifiedInfo, LLUUID>(id),
+	mClassifiedID( id )
 {
 	mFactoryMap["classified_details_panel"] = LLCallbackMap(LLFloaterClassifiedInfo::createClassifiedDetail, this);
 	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_preview_classified.xml", &getFactoryMap());
-	gClassifiedInfoInstances.addData(id, this);
 }
 
 LLFloaterClassifiedInfo::~LLFloaterClassifiedInfo()
 {
 	// child views automatically deleted
-	gClassifiedInfoInstances.removeData(mClassifiedID);
-
 }
 
 void LLFloaterClassifiedInfo::displayClassifiedInfo(const LLUUID& classified_id)
@@ -114,27 +107,19 @@ void* LLFloaterClassifiedInfo::createClassifiedDetail(void* userdata)
 // static
 LLFloaterClassifiedInfo* LLFloaterClassifiedInfo::show(const LLUUID &classified_id)
 {
-	if (classified_id.isNull())
+	if (classified_id.isNull()) return nullptr;
+
+	LLFloaterClassifiedInfo* floater = getInstance(classified_id);
+	if (!floater)
 	{
-		return NULL;
+		floater = new LLFloaterClassifiedInfo(classified_id);
+		floater->center();
+		floater->displayClassifiedInfo(classified_id);
 	}
 
-	LLFloaterClassifiedInfo *floater;
-	if (gClassifiedInfoInstances.checkData(classified_id))
-	{
-		// ...bring that window to front
-		floater = gClassifiedInfoInstances.getData(classified_id);
-		floater->open();	/*Flawfinder: ignore*/
-		floater->setFrontmost(true);
-	}
-	else
-	{
-		floater =  new LLFloaterClassifiedInfo("calssifiedinfo", classified_id );
-		floater->center();
-		floater->open();	/*Flawfinder: ignore*/
-		floater->displayClassifiedInfo(classified_id);
-		floater->setFrontmost(true);
-	}
+	// ...bring that window to front
+	floater->open();	/*Flawfinder: ignore*/
+	floater->setFrontmost(true);
 
 	return floater;
 }

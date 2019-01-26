@@ -92,7 +92,7 @@ typedef LLMemberListener<LLView> view_listener_t;
 
 class LLFileEnableSaveAs : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		LLFloater* frontmost = gFloaterView->getFrontmost();
 		if (frontmost && frontmost->hasChild("Save Preview As...", true)) // If we're the tearoff.
@@ -120,10 +120,10 @@ class LLFileEnableSaveAs : public view_listener_t
 
 class LLFileEnableUpload : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
-		bool new_value = gStatusBar && LLGlobalEconomy::Singleton::getInstance() &&
-						 gStatusBar->getBalance() >= LLGlobalEconomy::Singleton::getInstance()->getPriceUpload();
+		bool new_value = gStatusBar && LLGlobalEconomy::getInstance() &&
+						 gStatusBar->getBalance() >= LLGlobalEconomy::getInstance()->getPriceUpload();
 		gMenuHolder->findControl(userdata["control"].asString())->setValue(new_value);
 		return true;
 	}
@@ -131,11 +131,78 @@ class LLFileEnableUpload : public view_listener_t
 
 class LLFileEnableUploadModel : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		return gMeshRepo.meshUploadEnabled();
 	}
 };
+
+LLMutex* LLFilePickerThread::sMutex = NULL;
+std::queue<LLFilePickerThread*> LLFilePickerThread::sDeadQ;
+
+void LLFilePickerThread::getFile()
+{
+#if LL_WINDOWS
+	start();
+#else
+	run();
+#endif
+}
+
+//virtual 
+void LLFilePickerThread::run()
+{
+	LLFilePicker picker;
+#if LL_WINDOWS
+	if (picker.getOpenFile(mFilter, false))
+	{
+		mFile = picker.getFirstFile();
+	}
+#else
+	if (picker.getOpenFile(mFilter, true))
+	{
+		mFile = picker.getFirstFile();
+	}
+#endif
+
+	{
+		LLMutexLock lock(sMutex);
+		sDeadQ.push(this);
+	}
+
+}
+
+//static
+void LLFilePickerThread::initClass()
+{
+	sMutex = new LLMutex();
+}
+
+//static
+void LLFilePickerThread::cleanupClass()
+{
+	clearDead();
+	
+	delete sMutex;
+	sMutex = NULL;
+}
+
+//static
+void LLFilePickerThread::clearDead()
+{
+	if (!sDeadQ.empty())
+	{
+		LLMutexLock lock(sMutex);
+		while (!sDeadQ.empty())
+		{
+			LLFilePickerThread* thread = sDeadQ.front();
+			thread->notify(thread->mFile);
+			delete thread;
+			sDeadQ.pop();
+		}
+	}
+}
+
 
 //============================================================================
 
@@ -196,8 +263,6 @@ void AIFileUpload::start_filepicker(LLFilePicker::ELoadFilter filter, char const
 	if( gAgentCamera.cameraMouselook() )
 	{
 		gAgentCamera.changeCameraToDefault();
-		// This doesn't seem necessary. JC
-		// display();
 	}
 
 	LLFilePicker& picker = LLFilePicker::instance();
@@ -288,6 +353,7 @@ bool AIFileUpload::is_valid(std::string const& filename, LLFilePicker::ELoadFilt
 		}
 	}//end if a wave/sound file
 
+
 	return true;
 }
 
@@ -325,7 +391,7 @@ class LLFileUploadModel : public view_listener_t
 
 class LLFileUploadSound : public view_listener_t, public AIFileUpload
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		start_filepicker(LLFilePicker::FFLOAD_WAV, "sound");
 		return true;
@@ -341,7 +407,7 @@ class LLFileUploadSound : public view_listener_t, public AIFileUpload
 
 class LLFileUploadAnim : public view_listener_t, public AIFileUpload
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		start_filepicker(LLFilePicker::FFLOAD_ANIM, "animations");
 		return true;
@@ -349,7 +415,7 @@ class LLFileUploadAnim : public view_listener_t, public AIFileUpload
 
   protected:
 	// Inherited from AIFileUpload.
-	/*virtual*/ void handle_event(std::string const& filename)
+	/*virtual*/ void handle_event(std::string const& filename) override
 	{
 		if (filename.rfind(".anim") != std::string::npos)
 		{
@@ -381,7 +447,7 @@ class LLFileUploadScript : public view_listener_t, public AIFileUpload
 
 class LLFileUploadBulk : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		if( gAgentCamera.cameraMouselook() )
 		{
@@ -397,7 +463,7 @@ class LLFileUploadBulk : public view_listener_t
 		//
 		// Also fix single upload to charge first, then refund
 		// <edit>
-		S32 expected_upload_cost = LLGlobalEconomy::Singleton::getInstance()->getPriceUpload();
+		S32 expected_upload_cost = LLGlobalEconomy::getInstance()->getPriceUpload();
 		const char* notification_type = expected_upload_cost ? "BulkTemporaryUpload" : "BulkTemporaryUploadFree";
 		LLSD args;
 		args["UPLOADCOST"] = gHippoGridManager->getConnectedGrid()->getUploadFee();
@@ -433,7 +499,7 @@ class LLFileUploadBulk : public view_listener_t
 				LLStringUtil::stripNonprintable(asset_name);
 				LLStringUtil::trim(asset_name);
 				
-				S32 expected_upload_cost = LLGlobalEconomy::Singleton::getInstance()->getPriceUpload();
+				S32 expected_upload_cost = LLGlobalEconomy::getInstance()->getPriceUpload();
 				gSavedSettings.setBOOL("TemporaryUpload", enabled);
                 LLResourceUploadInfo::ptr_t uploadInfo(new LLNewFileResourceUploadInfo(
 					filename,
@@ -465,12 +531,12 @@ void upload_error(const std::string& error_message, const std::string& label, co
 	{
 		LL_DEBUGS() << "unable to remove temp file" << LL_ENDL;
 	}
-	//AIFIXME? LLFilePicker::instance().reset();						
+	LLFilePicker::instance().reset();						
 }
 
 class LLFileEnableCloseWindow : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		bool new_value = NULL != LLFloater::getClosableFloaterFromFocus();
 
@@ -482,7 +548,7 @@ class LLFileEnableCloseWindow : public view_listener_t
 
 class LLFileCloseWindow : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		LLFloater::closeFocusedFloater();
 
@@ -492,7 +558,7 @@ class LLFileCloseWindow : public view_listener_t
 
 class LLFileEnableCloseAllWindows : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		bool open_children = gFloaterView->allChildrenClosed();
 		gMenuHolder->findControl(userdata["control"].asString())->setValue(!open_children);
@@ -502,7 +568,7 @@ class LLFileEnableCloseAllWindows : public view_listener_t
 
 class LLFileCloseAllWindows : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		bool app_quitting = false;
 		gFloaterView->closeAllChildren(app_quitting);
@@ -514,7 +580,7 @@ class LLFileCloseAllWindows : public view_listener_t
 // <edit>
 class LLFileMinimizeAllWindows : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		gFloaterView->minimizeAllChildren();
 		return true;
@@ -524,20 +590,17 @@ class LLFileMinimizeAllWindows : public view_listener_t
 
 class LLFileSavePreview : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
-		LLFloater* top = gFloaterView->getFrontmost();
-		if (top)
-		{
+		if (LLFloater* top = gFloaterView->getFrontmost())
 			top->saveAs();
-		}
 		return true;
 	}
 };
 
 class LLFileTakeSnapshotToDisk : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		LLPointer<LLImageRaw> raw = new LLImageRaw;
 
@@ -586,7 +649,6 @@ class LLFileTakeSnapshotToDisk : public view_listener_t
 				LL_WARNS() << "Unknown Local Snapshot format" << LL_ENDL;
 				return true;
 			}
-
 			formatted->enableOverSize() ;
 			formatted->encode(raw, 0);
 			formatted->disableOverSize();
@@ -598,39 +660,38 @@ class LLFileTakeSnapshotToDisk : public view_listener_t
 
 class LLFileQuit : public view_listener_t
 {
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		LLAppViewer::instance()->userQuit();
 		return true;
 	}
 };
 
+
 void handle_compress_image(void*)
 {
-	LLFilePicker& filepicker = LLFilePicker::instance();
-	if (!filepicker.getMultipleOpenFiles(LLFilePicker::FFLOAD_IMAGE))
-		return;
-
-	std::vector<std::string> const& filenames(filepicker.getFilenames());
-	for(std::vector<std::string>::const_iterator filename = filenames.begin(); filename != filenames.end(); ++filename)
+	LLFilePicker& picker = LLFilePicker::instance();
+	if (picker.getMultipleOpenFiles(LLFilePicker::FFLOAD_IMAGE))
 	{
-		std::string const& infile(*filename);
-		std::string outfile = infile + ".j2c";
-
-		LL_INFOS() << "Input:  " << infile << LL_ENDL;
-		LL_INFOS() << "Output: " << outfile << LL_ENDL;
-
-		BOOL success;
-
-		success = LLViewerTextureList::createUploadFile(infile, outfile, IMG_CODEC_TGA);
-
-		if (success)
+		for(const auto& infile : picker.getFilenames())
 		{
-			LL_INFOS() << "Compression complete" << LL_ENDL;
-		}
-		else
-		{
-			LL_INFOS() << "Compression failed: " << LLImage::getLastError() << LL_ENDL;
+			std::string outfile = infile + ".j2c";
+
+			LL_INFOS() << "Input:  " << infile << LL_ENDL;
+			LL_INFOS() << "Output: " << outfile << LL_ENDL;
+
+			BOOL success;
+
+			success = LLViewerTextureList::createUploadFile(infile, outfile, IMG_CODEC_TGA);
+
+			if (success)
+			{
+				LL_INFOS() << "Compression complete" << LL_ENDL;
+			}
+			else
+			{
+				LL_INFOS() << "Compression failed: " << LLImage::getLastError() << LL_ENDL;
+			}
 		}
 	}
 }
@@ -1152,11 +1213,7 @@ bool upload_new_resource(
 		return false;
 	}
 
-//     uploadInfo->setAssetType(assetType);
-//     uploadInfo->setTransactionId(tid);
-
-
-	std::string url = gAgent.getRegion()->getCapability("NewFileAgentInventory");
+	const std::string url = gAgent.getRegionCapability("NewFileAgentInventory");
 
 	// <edit>
 	bool temporary = gSavedSettings.getBOOL("TemporaryUpload");
@@ -1229,33 +1286,8 @@ bool upload_new_resource(
 
 LLAssetID generate_asset_id_for_new_upload(const LLTransactionID& tid)
 {
-	if (gDisconnected)
-	{	
-		LLAssetID rv;
-
-		rv.setNull();
-		return rv;
-	}
-
-	LLAssetID uuid = tid.makeAssetID(gAgent.getSecureSessionID());
-
-	return uuid;
-}
-
-void increase_new_upload_stats(LLAssetType::EType asset_type)
-{
-	if (LLAssetType::AT_SOUND == asset_type)
-	{
-		LLViewerStats::getInstance()->incStat(LLViewerStats::ST_UPLOAD_SOUND_COUNT);
-	}
-	else if (LLAssetType::AT_TEXTURE == asset_type)
-	{
-		LLViewerStats::getInstance()->incStat(LLViewerStats::ST_UPLOAD_TEXTURE_COUNT);
-	}
-	else if (LLAssetType::AT_ANIMATION == asset_type)
-	{
-		LLViewerStats::getInstance()->incStat(LLViewerStats::ST_UPLOAD_ANIM_COUNT);
-	}
+	return gDisconnected ? LLAssetID::null
+		: tid.makeAssetID(gAgent.getSecureSessionID());
 }
 
 void assign_defaults_and_show_upload_message(LLAssetType::EType asset_type,
@@ -1265,25 +1297,15 @@ void assign_defaults_and_show_upload_message(LLAssetType::EType asset_type,
 											 std::string& description)
 {
 	if (LLInventoryType::IT_NONE == inventory_type)
-	{
 		inventory_type = LLInventoryType::defaultForAssetType(asset_type);
-	}
 	LLStringUtil::stripNonprintable(name);
 	LLStringUtil::stripNonprintable(description);
 
-	if (name.empty())
-	{
-		name = "(No Name)";
-	}
-	if (description.empty())
-	{
-		description = "(No Description)";
-	}
+	if (name.empty()) name = "(No Name)";
+	if (description.empty()) description = "(No Description)";
 
 	// At this point, we're ready for the upload.
-	std::string upload_message = "Uploading...\n\n";
-	upload_message.append(display_name);
-	LLUploadDialog::modalUploadDialog(upload_message);
+	LLUploadDialog::modalUploadDialog("Uploading...\n\n" + display_name);
 }
 
 
@@ -1312,21 +1334,110 @@ void init_menu_file()
 }
 
 // <edit>
+/* Singu Note: In case it's needed.
+void uploadComplete(const LLUUID& item_id, const LLUUID& new_asset_id, const LLSD& content)
+{
+	LL_INFOS() << "LLUpdateAgentInventoryResponder::result from capabilities" << LL_ENDL;
+	auto* item = static_cast<LLViewerInventoryItem*>(gInventory.getItem(item_id));
+	if(!item)
+	{
+		LL_WARNS() << "Inventory item for " << mVFileID
+			<< " is no longer in agent inventory." << LL_ENDL;
+		return;
+	}
+
+	// Update viewer inventory item
+	LLPointer<LLViewerInventoryItem> new_item = new LLViewerInventoryItem(item);
+	new_item->setAssetUUID(new_asset_id);
+	gInventory.updateItem(new_item);
+	gInventory.notifyObservers();
+
+	LL_INFOS() << "Inventory item " << item->getName() << " saved into "
+		<< new_asset.asString() << LL_ENDL;
+
+	switch(new_item->getInventoryType())
+	{
+		case LLInventoryType::IT_NOTECARD:
+		{
+			// Update the UI with the new asset.
+			if (auto* nc = static_cast<LLPreviewNotecard*>(LLPreview::find(item_id)))
+			{
+				// *HACK: we have to delete the asset in the VFS so
+				// that the viewer will redownload it. This is only
+				// really necessary if the asset had to be modified by
+				// the uploader, so this can be optimized away in some
+				// cases. A better design is to have a new uuid if the
+				// script actually changed the asset.
+				if (nc->hasEmbeddedInventory())
+					gVFS->removeFile(new_asset_id, LLAssetType::AT_NOTECARD);
+				nc->refreshFromInventory();
+			}
+			break;
+		}
+		case LLInventoryType::IT_LSL:
+		{
+			// Find our window and close it if requested.
+			if (auto* preview = static_cast<LLPreviewLSL*>(LLPreview::find(item_id)))
+			{
+				// Bytecode save completed
+				if (content["compiled"]) preview->callbackLSLCompileSucceeded();
+				else preview->callbackLSLCompileFailed(content["errors"]);
+			}
+			break;
+		}
+
+		case LLInventoryType::IT_GESTURE:
+		{
+			// If this gesture is active, then we need to update the in-memory
+			// active map with the new pointer.
+			auto& gesture_mgr = LLGestureMgr::instance();
+			if (gesture_mgr.isGestureActive(item_id))
+			{
+				gesture_mgr.replaceGesture(item_id, new_item->getAssetUUID());
+				gInventory.notifyObservers();
+			}
+
+			//gesture will have a new asset_id
+			if (auto* previewp = static_cast<LLPreviewGesture*>(LLPreview::find(item_id)))
+				previewp->onUpdateSucceeded();
+
+			break;
+		}
+		case LLInventoryType::IT_WEARABLE:
+		default:
+			break;
+	}
+}
+*/
+
 void NewResourceItemCallback::fire(const LLUUID& new_item_id)
 {
 	LLViewerInventoryItem* new_item = (LLViewerInventoryItem*)gInventory.getItem(new_item_id);
-	if(!new_item) return;
+	if (!new_item) return;
 	LLUUID vfile_id = LLUUID(new_item->getDescription());
-	if(vfile_id.isNull()) return;
+	if (vfile_id.isNull()) return;
 	new_item->setDescription("(No Description)");
-	std::string type("Uploads");
+
+	//LLSD body;
+	std::string /*agent_url,*/ type("Uploads");
 	switch(new_item->getInventoryType())
 	{
-		case LLInventoryType::IT_LSL:      type = "Scripts"; break;
-		case LLInventoryType::IT_GESTURE:  type = "Gestures"; break;
-		case LLInventoryType::IT_NOTECARD: type = "Notecard"; break;
-		default: break;
+		case LLInventoryType::IT_LSL:
+			/*agent_url = gAgent.getRegionCapability("UpdateScriptAgent");
+			body["target"] = "lsl2";*/
+			type = "Scripts";
+		break;
+		case LLInventoryType::IT_GESTURE:
+			//agent_url = gAgent.getRegionCapability("UpdateGestureAgentInventory");
+			type = "Gestures";
+		break;
+		case LLInventoryType::IT_NOTECARD:
+			//agent_url = gAgent.getRegionCapability("UpdateNotecardAgentInventory");
+			type = "Notecard";
+		break;
+		default: return;
 	}
+
 	LLPermissions perms = new_item->getPermissions();
 	perms.setMaskNext(LLFloaterPerms::getNextOwnerPerms(type));
 	perms.setMaskGroup(LLFloaterPerms::getGroupPerms(type));
@@ -1336,34 +1447,12 @@ void NewResourceItemCallback::fire(const LLUUID& new_item_id)
 	gInventory.updateItem(new_item);
 	gInventory.notifyObservers();
 
-	std::string agent_url;
-	LLSD body;
-	body["item_id"] = new_item_id;
-	
-	if(new_item->getType() == LLAssetType::AT_GESTURE)
-	{
-		agent_url = gAgent.getRegion()->getCapability("UpdateGestureAgentInventory");
-	}
-	else if(new_item->getType() == LLAssetType::AT_LSL_TEXT)
-	{
-		agent_url = gAgent.getRegion()->getCapability("UpdateScriptAgent");
-		body["target"] = "lsl2";
-	}
-	else if(new_item->getType() == LLAssetType::AT_NOTECARD)
-	{
-		agent_url = gAgent.getRegion()->getCapability("UpdateNotecardAgentInventory");
-	}
-	else
-	{
-		return;
-	}
-	
-	if(agent_url.empty()) return;
-	// Singu FIXME: I dun wanna rewrite this function right now.
-	LL_ERRS() << "Singu TODO: Fix this to use HTTP Coroutines and such." << LL_ENDL;
-/*
-	//LLHTTPClient::post(agent_url, body,
-	new LLUpdateAgentInventoryResponder(body, vfile_id, new_item->getType()));
-*/
+	//if (agent_url.empty()) return;
+
+	//body["item_id"] = new_item_id;
+	/* Singu Note: I don't think this was actually doing anything important, so I don't think
+	 * we need to translate this, but I left the meat of LLUpdateAgentInventoryResponder above this function
+	LLHTTPClient::post(agent_url, body,
+		new LLUpdateAgentInventoryResponder(body, vfile_id, new_item->getType()));*/
 }
 // </edit>

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lldirpicker.cpp
  * @brief OS-specific file picker
@@ -64,7 +66,7 @@ bool LLDirPicker::check_local_file_access_enabled()
 	if ( ! local_file_system_browsing_enabled )
 	{
 		mDir.clear();	// Windows
-		mFileName = NULL; // Mac/Linux
+		mFileName = nullptr; // Mac/Linux
 		return false;
 	}
 
@@ -74,7 +76,7 @@ bool LLDirPicker::check_local_file_access_enabled()
 #if LL_WINDOWS
 
 LLDirPicker::LLDirPicker() :
-	mFileName(NULL),
+	mFileName(nullptr),
 	mLocked(false)
 {
 }
@@ -107,13 +109,13 @@ BOOL LLDirPicker::getDir(std::string* filename)
 
    bi.ulFlags   = BIF_USENEWUI;
    bi.hwndOwner = (HWND)gViewerWindow->getPlatformWindow();
-   bi.lpszTitle = NULL;
+   bi.lpszTitle = nullptr;
 
-   ::OleInitialize(NULL);
+   ::OleInitialize(nullptr);
 
    LPITEMIDLIST pIDL = ::SHBrowseForFolder(&bi);
 
-   if(pIDL != NULL)
+   if(pIDL != nullptr)
    {
       WCHAR buffer[_MAX_PATH] = {'\0'};
 

@@ -35,11 +35,19 @@
 class LLVFile
 {
 public:
+	enum operation_t : S32
+	{
+		READ = 0x00000001,
+		WRITE = 0x00000002,
+		READ_WRITE = 0x00000003,   // LLVFile::READ & LLVFile::WRITE
+		APPEND = 0x00000006   // 0x00000004 & LLVFile::WRITE
+	};
+
 	LLVFile(LLVFS *vfs, const LLUUID &file_id, const LLAssetType::EType file_type, S32 mode = LLVFile::READ);
 	~LLVFile();
 
 	BOOL read(U8 *buffer, S32 bytes, BOOL async = FALSE, F32 priority = 128.f);	/* Flawfinder: ignore */ 
-	static U8* readFile(LLVFS *vfs, const LLUUID &uuid, LLAssetType::EType type, S32* bytes_read = 0);
+	static U8* readFile(LLVFS *vfs, const LLUUID &uuid, LLAssetType::EType type, S32* bytes_read = nullptr);
 	void setReadPriority(const F32 priority);
 	BOOL isReadComplete();
 	S32  getLastBytesRead();
@@ -59,7 +67,7 @@ public:
 	bool isLocked(EVFSLock lock);
 	void waitForLock(EVFSLock lock);
 	
-	static void initClass(LLVFSThread* vfsthread = NULL);
+	static void initClass(LLVFSThread* vfsthread = nullptr);
 	static void cleanupClass();
 	static LLVFSThread* getVFSThread() { return sVFSThread; }
 
@@ -68,21 +76,13 @@ protected:
 	static BOOL sAllocdVFSThread;
 	U32 threadPri() { return LLVFSThread::PRIORITY_NORMAL + llmin((U32)mPriority,(U32)0xfff); }
 	
-public:
-	static const S32 READ;
-	static const S32 WRITE;
-	static const S32 READ_WRITE;
-	static const S32 APPEND;
-	
 protected:
-	LLAssetType::EType mFileType;
-
+	LLVFS	*mVFS;
 	LLUUID	mFileID;
+	LLAssetType::EType mFileType;
 	S32		mPosition;
 	S32		mMode;
-	LLVFS	*mVFS;
 	F32		mPriority;
-
 	S32		mBytesRead;
 	LLVFSThread::handle_t mHandle;
 };

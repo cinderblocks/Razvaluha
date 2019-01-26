@@ -4,31 +4,25 @@
  * @date 2005-09-26
  * @brief helper tut methods
  *
- * $LicenseInfo:firstyear=2005&license=viewergpl$
- * 
- * Copyright (c) 2005-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2005&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -36,14 +30,61 @@
 #define LL_LLTUT_H
 
 #include "is_approx_equal_fraction.h" // instead of llmath.h
-
-#include <tut/tut.hpp>
 #include <cstring>
 
 class LLDate;
 class LLSD;
 class LLURI;
 
+namespace tut
+{
+	void ensure_equals(const std::string& msg,
+		const LLDate& actual, const LLDate& expected);
+
+	void ensure_equals(const std::string& msg,
+		const LLURI& actual, const LLURI& expected);
+
+	// std::vector<U8> is the current definition of LLSD::Binary. Because
+	// we're only forward-declaring LLSD in this header file, we can't
+	// directly reference that nested type. If the build complains that
+	// there's no definition for this declaration, it could be that
+	// LLSD::Binary has changed, and that this declaration must be adjusted to
+	// match.
+	void ensure_equals(const std::string& msg,
+		const std::vector<U8>& actual, const std::vector<U8>& expected);
+
+	void ensure_equals(const std::string& msg,
+		const LLSD& actual, const LLSD& expected);
+
+	void ensure_starts_with(const std::string& msg,
+		const std::string& actual, const std::string& expectedStart);
+
+	void ensure_ends_with(const std::string& msg,
+		const std::string& actual, const std::string& expectedEnd);
+
+	void ensure_contains(const std::string& msg,
+		const std::string& actual, const std::string& expectedSubString);
+
+	void ensure_does_not_contain(const std::string& msg,
+		const std::string& actual, const std::string& expectedSubString);
+}
+
+// This is an odd place to #include an important contributor -- but the usual
+// rules are reversed here. Instead of the overloads above referencing tut.hpp
+// features, we need calls in tut.hpp template functions to dispatch to our
+// overloads declared above.
+
+// turn off warnings about unused functions from clang for tut package
+#if __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+#include <tut/tut.hpp>
+#if __clang__
+#pragma clang diagnostic pop
+#endif
+
+// The functions BELOW this point actually consume tut.hpp functionality.
 namespace tut
 {
 	inline void ensure_approximately_equals(const char* msg, F64 actual, F64 expected, U32 frac_bits)
@@ -69,6 +110,16 @@ namespace tut
 	inline void ensure_approximately_equals(F32 actual, F32 expected, U32 frac_bits)
 	{
 		ensure_approximately_equals(NULL, actual, expected, frac_bits);
+	}
+
+	inline void ensure_approximately_equals_range(const char *msg, F32 actual, F32 expected, F32 delta)
+	{
+		if (fabs(actual-expected)>delta)
+		{
+			std::stringstream ss;
+			ss << (msg?msg:"") << (msg?": ":"") << "not equal actual: " << actual << " expected: " << expected << " tolerance: " << delta;
+			throw tut::failure(ss.str().c_str());
+		}
 	}
 
 	inline void ensure_memory_matches(const char* msg,const void* actual, U32 actual_len, const void* expected,U32 expected_len)
@@ -103,40 +154,6 @@ namespace tut
 	{
 		ensure_not_equals(NULL, actual, expected);
 	}
-	
-	
-	template <class T,class Q>
-	void ensure_equals(const std::string& msg,
-		const Q& actual,const T& expected)
-		{ ensure_equals(msg.c_str(), actual, expected); }
-
-	void ensure_equals(const char* msg,
-		const LLDate& actual, const LLDate& expected);
-
-	void ensure_equals(const char* msg,
-		const LLURI& actual, const LLURI& expected);
-		
-	void ensure_equals(const char* msg,
-		const std::vector<U8>& actual, const std::vector<U8>& expected);
-
-	void ensure_equals(const char* msg,
-		const LLSD& actual, const LLSD& expected);
-
-	void ensure_equals(const std::string& msg,
-		const LLSD& actual, const LLSD& expected);
-	
-	void ensure_starts_with(const std::string& msg,
-		const std::string& actual, const std::string& expectedStart);
-
-	void ensure_ends_with(const std::string& msg,
-		const std::string& actual, const std::string& expectedEnd);
-
-	void ensure_contains(const std::string& msg,
-		const std::string& actual, const std::string& expectedSubString);
-
-	void ensure_does_not_contain(const std::string& msg,
-		const std::string& actual, const std::string& expectedSubString);
 }
-
 
 #endif // LL_LLTUT_H

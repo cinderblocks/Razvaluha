@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llplugininstance.cpp
  * @brief LLPluginInstance handles loading the dynamic library of a plugin and setting up its entry points for message passing.
@@ -52,9 +54,9 @@ const char *LLPluginInstance::PLUGIN_INIT_FUNCTION_NAME = "LLPluginInitEntryPoin
  * @param[in] owner Plugin instance. TODO:DOC is this a good description of what "owner" is?
  */
 LLPluginInstance::LLPluginInstance(LLPluginInstanceMessageListener *owner) :
-	mDSOHandle(NULL),
-	mPluginUserData(NULL),
-	mPluginSendMessageFunction(NULL)
+	mDSOHandle(nullptr),
+	mPluginUserData(nullptr),
+	mPluginSendMessageFunction(nullptr)
 {
 	mOwner = owner;
 }
@@ -64,10 +66,10 @@ LLPluginInstance::LLPluginInstance(LLPluginInstanceMessageListener *owner) :
  */
 LLPluginInstance::~LLPluginInstance()
 {
-	if(mDSOHandle != NULL)
+	if(mDSOHandle != nullptr)
 	{
 		apr_dso_unload(mDSOHandle);
-		mDSOHandle = NULL;
+		mDSOHandle = nullptr;
 	}
 }
 
@@ -79,7 +81,7 @@ LLPluginInstance::~LLPluginInstance()
  */
 int LLPluginInstance::load(const std::string& plugin_dir, std::string &plugin_file)
 {
-	pluginInitFunction init_function = NULL;
+	pluginInitFunction init_function = nullptr;
 	
 	if ( plugin_dir.length() )
 	{

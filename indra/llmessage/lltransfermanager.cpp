@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltransfermanager.cpp
  * @brief Improved transfer mechanism for moving data through the
@@ -79,10 +81,10 @@ void LLTransferManager::init()
 	mValid = TRUE;
 
 	// Register message system handlers
-	gMessageSystem->setHandlerFunc("TransferRequest", processTransferRequest, NULL);
-	gMessageSystem->setHandlerFunc("TransferInfo", processTransferInfo, NULL);
-	gMessageSystem->setHandlerFunc("TransferPacket", processTransferPacket, NULL);
-	gMessageSystem->setHandlerFunc("TransferAbort", processTransferAbort, NULL);
+	gMessageSystem->setHandlerFunc("TransferRequest", processTransferRequest, nullptr);
+	gMessageSystem->setHandlerFunc("TransferInfo", processTransferInfo, nullptr);
+	gMessageSystem->setHandlerFunc("TransferPacket", processTransferPacket, nullptr);
+	gMessageSystem->setHandlerFunc("TransferAbort", processTransferAbort, nullptr);
 }
 
 
@@ -150,7 +152,7 @@ LLTransferSourceChannel *LLTransferManager::getSourceChannel(const LLHost &host,
 	LLTransferConnection *tcp = getTransferConnection(host);
 	if (!tcp)
 	{
-		return NULL;
+		return nullptr;
 	}
 	return tcp->getSourceChannel(type);
 }
@@ -162,7 +164,7 @@ LLTransferTargetChannel *LLTransferManager::getTargetChannel(const LLHost &host,
 	LLTransferConnection *tcp = getTransferConnection(host);
 	if (!tcp)
 	{
-		return NULL;
+		return nullptr;
 	}
 	return tcp->getTargetChannel(type);
 }
@@ -193,7 +195,7 @@ LLTransferSource *LLTransferManager::findTransferSource(const LLUUID &transfer_i
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 //
@@ -211,8 +213,14 @@ void LLTransferManager::processTransferRequest(LLMessageSystem *msgp, void **)
 	F32 priority;
 
 	msgp->getUUID("TransferInfo", "TransferID", transfer_id);
-	msgp->getS32("TransferInfo", "SourceType", (S32 &)source_type);
-	msgp->getS32("TransferInfo", "ChannelType", (S32 &)channel_type);
+	S32 source_type_tmp;
+	msgp->getS32("TransferInfo", "SourceType", source_type_tmp);
+	source_type = (LLTransferSourceType) source_type_tmp;
+
+	S32 channel_type_tmp;
+	msgp->getS32("TransferInfo", "ChannelType", channel_type_tmp);
+	channel_type = (LLTransferChannelType)channel_type_tmp;
+
 	msgp->getF32("TransferInfo", "Priority", priority);
 
 	LLTransferSourceChannel *tscp = gTransferManager.getSourceChannel(msgp->getSender(), channel_type);
@@ -275,15 +283,24 @@ void LLTransferManager::processTransferInfo(LLMessageSystem *msgp, void **)
 	//LL_INFOS() << "LLTransferManager::processTransferInfo" << LL_ENDL;
 
 	LLUUID transfer_id;
-	LLTransferTargetType target_type;
+	//LLTransferTargetType target_type;
 	LLTransferChannelType channel_type;
 	LLTSCode status;
 	S32 size;
 
 	msgp->getUUID("TransferInfo", "TransferID", transfer_id);
-	msgp->getS32("TransferInfo", "TargetType", (S32 &)target_type);
-	msgp->getS32("TransferInfo", "ChannelType", (S32 &)channel_type);
-	msgp->getS32("TransferInfo", "Status", (S32 &)status);
+	//S32 target_type_tmp;
+	//msgp->getS32("TransferInfo", "TargetType", target_type_tmp);
+	//target_type = (LLTransferTargetType) target_type_tmp;
+
+	S32 channel_type_tmp;
+	msgp->getS32("TransferInfo", "ChannelType", channel_type_tmp);
+	channel_type = (LLTransferChannelType) channel_type_tmp;
+
+	S32 status_tmp;
+	msgp->getS32("TransferInfo", "Status", status_tmp);
+	status = (LLTSCode) status_tmp;
+
 	msgp->getS32("TransferInfo", "Size", size);
 
 	//LL_INFOS() << transfer_id << ":" << target_type<< ":" << channel_type << LL_ENDL;
@@ -348,7 +365,7 @@ void LLTransferManager::processTransferInfo(LLMessageSystem *msgp, void **)
 	// This is a lame cut and paste of code down below.  If we change the logic down there,
 	// we HAVE to change the logic up here.
 
-	while (1)
+	while (true)
 	{
 		S32 packet_id = 0;
 		U8 tmp_data[MAX_PACKET_DATA_SIZE];
@@ -367,7 +384,7 @@ void LLTransferManager::processTransferInfo(LLMessageSystem *msgp, void **)
 			size = packetp->mSize;
 			if (size)
 			{
-				if ((packetp->mDatap != NULL) && (size<(S32)sizeof(tmp_data)))
+				if ((packetp->mDatap != nullptr) && (size<(S32)sizeof(tmp_data)))
 				{
 					memcpy(tmp_data, packetp->mDatap, size);	/*Flawfinder: ignore*/
 				}
@@ -396,7 +413,7 @@ void LLTransferManager::processTransferInfo(LLMessageSystem *msgp, void **)
 			}
 			else
 			{
-				LL_INFOS() << "LLTransferManager::processTransferInfo replay FINISHED for " << transfer_id << LL_ENDL;
+				LL_DEBUGS() << "LLTransferManager::processTransferInfo replay FINISHED for " << transfer_id << LL_ENDL;
 			}
 			// This transfer is done, either via error or not.
 			ttp->completionCallback(status);
@@ -417,10 +434,13 @@ void LLTransferManager::processTransferPacket(LLMessageSystem *msgp, void **)
 	S32 packet_id;
 	LLTSCode status;
 	S32 size;
+	S32 tmp;
 	msgp->getUUID("TransferData", "TransferID", transfer_id);
-	msgp->getS32("TransferData", "ChannelType", (S32 &)channel_type);
+	msgp->getS32("TransferData", "ChannelType", tmp);
+	memcpy(&channel_type, &tmp, 4);
 	msgp->getS32("TransferData", "Packet", packet_id);
-	msgp->getS32("TransferData", "Status", (S32 &)status);
+	msgp->getS32("TransferData", "Status", tmp);
+	memcpy(&status, &tmp, 4);
 
 	// Find the transfer associated with this packet.
 	//LL_INFOS() << transfer_id << ":" << channel_type << LL_ENDL;
@@ -543,7 +563,7 @@ void LLTransferManager::processTransferPacket(LLMessageSystem *msgp, void **)
 			size = packetp->mSize;
 			if (size)
 			{
-				if ((packetp->mDatap != NULL) && (size<(S32)sizeof(tmp_data)))
+				if ((packetp->mDatap != nullptr) && (size<(S32)sizeof(tmp_data)))
 				{
 					memcpy(tmp_data, packetp->mDatap, size);	/*Flawfinder: ignore*/
 				}
@@ -569,7 +589,9 @@ void LLTransferManager::processTransferAbort(LLMessageSystem *msgp, void **)
 	LLUUID transfer_id;
 	LLTransferChannelType channel_type;
 	msgp->getUUID("TransferInfo", "TransferID", transfer_id);
-	msgp->getS32("TransferInfo", "ChannelType", (S32 &)channel_type);
+	S32 channel_type_tmp;
+	msgp->getS32("TransferInfo", "ChannelType", channel_type_tmp);
+	channel_type = (LLTransferChannelType) channel_type_tmp;
 
 	// See if it's a target that we're trying to abort
 	// Find the transfer associated with this packet.
@@ -607,7 +629,7 @@ void LLTransferManager::reliablePacketCallback(void **user_data, S32 result)
 {
 	LLUUID *transfer_idp = (LLUUID *)user_data;
 	if (result &&
-		transfer_idp != NULL)
+		transfer_idp != nullptr)
 	{
 		LLTransferSource *tsp = gTransferManager.findTransferSource(*transfer_idp);
 		if (tsp)
@@ -787,7 +809,7 @@ void LLTransferSourceChannel::updateTransfers()
 		next++;
 
 		LLTransferSource *tsp = iter->second;
-		U8 *datap = NULL;
+		U8 *datap = nullptr;
 		S32 data_size = 0;
 		BOOL delete_data = FALSE;
 		S32 packet_id = 0;
@@ -831,10 +853,10 @@ void LLTransferSourceChannel::updateTransfers()
 		if (delete_data)
 		{
 			delete[] datap;
-			datap = NULL;
+			datap = nullptr;
 		}
 
-		if (findTransferSource(transaction_id) == NULL)
+		if (findTransferSource(transaction_id) == nullptr)
 		{
 			//Warning!  In the case of an aborted transfer, the sendReliable call above calls 
 			//AbortTransfer which in turn calls deleteTransfer which means that somewhere way 
@@ -893,7 +915,7 @@ LLTransferSource *LLTransferSourceChannel::findTransferSource(const LLUUID &tran
 			return tsp;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -1013,7 +1035,7 @@ LLTransferTarget *LLTransferTargetChannel::findTransferTarget(const LLUUID &tran
 			return ttp;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -1049,7 +1071,7 @@ LLTransferSource::LLTransferSource(const LLTransferSourceType type,
 								   const F32 priority) :
 	mType(type),
 	mID(transfer_id),
-	mChannelp(NULL),
+	mChannelp(nullptr),
 	mPriority(priority),
 	mSize(0),
 	mLastPacketID(-1)
@@ -1144,7 +1166,7 @@ LLTransferSource *LLTransferSource::createSource(const LLTransferSourceType styp
 			{
 				// Use the callback to create the source type if it's not there.
 				LL_WARNS() << "Unknown transfer source type: " << stype << LL_ENDL;
-				return NULL;
+				return nullptr;
 			}
 			return (sSourceCreateMap[stype])(id, priority);
 		}
@@ -1173,7 +1195,7 @@ F32 LLTransferSource::sGetPriority(LLTransferSource *&tsp)
 LLTransferPacket::LLTransferPacket(const S32 packet_id, const LLTSCode status, const U8 *datap, const S32 size) :
 	mPacketID(packet_id),
 	mStatus(status),
-	mDatap(NULL),
+	mDatap(nullptr),
 	mSize(size)
 {
 	if (size == 0)
@@ -1182,7 +1204,7 @@ LLTransferPacket::LLTransferPacket(const S32 packet_id, const LLTSCode status, c
 	}
 	
 	mDatap = new U8[size];
-	if (mDatap != NULL)
+	if (mDatap != nullptr)
 	{
 		memcpy(mDatap, datap, size);	/*Flawfinder: ignore*/
 	}
@@ -1204,7 +1226,7 @@ LLTransferTarget::LLTransferTarget(
 	mType(type),
 	mSourceType(source_type),
 	mID(transfer_id),
-	mChannelp(NULL),
+	mChannelp(nullptr),
 	mGotInfo(FALSE),
 	mSize(0),
 	mLastPacketID(-1)
@@ -1288,7 +1310,7 @@ LLTransferTarget* LLTransferTarget::createTarget(
 		return new LLTransferTargetVFile(id, source_type);
 	default:
 		LL_WARNS() << "Unknown transfer target type: " << type << LL_ENDL;
-		return NULL;
+		return nullptr;
 	}
 }
 

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llanimationstates.cpp
  * @brief Implementation of animation state related functions.
@@ -353,14 +355,14 @@ const char *LLAnimationLibrary::animStateToString( const LLUUID& state )
 {
 	if (state.isNull())
 	{
-		return NULL;
+		return nullptr;
 	}
 	if (mAnimMap.count(state))
 	{
 		return mAnimMap[state];
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
@@ -380,7 +382,7 @@ LLUUID LLAnimationLibrary::stringToAnimState( const std::string& name, BOOL allo
 	if (true_name)
 	{
 		for (anim_map_t::iterator iter = mAnimMap.begin();
-			 iter != mAnimMap.end(); iter++)
+			 iter != mAnimMap.end(); ++iter)
 		{
 			if (iter->second == true_name)
 			{
@@ -412,7 +414,7 @@ std::string LLAnimationLibrary::animationName( const LLUUID& id ) const
 	if (cptr)
 		return std::string(cptr);
 	else
-		return std::string("[") + id.asString() + std::string("]");
+		return llformat("[%s]", id.asString().c_str());
 }
 
 // Animation states that the user can trigger as part of a gesture

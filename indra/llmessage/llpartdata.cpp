@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpartdata.cpp
  * @brief Particle system data packing
@@ -294,14 +296,14 @@ BOOL LLPartSysData::unpack(LLDataPacker &dp)
 		//skip to LLPartData block
 		U8 feh = 0;
 		
-		for (S32 i = 0; i < size; ++i)
+		for (U32 i = 0; i < size; ++i)
 		{
 			dp.unpackU8(feh, "whippang");
 		}
 				
 		dp.unpackS32(size, "partsize");
 		//skip LLPartData block
-		for (S32 i = 0; i < size; ++i)
+		for (U32 i = 0; i < size; ++i)
 		{
 			dp.unpackU8(feh, "whippang");
 		}
@@ -315,14 +317,14 @@ BOOL LLPartSysData::unpack(LLDataPacker &dp)
 
 std::ostream& operator<<(std::ostream& s, const LLPartSysData &data)
 {
-	s << "Flags: " << std::hex << data.mFlags;
-	s << " Pattern: " << std::hex << (U32) data.mPattern << "\n";
+	s << "Flags: " << std::hex << data.mFlags << std::dec;
+	s << " Pattern: " << std::hex << (U32) data.mPattern << std::dec << "\n";
 	s << "Age: [" << data.mStartAge << ", " << data.mMaxAge << "]\n";
 	s << "Angle: [" << data.mInnerAngle << ", " << data.mOuterAngle << "]\n";
 	s << "Burst Rate: " << data.mBurstRate << "\n";
 	s << "Burst Radius: " << data.mBurstRadius << "\n";
 	s << "Burst Speed: [" << data.mBurstSpeedMin << ", " << data.mBurstSpeedMax << "]\n";
-	s << "Burst Part Count: " << std::hex << (U32) data.mBurstPartCount << "\n";
+	s << "Burst Part Count: " << std::hex << (U32) data.mBurstPartCount << std::dec << "\n";
 	s << "Angular Velocity: " << data.mAngularVelocity << "\n";
 	s << "Accel: " << data.mPartAccel;
 	return s;

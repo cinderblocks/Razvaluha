@@ -67,12 +67,12 @@ public:
 	/**
 	 * @return Returns the number of the test metrics in this tester instance.
 	 */
-	S32 getNumberOfMetrics() const { return mMetricStrings.size() ;}
+	size_t getNumberOfMetrics() const { return mMetricStrings.size() ;}
 	/**
 	 * @return Returns the metric name at index
 	 * @param[in] index - Index on the list of metrics managed by this tester instance.
 	 */
-	std::string getMetricName(S32 index) const { return mMetricStrings[index] ;}
+	std::string getMetricName(size_t index) const { return mMetricStrings[index] ;}
 
 protected:
 	/**
@@ -156,7 +156,7 @@ public:
 	/**
 	 * @brief Delete all testers and reset the tester map
 	 */
-	static void cleanClass() ;
+	static void cleanupClass() ;
 
 private:
 	// Add a tester to the map. Returns false if adding fails.
@@ -181,7 +181,7 @@ public:
 	 * This will be loading the base and current sessions and compare them using the virtual 
 	 * abstract methods loadTestSession() and compareTestSessions()
 	 */
-	virtual void analyzePerformance(llofstream* os, LLSD* base, LLSD* current) ;
+	void analyzePerformance(llofstream* os, LLSD* base, LLSD* current) override;
 
 protected:
 	/**

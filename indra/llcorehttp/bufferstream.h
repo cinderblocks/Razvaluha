@@ -91,22 +91,22 @@ public:
 	virtual ~BufferArrayStreamBuf();
 
 private:
-	BufferArrayStreamBuf(const BufferArrayStreamBuf &);	// Not defined
-	void operator=(const BufferArrayStreamBuf &);		// Not defined
+	BufferArrayStreamBuf(const BufferArrayStreamBuf &) = delete;			// Not defined
+	BufferArrayStreamBuf& operator=(const BufferArrayStreamBuf &) = delete;	// Not defined
 
 public:
 	// Input interfaces from std::streambuf
-	int_type underflow();
-	int_type uflow();
-	int_type pbackfail(int_type ch);
-	std::streamsize showmanyc();
+	int_type underflow() override;
+	int_type uflow() override;
+	int_type pbackfail(int_type ch) override;
+	std::streamsize showmanyc() override;
 
 	// Output interfaces from std::streambuf
-	int_type overflow(int c);
-	std::streamsize xsputn(const char * src, std::streamsize count);
+	int_type overflow(int c) override;
+	std::streamsize xsputn(const char * src, std::streamsize count) override;
 
 	// Common/misc interfaces from std::streambuf
-	std::streampos seekoff(std::streamoff off, std::ios_base::seekdir way, std::ios_base::openmode which);
+	std::streampos seekoff(std::streamoff off, std::ios_base::seekdir way, std::ios_base::openmode which) override;
 	
 protected:
 	BufferArray *		mBufferArray;			// Ref counted

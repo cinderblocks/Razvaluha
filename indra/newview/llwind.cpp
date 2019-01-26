@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llwind.cpp
  * @brief LLWind class implementation
  *
- * $LicenseInfo:firstyear=2000&license=viewergpl$
- * 
- * Copyright (c) 2000-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2000&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -48,19 +44,20 @@
 
 // viewer
 #include "v4color.h"
-#include "llagent.h"
-#include "llviewerregion.h"
+#include "llagent.h"	// for gAgent
+#include "llworld.h"
+#include "llviewerregion.h"	// for getRegion()
 
 const F32 CLOUD_DIVERGENCE_COEF = 0.5f; 
 
+#include <numeric>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 LLWind::LLWind()
-:	mSize(16),
-	mCloudDensityp(NULL)
+:	mCloudDensityp(nullptr)
 {
 	init();
 }
@@ -68,10 +65,6 @@ LLWind::LLWind()
 
 LLWind::~LLWind()
 {
-	delete [] mVelX;
-	delete [] mVelY;
-	delete [] mCloudVelX;
-	delete [] mCloudVelY;
 }
 
 
@@ -82,35 +75,23 @@ LLWind::~LLWind()
 
 void LLWind::init()
 {
-	// Let's leave this enabled for now, I don't want to muck stuff up in case wind is re-enabled
+	LL_DEBUGS("Wind") << "initializing wind size: "<< WIND_SIZE << LL_ENDL;
+
 	// Initialize vector data
-	mVelX = new F32[mSize*mSize];
-	mVelY = new F32[mSize*mSize];
-
-	mCloudVelX = new F32[mSize*mSize];
-	mCloudVelY = new F32[mSize*mSize];
-
-	S32 i;
-	for (i = 0; i < mSize*mSize; i++)
-	{
-		mVelX[i] = 0.5f;
-		mVelY[i] = 0.5f;
-		mCloudVelX[i] = 0.0f;
-		mCloudVelY[i] = 0.0f;
-	}
+	mVelX.fill(0.5f);
+	mVelY.fill(0.5f);
+	mCloudVelX.fill(0.0f);
+	mCloudVelY.fill(0.0f);
 }
 
 
 void LLWind::decompress(LLBitPack &bitpack, LLGroupHeader *group_headerp)
 {
 	static const LLCachedControl<bool> wind_enabled("WindEnabled",false); 
-	if (!mCloudDensityp || !wind_enabled)
-	{
-		return;
-	}
+	if (!mCloudDensityp || !wind_enabled) return;
 
 	LLPatchHeader  patch_header;
-	S32 buffer[16*16];
+	S32 buffer[ARRAY_SIZE];
 
 	init_patch_decompressor(group_headerp->patch_size);
 
@@ -122,14 +103,12 @@ void LLWind::decompress(LLBitPack &bitpack, LLGroupHeader *group_headerp)
 	// X component
 	decode_patch_header(bitpack, &patch_header);
 	decode_patch(bitpack, buffer);
-	decompress_patch(mVelX, buffer, &patch_header);
+	decompress_patch(mVelX.data(), buffer, &patch_header);
 
 	// Y component
 	decode_patch_header(bitpack, &patch_header);
 	decode_patch(bitpack, buffer);
-	decompress_patch(mVelY, buffer, &patch_header);
-
-
+	decompress_patch(mVelY.data(), buffer, &patch_header);
 
 	S32 i, j, k;
 	// HACK -- mCloudVelXY is the same as mVelXY, except we add a divergence
@@ -138,43 +117,43 @@ void LLWind::decompress(LLBitPack &bitpack, LLGroupHeader *group_headerp)
 	// NOTE ASSUMPTION: cloud density has the same dimensions as the wind field
 	// This needs to be fixed... causes discrepency at region boundaries
 
-	for (j=1; j<mSize-1; j++)
+	for (j=1; j<WIND_SIZE-1; j++)
 	{
-		for (i=1; i<mSize-1; i++)
+		for (i=1; i<WIND_SIZE-1; i++)
 		{
-			k = i + j * mSize;
-			*(mCloudVelX + k) = *(mVelX + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 1) - *(mCloudDensityp + k - 1));
-			*(mCloudVelY + k) = *(mVelY + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + mSize) - *(mCloudDensityp + k - mSize));
+			k = i + j * WIND_SIZE;
+			mCloudVelX[k] = mVelX[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 1) - *(mCloudDensityp + k - 1));
+			mCloudVelY[k] = mVelY[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + WIND_SIZE) - *(mCloudDensityp + k - WIND_SIZE));
 		}
 	}
 
-	i = mSize - 1;
-	for (j=1; j<mSize-1; j++)
+	i = WIND_SIZE - 1;
+	for (j=1; j<WIND_SIZE-1; j++)
 	{
-		k = i + j * mSize;
-		*(mCloudVelX + k) = *(mVelX + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k) - *(mCloudDensityp + k - 2));
-		*(mCloudVelY + k) = *(mVelY + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + mSize) - *(mCloudDensityp + k - mSize));
+		k = i + j * WIND_SIZE;
+		mCloudVelX[k] = mVelX[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k) - *(mCloudDensityp + k - 2));
+		mCloudVelY[k] = mVelY[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + WIND_SIZE) - *(mCloudDensityp + k - WIND_SIZE));
 	}
 	i = 0;
-	for (j=1; j<mSize-1; j++)
+	for (j=1; j<WIND_SIZE-1; j++)
 	{
-		k = i + j * mSize;
-		*(mCloudVelX + k) = *(mVelX + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 2) - *(mCloudDensityp + k));
-		*(mCloudVelY + k) = *(mVelY + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + mSize) - *(mCloudDensityp + k + mSize));
+		k = i + j * WIND_SIZE;
+		mCloudVelX[k] = mVelX[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 2) - *(mCloudDensityp + k));
+		mCloudVelY[k] = mVelY[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + WIND_SIZE) - *(mCloudDensityp + k + WIND_SIZE));
 	}
-	j = mSize - 1;
-	for (i=1; i<mSize-1; i++)
+	j = WIND_SIZE - 1;
+	for (i=1; i<WIND_SIZE-1; i++)
 	{
-		k = i + j * mSize;
-		*(mCloudVelX + k) = *(mVelX + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 1) - *(mCloudDensityp + k - 1));
-		*(mCloudVelY + k) = *(mVelY + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k) - *(mCloudDensityp + k - 2*mSize));
+		k = i + j * WIND_SIZE;
+		mCloudVelX[k] = mVelX[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 1) - *(mCloudDensityp + k - 1));
+		mCloudVelY[k] = mVelY[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k) - *(mCloudDensityp + k - 2*WIND_SIZE));
 	}
 	j = 0;
-	for (i=1; i<mSize-1; i++)
+	for (i=1; i<WIND_SIZE-1; i++)
 	{
-		k = i + j * mSize;
-		*(mCloudVelX + k) = *(mVelX + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 1) - *(mCloudDensityp + k -1));
-		*(mCloudVelY + k) = *(mVelY + k) + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 2*mSize) - *(mCloudDensityp + k));
+		k = i + j * WIND_SIZE;
+		mCloudVelX[k] = mVelX[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 1) - *(mCloudDensityp + k -1));
+		mCloudVelY[k] = mVelY[k] + CLOUD_DIVERGENCE_COEF * (*(mCloudDensityp + k + 2*WIND_SIZE) - *(mCloudDensityp + k));
 	}
 }
 
@@ -182,32 +161,23 @@ void LLWind::decompress(LLBitPack &bitpack, LLGroupHeader *group_headerp)
 LLVector3 LLWind::getAverage()
 {
 	static const LLCachedControl<bool> wind_enabled("WindEnabled",false); 
-	if(!wind_enabled)
-	{
-		return LLVector3(0.f, 0.f, 0.f);
-	}
-	//  Returns in average_wind the average wind velocity 
-	LLVector3 average(0.0f, 0.0f, 0.0f);	
-	S32 i, grid_count;
-	grid_count = mSize * mSize;
-	for (i = 0; i < grid_count; i++)
-	{
-		average.mV[VX] += mVelX[i];
-		average.mV[VY] += mVelY[i];
-	}
+	if (!wind_enabled) return LLVector3(0.f, 0.f, 0.f);
 
-	average *= 1.f/((F32)(grid_count)) * WIND_SCALE_HACK;
-	return average;
+	constexpr F32 scalar = 1.f/((F32)(ARRAY_SIZE)) * WIND_SCALE_HACK;
+	//  Returns in average_wind the average wind velocity 
+	return LLVector3(
+		std::accumulate(mVelX.begin(), mVelX.end(), 0.0f) * scalar,
+		std::accumulate(mVelY.begin(), mVelY.end(), 0.0f) * scalar,
+		0.0f
+	);
 }
 
 
 LLVector3 LLWind::getVelocityNoisy(const LLVector3 &pos_region, const F32 dim)
 {
 	static const LLCachedControl<bool> wind_enabled("WindEnabled",false); 
-	if(!wind_enabled)
-	{
-		return LLVector3(0.f, 0.f, 0.f);
-	}
+	if (!wind_enabled) return LLVector3(0.f, 0.f, 0.f);
+	
 	//  Resolve a value, using fractal summing to perturb the returned value 
 	LLVector3 r_val(0,0,0);
 	F32 norm = 1.0f;
@@ -239,11 +209,8 @@ LLVector3 LLWind::getVelocityNoisy(const LLVector3 &pos_region, const F32 dim)
 LLVector3 LLWind::getVelocity(const LLVector3 &pos_region)
 {
 	static const LLCachedControl<bool> wind_enabled("WindEnabled",false); 
-	if(!wind_enabled)
-	{
-		return LLVector3(0.f, 0.f, 0.f);
-	}
-	llassert(mSize == 16);
+	if (!wind_enabled) return LLVector3(0.f, 0.f, 0.f);
+
 	// Resolves value of wind at a location relative to SW corner of region
 	//  
 	// Returns wind magnitude in X,Y components of vector3
@@ -253,10 +220,7 @@ LLVector3 LLWind::getVelocity(const LLVector3 &pos_region)
 
 	LLVector3 pos_clamped_region(pos_region);
 	
-// <FS:CR> Aurora Sim
-	//F32 region_width_meters = LLWorld::getInstance()->getRegionWidthInMeters();
 	F32 region_width_meters = gAgent.getRegion()->getWidth();
-// </FS:CR> Aurora Sim
 
 	if (pos_clamped_region.mV[VX] < 0.f)
 	{
@@ -277,23 +241,23 @@ LLVector3 LLWind::getVelocity(const LLVector3 &pos_region)
 	}
 	
 	
-	S32 i = llfloor(pos_clamped_region.mV[VX] * mSize / region_width_meters);
-	S32 j = llfloor(pos_clamped_region.mV[VY] * mSize / region_width_meters);
-	k = i + j*mSize;
-	dx = ((pos_clamped_region.mV[VX] * mSize / region_width_meters) - (F32) i);
-	dy = ((pos_clamped_region.mV[VY] * mSize / region_width_meters) - (F32) j);
+	S32 i = llfloor(pos_clamped_region.mV[VX] * WIND_SIZE / region_width_meters);
+	S32 j = llfloor(pos_clamped_region.mV[VY] * WIND_SIZE / region_width_meters);
+	k = i + j*WIND_SIZE;
+	dx = ((pos_clamped_region.mV[VX] * WIND_SIZE / region_width_meters) - (F32) i);
+	dy = ((pos_clamped_region.mV[VY] * WIND_SIZE / region_width_meters) - (F32) j);
 
-	if ((i < mSize-1) && (j < mSize-1))
+	if ((i < WIND_SIZE-1) && (j < WIND_SIZE-1))
 	{
 		//  Interior points, no edges
 		r_val.mV[VX] =  mVelX[k]*(1.0f - dx)*(1.0f - dy) + 
 						mVelX[k + 1]*dx*(1.0f - dy) + 
-						mVelX[k + mSize]*dy*(1.0f - dx) + 
-						mVelX[k + mSize + 1]*dx*dy;
+						mVelX[k + WIND_SIZE]*dy*(1.0f - dx) + 
+						mVelX[k + WIND_SIZE + 1]*dx*dy;
 		r_val.mV[VY] =  mVelY[k]*(1.0f - dx)*(1.0f - dy) + 
 						mVelY[k + 1]*dx*(1.0f - dy) + 
-						mVelY[k + mSize]*dy*(1.0f - dx) + 
-						mVelY[k + mSize + 1]*dx*dy;
+						mVelY[k + WIND_SIZE]*dy*(1.0f - dx) + 
+						mVelY[k + WIND_SIZE + 1]*dx*dy;
 	}
 	else 
 	{
@@ -305,15 +269,11 @@ LLVector3 LLWind::getVelocity(const LLVector3 &pos_region)
 	return r_val * WIND_SCALE_HACK;
 }
 
-
 LLVector3 LLWind::getCloudVelocity(const LLVector3 &pos_region)
 {
 	static const LLCachedControl<bool> wind_enabled("WindEnabled",false); 
-	if(!wind_enabled)
-	{
-		return LLVector3(0.f, 0.f, 0.f);
-	}
-	llassert(mSize == 16);
+	if (!wind_enabled) return LLVector3(0.f, 0.f, 0.f);
+
 	// Resolves value of wind at a location relative to SW corner of region
 	//  
 	// Returns wind magnitude in X,Y components of vector3
@@ -344,23 +304,23 @@ LLVector3 LLWind::getCloudVelocity(const LLVector3 &pos_region)
 	}
 	
 	
-	S32 i = llfloor(pos_clamped_region.mV[VX] * mSize / region_width_meters);
-	S32 j = llfloor(pos_clamped_region.mV[VY] * mSize / region_width_meters);
-	k = i + j*mSize;
-	dx = ((pos_clamped_region.mV[VX] * mSize / region_width_meters) - (F32) i);
-	dy = ((pos_clamped_region.mV[VY] * mSize / region_width_meters) - (F32) j);
+	S32 i = llfloor(pos_clamped_region.mV[VX] * WIND_SIZE / region_width_meters);
+	S32 j = llfloor(pos_clamped_region.mV[VY] * WIND_SIZE / region_width_meters);
+	k = i + j*WIND_SIZE;
+	dx = ((pos_clamped_region.mV[VX] * WIND_SIZE / region_width_meters) - (F32) i);
+	dy = ((pos_clamped_region.mV[VY] * WIND_SIZE / region_width_meters) - (F32) j);
 
-	if ((i < mSize-1) && (j < mSize-1))
+	if ((i < WIND_SIZE-1) && (j < WIND_SIZE-1))
 	{
 		//  Interior points, no edges
 		r_val.mV[VX] =  mCloudVelX[k]*(1.0f - dx)*(1.0f - dy) + 
 						mCloudVelX[k + 1]*dx*(1.0f - dy) + 
-						mCloudVelX[k + mSize]*dy*(1.0f - dx) + 
-						mCloudVelX[k + mSize + 1]*dx*dy;
+						mCloudVelX[k + WIND_SIZE]*dy*(1.0f - dx) + 
+						mCloudVelX[k + WIND_SIZE + 1]*dx*dy;
 		r_val.mV[VY] =  mCloudVelY[k]*(1.0f - dx)*(1.0f - dy) + 
 						mCloudVelY[k + 1]*dx*(1.0f - dy) + 
-						mCloudVelY[k + mSize]*dy*(1.0f - dx) + 
-						mCloudVelY[k + mSize + 1]*dx*dy;
+						mCloudVelY[k + WIND_SIZE]*dy*(1.0f - dx) + 
+						mCloudVelY[k + WIND_SIZE + 1]*dx*dy;
 	}
 	else 
 	{

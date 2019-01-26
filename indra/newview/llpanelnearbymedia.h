@@ -183,8 +183,8 @@ private:
 
 class LLFloaterNearbyMedia : public LLFloater, public LLSingleton<LLFloaterNearbyMedia>
 {
+	LLSINGLETON(LLFloaterNearbyMedia);
 public:
-	LLFloaterNearbyMedia();
 
 	static void updateClass();
 

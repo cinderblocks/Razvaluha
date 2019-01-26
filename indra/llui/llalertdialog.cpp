@@ -48,6 +48,7 @@
 #include "lluictrlfactory.h"
 #include "llnotifications.h"
 #include "llfunctorregistry.h"
+#include "lldraghandle.h"
 
 const S32 MAX_ALLOWED_MSG_WIDTH = 400;
 const F32 DEFAULT_BUTTON_DELAY = 0.5f;
@@ -56,6 +57,7 @@ const S32 MSG_PAD = 8;
 /*static*/ LLControlGroup* LLAlertDialog::sSettings = NULL;
 /*static*/ LLAlertDialog::URLLoader* LLAlertDialog::sURLLoader;
 
+// Singu TODO: Update to LLScreenChannel and LLNotificationAlertHandler?
 //static
 void LLAlertDialog::initClass()
 {
@@ -102,7 +104,6 @@ bool LLAlertDialog::onNewNotification(const LLSD& notify, bool is_modal)
 static const S32 VPAD = 16;
 static const S32 HPAD = 25;
 static const S32 BTN_HPAD = 8;
-static const LLFONT_ID FONT_NAME = LLFONT_SANSSERIF;
 
 LLAlertDialog::LLAlertDialog( LLNotificationPtr notification, bool modal)
 	:	LLModalDialog( notification->getLabel(), 100, 100, modal ),  // dummy size.  Will reshape below.
@@ -114,7 +115,7 @@ LLAlertDialog::LLAlertDialog( LLNotificationPtr notification, bool modal)
 		mLineEditor(NULL),
 		mNote(notification)
 {
-	const LLFontGL* font = LLResMgr::getInstance()->getRes( FONT_NAME );
+	const LLFontGL* font = LLFontGL::getFontSansSerif();
 	const S32 LINE_HEIGHT = llfloor(font->getLineHeight() + 0.99f);
 	const S32 EDITOR_HEIGHT = 20;
 
@@ -233,6 +234,12 @@ LLAlertDialog::LLAlertDialog( LLNotificationPtr notification, bool modal)
 		msg_box->setColor( LLUI::sColorsGroup->getColor( "AlertTextColor" ) );
 	}
 
+	LLDragHandle* handle = getDragHandle();
+	if (handle)
+	{
+		getDragHandle()->setTextColor(LLUI::sColorsGroup->getColor(mCaution ? "AlertCautionTextColor" : "AlertTextColor"));
+	}
+
 	LLRect rect;
 	rect.setLeftTopAndSize( msg_x, msg_y, text_rect.getWidth(), text_rect.getHeight() );
 	msg_box->setRect( rect );
@@ -257,6 +264,10 @@ LLAlertDialog::LLAlertDialog( LLNotificationPtr notification, bool modal)
 			button_data.mText);
 
 		btn->setClickedCallback(boost::bind(&LLAlertDialog::onButtonPressed, this, _1, button_data.mUrl));
+		if (mCaution)
+		{
+			btn->setColor(LLUI::sColorsGroup->getColor("ButtonCautionImageColor"));
+		}
 
 		addChild(btn);
 
@@ -339,17 +350,20 @@ bool LLAlertDialog::show()
 
 	// attach to floater if necessary
 	LLUUID context_key = mNote->getPayload()["context"].asUUID();
-	LLFloaterNotificationContext* contextp = dynamic_cast<LLFloaterNotificationContext*>(LLNotificationContext::getInstance(context_key));
-	if (contextp && contextp->getFloater())
+	if (context_key.notNull())
 	{
-		contextp->getFloater()->addDependentFloater(this, FALSE);
+		LLFloaterNotificationContext* contextp = dynamic_cast<LLFloaterNotificationContext*>(LLNotificationContext::getInstance(context_key));
+		if (contextp && contextp->getFloater())
+		{
+			contextp->getFloater()->addDependentFloater(this, FALSE);
+		}
 	}
 	return true;
 }
 
 bool LLAlertDialog::setCheckBox( const std::string& check_title, const std::string& check_control )
 {
-	const LLFontGL* font = LLResMgr::getInstance()->getRes( FONT_NAME );
+	const LLFontGL* font = LLFontGL::getFontSansSerif();
 	const S32 LINE_HEIGHT = llfloor(font->getLineHeight() + 0.99f);
 	
 	// Extend dialog for "check next time"
@@ -371,6 +385,11 @@ bool LLAlertDialog::setCheckBox( const std::string& check_title, const std::stri
 								max_msg_width, LINE_HEIGHT);
 
 	mCheck = new LLCheckboxCtrl(std::string("check"), check_rect, check_title, font, boost::bind(&LLAlertDialog::onClickIgnore, this, _1));
+	mCheck->setEnabledColor(LLUI::sColorsGroup->getColor( mCaution ? "AlertCautionTextColor" : "AlertTextColor"));
+	if (mCaution)
+	{
+		mCheck->setButtonColor(LLUI::sColorsGroup->getColor("ButtonCautionImageColor"));
+	}
 	addChild(mCheck);
 
 	return true;
@@ -397,6 +416,7 @@ void LLAlertDialog::onClose(bool app_quitting)
 {
 	if(mNote.get() && !mNote->isRespondedTo() && !mNote->isIgnored())
 	{
+		// Singu TODO: I know this could be done better, but it doesn't matter for now.
 		LLButton* btn = NULL;
 		bool found_cancel = false;
 		for(child_list_const_iter_t it = beginChild(); it != endChild(); ++it)
@@ -439,42 +459,24 @@ LLAlertDialog::~LLAlertDialog()
 
 BOOL LLAlertDialog::hasTitleBar() const
 {
-	return (getCurrentTitle() != "" && getCurrentTitle() != " ")	// has title
+	return (!getCurrentTitle().empty() && getCurrentTitle() != " ")	// has title
 			|| isMinimizeable()
 			|| isCloseable();
 }
 
 BOOL LLAlertDialog::handleKeyHere(KEY key, MASK mask )
 {
-	if( KEY_RETURN == key && mask == MASK_NONE )
-	{
-		LLModalDialog::handleKeyHere( key, mask );
-		return TRUE;
-	}
-	else if (KEY_RIGHT == key)
+	if (KEY_RIGHT == key || (KEY_TAB == key && mask == MASK_NONE))
 	{
 		focusNextItem(FALSE);
 		return TRUE;
 	}
-	else if (KEY_LEFT == key)
+	if (KEY_LEFT == key || (KEY_TAB == key && mask == MASK_SHIFT))
 	{
 		focusPrevItem(FALSE);
 		return TRUE;
 	}
-	else if (KEY_TAB == key && mask == MASK_NONE)
-	{
-		focusNextItem(FALSE);
-		return TRUE;
-	}
-	else if (KEY_TAB == key && mask == MASK_SHIFT)
-	{
-		focusPrevItem(FALSE);
-		return TRUE;
-	}
-	else
-	{
-		return LLModalDialog::handleKeyHere( key, mask );
-	}
+	return LLModalDialog::handleKeyHere( key, mask );
 }
 
 // virtual

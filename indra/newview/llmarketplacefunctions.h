@@ -1,4 +1,4 @@
-/**
+/** 
  * @file llmarketplacefunctions.h
  * @brief Miscellaneous marketplace-related functions and classes
  * class definition
@@ -6,21 +6,21 @@
  * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2011, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
  * version 2.1 of the License only.
- *
+ * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
+ * 
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
@@ -30,11 +30,6 @@
 
 
 #include <llsd.h>
-#include <boost/function.hpp>
-#include <boost/signals2.hpp>
-
-#include "llsingleton.h"
-#include "llstring.h"
 
 
 
@@ -86,10 +81,9 @@ namespace MarketplaceFetchCodes
 class LLMarketplaceInventoryImporter
 	: public LLSingleton<LLMarketplaceInventoryImporter>
 {
+	LLSINGLETON(LLMarketplaceInventoryImporter);
 public:
 	static void update();
-
-	LLMarketplaceInventoryImporter();
 
 	typedef boost::signals2::signal<void (bool)> status_changed_signal_t;
 	typedef boost::signals2::signal<void (U32, const LLSD&)> status_report_signal_t;
@@ -97,23 +91,23 @@ public:
 	boost::signals2::connection setInitializationErrorCallback(const status_report_signal_t::slot_type& cb);
 	boost::signals2::connection setStatusChangedCallback(const status_changed_signal_t::slot_type& cb);
 	boost::signals2::connection setStatusReportCallback(const status_report_signal_t::slot_type& cb);
-
+	
 	void initialize();
 	bool triggerImport();
 	bool isImportInProgress() const { return mImportInProgress; }
 	bool isInitialized() const { return mInitialized; }
 	U32 getMarketPlaceStatus() const { return mMarketPlaceStatus; }
-
+	
 protected:
 	void reinitializeAndTriggerImport();
 	void updateImport();
-
+	
 private:
 	bool mAutoTriggerImport;
 	bool mImportInProgress;
 	bool mInitialized;
-	U32 mMarketPlaceStatus;
-
+	U32  mMarketPlaceStatus;
+	
 	status_report_signal_t *	mErrorInitSignal;
 	status_changed_signal_t *	mStatusChangedSignal;
 	status_report_signal_t *	mStatusReportSignal;
@@ -181,10 +175,11 @@ class LLSLMDeleteListingsResponder;
 class LLMarketplaceData
     : public LLSingleton<LLMarketplaceData>
 {
-    friend class LLSingleton < LLMarketplaceData > ;
+    LLSINGLETON(LLMarketplaceData);
+    virtual ~LLMarketplaceData();
 
 public:
-	friend class LLSLMGetMerchantResponder;
+    friend class LLSLMGetMerchantResponder;
     friend class LLSLMGetListingsResponder;
     friend class LLSLMCreateListingsResponder;
     friend class LLSLMGetListingResponder;
@@ -242,9 +237,6 @@ public:
     void decrementValidationWaiting(const LLUUID& folder_id, S32 count = 1);
 
 private:
-    LLMarketplaceData();
-    virtual ~LLMarketplaceData();
-
     // Modify Marketplace data set  : each method returns true if the function succeeds, false if error
     // Used internally only by SLM Responders when data are received from the SLM Server
     bool addListing(const LLUUID& folder_id, S32 listing_id, const LLUUID& version_id, bool is_listed, const std::string& edit_url, S32 count);

@@ -40,7 +40,6 @@ set(llprimitive_SOURCE_FILES
     lltextureentry.cpp
     lltreeparams.cpp
     llvolumemessage.cpp
-    llvolumexml.cpp
     material_codes.cpp
     )
 
@@ -56,12 +55,12 @@ set(llprimitive_HEADER_FILES
     llmodelloader.h
     llprimitive.h
     llprimtexturelist.h
+    lllslconstants.h
     lltextureanim.h
     lltextureentry.h
-    lltree_common.h
     lltreeparams.h
+    lltree_common.h
     llvolumemessage.h
-    llvolumexml.h
     material_codes.h
     object_flags.h
     )
@@ -81,5 +80,7 @@ target_link_libraries(llprimitive
     ${LLXML_LIBRARIES}
     ${LLPHYSICSEXTENSIONS_LIBRARIES}
     ${LLCHARACTER_LIBRARIES}
+    ${BOOST_COROUTINE_LIBRARY}
+    ${BOOST_CONTEXT_LIBRARY}
     )
 

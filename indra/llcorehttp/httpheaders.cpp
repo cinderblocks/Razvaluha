@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file httpheaders.cpp
  * @brief Implementation of the HTTPHeaders class
@@ -114,7 +116,7 @@ const std::string * HttpHeaders::find(const std::string &name) const
 			return &(*iter).second;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void HttpHeaders::remove(const char *name)

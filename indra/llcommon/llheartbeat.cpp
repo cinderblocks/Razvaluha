@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llheartbeat.cpp
  * @brief Class encapsulating logic for telling a watchdog that we live.
@@ -69,7 +71,7 @@ LLHeartbeat::rawSend()
 
 	int result;
 #ifndef LL_DARWIN
-	static union sigval dummy;
+	union sigval dummy;
 	result = sigqueue(getppid(), LL_HEARTBEAT_SIGNAL, dummy);
 #else
 	result = kill(getppid(), LL_HEARTBEAT_SIGNAL);

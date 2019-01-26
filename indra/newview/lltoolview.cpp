@@ -101,7 +101,7 @@ LLToolView::~LLToolView()
 // 	mButtonCount++;
 
 // 	const S32 LABEL_TOP_SPACING = 0;
-// 	const LLFontGL* font = LLResMgr::getInstance()->getRes( LLFONT_SANSSERIF_SMALL );
+// 	const LLFontGL* font = LLFontGL::getFontSansSerifSmall();
 // 	S32 label_width = font->getWidth( label );
 // 	LLRect label_rect;
 // 	label_rect.setLeftTopAndSize( 

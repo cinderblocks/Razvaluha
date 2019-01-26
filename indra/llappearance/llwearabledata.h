@@ -2,7 +2,7 @@
  * @file llwearabledata.h
  * @brief LLWearableData class header file
  *
- * $LicenseInfo:firstyear=20012license=viewerlgpl$
+ * $LicenseInfo:firstyear=2012&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
  * 
@@ -30,7 +30,6 @@
 #include "llavatarappearancedefines.h"
 #include "llwearable.h"
 #include "llerror.h"
-#include <boost/array.hpp>
 
 class LLAvatarAppearance;
 
@@ -101,11 +100,12 @@ protected:
 protected:
 	LLAvatarAppearance* mAvatarAppearance;
 	typedef std::vector<LLWearable*> wearableentry_vec_t; // all wearables of a certain type (EG all shirts)
-	//typedef std::map<LLWearableType::EType, wearableentry_vec_t> wearableentry_map_t;	// wearable "categories" arranged by wearable type
-	
+#if USE_LL_APPEARANCE_CODE
+	typedef std::map<LLWearableType::EType, wearableentry_vec_t> wearableentry_map_t;	// wearable "categories" arranged by wearable type
+#else // USE_LL_APPEARANCE_CODE
 	//Why this weird structure? LLWearableType::WT_COUNT small and known, therefore it's more efficient to make an array of vectors, indexed
 	//by wearable type. This allows O(1) lookups. This structure simply lets us plug in this optimization without touching any code elsewhere.
-	typedef boost::array<std::pair<LLWearableType::EType,wearableentry_vec_t>,LLWearableType::WT_COUNT> wearable_array_t;
+	typedef std::array<std::pair<LLWearableType::EType, wearableentry_vec_t>, LLWearableType::WT_COUNT> wearable_array_t;
 	struct wearableentry_map_t : public wearable_array_t
 	{
 		wearableentry_map_t()
@@ -128,10 +128,12 @@ protected:
 		wearableentry_vec_t&       operator []	(const S32 index)		{ return at(index).second; }
 		const wearableentry_vec_t& operator []	(const S32 index) const	{ return at(index).second; }
 	};
-	wearableentry_map_t mWearableDatas;	//Array for quicker lookups.
+#endif // USE_LL_APPEARANCE_CODE
+	wearableentry_map_t mWearableDatas;
 
 };
 
 
 
 #endif // LL_WEARABLEDATA_H
+

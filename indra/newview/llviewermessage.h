@@ -39,7 +39,6 @@
 #include "lltransactiontypes.h"
 #include "lluuid.h"
 #include "message.h"
-#include "stdenums.h"
 #include "llnotifications.h"
 #include "llchat.h"
 

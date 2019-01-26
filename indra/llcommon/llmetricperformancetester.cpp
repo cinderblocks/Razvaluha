@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmetricperformancetester.cpp
  * @brief LLMetricPerformanceTesterBasic and LLMetricPerformanceTesterWithSession classes implementation
@@ -40,7 +42,7 @@
 LLMetricPerformanceTesterBasic::name_tester_map_t LLMetricPerformanceTesterBasic::sTesterMap ;
 
 /*static*/ 
-void LLMetricPerformanceTesterBasic::cleanClass() 
+void LLMetricPerformanceTesterBasic::cleanupClass() 
 {
 	for (name_tester_map_t::iterator iter = sTesterMap.begin() ; iter != sTesterMap.end() ; ++iter)
 	{
@@ -84,7 +86,7 @@ LLMetricPerformanceTesterBasic* LLMetricPerformanceTesterBasic::getTester(std::s
 	{
 		return found_it->second ;
 	}
-	return NULL ;
+	return nullptr ;
 }
 
 /*static*/ 
@@ -100,7 +102,7 @@ LLSD LLMetricPerformanceTesterBasic::analyzeMetricPerformanceLog(std::istream& i
 	LLSD ret;
 	LLSD cur;
 	
-	while (!is.eof() && LLSDParser::PARSE_FAILURE != LLSDSerialize::fromXML(cur, is))
+	while (!is.fail() && !is.eof() && LLSDParser::PARSE_FAILURE != LLSDSerialize::fromXML(cur, is))
 	{
 		for (LLSD::map_iterator iter = cur.beginMap(); iter != cur.endMap(); ++iter)
 		{
@@ -111,8 +113,8 @@ LLSD LLMetricPerformanceTesterBasic::analyzeMetricPerformanceLog(std::istream& i
 			{
 				ret[label]["Name"] = iter->second["Name"] ;
 				
-				S32 num_of_metrics = tester->getNumberOfMetrics() ;
-				for(S32 index = 0 ; index < num_of_metrics ; index++)
+				size_t num_of_metrics = tester->getNumberOfMetrics() ;
+				for(size_t index = 0 ; index < num_of_metrics ; index++)
 				{
 					ret[label][ tester->getMetricName(index) ] = iter->second[ tester->getMetricName(index) ] ;
 				}
@@ -273,8 +275,8 @@ void LLMetricPerformanceTesterBasic::compareTestResults(llofstream* os, std::str
 
 LLMetricPerformanceTesterWithSession::LLMetricPerformanceTesterWithSession(std::string name) : 
 	LLMetricPerformanceTesterBasic(name),
-	mBaseSessionp(NULL),
-	mCurrentSessionp(NULL)
+	mBaseSessionp(nullptr),
+	mCurrentSessionp(nullptr)
 {
 }
 
@@ -283,12 +285,12 @@ LLMetricPerformanceTesterWithSession::~LLMetricPerformanceTesterWithSession()
 	if (mBaseSessionp)
 	{
 		delete mBaseSessionp ;
-		mBaseSessionp = NULL ;
+		mBaseSessionp = nullptr ;
 	}
 	if (mCurrentSessionp)
 	{
 		delete mCurrentSessionp ;
-		mCurrentSessionp = NULL ;
+		mCurrentSessionp = nullptr ;
 	}
 }
 
@@ -315,12 +317,12 @@ void LLMetricPerformanceTesterWithSession::analyzePerformance(llofstream* os, LL
 	if (mBaseSessionp)
 	{
 		delete mBaseSessionp ;
-		mBaseSessionp = NULL ;
+		mBaseSessionp = nullptr ;
 	}
 	if (mCurrentSessionp)
 	{
 		delete mCurrentSessionp ;
-		mCurrentSessionp = NULL ;
+		mCurrentSessionp = nullptr ;
 	}
 }
 

@@ -37,7 +37,6 @@
 #include "llinventory.h"
 #include "llviewerobject.h"
 #include "llvoinventorylistener.h"
-#include "llmap.h"
 #include "lluuid.h"
 
 #include "llfloater.h"

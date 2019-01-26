@@ -9,9 +9,7 @@
 #   LINUX   - Linux
 #   WINDOWS - Windows
 
-
 # Relative and absolute paths to subtrees.
-
 if(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)
 set(${CMAKE_CURRENT_LIST_FILE}_INCLUDED "YES")
 
@@ -24,13 +22,27 @@ set(LIBS_OPEN_PREFIX)
 set(SCRIPTS_PREFIX ../scripts)
 set(VIEWER_PREFIX)
 set(INTEGRATION_TESTS_PREFIX)
-set(LL_TESTS OFF CACHE BOOL "Build and run unit and integration tests (disable for build timing runs to reduce variation)")
+option(LL_TESTS "Build and run unit and integration tests (disable for build timing runs to reduce variation" OFF)
 
 # Compiler and toolchain options
 set(DISABLE_TCMALLOC OFF CACHE BOOL "Disable linkage of TCMalloc. (64bit builds automatically disable TCMalloc)")
 set(DISABLE_FATAL_WARNINGS TRUE CACHE BOOL "Set this to FALSE to enable fatal warnings.")
 option(INCREMENTAL_LINK "Use incremental linking or incremental LTCG for LTO on win32 builds (enable for faster links on some machines)" OFF)
 option(USE_LTO "Enable Whole Program Optimization and related folding and binary reduction routines" OFF)
+option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
+
+# Media Plugins
+option(ENABLE_MEDIA_PLUGINS "Turn off building media plugins if they are imported by third-party library mechanism" ON)
+option(LIBVLCPLUGIN "Turn off building support for libvlc plugin" ON)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(LIBVLCPLUGIN OFF)
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+# Audio Engines
+option(FMODSTUDIO "Build with support for the FMOD Studio audio engine" OFF)
+
+# Window implementation
+option(LLWINDOW_SDL2 "Use SDL2 for window and input handling" OFF)
 
 # Proprietary Library Features
 option(NVAPI "Use nvapi driver interface library" OFF)
@@ -60,7 +72,7 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/Server.cmake)
   set(INSTALL_PROPRIETARY ON CACHE BOOL "Install proprietary binaries")
 endif (EXISTS ${CMAKE_SOURCE_DIR}/Server.cmake)
 set(TEMPLATE_VERIFIER_OPTIONS "" CACHE STRING "Options for scripts/template_verifier.py")
-set(TEMPLATE_VERIFIER_MASTER_URL "http://bitbucket.org/lindenlab/master-message-template/raw/tip/message_template.msg" CACHE STRING "Location of the master message template")
+set(TEMPLATE_VERIFIER_MASTER_URL "https://bitbucket.org/alchemyviewer/master-message-template/raw/tip/message_template.msg" CACHE STRING "Location of the master message template")
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
@@ -74,41 +86,41 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(LL_ARCH ${ARCH}_win64)
     set(LL_ARCH_DIR ${ARCH}-win64)
     set(WORD_SIZE 64)
-    set(AUTOBUILD_PLATFORM_NAME "windows64")
+    set(AUTOBUILD_PLATFORM_NAME "windows64" CACHE STRING "Autobuild Platform Name")
   else (WORD_SIZE EQUAL 64)
     set(ARCH i686 CACHE STRING "Viewer Architecture")
     set(LL_ARCH ${ARCH}_win32)
     set(LL_ARCH_DIR ${ARCH}-win32)
     set(WORD_SIZE 32)
-    set(AUTOBUILD_PLATFORM_NAME "windows")
+    set(AUTOBUILD_PLATFORM_NAME "windows" CACHE STRING "Autobuild Platform Name")
   endif (WORD_SIZE EQUAL 64)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(LINUX ON BOOl FORCE)
+  set(LINUX ON BOOL FORCE)
 
   # If someone has specified a word size, use that to determine the
   # architecture.  Otherwise, let the architecture specify the word size.
   if (WORD_SIZE EQUAL 32)
     #message(STATUS "WORD_SIZE is 32")
     set(ARCH i686)
-    set(AUTOBUILD_PLATFORM_NAME "linux")
+    set(AUTOBUILD_PLATFORM_NAME "linux" CACHE STRING "Autobuild Platform Name")
   elseif (WORD_SIZE EQUAL 64)
     #message(STATUS "WORD_SIZE is 64")
     set(ARCH x86_64)
-    set(AUTOBUILD_PLATFORM_NAME "linux64")
+    set(AUTOBUILD_PLATFORM_NAME "linux64" CACHE STRING "Autobuild Platform Name")
   else (WORD_SIZE EQUAL 32)
     #message(STATUS "WORD_SIZE is UNDEFINED")
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
       message(STATUS "Size of void pointer is detected as 8; ARCH is 64-bit")
       set(WORD_SIZE 64)
-      set(AUTOBUILD_PLATFORM_NAME "linux64")
+      set(AUTOBUILD_PLATFORM_NAME "linux64" CACHE STRING "Autobuild Platform Name")
     elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
       message(STATUS "Size of void pointer is detected as 4; ARCH is 32-bit")
       set(WORD_SIZE 32)
-      set(AUTOBUILD_PLATFORM_NAME "linux")
+      set(AUTOBUILD_PLATFORM_NAME "linux" CACHE STRING "Autobuild Platform Name")
     else()
-      message(FATAL_ERROR "Unkown Architecture!")
+      message(FATAL_ERROR "Unknown Architecture!")
     endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
   endif (WORD_SIZE EQUAL 32)
 
@@ -141,31 +153,50 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(DARWIN 1)
+  
+  if (XCODE_VERSION LESS 9.0.0)
+    message( FATAL_ERROR "Xcode 9.0.0 or greater is required." )
+  endif (XCODE_VERSION LESS 9.0.0)
+  message( "Building with " ${CMAKE_OSX_SYSROOT} )
+  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
 
-  # now we only support Xcode 7.0 using 10.11 (El Capitan), minimum OS 10.7 (Lion)
-  set(XCODE_VERSION 7.0)
-  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
-  set(CMAKE_OSX_SYSROOT macosx10.11)
-
-    set(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION "com.apple.compilers.llvm.clang.1_0")
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION "com.apple.compilers.llvm.clang.1_0")
   set(CMAKE_XCODE_ATTRIBUTE_GCC_OPTIMIZATION_LEVEL 3)
   set(CMAKE_XCODE_ATTRIBUTE_GCC_STRICT_ALIASING NO)
   set(CMAKE_XCODE_ATTRIBUTE_GCC_FAST_MATH NO)
-  set(CMAKE_XCODE_ATTRIBUTE_CLANG_X86_VECTOR_INSTRUCTIONS ssse3)
-  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libstdc++")
+  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
+  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++14")
+  if (USE_AVX2)
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_X86_VECTOR_INSTRUCTIONS avx2)
+  elseif (USE_AVX)
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_X86_VECTOR_INSTRUCTIONS avx)
+  else ()
+  set(CMAKE_XCODE_ATTRIBUTE_CLANG_X86_VECTOR_INSTRUCTIONS sse4.1)
+  endif ()
 
-  set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT dwarf-with-dsym)
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+    set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT dwarf-with-dsym)
+  else (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+    set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT dwarf)
+  endif (${CMAKE_BUILD_TYPE} STREQUAL "Release")
 
-  # Build only for i386 by default, system default on MacOSX 10.6+ is x86_64
+  set(WORD_SIZE 64)
   if (NOT CMAKE_OSX_ARCHITECTURES)
-    set(CMAKE_OSX_ARCHITECTURES "i386")
+    if (WORD_SIZE EQUAL 64)
+      set(CMAKE_OSX_ARCHITECTURES x86_64)
+    else (WORD_SIZE EQUAL 64)
+      set(CMAKE_OSX_ARCHITECTURES i386)
+    endif (WORD_SIZE EQUAL 64)
   endif (NOT CMAKE_OSX_ARCHITECTURES)
 
-  set(ARCH ${CMAKE_OSX_ARCHITECTURES})
+  if (WORD_SIZE EQUAL 64)
+    set(ARCH x86_64)
+  else (WORD_SIZE EQUAL 64)
+    set(ARCH i386)
+  endif (WORD_SIZE EQUAL 64)
   set(LL_ARCH ${ARCH}_darwin)
   set(LL_ARCH_DIR universal-darwin)
-  set(WORD_SIZE 32)
-  set(AUTOBUILD_PLATFORM_NAME "darwin")
+  set(AUTOBUILD_PLATFORM_NAME "darwin" CACHE STRING "Autobuild Platform Name")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 # Default deploy grid
@@ -176,14 +207,16 @@ set(VIEWER_CHANNEL "Singularity Test" CACHE STRING "Viewer Channel Name")
 string(REPLACE " " "" VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL})
 set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_NOSPACE} CACHE STRING "Prefix used for resulting artifacts.")
 
-set(ENABLE_SIGNING OFF CACHE BOOL "Enable signing the viewer")
-set(SIGNING_IDENTITY "" CACHE STRING "Specifies the signing identity to use, if necessary.")
-
 set(VERSION_BUILD "0" CACHE STRING "Revision number passed in from the outside")
-set(STANDALONE OFF CACHE BOOL "Use libraries from your system rather than Linden-supplied prebuilt libraries.")
+set(STANDALONE OFF CACHE BOOL "Use libraries from your system rather than prebuilt libraries.")
 
 set(USE_PRECOMPILED_HEADERS ON CACHE BOOL "Enable use of precompiled header directives where supported.")
 
+option(ENABLE_SIGNING "Enable signing the viewer" OFF)
+set(SIGNING_IDENTITY "" CACHE STRING "Specifies the signing identity to use, if necessary.")
+
 source_group("CMake Rules" FILES CMakeLists.txt)
+
+mark_as_advanced(AUTOBUILD_PLATFORM_NAME)
 
 endif(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)

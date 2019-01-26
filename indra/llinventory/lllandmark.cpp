@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lllandmark.cpp
  * @brief Landmark asset class
@@ -156,7 +158,7 @@ LLLandmark* LLLandmark::constructFromString(const char *buffer)
 
  error:
 	LL_INFOS() << "Bad Landmark Asset: bad _DATA_ block." << LL_ENDL;
-	return NULL;
+	return nullptr;
 }
 
 

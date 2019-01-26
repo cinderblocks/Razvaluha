@@ -48,6 +48,9 @@
 #include "llweb.h"
 #include "llcapabilityprovider.h"
 #include "llmatrix4a.h"					// LLMatrix4a
+#include "llframetimer.h"
+#include "lleasymessagesender.h"
+#include <unordered_map>
 
 // Surface id's
 #define LAND  1
@@ -60,6 +63,7 @@ const U32 REGION_HANDSHAKE_SUPPORTS_SELF_APPEARANCE = 1U << 2;
 class LLEventPoll;
 class LLVLComposition;
 class LLViewerObject;
+class LLViewerTexture; // <alchemy/>
 class LLMessageSystem;
 class LLNetMap;
 class LLViewerParcelOverlay;
@@ -73,10 +77,6 @@ class LLDataPackerBinaryBuffer;
 class LLHost;
 class LLBBox;
 class LLSpatialGroup;
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-07-26 (Catznip-3.3)
-class LLViewerTexture;
-// [/SL:KB]
-
 class LLViewerRegionImpl;
 class LLViewerOctreeGroup;
 
@@ -112,16 +112,6 @@ public:
 				   const U32 patch_grid_width,
 				   const F32 region_width_meters);
 	~LLViewerRegion();
-
-	void* operator new(size_t size)
-	{
-		return ll_aligned_malloc_16(size);
-	}
-
-	void operator delete(void* ptr)
-	{
-		ll_aligned_free_16(ptr);
-	}
 
 	// Call this after you have the region name and handle.
 	void loadObjectCache();
@@ -178,7 +168,7 @@ public:
 
 	// Draw lines in the dirt showing ownership. Return number of 
 	// vertices drawn.
-	S32 renderPropertyLines();
+	S32 renderPropertyLines() const;
 
 	// Call this whenever you change the height data in the region.
 	// (Automatically called by LLSurfacePatch's update routine)
@@ -249,6 +239,10 @@ public:
 	// can process the message.
 	static void processRegionInfo(LLMessageSystem* msg, void**);
 
+	//check if the viewer camera is static
+	static BOOL isViewerCameraStatic();
+	static void calcNewObjectCreationThrottle();
+
 	void setCacheID(const LLUUID& id);
 
 	F32	getWidth() const						{ return mWidth; }
@@ -274,9 +268,13 @@ public:
 	void setCapabilityDebug(const std::string& name, const std::string& url);
 	bool isCapabilityAvailable(const std::string& name) const;
 	// implements LLCapabilityProvider
-    virtual std::string getCapability(const std::string& name) const;
+	std::string getCapability(const std::string& name) const override;
     std::string getCapabilityDebug(const std::string& name) const;
 
+
+	virtual std::set<std::string> getCapURLNames(const std::string& cap_url);
+	virtual bool isCapURLMapped(const std::string& cap_url);
+	virtual std::set<std::string> getAllCaps();
 
 	// has region received its final (not seed) capability list?
 	bool capabilitiesReceived() const;
@@ -287,7 +285,7 @@ public:
 	void logActiveCapabilities() const;
 
     /// implements LLCapabilityProvider
-	/*virtual*/ const LLHost& getHost() const;
+	/*virtual*/ const LLHost& getHost() const override;
 	const U64 		&getHandle() const 			{ return mHandle; }
 
 	LLSurface		&getLand() const;
@@ -365,8 +363,9 @@ public:
 
 	friend std::ostream& operator<<(std::ostream &s, const LLViewerRegion &region);
     /// implements LLCapabilityProvider
-    virtual std::string getDescription() const;
-	std::string getHttpUrl() const { return mHttpUrl ;}
+    virtual std::string getDescription() const override;
+	std::string getHttpUrl() const { return mLegacyHttpUrl ;}
+    std::string getViewerAssetUrl() const { return mViewerAssetUrl; }
 
 	LLSpatialPartition* getSpatialPartition(U32 type);
 
@@ -471,34 +470,37 @@ private:
 	std::string mColoName;
 	std::string mProductSKU;
 	std::string mProductName;
-	std::string mHttpUrl;
+	std::string mLegacyHttpUrl;
+	std::string mViewerAssetUrl;
 	
 	// Maps local ids to cache entries.
 	// Regions can have order 10,000 objects, so assume
 	// a structure of size 2^14 = 16,000
 	BOOL									mCacheLoaded;
 	BOOL                                    mCacheDirty;
+	bool	mAlive;					// can become false if circuit disconnects
+	bool	mCapabilitiesReceived;
+	bool	mSimulatorFeaturesReceived;
+	BOOL mReleaseNotesRequested;
 
 	std::vector<U32>						mCacheMissFull;
 	std::vector<U32>						mCacheMissCRC;
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-07-26 (Catznip-3.3)
-	mutable tex_matrix_t mWorldMapTiles;
-// [/SL:KB]
 
-	bool	mAlive;					// can become false if circuit disconnects
-	bool	mCapabilitiesReceived;
-	bool	mSimulatorFeaturesReceived;
 	caps_received_signal_t mCapabilitiesReceivedSignal;
 	caps_received_signal_t mSimulatorFeaturesReceivedSignal;
 
-	BOOL mReleaseNotesRequested;
-	
 	LLSD mSimulatorFeatures;
 	U32 mGamingFlags;
+
 	// the materials capability throttle
 	LLFrameTimer mMaterialsCapThrottleTimer;
 	LLFrameTimer	mRenderInfoRequestTimer;
+
+	mutable tex_matrix_t mWorldMapTiles;
+
+	using url_mapping_t = std::unordered_multimap<std::string, std::string>;
+	url_mapping_t mCapURLMappings;
 };
 
 inline BOOL LLViewerRegion::getRegionProtocol(U64 protocol) const
@@ -591,5 +593,3 @@ inline BOOL LLViewerRegion::getReleaseNotesRequested() const
 }
 
 #endif
-
-

@@ -93,21 +93,21 @@ protected:
 	/*virtual*/ ~LLImageDXT();
 
 private:
-	BOOL encodeDXT(const LLImageRaw* raw_image, F32 decode_time, bool explicit_mips);
+	bool encodeDXT(const LLImageRaw* raw_image, F32 decode_time, bool explicit_mips);
 	
 public:
 	LLImageDXT();
 
-	/*virtual*/ std::string getExtension() { return std::string("dxt"); }
-	/*virtual*/ BOOL updateData();
+	/*virtual*/ std::string getExtension() override { return std::string("dxt"); }
+	/*virtual*/ bool updateData() override;
 
-	/*virtual*/ BOOL decode(LLImageRaw* raw_image, F32 decode_time);
-	/*virtual*/ BOOL encode(const LLImageRaw* raw_image, F32 encode_time);
+	/*virtual*/ bool decode(LLImageRaw* raw_image, F32 decode_time) override;
+	/*virtual*/ bool encode(const LLImageRaw* raw_image, F32 encode_time) override;
 
-	/*virtual*/ S32 calcHeaderSize();
-	/*virtual*/ S32 calcDataSize(S32 discard_level = 0);
+	/*virtual*/ S32 calcHeaderSize() override;
+	/*virtual*/ S32 calcDataSize(S32 discard_level = 0) override;
 
-	BOOL getMipData(LLPointer<LLImageRaw>& raw, S32 discard=-1);
+	bool getMipData(LLPointer<LLImageRaw>& raw, S32 discard=-1);
 	
 	void setFormat();
 	S32 getMipOffset(S32 discard);

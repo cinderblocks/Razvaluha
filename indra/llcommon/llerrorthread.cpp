@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llerrorthread.cpp
  *
@@ -31,7 +33,7 @@
 
 LLErrorThread::LLErrorThread()
 	: LLThread("Error"),
-	  mUserDatap(NULL)
+	  mUserDatap(nullptr)
 {
 }
 
@@ -51,7 +53,6 @@ void* LLErrorThread::getUserData() const
 }
 
 #if !LL_WINDOWS
-#include <sys/wait.h>
 //
 // Various signal/error handling functions that can't be put into the class
 //
@@ -110,79 +111,8 @@ void LLErrorThread::run()
 	LL_INFOS() << "thread_error - Waiting for an error" << LL_ENDL;
 
 	S32 counter = 0;
-#if !LL_WINDOWS
-	U32 last_sig_child_count = 0;
-#endif
 	while (! (LLApp::isError() || LLApp::isStopped()))
 	{
-#if !LL_WINDOWS
-		// Check whether or not the main thread had a sig child we haven't handled.
-		U32 current_sig_child_count = LLApp::getSigChildCount();
-		if (last_sig_child_count != current_sig_child_count)
-		{
-			int status = 0;
-			pid_t child_pid = 0;
-			last_sig_child_count = current_sig_child_count;
-			if (LLApp::sLogInSignal)
-			{
-				LL_INFOS() << "thread_error handling SIGCHLD #" << current_sig_child_count << LL_ENDL;
-			}
-			for (LLApp::child_map::iterator iter = LLApp::sChildMap.begin(); iter != LLApp::sChildMap.end();)
-			{
-				child_pid = iter->first;
-				LLChildInfo &child_info = iter->second;
-				// check the status of *all* children, in case we missed a signal
-				if (0 != waitpid(child_pid, &status, WNOHANG))
-				{
-					bool exited = false;
-					int exit_status = -1;
-					get_child_status(status, exit_status, exited, LLApp::sLogInSignal);
-
-					if (child_info.mCallback)
-					{
-						if (LLApp::sLogInSignal)
-						{
-							LL_INFOS() << "Signal handler - Running child callback" << LL_ENDL;
-						}
-						child_info.mCallback(child_pid, exited, status);
-					}
-					LLApp::sChildMap.erase(iter++);
-				}
-				else
-				{
-					// Child didn't terminate, yet we got a sigchild somewhere...
-					if (child_info.mGotSigChild && child_info.mCallback)
-					{
-						child_info.mCallback(child_pid, false, 0);
-					}
-					child_info.mGotSigChild = FALSE;
-					iter++;
-				}
-			}
-
-			// check the status of *all* children, in case we missed a signal
-			// Same as above, but use the default child callback
-			while(0 < (child_pid = waitpid( -1, &status, WNOHANG )))
-			{
-				if (0 != waitpid(child_pid, &status, WNOHANG))
-				{
-					bool exited = false;
-					int exit_status = -1;
-					get_child_status(status, exit_status, exited, LLApp::sLogInSignal);
-					if (LLApp::sDefaultChildCallback)
-					{
-						if (LLApp::sLogInSignal)
-						{
-							LL_INFOS() << "Signal handler - Running default child callback" << LL_ENDL;
-						}
-						LLApp::sDefaultChildCallback(child_pid, true, status);
-					}
-				}
-			}
-		}
-
-
-#endif
 		ms_sleep(10);
 		counter++;
 	}

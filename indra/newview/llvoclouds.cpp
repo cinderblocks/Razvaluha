@@ -53,6 +53,7 @@
 #include "llspatialpartition.h"
 
 #if ENABLE_CLASSIC_CLOUDS
+const LLUUID IMG_CLOUD_POOF		("fc4b9f0b-d008-45c6-96a4-01dd947ac621"); // dataserver
 LLUUID gCloudTextureID = IMG_CLOUD_POOF;
 
 

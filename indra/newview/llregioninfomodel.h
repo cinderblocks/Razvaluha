@@ -72,11 +72,9 @@ public:
 	std::string	mSimName;
 	std::string	mSimType;
 
+	LLSINGLETON(LLRegionInfoModel);
 protected:
-	friend class LLSingleton<LLRegionInfoModel>;
 	friend class LLViewerRegion;
-
-	LLRegionInfoModel();
 
 	/**
 	 * Refresh model with data from the incoming server message.

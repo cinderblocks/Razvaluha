@@ -1,42 +1,38 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llappviewerwin32.cpp
  * @brief The LLAppViewerWin32 class definitions
  *
- * $LicenseInfo:firstyear=2007&license=viewergpl$
- * 
- * Copyright (c) 2007-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2007&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */ 
 
 #include "llviewerprecompiledheaders.h"
 
-#if defined(_DEBUG)
-# if _MSC_VER >= 1400 // Visual C++ 2005 or later
-#	define WINDOWS_CRT_MEM_CHECKS 1
-# endif
+#ifdef INCLUDE_VLD
+#define VLD_FORCE_ENABLE 1
+#include "vld.h"
 #endif
+#include "llwin32headers.h"
 
 #include "llwindowwin32.h" // *FIX: for setting gIconResource.
 
@@ -47,10 +43,10 @@
 
 #include <fcntl.h>		//_O_APPEND
 #include <io.h>			//_open_osfhandle()
-#include <errorrep.h>	// for AddERExcludedApplicationA()
 #include <process.h>	// _spawnl()
 #include <tchar.h>		// For TCHAR support
 #include <Werapi.h>
+#include <VersionHelpers.h>
 
 #include "llviewercontrol.h"
 #include "lldxhardware.h"
@@ -63,7 +59,6 @@
 #include <stdlib.h>
 
 #include "llweb.h"
-#include "llsecondlifeurls.h"
 
 #include "llwindebug.h"
 
@@ -74,18 +69,31 @@
 #include "llcommandlineparser.h"
 #include "lltrans.h"
 
-// *FIX:Mani - This hack is to fix a linker issue with libndofdev.lib
-// The lib was compiled under VS2005 - in VS2003 we need to remap assert
-#ifdef LL_DEBUG
-#ifdef LL_MSVC7 
-extern "C" {
-    void _wassert(const wchar_t * _Message, const wchar_t *_File, unsigned _Line)
-    {
-        LL_ERRS() << _Message << LL_ENDL;
-    }
+#include <exception>
+namespace
+{
+    void (*gOldTerminateHandler)() = nullptr;
 }
-#endif
-#endif
+
+static void exceptionTerminateHandler()
+{
+	// reinstall default terminate() handler in case we re-terminate.
+	if (gOldTerminateHandler) std::set_terminate(gOldTerminateHandler);
+	// treat this like a regular viewer crash, with nice stacktrace etc.
+    long *null_ptr;
+    null_ptr = nullptr;
+    *null_ptr = 0xDEADBEEF; //Force an exception that will trigger breakpad.
+	//LLAppViewer::handleViewerCrash();
+	// we've probably been killed-off before now, but...
+	gOldTerminateHandler(); // call old terminate() handler
+}
+
+LONG WINAPI catchallCrashHandler(EXCEPTION_POINTERS * /*ExceptionInfo*/)
+{
+	LL_WARNS() << "Hit last ditch-effort attempt to catch crash." << LL_ENDL;
+	exceptionTerminateHandler();
+	return 0;
+}
 
 const std::string LLAppViewerWin32::sWindowClass = "Second Life";
 
@@ -102,7 +110,7 @@ bool create_app_mutex()
 	bool result = true;
 	LPCWSTR unique_mutex_name = L"SecondLifeAppMutex";
 	HANDLE hMutex;
-	hMutex = CreateMutex(NULL, TRUE, unique_mutex_name); 
+	hMutex = CreateMutex(nullptr, TRUE, unique_mutex_name); 
 	if(GetLastError() == ERROR_ALREADY_EXISTS) 
 	{     
 		result = false;
@@ -235,13 +243,17 @@ int APIENTRY WINMAIN(HINSTANCE hInstance,
 			heap_enable_lfh_error[i] = GetLastError();
 	}
 #endif
-	
-	// *FIX: global
-	gIconResource = MAKEINTRESOURCE(IDI_LL_ICON);
 
 	LLAppViewerWin32* viewer_app_ptr = new LLAppViewerWin32(lpCmdLine);
 	
+	// *FIX: global
+	gIconResource = MAKEINTRESOURCE(IDI_LL_ICON);
+	
 	viewer_app_ptr->setErrorHandler(LLAppViewer::handleViewerCrash);
+
+#if LL_SEND_CRASH_REPORTS 
+	// ::SetUnhandledExceptionFilter(catchallCrashHandler); 
+#endif
 
 	// Set a debug info flag to indicate if multiple instances are running.
 	bool found_other_instance = !create_app_mutex();
@@ -291,10 +303,8 @@ int APIENTRY WINMAIN(HINSTANCE hInstance,
 	}
 	
 	// Run the application main loop
-	if(!LLApp::isQuitting()) 
-	{
-		viewer_app_ptr->mainLoop();
-	}
+	while (! viewer_app_ptr->frame()) 
+	{}
 
 	if (!LLApp::isError())
 	{
@@ -333,7 +343,7 @@ int APIENTRY WINMAIN(HINSTANCE hInstance,
 	 
 	}
 	delete viewer_app_ptr;
-	viewer_app_ptr = NULL;
+	viewer_app_ptr = nullptr;
 
 	//start updater
 	if(LLAppViewer::sUpdaterInfo)
@@ -341,7 +351,7 @@ int APIENTRY WINMAIN(HINSTANCE hInstance,
 		_spawnl(_P_NOWAIT, LLAppViewer::sUpdaterInfo->mUpdateExePath.c_str(), LLAppViewer::sUpdaterInfo->mUpdateExePath.c_str(), LLAppViewer::sUpdaterInfo->mParams.str().c_str(), NULL);
 
 		delete LLAppViewer::sUpdaterInfo ;
-		LLAppViewer::sUpdaterInfo = NULL ;
+		LLAppViewer::sUpdaterInfo = nullptr ;
 	}
 
 #ifdef USE_NVAPI
@@ -379,46 +389,27 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 void LLAppViewerWin32::disableWinErrorReporting()
 {
-	const char win_xp_string[] = "Microsoft Windows XP";
-	BOOL is_win_xp = ( getOSInfo().getOSString().substr(0, strlen(win_xp_string) ) == win_xp_string );		/* Flawfinder: ignore*/
-	if( is_win_xp )
+	std::string executable_name = gDirUtilp->getExecutableFilename();
+
+	if( S_OK == WerAddExcludedApplication( utf8str_to_utf16str(executable_name).c_str(), FALSE ) )
 	{
-		// Note: we need to use run-time dynamic linking, because load-time dynamic linking will fail
-		// on systems that don't have the library installed (all non-Windows XP systems)
-		HINSTANCE fault_rep_dll_handle = LoadLibrary(L"faultrep.dll");		/* Flawfinder: ignore */
-		if( fault_rep_dll_handle )
-		{
-			pfn_ADDEREXCLUDEDAPPLICATIONA pAddERExcludedApplicationA  = (pfn_ADDEREXCLUDEDAPPLICATIONA) GetProcAddress(fault_rep_dll_handle, "AddERExcludedApplicationA");
-			if( pAddERExcludedApplicationA )
-			{
-
-				// Strip the path off the name
-				const char* executable_name = gDirUtilp->getExecutableFilename().c_str();
-
-				if( 0 == pAddERExcludedApplicationA( executable_name ) )
-				{
-					U32 error_code = GetLastError();
-					LL_INFOS() << "AddERExcludedApplication() failed with error code " << error_code << LL_ENDL;
-				}
-				else
-				{
-					LL_INFOS() << "AddERExcludedApplication() success for " << executable_name << LL_ENDL;
-				}
-			}
-			FreeLibrary( fault_rep_dll_handle );
-		}
+		LL_INFOS() << "WerAddExcludedApplication() succeeded for " << executable_name << LL_ENDL;
+	}
+	else
+	{
+		LL_INFOS() << "WerAddExcludedApplication() failed for " << executable_name << LL_ENDL;
 	}
 }
 
 const S32 MAX_CONSOLE_LINES = 500;
 
-void create_console()
+static bool create_console()
 {
 
 	CONSOLE_SCREEN_BUFFER_INFO coninfo;
 
 	// allocate a console for this app
-	AllocConsole();
+	const bool isConsoleAllocated = AllocConsole();
 
 	// set the screen buffer to be big enough to let us scroll text
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &coninfo);
@@ -430,16 +421,16 @@ void create_console()
 	freopen("CONOUT$", "w", stdout);
 	freopen("CONOUT$", "w", stderr);
 
-	setvbuf( stdin, NULL, _IONBF, 0 );
-	setvbuf( stdout, NULL, _IONBF, 0 );
-	setvbuf( stderr, NULL, _IONBF, 0 );
+	setvbuf( stdin, nullptr, _IONBF, 0 );
+	setvbuf( stdout, nullptr, _IONBF, 0 );
+	setvbuf( stderr, nullptr, _IONBF, 0 );
 
-
+    return isConsoleAllocated;
 }
 
-
 LLAppViewerWin32::LLAppViewerWin32(const char* cmd_line) :
-    mCmdLine(cmd_line)
+	mCmdLine(cmd_line),
+	mIsConsoleAllocated(false)
 {
 }
 
@@ -451,7 +442,7 @@ bool LLAppViewerWin32::init()
 {
 	// Platform specific initialization.
 	
-	// Turn off Windows XP Error Reporting
+	// Turn off Windows Error Reporting
 	// (Don't send our data to Microsoft--at least until we are Logo approved and have a way
 	// of getting the data back from them.)
 	//
@@ -464,6 +455,7 @@ bool LLAppViewerWin32::init()
 
 #if LL_WINDOWS
 #if LL_SEND_CRASH_REPORTS
+
 
 	LLAppViewer* pApp = LLAppViewer::instance();
 	pApp->initCrashReporting();
@@ -482,18 +474,24 @@ bool LLAppViewerWin32::cleanup()
 
 	gDXHardware.cleanup();
 
+	if (mIsConsoleAllocated)
+	{
+		FreeConsole();
+		mIsConsoleAllocated = false;
+	}
+
 	return result;
 }
 
-bool LLAppViewerWin32::initLogging()
+void LLAppViewerWin32::initLoggingAndGetLastDuration()
 {
-	return LLAppViewer::initLogging();
+	LLAppViewer::initLoggingAndGetLastDuration();
 }
 
 void LLAppViewerWin32::initConsole()
 {
 	// pop up debug console
-	create_console();
+	mIsConsoleAllocated = create_console();
 	return LLAppViewer::initConsole();
 }
 
@@ -517,11 +515,9 @@ bool LLAppViewerWin32::initHardwareTest()
 	//
 	if (FALSE == gSavedSettings.getBOOL("NoHardwareProbe"))
 	{
-		BOOL vram_only = !gSavedSettings.getBOOL("ProbeHardwareOnStartup");
-
 		// per DEV-11631 - disable hardware probing for everything
 		// but vram.
-		vram_only = TRUE;
+		BOOL vram_only = TRUE;
 
 		LLSplashScreen::update(LLTrans::getString("StartupDetectingHardware"));
 
@@ -545,7 +541,7 @@ bool LLAppViewerWin32::initHardwareTest()
 			if (OSBTN_NO== button)
 			{
 				LL_INFOS("AppInit") << "User quitting after failed DirectX 9 detection" << LL_ENDL;
-				LLWeb::loadURLExternal(DIRECTX_9_URL, false);
+				LLWeb::loadURLExternal("http://secondlife.com/support/", false);
 				return false;
 			}
 			gSavedSettings.setWarning("AboutDirectX9", FALSE);
@@ -587,7 +583,7 @@ bool LLAppViewerWin32::initParseCommandLine(LLCommandLineParser& clp)
 	}
 
 	// Find the system language.
-	FL_Locale *locale = NULL;
+	FL_Locale *locale = nullptr;
 	FL_Success success = FL_FindLocale(&locale, FL_MESSAGES);
 	if (success != 0)
 	{
@@ -611,7 +607,6 @@ bool LLAppViewerWin32::initParseCommandLine(LLCommandLineParser& clp)
 bool LLAppViewerWin32::restoreErrorTrap()
 {	
 	return true;
-	//return LLWinDebug::checkExceptionHandler();
 }
 
 void LLAppViewerWin32::initCrashReporting(bool reportFreeze)
@@ -626,9 +621,9 @@ bool LLAppViewerWin32::sendURLToOtherInstance(const std::string& url)
 	mbstowcs(window_class, sWindowClass.c_str(), 255);
 	window_class[255] = 0;
 	// Use the class instead of the window name.
-	HWND other_window = FindWindow(window_class, NULL);
+	HWND other_window = FindWindow(window_class, nullptr);
 
-	if (other_window != NULL)
+	if (other_window != nullptr)
 	{
 		LL_DEBUGS() << "Found other window with the name '" << getWindowTitle() << "'" << LL_ENDL;
 		COPYDATASTRUCT cds;
@@ -654,13 +649,13 @@ std::string LLAppViewerWin32::generateSerialNumber()
 	DWORD serial = 0;
 	DWORD flags = 0;
 	BOOL success = GetVolumeInformation(
-			L"C:\\",
-			NULL,		// volume name buffer
+			TEXT("C:\\"),
+			nullptr,		// volume name buffer
 			0,			// volume name buffer size
 			&serial,	// volume serial
-			NULL,		// max component length
+			nullptr,		// max component length
 			&flags,		// file system flags
-			NULL,		// file system name buffer
+			nullptr,		// file system name buffer
 			0);			// file system name buffer size
 	if (success)
 	{

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llformat.cpp
  * @date   January 2007
@@ -29,18 +31,12 @@
 
 #include "llformat.h"
 
-#include <cstdarg>
-
 // common used function with va_list argument
 // wrapper for vsnprintf to be called from llformatXXX functions.
 static void va_format(std::string& out, const char *fmt, va_list va)
 {
-	char tstr[1024];	/* Flawfinder: ignore */
-#if LL_WINDOWS
-	_vsnprintf(tstr, 1024, fmt, va);
-#else
-	vsnprintf(tstr, 1024, fmt, va);	/* Flawfinder: ignore */
-#endif
+	char tstr[2048];	/* Flawfinder: ignore */
+	std::vsnprintf(tstr, 2048, fmt, va);	/* Flawfinder: ignore */
 	out.assign(tstr);
 }
 
@@ -68,4 +64,3 @@ std::string llformat_to_utf8(const char *fmt, ...)
 #endif
 	return res;
 }
-

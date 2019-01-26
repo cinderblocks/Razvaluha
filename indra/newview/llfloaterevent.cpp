@@ -46,12 +46,6 @@
 ////////////////////////////////////////////////////////////////////////////
 // LLFloaterEventInfo
 
-//-----------------------------------------------------------------------------
-// Globals
-//-----------------------------------------------------------------------------
-
-LLMap< U32, LLFloaterEventInfo* > gEventInfoInstances;
-
 class LLEventHandler : public LLCommandHandler
 {
 public:
@@ -77,24 +71,22 @@ LLEventHandler gEventHandler;
 
 LLFloaterEventInfo::LLFloaterEventInfo(const std::string& name, const U32 event_id)
 :	LLFloater(name),
-	mEventID( event_id )
+	LLInstanceTracker<LLFloaterEventInfo, U32>(event_id)
 {
 
 	mFactoryMap["event_details_panel"] = LLCallbackMap(LLFloaterEventInfo::createEventDetail, this);
 	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_preview_event.xml", &getFactoryMap());
-	gEventInfoInstances.addData(event_id, this);
 }
 
 LLFloaterEventInfo::~LLFloaterEventInfo()
 {
 	// child views automatically deleted
-	gEventInfoInstances.removeData(mEventID);
 }
 
 void LLFloaterEventInfo::displayEventInfo(const U32 event_id)
 {
 	mPanelEventp->setEventID(event_id);
-	this->setFrontmost(true);
+	setFrontmost(true);
 }
 
 // static
@@ -110,22 +102,17 @@ void* LLFloaterEventInfo::createEventDetail(void* userdata)
 // static
 LLFloaterEventInfo* LLFloaterEventInfo::show(const U32 event_id)
 {
-	LLFloaterEventInfo *floater;
-	if (gEventInfoInstances.checkData(event_id))
+	LLFloaterEventInfo* floater = getInstance(event_id);
+	if (!floater)
 	{
-		// ...bring that window to front
-		floater = gEventInfoInstances.getData(event_id);
-		floater->open();	/*Flawfinder: ignore*/
-		floater->setFrontmost(true);
-	}
-	else
-	{
-		floater =  new LLFloaterEventInfo("eventinfo", event_id );
+		floater = new LLFloaterEventInfo("eventinfo", event_id );
 		floater->center();
-		floater->open();	/*Flawfinder: ignore*/
 		floater->displayEventInfo(event_id);
-		floater->setFrontmost(true);
 	}
+
+	// ...bring that window to front
+	floater->open();	/*Flawfinder: ignore*/
+	floater->setFrontmost(true);
 
 	return floater;
 }

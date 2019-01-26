@@ -2,32 +2,25 @@
  * @file llkeyframemotion.h
  * @brief Implementation of LLKeframeMotion class.
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * AICachedPointer and AICachedPointPtr copyright (c) 2013, Aleric Inglewood.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -38,8 +31,6 @@
 // Header files
 //-----------------------------------------------------------------------------
 
-#include <string>
-
 #include "llassetstorage.h"
 #include "llbboxlocal.h"
 #include "llhandmotion.h"
@@ -49,124 +40,16 @@
 #include "v3dmath.h"
 #include "v3math.h"
 #include "llbvhconsts.h"
-#include <boost/intrusive_ptr.hpp>
 
 class LLKeyframeDataCache;
 class LLVFS;
 class LLDataPacker;
-class LLMotionController;
 
 #define MIN_REQUIRED_PIXEL_AREA_KEYFRAME (40.f)
 #define MAX_CHAIN_LENGTH (4)
 
 const S32 KEYFRAME_MOTION_VERSION = 1;
 const S32 KEYFRAME_MOTION_SUBVERSION = 0;
-
-//-----------------------------------------------------------------------------
-// <singu>
-
-template<typename KEY, typename T>
-class AICachedPointer;
-
-template<typename KEY, typename T>
-void intrusive_ptr_add_ref(AICachedPointer<KEY, T> const* p);
-
-template<typename KEY, typename T>
-void intrusive_ptr_release(AICachedPointer<KEY, T> const* p);
-
-template<typename KEY, typename T>
-class AICachedPointer
-{
-  public:
-	typedef std::set<AICachedPointer<KEY, T> > container_type;
-
-  private:
-	KEY mKey;							// The unique key.
-	LLPointer<T> mData;					// The actual data pointer.
-	container_type* mCache;				// Pointer to the underlaying cache.
-	mutable int mRefCount;				// Number of AICachedPointerPtr's pointing to this object.
-
-  public:
-	// Construct a NULL pointer. This is needed when adding a new entry to a std::set, it is always first default constructed.
-	AICachedPointer(void) : mCache(NULL) { }
-
-	// Copy constructor. This is needed to replace the std::set inserted instance with its actual value.
-	AICachedPointer(AICachedPointer const& cptr) : mKey(cptr.mKey), mData(cptr.mData), mCache(cptr.mCache), mRefCount(0) { }
-
-	// Construct a AICachedPointer that points to 'ptr' with key 'key'.
-	AICachedPointer(KEY const& key, T* ptr, container_type* cache) : mKey(key), mData(ptr), mCache(cache), mRefCount(-1) { }
-
-	// Construct a temporary NULL pointer that can be used in a search for a key.
-	AICachedPointer(KEY const& key) : mKey(key), mCache(NULL) { }
-
-	// Accessors for key and data.
-	KEY const& key(void) const { return mKey; }
-	T const* get(void) const { return mData.get(); }
-	T* get(void) { return mData.get(); }
-
-	// Order only by key.
-	friend bool operator<(AICachedPointer const& cp1, AICachedPointer const& cp2) { return cp1.mKey < cp2.mKey; }
-
-  private:
-	friend void intrusive_ptr_add_ref<>(AICachedPointer<KEY, T> const* p);
-	friend void intrusive_ptr_release<>(AICachedPointer<KEY, T> const* p);
-
-  private:
-	AICachedPointer& operator=(AICachedPointer const&);
-};
-
-template<typename KEY, typename T>
-void intrusive_ptr_add_ref(AICachedPointer<KEY, T> const* p)
-{
-  llassert(p->mCache);
-  if (p->mCache)
-  {
-	p->mRefCount++;
-  }
-}
-
-template<typename KEY, typename T>
-void intrusive_ptr_release(AICachedPointer<KEY, T> const* p)
-{
-  llassert(p->mCache);
-  if (p->mCache)
-  {
-	if (--p->mRefCount == 0)
-	{
-	  p->mCache->erase(p->mKey);
-	}
-  }
-}
-
-template<typename KEY, typename T>
-class AICachedPointerPtr
-{
-  private:
-	boost::intrusive_ptr<AICachedPointer<KEY, T> const> mPtr;
-	static int sCnt;
-
-  public:
-	AICachedPointerPtr(void) { ++sCnt; }
-	AICachedPointerPtr(AICachedPointerPtr const& cpp) : mPtr(cpp.mPtr) { ++sCnt; }
-	AICachedPointerPtr(AICachedPointer<KEY, T> const* cp) : mPtr(cp) { ++sCnt; }
-	~AICachedPointerPtr() { --sCnt; }
-
-	typedef boost::intrusive_ptr<AICachedPointer<KEY, T> const> const AICachedPointerPtr<KEY, T>::* const bool_type;
-	operator bool_type() const { return mPtr ? &AICachedPointerPtr<KEY, T>::mPtr : NULL; }
-
-	T const* operator->() const { return mPtr->get(); }
-	T* operator->() { return const_cast<AICachedPointer<KEY, T>&>(*mPtr).get(); }
-	T const& operator*() const { return *mPtr->get(); }
-	T& operator*() { return *const_cast<AICachedPointer<KEY, T>&>(*mPtr).get(); }
-
-	AICachedPointerPtr& operator=(AICachedPointerPtr const& cpp) { mPtr = cpp.mPtr; return *this; }
-};
-
-template<typename KEY, typename T>
-int AICachedPointerPtr<KEY, T>::sCnt;
-
-// </singu>
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // class LLKeyframeMotion
@@ -177,7 +60,7 @@ class LLKeyframeMotion :
 	friend class LLKeyframeDataCache;
 public:
 	// Constructor
-	LLKeyframeMotion(const LLUUID &id, LLMotionController* controller);
+	LLKeyframeMotion(const LLUUID &id);
 
 	// Destructor
 	virtual ~LLKeyframeMotion();
@@ -194,7 +77,7 @@ public:
 
 	// static constructor
 	// all subclasses must implement such a function and register it
-	static LLMotion* create(LLUUID const& id, LLMotionController* controller);
+	static LLMotion *create(const LLUUID& id);
 
 public:
 	//-------------------------------------------------------------------------
@@ -202,59 +85,64 @@ public:
 	//-------------------------------------------------------------------------
 
 	// motions must specify whether or not they loop
-	virtual BOOL getLoop() { 
+	BOOL getLoop() override
+	{ 
 		if (mJointMotionList) return mJointMotionList->mLoop; 
 		else return FALSE;
 	}
 
 	// motions must report their total duration
-	virtual F32 getDuration() { 
+	F32 getDuration() override
+	{ 
 		if (mJointMotionList) return mJointMotionList->mDuration; 
 		else return 0.f;
 	}
 
 	// motions must report their "ease in" duration
-	virtual F32 getEaseInDuration() { 
+	F32 getEaseInDuration() override
+	{ 
 		if (mJointMotionList) return mJointMotionList->mEaseInDuration; 
 		else return 0.f;
 	}
 
 	// motions must report their "ease out" duration.
-	virtual F32 getEaseOutDuration() { 
+	F32 getEaseOutDuration() override
+	{ 
 		if (mJointMotionList) return mJointMotionList->mEaseOutDuration; 
 		else return 0.f;
 	}
 
 	// motions must report their priority
-	virtual LLJoint::JointPriority getPriority() { 
+	LLJoint::JointPriority getPriority() override
+	{ 
 		if (mJointMotionList) return mJointMotionList->mBasePriority; 
 		else return LLJoint::LOW_PRIORITY;
 	}
 
-	virtual LLMotionBlendType getBlendType() { return NORMAL_BLEND; }
+	LLMotionBlendType getBlendType() override { return NORMAL_BLEND; }
 
 	// called to determine when a motion should be activated/deactivated based on avatar pixel coverage
-	virtual F32 getMinPixelArea() { return MIN_REQUIRED_PIXEL_AREA_KEYFRAME; }
+	F32 getMinPixelArea() override { return MIN_REQUIRED_PIXEL_AREA_KEYFRAME; }
 
 	// run-time (post constructor) initialization,
 	// called after parameters have been set
 	// must return true to indicate success and be available for activation
-	virtual LLMotionInitStatus onInitialize(LLCharacter *character);
+	LLMotionInitStatus onInitialize(LLCharacter *character) override;
 
 	// called when a motion is activated
 	// must return TRUE to indicate success, or else
 	// it will be deactivated
-	virtual BOOL onActivate();
+	BOOL onActivate() override;
 
 	// called per time step
 	// must return TRUE while it is active, and
 	// must return FALSE when the motion is completed.
-	virtual BOOL onUpdate(F32 time, U8* joint_mask);
+	BOOL onUpdate(F32 time, U8* joint_mask) override;
 
 	// called when a motion is deactivated
-	virtual void onDeactivate();
+	void onDeactivate() override;
 
-	virtual void setStopTime(F32 time);
+	void setStopTime(F32 time) override;
 
 	static void setVFS(LLVFS* vfs) { sVFS = vfs; }
 
@@ -267,7 +155,8 @@ public:
 	U32		getFileSize();
 	BOOL	serialize(LLDataPacker& dp) const;
 	BOOL	deserialize(LLDataPacker& dp);
-	BOOL	isLoaded() { return !!mJointMotionList; }
+	BOOL	isLoaded() { return mJointMotionList != nullptr; }
+    void	dumpToFile(const std::string& name);
 
 
 	// setters for modifying a keyframe animation
@@ -315,17 +204,17 @@ protected:
 	{
 	public:
 		JointConstraintSharedData() :
+			mSourceConstraintVolume(0),
+			mTargetConstraintVolume(0), 
 			mChainLength(0),
+			mJointStateIndices(nullptr),
 			mEaseInStartTime(0.f), 
 			mEaseInStopTime(0.f),
 			mEaseOutStartTime(0.f),
-			mEaseOutStopTime(0.f), 
+			mEaseOutStopTime(0.f),
 			mUseTargetOffset(FALSE),
 			mConstraintType(CONSTRAINT_TYPE_POINT),
-			mConstraintTargetType(CONSTRAINT_TARGET_TYPE_BODY),
-			mSourceConstraintVolume(0),
-			mTargetConstraintVolume(0),
-			mJointStateIndices(NULL)
+			mConstraintTargetType(CONSTRAINT_TARGET_TYPE_BODY)
 		{ };
 		~JointConstraintSharedData() { delete [] mJointStateIndices; }
 
@@ -394,7 +283,7 @@ public:
 	{
 	public:
 		ScaleKey() { mTime = 0.0f; }
-		ScaleKey(F32 time, const LLVector3 &scale) { mTime = time; mScale = scale; }
+		ScaleKey(F32 time, const LLVector3 &scale) : mTime(time), mScale(scale) {}
 
 		F32			mTime;
 		LLVector3	mScale;
@@ -407,7 +296,7 @@ public:
 	{
 	public:
 		RotationKey() { mTime = 0.0f; }
-		RotationKey(F32 time, const LLQuaternion &rotation) { mTime = time; mRotation = rotation; }
+		RotationKey(F32 time, const LLQuaternion &rotation) : mTime(time), mRotation(rotation) {}
 
 		F32				mTime;
 		LLQuaternion	mRotation;
@@ -420,7 +309,7 @@ public:
 	{
 	public:
 		PositionKey() { mTime = 0.0f; }
-		PositionKey(F32 time, const LLVector3 &position) { mTime = time; mPosition = position; }
+		PositionKey(F32 time, const LLVector3 &position) : mTime(time), mPosition(position) {}
 
 		F32			mTime;
 		LLVector3	mPosition;
@@ -502,7 +391,7 @@ public:
 	//-------------------------------------------------------------------------
 	// JointMotionList
 	//-------------------------------------------------------------------------
-	class JointMotionList : public LLRefCount
+	class JointMotionList
 	{
 	public:
 		std::vector<JointMotion*> mJointMotionArray;
@@ -531,16 +420,13 @@ public:
 	};
 
 
-	// Singu: Type of a pointer to the cached pointer (in LLKeyframeDataCache::sKeyframeDataMap) to a JointMotionList object.
-	typedef AICachedPointerPtr<LLUUID, JointMotionList> JointMotionListPtr;
-
 protected:
 	static LLVFS*				sVFS;
 
 	//-------------------------------------------------------------------------
 	// Member Data
 	//-------------------------------------------------------------------------
-	JointMotionListPtr				mJointMotionList;			// singu: automatically clean up cache entry when destructed.
+	JointMotionList*				mJointMotionList;
 	std::vector<LLPointer<LLJointState> > mJointStates;
 	LLJoint*						mPelvisp;
 	LLCharacter*					mCharacter;
@@ -554,19 +440,16 @@ protected:
 
 class LLKeyframeDataCache
 {
-private:
-	friend class LLKeyframeMotion;
+public:
+	// *FIX: implement this as an actual singleton member of LLKeyframeMotion
 	LLKeyframeDataCache(){};
 	~LLKeyframeDataCache();
 
-public:
-	typedef AICachedPointer<LLUUID, LLKeyframeMotion::JointMotionList>::container_type keyframe_data_map_t;	// singu: add automatic cache cleanup.
+	typedef std::map<LLUUID, class LLKeyframeMotion::JointMotionList*> keyframe_data_map_t; 
 	static keyframe_data_map_t sKeyframeDataMap;
 
-	//<singu>
-	static LLKeyframeMotion::JointMotionListPtr createKeyframeData(LLUUID const& id);	// id may not exist.
-	static LLKeyframeMotion::JointMotionListPtr    getKeyframeData(LLUUID const& id);	// id may or may not exists. Returns a NULL pointer when it doesn't exist.
-	//</singu>
+	static void addKeyframeData(const LLUUID& id, LLKeyframeMotion::JointMotionList*);
+	static LLKeyframeMotion::JointMotionList* getKeyframeData(const LLUUID& id);
 
 	static void removeKeyframeData(const LLUUID& id);
 

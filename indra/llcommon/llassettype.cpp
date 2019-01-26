@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llassettype.cpp
  * @brief Implementatino of LLAssetType functionality.
@@ -63,8 +65,7 @@ struct AssetEntry : public LLDictionaryEntry
 class LLAssetDictionary : public LLSingleton<LLAssetDictionary>,
 						  public LLDictionary<LLAssetType::EType, AssetEntry>
 {
-public:
-	LLAssetDictionary();
+	LLSINGLETON(LLAssetDictionary);
 };
 
 LLAssetDictionary::LLAssetDictionary()
@@ -80,29 +81,28 @@ LLAssetDictionary::LLAssetDictionary()
 	addEntry(LLAssetType::AT_OBJECT, 			new AssetEntry("OBJECT",			"object",	"object",			true,		false,		false));
 	addEntry(LLAssetType::AT_NOTECARD, 			new AssetEntry("NOTECARD",			"notecard",	"note card",		true,		false,		true));
 	addEntry(LLAssetType::AT_CATEGORY, 			new AssetEntry("CATEGORY",			"category",	"folder",			true,		false,		false));
-	//addEntry(LLAssetType::AT_ROOT_CATEGORY, 	new AssetEntry("ROOT_CATEGORY", 	"root",		"root",				false,		false,		false));
 	addEntry(LLAssetType::AT_LSL_TEXT, 			new AssetEntry("LSL_TEXT",			"lsltext",	"lsl2 script",		true,		false,		false));
 	addEntry(LLAssetType::AT_LSL_BYTECODE, 		new AssetEntry("LSL_BYTECODE",		"lslbyte",	"lsl bytecode",		true,		false,		false));
 	addEntry(LLAssetType::AT_TEXTURE_TGA, 		new AssetEntry("TEXTURE_TGA",		"txtr_tga",	"tga texture",		true,		false,		false));
 	addEntry(LLAssetType::AT_BODYPART, 			new AssetEntry("BODYPART",			"bodypart",	"body part",		true,		true,		true));
-	//addEntry(LLAssetType::AT_TRASH, 			new AssetEntry("TRASH", 			"trash",	"trash",			false,		false,		false));
-	//addEntry(LLAssetType::AT_SNAPSHOT_CATEGORY, new AssetEntry("SNAPSHOT_CATEGORY",	"snapshot", "snapshot",			false,		false,		false));
-	//addEntry(LLAssetType::AT_LOST_AND_FOUND, 	new AssetEntry("LOST_AND_FOUND",	"lstndfnd",	"lost and found",	false,		false,		false));
 	addEntry(LLAssetType::AT_SOUND_WAV, 		new AssetEntry("SOUND_WAV",			"snd_wav",	"sound",			true,		false,		false));
 	addEntry(LLAssetType::AT_IMAGE_TGA, 		new AssetEntry("IMAGE_TGA",			"img_tga",	"targa image",		true,		false,		false));
 	addEntry(LLAssetType::AT_IMAGE_JPEG, 		new AssetEntry("IMAGE_JPEG",		"jpeg",		"jpeg image",		true,		false,		false));
 	addEntry(LLAssetType::AT_ANIMATION, 		new AssetEntry("ANIMATION",			"animatn",	"animation",		true,		true,		true));
 	addEntry(LLAssetType::AT_GESTURE, 			new AssetEntry("GESTURE",			"gesture",	"gesture",			true,		true,		true));
 	addEntry(LLAssetType::AT_SIMSTATE, 			new AssetEntry("SIMSTATE",			"simstate",	"simstate",			false,		false,		false));
-	//addEntry(LLAssetType::AT_FAVORITE, 			new AssetEntry("FAVORITE",			"favorite",	"",					false,		false,		false));
+
 	addEntry(LLAssetType::AT_LINK, 				new AssetEntry("LINK",				"link",		"sym link",			false,		false,		true));
 	addEntry(LLAssetType::AT_LINK_FOLDER, 		new AssetEntry("FOLDER_LINK",		"link_f", 	"sym folder link",	false,		false,		true));
 	addEntry(LLAssetType::AT_CURRENT_OUTFIT,	new AssetEntry("FOLDER_LINK",		"current",	"current outfit",	false,		false,		false));
 	addEntry(LLAssetType::AT_OUTFIT,			new AssetEntry("OUTFIT",			"outfit", 	"outfit",			false,		false,		false));
 	addEntry(LLAssetType::AT_MY_OUTFITS,		new AssetEntry("MY_OUTFITS",		"my_otfts",	"my outfits",		false,		false,		false));
 	addEntry(LLAssetType::AT_MESH,		        new AssetEntry("MESH",		        "mesh",	    "mesh",		        false,		true,		true));
+	addEntry(LLAssetType::AT_WIDGET,            new AssetEntry("WIDGET",            "widget",   "widget",           false,      false,      false));
+	addEntry(LLAssetType::AT_PERSON,            new AssetEntry("PERSON",            "person",   "person",           false,      false,      false));
 	addEntry(LLAssetType::AT_NONE, 				new AssetEntry("NONE",				"-1",		NULL,		  		false,		false,		false));
-};		
+
+};
 
 // static
 LLAssetType::EType LLAssetType::getType(const std::string& desc_name)
@@ -153,7 +153,7 @@ LLAssetType::EType LLAssetType::lookup(const std::string& type_name)
 	const LLAssetDictionary *dict = LLAssetDictionary::getInstance();
 	for (LLAssetDictionary::const_iterator iter = dict->begin();
 		 iter != dict->end();
-		 iter++)
+		 ++iter)
 	{
 		const AssetEntry *entry = iter->second;
 		if (type_name == entry->mTypeName)
@@ -191,7 +191,7 @@ LLAssetType::EType LLAssetType::lookupHumanReadable(const std::string& readable_
 	const LLAssetDictionary *dict = LLAssetDictionary::getInstance();
 	for (LLAssetDictionary::const_iterator iter = dict->begin();
 		 iter != dict->end();
-		 iter++)
+		 ++iter)
 	{
 		const AssetEntry *entry = iter->second;
 		if (entry->mHumanName && (readable_name == entry->mHumanName))

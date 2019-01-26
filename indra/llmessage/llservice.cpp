@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llservice.cpp
  * @author Phoenix
@@ -65,10 +67,10 @@ LLIOPipe* LLService::activate(
 	if(name.empty())
 	{
 		LL_INFOS() << "LLService::activate - no service specified." << LL_ENDL;
-		return NULL;
+		return nullptr;
 	}
 	creators_t::iterator it = sCreatorFunctors.find(name);
-	LLIOPipe* rv = NULL;
+	LLIOPipe* rv = nullptr;
 	if(it != sCreatorFunctors.end())
 	{
 		if((*it).second->build(chain, context))

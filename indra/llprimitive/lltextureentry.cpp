@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltextureentry.cpp
  * @brief LLTextureEntry base class
@@ -60,25 +62,25 @@ LLTextureEntry* LLTextureEntry::newTextureEntry()
 
 //===============================================================
 LLTextureEntry::LLTextureEntry()
-  : mMediaEntry(NULL)
-  , mSelected(false)
+  : mSelected(false)
   , mMaterialUpdatePending(false)
+  , mMediaEntry(nullptr)
 {
 	init(LLUUID::null,1.f,1.f,0.f,0.f,0.f,DEFAULT_BUMP_CODE);
 }
 
 LLTextureEntry::LLTextureEntry(const LLUUID& tex_id)
-  : mMediaEntry(NULL)
-  , mSelected(false)
+  : mSelected(false)
   , mMaterialUpdatePending(false)
+  , mMediaEntry(nullptr)
 {
 	init(tex_id,1.f,1.f,0.f,0.f,0.f,DEFAULT_BUMP_CODE);
 }
 
 LLTextureEntry::LLTextureEntry(const LLTextureEntry &rhs)
-  : mMediaEntry(NULL)
-  , mSelected(false)
+  : mSelected(false)
   , mMaterialUpdatePending(false)
+  , mMediaEntry(nullptr)
 {
 	mID = rhs.mID;
 	mScaleS = rhs.mScaleS;
@@ -92,7 +94,7 @@ LLTextureEntry::LLTextureEntry(const LLTextureEntry &rhs)
 	mGlow = rhs.mGlow;
 	mMaterialID = rhs.mMaterialID;
 	mMaterial = rhs.mMaterial;
-	if (rhs.mMediaEntry != NULL) {
+	if (rhs.mMediaEntry != nullptr) {
 		// Make a copy
 		mMediaEntry = new LLMediaEntry(*rhs.mMediaEntry);
 	}
@@ -114,15 +116,15 @@ LLTextureEntry &LLTextureEntry::operator=(const LLTextureEntry &rhs)
 		mGlow = rhs.mGlow;
 		mMaterialID = rhs.mMaterialID;
 		mMaterial = rhs.mMaterial;
-		if (mMediaEntry != NULL) {
+		if (mMediaEntry != nullptr) {
 			delete mMediaEntry;
 		}
-		if (rhs.mMediaEntry != NULL) {
+		if (rhs.mMediaEntry != nullptr) {
 			// Make a copy
 			mMediaEntry = new LLMediaEntry(*rhs.mMediaEntry);
 		}
 		else {
-			mMediaEntry = NULL;
+			mMediaEntry = nullptr;
 		}
 	}
 
@@ -144,10 +146,10 @@ void LLTextureEntry::init(const LLUUID& tex_id, F32 scale_s, F32 scale_t, F32 of
 	mMaterialID.clear();
 	
 	setColor(LLColor4(1.f, 1.f, 1.f, 1.f));
-	if (mMediaEntry != NULL) {
+	if (mMediaEntry != nullptr) {
 	    delete mMediaEntry;
 	}
-	mMediaEntry = NULL;
+	mMediaEntry = nullptr;
 }
 
 LLTextureEntry::~LLTextureEntry()
@@ -155,7 +157,7 @@ LLTextureEntry::~LLTextureEntry()
 	if(mMediaEntry)
 	{
 		delete mMediaEntry;
-		mMediaEntry = NULL;
+		mMediaEntry = nullptr;
 	}
 }
 
@@ -212,7 +214,7 @@ void LLTextureEntry::asLLSD(LLSD& sd) const
 	sd["media_flags"] = mMediaFlags;
 	if (hasMedia()) {
 		LLSD mediaData;
-        if (NULL != getMediaData()) {
+        if (nullptr != getMediaData()) {
             getMediaData()->asLLSD(mediaData);
         }
 		sd[TEXTURE_MEDIA_DATA_KEY] = mediaData;
@@ -417,7 +419,7 @@ S32 LLTextureEntry::setOffsetT(F32 t)
 
 S32 LLTextureEntry::setRotation(F32 theta)
 {
-	if (mRotation != theta && std::isfinite(theta))
+	if (mRotation != theta && llfinite(theta))
 	{
 		mRotation = theta;
 		return TEM_CHANGE_TEXTURE;
@@ -500,14 +502,14 @@ S32 LLTextureEntry::setMediaFlags(U8 media_flags)
 		mMediaFlags |= media_flags;
         
 		// Special code for media handling
-		if( hasMedia() && mMediaEntry == NULL)
+		if( hasMedia() && mMediaEntry == nullptr)
 		{
 			mMediaEntry = new LLMediaEntry;
 		}
-        else if ( ! hasMedia() && mMediaEntry != NULL)
+        else if ( ! hasMedia() && mMediaEntry != nullptr)
         {
             delete mMediaEntry;
-            mMediaEntry = NULL;
+            mMediaEntry = nullptr;
         }
         
 		return TEM_CHANGE_MEDIA;
@@ -568,7 +570,7 @@ S32 LLTextureEntry::setMaterialParams(const LLMaterialPtr pMaterialParams)
 void LLTextureEntry::setMediaData(const LLMediaEntry &media_entry)
 {
     mMediaFlags |= MF_HAS_MEDIA;
-    if (NULL != mMediaEntry)
+    if (nullptr != mMediaEntry)
     {
         delete mMediaEntry;
     }
@@ -585,7 +587,7 @@ bool LLTextureEntry::updateMediaData(const LLSD& media_data)
 	}
 	else {
 		mMediaFlags |= MF_HAS_MEDIA;
-		if (mMediaEntry == NULL)
+		if (mMediaEntry == nullptr)
 		{
 			mMediaEntry = new LLMediaEntry;
 		}
@@ -599,16 +601,16 @@ bool LLTextureEntry::updateMediaData(const LLSD& media_data)
 void LLTextureEntry::clearMediaData()
 {
     mMediaFlags &= ~MF_HAS_MEDIA;
-    if (mMediaEntry != NULL) {
+    if (mMediaEntry != nullptr) {
         delete mMediaEntry;
     }
-    mMediaEntry = NULL;
+    mMediaEntry = nullptr;
 }    
 
 void LLTextureEntry::mergeIntoMediaData(const LLSD& media_fields)
 {
     mMediaFlags |= MF_HAS_MEDIA;
-    if (mMediaEntry == NULL)
+    if (mMediaEntry == nullptr)
     {
         mMediaEntry = new LLMediaEntry;
     }
@@ -641,9 +643,9 @@ U32 LLTextureEntry::getVersionFromMediaVersionString(const std::string &version_
         size_t found = version_string.find(MEDIA_VERSION_STRING_PREFIX);
         if (found != std::string::npos) 
         {
-            found = version_string.find_first_of("/", found);
+            found = version_string.find_first_of('/', found);
             std::string v = version_string.substr(MEDIA_VERSION_STRING_PREFIX.length(), found);
-            version = strtoul(v.c_str(),NULL,10);
+            version = strtoul(v.c_str(), nullptr,10);
         }
     }
     return version;
@@ -658,7 +660,7 @@ LLUUID LLTextureEntry::getAgentIDFromMediaVersionString(const std::string &versi
         size_t found = version_string.find(MEDIA_VERSION_STRING_PREFIX);
         if (found != std::string::npos) 
         {
-            found = version_string.find_first_of("/", found);
+            found = version_string.find_first_of('/', found);
             if (found != std::string::npos) 
             {
                 std::string v = version_string.substr(found + 1);

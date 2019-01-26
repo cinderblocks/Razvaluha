@@ -29,18 +29,16 @@
 #include "linden_common.h"
 #include "llunits.h"
 #include "stdtypes.h"
-#include <new>
-#include <cstdlib>
 #if !LL_WINDOWS
 #include <stdint.h>
 #endif
 
 class LLMutex ;
 
-#if LL_WINDOWS && LL_DEBUG
+#if LL_WINDOWS && LL_DEBUG && LL_CHECK_MEM
 #define LL_CHECK_MEMORY llassert(_CrtCheckMemory());
 #else
-#define LL_CHECK_MEMORY
+#define LL_CHECK_MEMORY 
 #endif
 
 
@@ -58,32 +56,11 @@ class LLMutex ;
 #define LL_DEFAULT_HEAP_ALIGN 8
 #endif
 
-//<singu>
-// ll_assert_aligned seems to only exist to set breakpoints in case an alignment check fails.
-// However, the implementation was horrible: the test was done using a integer modulo after
-// calling a function; which is like 500 times slower then the below. That turned out to be
-// significant compared to CPU cycles used to do vector calculations in side of which this test
-// is used.
-//
-// This implementation uses a faster, inlined test, and then still calls a function when
-// that fails to set a break point there if needed.
-//
-// This uses the fact that 'alignment' is literal int (aka, '16' or '64') that is a power of two.
-// As a result, the modulo is converted by the compiler to a logical AND with alignment-1, what
-// it cannot do if you don't inline the test.
-#ifdef SHOW_ASSERT
-LL_COMMON_API void singu_alignment_check_failed(void);
 
-#define ll_assert_aligned(ptr,alignment)											\
-	do																				\
-	{																				\
-	  if (LL_UNLIKELY(reinterpret_cast<intptr_t>(ptr) % alignment))					\
-	  {																				\
-		singu_alignment_check_failed();												\
-	  }																				\
-	}																				\
-	while(0)
-//</singu>
+LL_COMMON_API void ll_assert_aligned_func(uintptr_t ptr,U32 alignment);
+
+#ifdef SHOW_ASSERT
+#define ll_assert_aligned(ptr,alignment) ll_assert_aligned_func(uintptr_t(ptr),((U32)alignment))
 #else
 #define ll_assert_aligned(ptr,alignment)
 #endif
@@ -93,13 +70,13 @@ LL_COMMON_API void singu_alignment_check_failed(void);
 template <typename T> T* LL_NEXT_ALIGNED_ADDRESS(T* address) 
 { 
 	return reinterpret_cast<T*>(
-		(reinterpret_cast<uintptr_t>(address) + 0xF) & ~0xF);
+		(uintptr_t(address) + 0xF) & ~0xF);
 }
 
 template <typename T> T* LL_NEXT_ALIGNED_ADDRESS_64(T* address) 
 { 
 	return reinterpret_cast<T*>(
-		(reinterpret_cast<uintptr_t>(address) + 0x3F) & ~0x3F);
+		(uintptr_t(address) + 0x3F) & ~0x3F);
 }
 
 #if LL_LINUX || LL_DARWIN
@@ -133,11 +110,15 @@ template <typename T> T* LL_NEXT_ALIGNED_ADDRESS_64(T* address)
 	#if defined(LL_WINDOWS)
 		return _aligned_malloc(size, align);
 	#else
+        char* aligned = NULL;
 		void* mem = malloc( size + (align - 1) + sizeof(void*) );
-		char* aligned = ((char*)mem) + sizeof(void*);
-		aligned += align - ((uintptr_t)aligned & (align - 1));
+        if (mem)
+        {
+            aligned = ((char*)mem) + sizeof(void*);
+            aligned += align - ((uintptr_t)aligned & (align - 1));
 
-		((void**)aligned)[-1] = mem;
+            ((void**)aligned)[-1] = mem;
+        }
 		return aligned;
 	#endif
 	}
@@ -155,6 +136,7 @@ template <typename T> T* LL_NEXT_ALIGNED_ADDRESS_64(T* address)
 	}
 #endif
 //------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
 
 #if !LL_USE_TCMALLOC
 inline void* ll_aligned_malloc_16(size_t size) // returned hunk MUST be freed with ll_aligned_free_16().
@@ -164,7 +146,7 @@ inline void* ll_aligned_malloc_16(size_t size) // returned hunk MUST be freed wi
 #elif defined(LL_DARWIN)
 	return malloc(size); // default osx malloc is 16 byte aligned.
 #else
-	void *rtn;
+	void *rtn = NULL;
 	if (LL_LIKELY(0 == posix_memalign(&rtn, 16, size)))
 		return rtn;
 	else // bad alignment requested, or out of memory
@@ -207,19 +189,17 @@ inline void* ll_aligned_realloc_16(void* ptr, size_t size, size_t old_size) // r
 
 #else // USE_TCMALLOC
 // ll_aligned_foo_16 are not needed with tcmalloc
-#define ll_aligned_malloc_16 ::malloc
-#define ll_aligned_realloc_16(a,b,c) ::realloc(a,b)
-#define ll_aligned_free_16 ::free
+#define ll_aligned_malloc_16 malloc
+#define ll_aligned_realloc_16(a,b,c) realloc(a,b)
+#define ll_aligned_free_16 free
 #endif // USE_TCMALLOC
 
 inline void* ll_aligned_malloc_32(size_t size) // returned hunk MUST be freed with ll_aligned_free_32().
 {
 #if defined(LL_WINDOWS)
 	return _aligned_malloc(size, 32);
-#elif defined(LL_DARWIN)
-	return ll_aligned_malloc_fallback( size, 32 );
 #else
-	void *rtn;
+	void *rtn = NULL;
 	if (LL_LIKELY(0 == posix_memalign(&rtn, 32, size)))
 		return rtn;
 	else // bad alignment requested, or out of memory
@@ -231,8 +211,28 @@ inline void ll_aligned_free_32(void *p)
 {
 #if defined(LL_WINDOWS)
 	_aligned_free(p);
-#elif defined(LL_DARWIN)
-	ll_aligned_free_fallback( p );
+#else
+	free(p); // posix_memalign() is compatible with heap deallocator
+#endif
+}
+
+inline void* ll_aligned_malloc_64(size_t size) // returned hunk MUST be freed with ll_aligned_free_64().
+{
+#if defined(LL_WINDOWS)
+	return _aligned_malloc(size, 64);
+#else
+	void *rtn = NULL;
+	if (LL_LIKELY(0 == posix_memalign(&rtn, 64, size)))
+		return rtn;
+	else // bad alignment requested, or out of memory
+		return NULL;
+#endif
+}
+
+inline void ll_aligned_free_64(void *p)
+{
+#if defined(LL_WINDOWS)
+	_aligned_free(p);
 #else
 	free(p); // posix_memalign() is compatible with heap deallocator
 #endif
@@ -253,6 +253,10 @@ LL_FORCE_INLINE void* ll_aligned_malloc(size_t size)
 	else if (ALIGNMENT == 32)
 	{
 		return ll_aligned_malloc_32(size);
+	}
+	else if (ALIGNMENT == 64)
+	{
+		return ll_aligned_malloc_64(size);
 	}
 	else
 	{
@@ -275,6 +279,10 @@ LL_FORCE_INLINE void ll_aligned_free(void* ptr)
 	{
 		return ll_aligned_free_32(ptr);
 	}
+	else if (ALIGNMENT == 64)
+	{
+		return ll_aligned_free_64(ptr);
+	}
 	else
 	{
 		return ll_aligned_free_fallback(ptr);
@@ -292,6 +300,7 @@ inline void ll_memcpy_nonaliased_aligned_16(char* __restrict dst, const char* __
 	assert((bytes % sizeof(F32))== 0); 
 	ll_assert_aligned(src,16);
 	ll_assert_aligned(dst,16);
+
 	assert((src < dst) ? ((src + bytes) <= dst) : ((dst + bytes) <= src));
 	assert(bytes%16==0);
 
@@ -344,6 +353,7 @@ inline void ll_memcpy_nonaliased_aligned_16(char* __restrict dst, const char* __
 
 	// Copy remainder 16b tail chunks (or ALL 16b chunks for sub-64b copies)
 	//
+	assert(0 == (((U8*) end - (U8*) dst) % 16));
 	while (dst < end)
 	{
 		_mm_store_ps((F32*)dst, _mm_load_ps((F32*)src));
@@ -352,23 +362,15 @@ inline void ll_memcpy_nonaliased_aligned_16(char* __restrict dst, const char* __
 	}
 }
 
-#ifndef __DEBUG_PRIVATE_MEM__
-#define __DEBUG_PRIVATE_MEM__  0
-#endif
-
 class LL_COMMON_API LLMemory
 {
 public:
-	static void initClass();
-	static void cleanupClass();
-	static void freeReserve();
 	// Return the resident set size of the current process, in bytes.
 	// Return value is zero if not known.
 	static U64 getCurrentRSS();
-	static U32 getWorkingSetSize();
 	static void* tryToAlloc(void* address, U32 size);
 	static void initMaxHeapSizeGB(F32Gigabytes max_heap_size, BOOL prevent_heap_failure);
-	static void updateMemoryInfo() ;
+	static void updateMemoryInfo(bool for_cache = false) ;
 	static void logMemoryInfo(BOOL update = FALSE);
 	static bool isMemoryPoolLow();
 
@@ -376,7 +378,6 @@ public:
 	static U32Kilobytes getMaxMemKB() ;
 	static U32Kilobytes getAllocatedMemKB() ;
 private:
-	static char* reserveMem;
 	static U32Kilobytes sAvailPhysicalMemInKB ;
 	static U32Kilobytes sMaxPhysicalMemInKB ;
 	static U32Kilobytes sAllocatedMemInKB;
@@ -386,378 +387,15 @@ private:
 	static BOOL sEnableMemoryFailurePrevention;
 };
 
-//----------------------------------------------------------------------------
-#if MEM_TRACK_MEM
-class LLMutex ;
-class LL_COMMON_API LLMemTracker
-{
-private:
-	LLMemTracker() ;
-	~LLMemTracker() ;
+// LLRefCount moved to llrefcount.h
 
-public:
-	static void release() ;
-	static LLMemTracker* getInstance() ;
+// LLPointer moved to llpointer.h
 
-	void track(const char* function, const int line) ;
-	void preDraw(BOOL pause) ;
-	void postDraw() ;
-	const char* getNextLine() ;
+// LLSafeHandle moved to llsafehandle.h
 
-private:
-	static LLMemTracker* sInstance ;
-	
-	char**     mStringBuffer ;
-	S32        mCapacity ;
-	U32        mLastAllocatedMem ;
-	S32        mCurIndex ;
-	S32        mCounter;
-	S32        mDrawnIndex;
-	S32        mNumOfDrawn;
-	BOOL       mPaused;
-	LLMutex*   mMutexp ;
-};
-
-#define MEM_TRACK_RELEASE LLMemTracker::release() ;
-#define MEM_TRACK         LLMemTracker::getInstance()->track(__FUNCTION__, __LINE__) ;
-
-#else // MEM_TRACK_MEM
-
-#define MEM_TRACK_RELEASE
-#define MEM_TRACK
-
-#endif // MEM_TRACK_MEM
-
-//----------------------------------------------------------------------------
+// LLSingleton moved to llsingleton.h
 
 
-//
-//class LLPrivateMemoryPool defines a private memory pool for an application to use, so the application does not
-//need to access the heap directly fro each memory allocation. Throught this, the allocation speed is faster, 
-//and reduces virtaul address space gragmentation problem.
-//Note: this class is thread-safe by passing true to the constructor function. However, you do not need to do this unless
-//you are sure the memory allocation and de-allocation will happen in different threads. To make the pool thread safe
-//increases allocation and deallocation cost.
-//
-class LL_COMMON_API LLPrivateMemoryPool
-{
-	friend class LLPrivateMemoryPoolManager ;
 
-public:
-	class LL_COMMON_API LLMemoryBlock //each block is devided into slots uniformly
-	{
-	public: 
-		LLMemoryBlock() ;
-		~LLMemoryBlock() ;
-
-		void init(char* buffer, U32 buffer_size, U32 slot_size) ;
-		void setBuffer(char* buffer, U32 buffer_size) ;
-
-		char* allocate() ;
-		void  freeMem(void* addr) ;
-
-		bool empty() {return !mAllocatedSlots;}
-		bool isFull() {return mAllocatedSlots == mTotalSlots;}
-		bool isFree() {return !mTotalSlots;}
-
-		U32  getSlotSize()const {return mSlotSize;}
-		U32  getTotalSlots()const {return mTotalSlots;}
-		U32  getBufferSize()const {return mBufferSize;}
-		char* getBuffer() const {return mBuffer;}
-
-		//debug use
-		void resetBitMap() ;
-	private:
-		char* mBuffer;
-		U32   mSlotSize ; //when the block is not initialized, it is the buffer size.
-		U32   mBufferSize ;
-		U32   mUsageBits ;
-		U8    mTotalSlots ;
-		U8    mAllocatedSlots ;
-		U8    mDummySize ; //size of extra bytes reserved for mUsageBits.
-
-	public:
-		LLMemoryBlock* mPrev ;
-		LLMemoryBlock* mNext ;
-		LLMemoryBlock* mSelf ;
-
-		struct CompareAddress
-		{
-			bool operator()(const LLMemoryBlock* const& lhs, const LLMemoryBlock* const& rhs)
-			{
-				return (size_t)lhs->getBuffer() < (size_t)rhs->getBuffer();
-			}
-		};
-	};
-
-	class LL_COMMON_API LLMemoryChunk //is divided into memory blocks.
-	{
-	public:
-		LLMemoryChunk() ;
-		~LLMemoryChunk() ;
-
-		void init(char* buffer, U32 buffer_size, U32 min_slot_size, U32 max_slot_size, U32 min_block_size, U32 max_block_size) ;
-		void setBuffer(char* buffer, U32 buffer_size) ;
-
-		bool empty() ;
-		
-		char* allocate(U32 size) ;
-		void  freeMem(void* addr) ;
-
-		char* getBuffer() const {return mBuffer;}
-		U32 getBufferSize() const {return mBufferSize;}
-		U32 getAllocatedSize() const {return mAlloatedSize;}
-
-		bool containsAddress(const char* addr) const;
-
-		static U32 getMaxOverhead(U32 data_buffer_size, U32 min_slot_size, 
-													   U32 max_slot_size, U32 min_block_size, U32 max_block_size) ;
-	
-		void dump() ;
-
-	private:
-		U32 getPageIndex(char const* addr) ;
-		U32 getBlockLevel(U32 size) ;
-		U16 getPageLevel(U32 size) ;
-		LLMemoryBlock* addBlock(U32 blk_idx) ;
-		void popAvailBlockList(U32 blk_idx) ;
-		void addToFreeSpace(LLMemoryBlock* blk) ;
-		void removeFromFreeSpace(LLMemoryBlock* blk) ;
-		void removeBlock(LLMemoryBlock* blk) ;
-		void addToAvailBlockList(LLMemoryBlock* blk) ;
-		U32  calcBlockSize(U32 slot_size);
-		LLMemoryBlock* createNewBlock(LLMemoryBlock* blk, U32 buffer_size, U32 slot_size, U32 blk_idx) ;
-
-	private:
-		LLMemoryBlock** mAvailBlockList ;//256 by mMinSlotSize
-		LLMemoryBlock** mFreeSpaceList;
-		LLMemoryBlock*  mBlocks ; //index of blocks by address.
-		
-		char* mBuffer ;
-		U32   mBufferSize ;
-		char* mDataBuffer ;
-		char* mMetaBuffer ;
-		U32   mMinBlockSize ;
-		U32   mMinSlotSize ;
-		U32   mMaxSlotSize ;
-		U32   mAlloatedSize ;
-		U16   mBlockLevels;
-		U16   mPartitionLevels;
-
-	public:
-		//form a linked list
-		LLMemoryChunk* mNext ;
-		LLMemoryChunk* mPrev ;
-	} ;
-
-private:
-	LLPrivateMemoryPool(S32 type, U32 max_pool_size) ;
-	~LLPrivateMemoryPool() ;
-
-	char *allocate(U32 size) ;
-	void  freeMem(void* addr) ;
-	
-	void  dump() ;
-	U32   getTotalAllocatedSize() ;
-	U32   getTotalReservedSize() {return mReservedPoolSize;}
-	S32   getType() const {return mType; }
-	bool  isEmpty() const {return !mNumOfChunks; }
-
-private:
-	void lock() ;
-	void unlock() ;	
-	S32 getChunkIndex(U32 size) ;
-	LLMemoryChunk*  addChunk(S32 chunk_index) ;
-	bool checkSize(U32 asked_size) ;
-	void removeChunk(LLMemoryChunk* chunk) ;
-	U16  findHashKey(const char* addr);
-	void addToHashTable(LLMemoryChunk* chunk) ;
-	void removeFromHashTable(LLMemoryChunk* chunk) ;
-	void rehash() ;
-	bool fillHashTable(U16 start, U16 end, LLMemoryChunk* chunk) ;
-	LLMemoryChunk* findChunk(const char* addr) ;
-
-	void destroyPool() ;
-
-public:
-	enum
-	{
-		SMALL_ALLOCATION = 0, //from 8 bytes to 2KB(exclusive), page size 2KB, max chunk size is 4MB.
-		MEDIUM_ALLOCATION,    //from 2KB to 512KB(exclusive), page size 32KB, max chunk size 4MB
-		LARGE_ALLOCATION,     //from 512KB to 4MB(inclusive), page size 64KB, max chunk size 16MB
-		SUPER_ALLOCATION      //allocation larger than 4MB.
-	};
-
-	enum
-	{
-		STATIC = 0 ,       //static pool(each alllocation stays for a long time) without threading support
-		VOLATILE,          //Volatile pool(each allocation stays for a very short time) without threading support
-		STATIC_THREADED,   //static pool with threading support
-		VOLATILE_THREADED, //volatile pool with threading support
-		MAX_TYPES
-	}; //pool types
-
-private:
-	LLMutex* mMutexp ;
-	U32  mMaxPoolSize;
-	U32  mReservedPoolSize ;	
-
-	LLMemoryChunk* mChunkList[SUPER_ALLOCATION] ; //all memory chunks reserved by this pool, sorted by address	
-	U16 mNumOfChunks ;
-	U16 mHashFactor ;
-
-	S32 mType ;
-
-	class LLChunkHashElement
-	{
-	public:
-		LLChunkHashElement() {mFirst = NULL ; mSecond = NULL ;}
-
-		bool add(LLMemoryChunk* chunk) ;
-		void remove(LLMemoryChunk* chunk) ;
-		LLMemoryChunk* findChunk(const char* addr) ;
-
-		bool empty() {return !mFirst && !mSecond; }
-		bool full()  {return mFirst && mSecond; }
-		bool hasElement(LLMemoryChunk* chunk) {return mFirst == chunk || mSecond == chunk;}
-
-	private:
-		LLMemoryChunk* mFirst ;
-		LLMemoryChunk* mSecond ;
-	};
-	std::vector<LLChunkHashElement> mChunkHashList ;
-};
-
-class LL_COMMON_API LLPrivateMemoryPoolManager
-{
-private:
-	LLPrivateMemoryPoolManager(BOOL enabled, U32 max_pool_size) ;
-	~LLPrivateMemoryPoolManager() ;
-
-public:	
-	static LLPrivateMemoryPoolManager* getInstance() ;
-	static void initClass(BOOL enabled, U32 pool_size) ;
-	static void destroyClass() ;
-
-	LLPrivateMemoryPool* newPool(S32 type) ;
-	void deletePool(LLPrivateMemoryPool* pool) ;
-
-private:	
-	std::vector<LLPrivateMemoryPool*> mPoolList ;	
-	U32  mMaxPrivatePoolSize;
-
-	static LLPrivateMemoryPoolManager* sInstance ;
-	static BOOL sPrivatePoolEnabled;
-	static std::vector<LLPrivateMemoryPool*> sDanglingPoolList ;
-public:
-	//debug and statistics info.
-	void updateStatistics() ;
-
-	U32 mTotalReservedSize ;
-	U32 mTotalAllocatedSize ;
-
-public:
-#if __DEBUG_PRIVATE_MEM__
-	static char* allocate(LLPrivateMemoryPool* poolp, U32 size, const char* function, const int line) ;	
-	
-	typedef std::map<char*, std::string> mem_allocation_info_t ;
-	static mem_allocation_info_t sMemAllocationTracker;
-#else
-	static char* allocate(LLPrivateMemoryPool* poolp, U32 size) ;	
-#endif
-	static void  freeMem(LLPrivateMemoryPool* poolp, void* addr) ;
-};
-
-//-------------------------------------------------------------------------------------
-#if __DEBUG_PRIVATE_MEM__
-#define ALLOCATE_MEM(poolp, size) LLPrivateMemoryPoolManager::allocate((poolp), (size), __FUNCTION__, __LINE__)
-#else
-#define ALLOCATE_MEM(poolp, size) LLPrivateMemoryPoolManager::allocate((poolp), (size))
-//#define ALLOCATE_MEM(poolp, size) new char[size]
-#endif
-#define FREE_MEM(poolp, addr) LLPrivateMemoryPoolManager::freeMem((poolp), (addr))
-//#define FREE_MEM(poolp, addr) delete[] addr;
-//-------------------------------------------------------------------------------------
-
-//
-//the below singleton is used to test the private memory pool.
-//
-#if 0
-class LL_COMMON_API LLPrivateMemoryPoolTester
-{
-private:
-	LLPrivateMemoryPoolTester() ;
-	~LLPrivateMemoryPoolTester() ;
-
-public:
-	static LLPrivateMemoryPoolTester* getInstance() ;
-	static void destroy() ;
-
-	void run(S32 type) ;	
-
-private:
-	void correctnessTest() ;
-	void performanceTest() ;
-	void fragmentationtest() ;
-
-	void test(U32 min_size, U32 max_size, U32 stride, U32 times, bool random_deletion, bool output_statistics) ;
-	void testAndTime(U32 size, U32 times) ;
-
-#if 0
-public:
-	void* operator new(size_t size)
-	{
-		return (void*)sPool->allocate(size) ;
-	}
-    void  operator delete(void* addr)
-	{
-		sPool->freeMem(addr) ;
-	}
-	void* operator new[](size_t size)
-	{
-		return (void*)sPool->allocate(size) ;
-	}
-    void  operator delete[](void* addr)
-	{
-		sPool->freeMem(addr) ;
-	}
-#endif
-
-private:
-	static LLPrivateMemoryPoolTester* sInstance;
-	static LLPrivateMemoryPool* sPool ;
-	static LLPrivateMemoryPool* sThreadedPool ;
-};
-#if 0
-//static
-void* LLPrivateMemoryPoolTester::operator new(size_t size)
-{
-	return (void*)sPool->allocate(size) ;
-}
-
-//static
-void  LLPrivateMemoryPoolTester::operator delete(void* addr)
-{
-	sPool->free(addr) ;
-}
-
-//static
-void* LLPrivateMemoryPoolTester::operator new[](size_t size)
-{
-	return (void*)sPool->allocate(size) ;
-}
-
-//static
-void  LLPrivateMemoryPoolTester::operator delete[](void* addr)
-{
-	sPool->free(addr) ;
-}
-#endif
-#endif
-
-//EVENTUALLY REMOVE THESE:
-#include "llpointer.h"
-#include "llsingleton.h"
-#include "llsafehandle.h"
 
 #endif

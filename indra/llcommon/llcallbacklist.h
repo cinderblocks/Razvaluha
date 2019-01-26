@@ -28,9 +28,7 @@
 #define LL_LLCALLBACKLIST_H
 
 #include "llstl.h"
-#include <boost/function.hpp>
 #include <list>
-#include "stdtypes.h"
 
 class LLCallbackList
 {
@@ -45,9 +43,9 @@ public:
 	LLCallbackList();
 	~LLCallbackList();
 
-	void addFunction( callback_t func, void *data = NULL );			// register a callback, which will be called as func(data)
-	bool containsFunction( callback_t func, void *data = NULL );	// true if list already contains the function/data pair
-	bool deleteFunction( callback_t func, void *data = NULL );		// removes the first instance of this function/data pair from the list, false if not found
+	void addFunction( callback_t func, void *data = nullptr );			// register a callback, which will be called as func(data)
+	bool containsFunction( callback_t func, void *data = nullptr );	// true if list already contains the function/data pair
+	bool deleteFunction( callback_t func, void *data = nullptr );		// removes the first instance of this function/data pair from the list, false if not found
 	void callFunctions();														// calls all functions
 	void deleteAllFunctions();
 
@@ -60,8 +58,8 @@ protected:
 	callback_list_t	mCallbackList;
 };
 
-typedef boost::function<void ()> nullary_func_t;
-typedef boost::function<bool ()> bool_func_t;
+typedef std::function<void ()> nullary_func_t;
+typedef std::function<bool ()> bool_func_t;
 
 // Call a given callable once in idle loop.
 void doOnIdleOneTime(nullary_func_t callable);

@@ -1,562 +1,238 @@
-// <edit>
-#include "llviewerprecompiledheaders.h"
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+/**
+ * @file llfloatermessagelog.cpp
+ *
+ * $LicenseInfo:firstyear=2015&license=viewerlgpl$
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * $/LicenseInfo$
+ */
 
+#include "llviewerprecompiledheaders.h"
 #include "llfloatermessagelog.h"
 
-#include "lleventtimer.h"
-#include "llmenugl.h"
-#include "llmessagetemplate.h"
-#include "llnotificationsutil.h"
+#include "llcheckboxctrl.h"
 #include "llscrolllistctrl.h"
-#include "llscrolllistitem.h"
 #include "lltexteditor.h"
 #include "lluictrlfactory.h"
 
 #include "llagent.h"
+#include "lleasymessagereader.h"
+#include "llfloatermessagebuilder.h"
+//#include "llfloaterreg.h"
+#include "lleasymessagelogentry.h"
+#include "llmessagetemplate.h"
+#include "llnotificationsutil.h"
+#include "llviewermenu.h"
 #include "llviewerregion.h"
+#include "llviewerwindow.h"
 #include "llworld.h"
+
 #include <boost/tokenizer.hpp>
 
+const std::string DEFAULT_FILTER = "!StartPingCheck !CompletePingCheck !PacketAck !SimulatorViewerTimeMessage !SimStats !AgentUpdate !AgentAnimation !AvatarAnimation !ViewerEffect !CoarseLocationUpdate !LayerData !CameraConstraint !ObjectUpdateCached !RequestMultipleObjects !ObjectUpdate !ObjectUpdateCompressed !ImprovedTerseObjectUpdate !KillObject !ImagePacket !SendXferPacket !ConfirmXferPacket !TransferPacket !SoundTrigger !AttachedSound !PreloadSound";
 
+//TODO: replace all filtering code, esp start/stopApplyingFilter
 
-////////////////////////////////
-// LLNetListItem
-//////////////////////////////// 	
-LLNetListItem::LLNetListItem(LLUUID id)
-:	mID(id),
-	mAutoName(TRUE),
-	mName("No name"),
-	mPreviousRegionName(""),
-	mCircuitData(NULL)	 	
+LLMessageLogFilter::LLMessageLogFilter(const std::string& filter)
 {
+	set(filter);
 }
 
-////////////////////////////////
-// LLFloaterMessageLogItem
-////////////////////////////////
-#define MAX_PACKET_LEN (0x2000)
-LLTemplateMessageReader* LLFloaterMessageLogItem::sTemplateMessageReader = NULL;
-LLFloaterMessageLogItem::LLFloaterMessageLogItem(LLMessageLogEntry entry)
-:	LLMessageLogEntry(entry.mType, entry.mFromHost, entry.mToHost, entry.mData, entry.mDataSize)
+void LLMessageLogFilter::set(const std::string& filter)
 {
-	if(!sTemplateMessageReader)
-	{
-		sTemplateMessageReader = new LLTemplateMessageReader(gMessageSystem->mMessageNumbers);
-	}
-	mID.generate();
-	mSequenceID = 0;
-	if(mType == TEMPLATE)
-	{
-		BOOL decode_invalid = FALSE;
-		S32 decode_len = mDataSize;
-		std::vector<U8> DecodeBuffer(MAX_PACKET_LEN,0);
-		memcpy(&(DecodeBuffer[0]),&(mData[0]),decode_len);
-		U8* decodep = &(DecodeBuffer[0]);
-		mFlags = DecodeBuffer[0];
-		gMessageSystem->zeroCodeExpand(&decodep, &decode_len);
-		if(decode_len < 7)
-			decode_invalid = TRUE;
-		else
-		{
-			mSequenceID = ntohl(*((U32*)(&decodep[1])));
-			sTemplateMessageReader->clearMessage();
-			if(!sTemplateMessageReader->validateMessage(decodep, decode_len, mFromHost, TRUE))
-				decode_invalid = TRUE;
-			else
-			{
-				if(!sTemplateMessageReader->decodeData(decodep, mFromHost, true))
-					decode_invalid = TRUE;
-				else
-				{
-					LLMessageTemplate* temp = sTemplateMessageReader->mCurrentRMessageTemplate;
-					mName = temp->mName;
-					mSummary = "";
-					
-					if(mFlags)
-					{
-						mSummary.append(" [ ");
-						if(mFlags & LL_ZERO_CODE_FLAG)
-							mSummary.append(" Zer ");
-						if(mFlags & LL_RELIABLE_FLAG)
-							mSummary.append(" Rel ");
-						if(mFlags & LL_RESENT_FLAG)
-							mSummary.append(" Rsd ");
-						if(mFlags & LL_ACK_FLAG)
-							mSummary.append(" Ack ");
-						mSummary.append(" ] ");
-					}
-					
-					LLMessageTemplate::message_block_map_t::iterator blocks_end = temp->mMemberBlocks.end();
-					for (LLMessageTemplate::message_block_map_t::iterator blocks_iter = temp->mMemberBlocks.begin();
-						 blocks_iter != blocks_end; ++blocks_iter)
-					{
-						LLMessageBlock* block = (*blocks_iter);
-						const char* block_name = block->mName;
-						S32 num_blocks = sTemplateMessageReader->getNumberOfBlocks(block_name);
-						if(!num_blocks)
-							mSummary.append(" { } ");
-						else if(num_blocks > 1)
-							mSummary.append(llformat(" %s [ %d ] { ... } ", block_name, num_blocks));
-						else for(S32 i = 0; i < 1; i++)
-						{
-							mSummary.append(" { ");
-							LLMessageBlock::message_variable_map_t::iterator var_end = block->mMemberVariables.end();
-							for (LLMessageBlock::message_variable_map_t::iterator var_iter = block->mMemberVariables.begin();
-								 var_iter != var_end; ++var_iter)
-							{
-								LLMessageVariable* variable = (*var_iter);
-								const char* var_name = variable->getName();
-								BOOL returned_hex;
-								std::string value = getString(sTemplateMessageReader, block_name, i, var_name, variable->getType(), returned_hex, TRUE);
-								mSummary.append(llformat(" %s=%s ", var_name, value.c_str()));
-							}
-							mSummary.append(" } ");
-							if(mSummary.length() > 255) break;
-						}
-						if(mSummary.length() > 255)
-						{
-							mSummary.append(" ... ");
-							break;
-						}
-					} // blocks_iter
-				} // decode_valid
-			}
-		}
-		if(decode_invalid)
-		{
-			mName = "Invalid";
-			mSummary = "";
-			for(S32 i = 0; i < mDataSize; i++)
-				mSummary.append(llformat("%02X ", mData[i]));
-		}
-	}
-	else // not template
-	{
-		mName = "SOMETHING ELSE";
-		mSummary = "TODO: SOMETHING ELSE";
-	}
-}
-LLFloaterMessageLogItem::~LLFloaterMessageLogItem()
-{
-}
-BOOL LLFloaterMessageLogItem::isOutgoing()
-{
-	return mFromHost == LLHost(16777343, gMessageSystem->getListenPort());
-}
-std::string LLFloaterMessageLogItem::getFull(BOOL show_header)
-{
-	std::string full("");
-	if(mType == TEMPLATE)
-	{
-		BOOL decode_invalid = FALSE;
-		S32 decode_len = mDataSize;
-		std::vector<U8> DecodeBuffer(MAX_PACKET_LEN,0);
-		memcpy(&(DecodeBuffer[0]),&(mData[0]),decode_len);
-		U8* decodep = &(DecodeBuffer[0]);
-		gMessageSystem->zeroCodeExpand(&decodep, &decode_len);
-		if(decode_len < 7)
-			decode_invalid = TRUE;
-		else
-		{
-			sTemplateMessageReader->clearMessage();
-			if(!sTemplateMessageReader->validateMessage(decodep, decode_len, mFromHost, TRUE))
-				decode_invalid = TRUE;
-			else
-			{
-				if(!sTemplateMessageReader->decodeData(decodep, mFromHost, TRUE))
-					decode_invalid = TRUE;
-				else
-				{
-					LLMessageTemplate* temp = sTemplateMessageReader->mCurrentRMessageTemplate;
-					full.append(isOutgoing() ? "out " : "in ");
-					full.append(llformat("%s\n", temp->mName));
-					if(show_header)
-					{
-						full.append("[Header]\n");
-						full.append(llformat("SequenceID = %u\n", mSequenceID));
-						full.append(llformat("LL_ZERO_CODE_FLAG = %s\n", (mFlags & LL_ZERO_CODE_FLAG) ? "True" : "False"));
-						full.append(llformat("LL_RELIABLE_FLAG = %s\n", (mFlags & LL_RELIABLE_FLAG) ? "True" : "False"));
-						full.append(llformat("LL_RESENT_FLAG = %s\n", (mFlags & LL_RESENT_FLAG) ? "True" : "False"));
-						full.append(llformat("LL_ACK_FLAG = %s\n", (mFlags & LL_ACK_FLAG) ? "True" : "False"));
-					}
-					LLMessageTemplate::message_block_map_t::iterator blocks_end = temp->mMemberBlocks.end();
-					for (LLMessageTemplate::message_block_map_t::iterator blocks_iter = temp->mMemberBlocks.begin();
-						 blocks_iter != blocks_end; ++blocks_iter)
-					{
-						LLMessageBlock* block = (*blocks_iter);
-						const char* block_name = block->mName;
-						S32 num_blocks = sTemplateMessageReader->getNumberOfBlocks(block_name);
-						for(S32 i = 0; i < num_blocks; i++)
-						{
-							full.append(llformat("[%s]\n", block->mName));
-							LLMessageBlock::message_variable_map_t::iterator var_end = block->mMemberVariables.end();
-							for (LLMessageBlock::message_variable_map_t::iterator var_iter = block->mMemberVariables.begin();
-								 var_iter != var_end; ++var_iter)
-							{
-								LLMessageVariable* variable = (*var_iter);
-								const char* var_name = variable->getName();
-								BOOL returned_hex;
-								std::string value = getString(sTemplateMessageReader, block_name, i, var_name, variable->getType(), returned_hex);
-								if(returned_hex)
-									full.append(llformat("%s =| ", var_name));
-								else
-									full.append(llformat("%s = ", var_name));
-								// llformat has a 1024 char limit!?
-								full.append(value);
-								full.append("\n");
-							}
-						}
-					} // blocks_iter
-				} // decode_valid
-			}
-		}
-		if(decode_invalid)
-		{
-			full = isOutgoing() ? "out" : "in";
-			full.append("\n");
-			for(S32 i = 0; i < mDataSize; i++)
-				full.append(llformat("%02X ", mData[i]));
-		}
-	}
-	else // not template
-	{
-		full = "FIXME";
-	}
-	return full;
-}
-// static
-std::string LLFloaterMessageLogItem::getString(LLTemplateMessageReader* readerp, const char* block_name, S32 block_num, const char* var_name, e_message_variable_type var_type, BOOL &returned_hex, BOOL summary_mode)
-{
-	returned_hex = FALSE;
-	std::stringstream stream;
-	char* value;
-	U32 valueU32;
-	U16 valueU16;
-	LLVector3 valueVector3;
-	LLVector3d valueVector3d;
-	LLVector4 valueVector4;
-	LLQuaternion valueQuaternion;
-	LLUUID valueLLUUID;
-	switch(var_type)
-	{
-	case MVT_U8:
-		U8 valueU8;
-		readerp->getU8(block_name, var_name, valueU8, block_num);
-		stream << U32(valueU8);
-		break;
-	case MVT_U16:
-		readerp->getU16(block_name, var_name, valueU16, block_num);
-		stream << valueU16;
-		break;
-	case MVT_U32:
-		readerp->getU32(block_name, var_name, valueU32, block_num);
-		stream << valueU32;
-		break;
-	case MVT_U64:
-		U64 valueU64;
-		readerp->getU64(block_name, var_name, valueU64, block_num);
-		stream << valueU64;
-		break;
-	case MVT_S8:
-		S8 valueS8;
-		readerp->getS8(block_name, var_name, valueS8, block_num);
-		stream << S32(valueS8);
-		break;
-	case MVT_S16:
-		S16 valueS16;
-		readerp->getS16(block_name, var_name, valueS16, block_num);
-		stream << valueS16;
-		break;
-	case MVT_S32:
-		S32 valueS32;
-		readerp->getS32(block_name, var_name, valueS32, block_num);
-		stream << valueS32;
-		break;
-	/*case MVT_S64:
-		S64 valueS64;
-		readerp->getS64(block_name, var_name, valueS64, block_num);
-		stream << valueS64;
-		break;*/
-	case MVT_F32:
-		F32 valueF32;
-		readerp->getF32(block_name, var_name, valueF32, block_num);
-		stream << valueF32;
-		break;
-	case MVT_F64:
-		F64 valueF64;
-		readerp->getF64(block_name, var_name, valueF64, block_num);
-		stream << valueF64;
-		break;
-	case MVT_LLVector3:
-		readerp->getVector3(block_name, var_name, valueVector3, block_num);
-		//stream << valueVector3;
-		stream << "<" << valueVector3.mV[0] << ", " << valueVector3.mV[1] << ", " << valueVector3.mV[2] << ">";
-		break;
-	case MVT_LLVector3d:
-		readerp->getVector3d(block_name, var_name, valueVector3d, block_num);
-		//stream << valueVector3d;
-		stream << "<" << valueVector3d.mdV[0] << ", " << valueVector3d.mdV[1] << ", " << valueVector3d.mdV[2] << ">";
-		break;
-	case MVT_LLVector4:
-		readerp->getVector4(block_name, var_name, valueVector4, block_num);
-		//stream << valueVector4;
-		stream << "<" << valueVector4.mV[0] << ", " << valueVector4.mV[1] << ", " << valueVector4.mV[2] << ", " << valueVector4.mV[3] << ">";
-		break;
-	case MVT_LLQuaternion:
-		readerp->getQuat(block_name, var_name, valueQuaternion, block_num);
-		//stream << valueQuaternion;
-		stream << "<" << valueQuaternion.mQ[0] << ", " << valueQuaternion.mQ[1] << ", " << valueQuaternion.mQ[2] << ", " << valueQuaternion.mQ[3] << ">";
-		break;
-	case MVT_LLUUID:
-		readerp->getUUID(block_name, var_name, valueLLUUID, block_num);
-		stream << valueLLUUID;
-		break;
-	case MVT_BOOL:
-		BOOL valueBOOL;
-		readerp->getBOOL(block_name, var_name, valueBOOL, block_num);
-		stream << valueBOOL;
-		break;
-	case MVT_IP_ADDR:
-		readerp->getIPAddr(block_name, var_name, valueU32, block_num);
-		stream << LLHost(valueU32, 0).getIPString();
-		break;
-	case MVT_IP_PORT:
-		readerp->getIPPort(block_name, var_name, valueU16, block_num);
-		stream << valueU16;
-	case MVT_VARIABLE:
-	case MVT_FIXED:
-	default:
-		S32 size = readerp->getSize(block_name, block_num, var_name);
-		if(size)
-		{
-			value = new char[size + 1];
-			readerp->getBinaryData(block_name, var_name, value, size, block_num);
-			value[size] = '\0';
-			S32 readable = 0;
-			S32 unreadable = 0;
-			S32 end = (summary_mode && (size > 64)) ? 64 : size;
-			for(S32 i = 0; i < end; i++)
-			{
-				if(!value[i])
-				{
-					if(i != (end - 1))
-					{ // don't want null terminator hiding data
-						unreadable = S32_MAX;
-						break;
-					}
-				}
-				else if(value[i] < 0x20 || value[i] >= 0x7F)
-				{
-					if(summary_mode)
-						unreadable++;
-					else
-					{ // never want any wrong characters outside of summary mode
-						unreadable = S32_MAX;
-						break;
-					}
-				}
-				else readable++;
-			}
-			if(readable >= unreadable)
-			{
-				if(summary_mode && (size > 64))
-				{
-					for(S32 i = 60; i < 63; i++)
-						value[i] = '.';
-					value[63] = '\0';
-				}
-				stream << value;
-				
-				delete[] value;
-			}
-			else
-			{
-				returned_hex = TRUE;
-				S32 end = (summary_mode && (size > 8)) ? 8 : size;
-				for(S32 i = 0; i < end; i++)
-					//stream << std::uppercase << std::hex << U32(value[i]) << " ";
-					stream << llformat("%02X ", (U8)value[i]);
-				if(summary_mode && (size > 8))
-					stream << " ... ";
-			}
-		}
-		break;
-	}
-
-	return stream.str();
-}
-LLMessageLogFilter::LLMessageLogFilter()
-{
-}
-LLMessageLogFilter::~LLMessageLogFilter()
-{
-}
-BOOL LLMessageLogFilter::set(std::string filter)
-{
+	mInputString = filter;
 	mPositiveNames.clear();
 	mNegativeNames.clear();
 	typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-	boost::char_separator<char> sep(" ","",boost::keep_empty_tokens);
-	boost::tokenizer<boost::char_separator<char> > tokens(filter, sep);
-	boost::tokenizer<boost::char_separator<char> >::iterator end = tokens.end();
-	for(boost::tokenizer<boost::char_separator<char> >::iterator iter = tokens.begin(); iter != end; ++iter)
+	boost::char_separator<char> sep(" ","");
+	tokenizer tokens(filter, sep);
+	tokenizer::iterator end = tokens.end();
+	for(tokenizer::iterator iter = tokens.begin(); iter != end; ++iter)
 	{
 		std::string token = (*iter);
 		LLStringUtil::trim(token);
-		LLStringUtil::toLower(token);
-		BOOL negative = token.find("!") == 0;
-		if(negative)
+		if(token.length())
 		{
-			token = token.substr(1);
-			mNegativeNames.push_back(token);
-		}
-		else
-			mPositiveNames.push_back(token);
-	}
-	return TRUE;
-}
-////////////////////////////////
-// LLMessageLogFilterApply
-////////////////////////////////
-LLMessageLogFilterApply::LLMessageLogFilterApply()
-:	LLEventTimer(0.1f),
-	mFinished(FALSE),
-	mProgress(0)
-{
-	mIter = LLFloaterMessageLog::sMessageLogEntries.begin();
-}
-void LLMessageLogFilterApply::cancel()
-{
-	mFinished = TRUE;
-}
-BOOL LLMessageLogFilterApply::tick()
-{
-	std::deque<LLMessageLogEntry>::iterator end = LLFloaterMessageLog::sMessageLogEntries.end();
-	if(mIter == end || !LLFloaterMessageLog::sInstance)
-	{
-		mFinished = TRUE;
-		if(LLFloaterMessageLog::sInstance)
-		{
-			if(LLFloaterMessageLog::sInstance->mMessageLogFilterApply == this)
+			LLStringUtil::toLower(token);
+
+			BOOL negative = token.find('!') == 0;
+			if(negative)
 			{
-				LLFloaterMessageLog::sInstance->stopApplyingFilter();
+				token = token.substr(1);
+				mNegativeNames.insert(token);
 			}
+			else
+				mPositiveNames.insert(token);
 		}
-		return TRUE;
 	}
-	for(S32 i = 0; i < 256; i++)
-	{
-		if(mIter == end)
-		{
-			mFinished = TRUE;
-			if(LLFloaterMessageLog::sInstance)
-			{
-				if(LLFloaterMessageLog::sInstance->mMessageLogFilterApply == this)
-				{
-					LLFloaterMessageLog::sInstance->stopApplyingFilter();
+}
 
-					//we're done messing with the deque, push all queued items to the main deque
-					std::deque<LLMessageLogEntry>::iterator queueIter = mQueuedMessages.begin();
-					std::deque<LLMessageLogEntry>::iterator queueEnd = mQueuedMessages.end();
+LLFloaterMessageLog::LLMessageLogNetMan::LLMessageLogNetMan(LLFloaterMessageLog* parent)
+:	LLEventTimer(1.0f)
+,	mParent(parent)
+{
+}
 
-					while(queueIter != queueEnd)
-					{
-						LLFloaterMessageLog::sInstance->conditionalLog(LLFloaterMessageLogItem((*queueIter)));
-						++queueIter;
-					}
-
-					mQueuedMessages.clear();
-				}
-			}
-
-			return TRUE;
-		}
-
-		LLFloaterMessageLog::sInstance->conditionalLog(LLFloaterMessageLogItem((*mIter)));
-		
-		mIter++;
-		mProgress++;
-	}
-	LLFloaterMessageLog::sInstance->updateFilterStatus();
+BOOL LLFloaterMessageLog::LLMessageLogNetMan::tick()
+{
+	if (mParent) mParent->updateGlobalNetList();
 	return FALSE;
 }
+
 ////////////////////////////////
-// LLFloaterMessageLog
+//LLFloaterMessageLog
 ////////////////////////////////
-LLFloaterMessageLog* LLFloaterMessageLog::sInstance;
+
 std::list<LLNetListItem*> LLFloaterMessageLog::sNetListItems;
-std::deque<LLMessageLogEntry> LLFloaterMessageLog::sMessageLogEntries;
-std::vector<LLFloaterMessageLogItem> LLFloaterMessageLog::sFloaterMessageLogItems;
-LLMessageLogFilter LLFloaterMessageLog::sMessageLogFilter = LLMessageLogFilter();
-std::string LLFloaterMessageLog::sMessageLogFilterString("!StartPingCheck !CompletePingCheck !PacketAck !SimulatorViewerTimeMessage !SimStats !AgentUpdate !AgentAnimation !AvatarAnimation !ViewerEffect !CoarseLocationUpdate !LayerData !CameraConstraint !ObjectUpdateCached !RequestMultipleObjects !ObjectUpdate !ObjectUpdateCompressed !ImprovedTerseObjectUpdate !KillObject !ImagePacket !SendXferPacket !ConfirmXferPacket !TransferPacket !SoundTrigger !AttachedSound !PreloadSound");
-BOOL LLFloaterMessageLog::sBusyApplyingFilter = FALSE;
-LLFloaterMessageLog::LLFloaterMessageLog()
-:	LLFloater(),
-	LLEventTimer(1.0f),
-	mNetInfoMode(NI_NET),
-	mMessageLogFilterApply(NULL)
+LogPayloadList LLFloaterMessageLog::sMessageLogEntries = LogPayloadList(4096);
+LLMutex* LLFloaterMessageLog::sNetListMutex = nullptr;
+LLMutex* LLFloaterMessageLog::sMessageListMutex = nullptr;
+LLMutex* LLFloaterMessageLog::sIncompleteHTTPConvoMutex = nullptr;
+
+LLFloaterMessageLog::LLFloaterMessageLog(const LLSD& key)
+:	LLFloater(/*key*/)
+,	mMessagelogScrollListCtrl(nullptr)
+,	mMessageLogFilter(DEFAULT_FILTER)
+,	mInfoPaneMode(IPANE_NET)
+,	mBeautifyMessages(true)
+,	mMessagesLogged(0)
+,	mEasyMessageReader(new LLEasyMessageReader())
+,   mStatusText(nullptr)
 {
-	sInstance = this;
-	LLMessageLog::setCallback(onLog);
-	sMessageLogEntries = LLMessageLog::getDeque();
+	mCommitCallbackRegistrar.add("MessageLog.Filter.Action", boost::bind(&LLFloaterMessageLog::onClickFilterMenu, this, _2));
+	if(!sNetListMutex)
+		sNetListMutex = new LLMutex();
+	if(!sMessageListMutex)
+		sMessageListMutex = new LLMutex();
+	if(!sIncompleteHTTPConvoMutex)
+		sIncompleteHTTPConvoMutex = new LLMutex();
+
+	mFloaterMessageLogItems.reserve(4096);
 	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_message_log.xml");
 }
+
 LLFloaterMessageLog::~LLFloaterMessageLog()
 {
-	LLMessageLog::setCallback(NULL);
 	stopApplyingFilter();
-	sInstance = NULL;
+	clearFloaterMessageItems(true);
+
+	LLMessageLog::setCallback(nullptr);
+
+	sNetListMutex->lock();
 	sNetListItems.clear();
-	sMessageLogEntries.clear();
-	sFloaterMessageLogItems.clear();
+	sNetListMutex->unlock();
+	
+	clearMessageLogEntries();
+	delete mEasyMessageReader;
+	delete sNetListMutex;
+	delete sMessageListMutex;
+	delete sIncompleteHTTPConvoMutex;
+	sNetListMutex = nullptr;
+	sMessageListMutex = nullptr;
+	sIncompleteHTTPConvoMutex = nullptr;
 }
-// static
-void LLFloaterMessageLog::show()
-{
-	if(!sInstance) sInstance = new LLFloaterMessageLog();
-	sInstance->open();
-}
+
 BOOL LLFloaterMessageLog::postBuild()
 {
-	childSetCommitCallback("net_list", onCommitNetList, this);
-	childSetCommitCallback("message_log", onCommitMessageLog, this);
-	childSetAction("filter_choice_btn", onClickFilterChoice, this);
-	childSetAction("filter_apply_btn", onClickFilterApply, this);
-	childSetCommitCallback("filter_edit", onCommitFilter, this);
-	childSetAction("clear_log_btn", onClickClearLog, this);
-	childSetText("filter_edit", sMessageLogFilterString);
-	refreshNetList();
-	refreshNetInfo(TRUE);
-	startApplyingFilter(sMessageLogFilterString, TRUE);
+    mStatusText = getChild<LLTextEditor>("log_status_text");
+	mMessagelogScrollListCtrl = getChild<LLScrollListCtrl>("message_log");
+	mMessagelogScrollListCtrl->setSortCallback(boost::bind(&LLFloaterMessageLog::sortMessageList, this, _1 ,_2, _3));
+
+	getChild<LLUICtrl>("net_list")->setCommitCallback(boost::bind(&LLFloaterMessageLog::onCommitNetList, this, _1));
+	getChild<LLUICtrl>("message_log")->setCommitCallback(boost::bind(&LLFloaterMessageLog::onCommitMessageLog, this, _1));
+	getChild<LLUICtrl>("filter_choice_btn")->setCommitCallback(boost::bind(&LLFloaterMessageLog::onClickFilterChoice, this));
+	getChild<LLUICtrl>("filter_apply_btn")->setCommitCallback(boost::bind(&LLFloaterMessageLog::onClickFilterApply, this));
+	getChild<LLUICtrl>("filter_edit")->setCommitCallback(boost::bind(&LLFloaterMessageLog::onCommitFilter, this));
+	getChild<LLUICtrl>("wrap_net_info")->setCommitCallback(boost::bind(&LLFloaterMessageLog::onCheckWrapNetInfo, this, _2));
+	getChild<LLUICtrl>("beautify_messages")->setCommitCallback(boost::bind(&LLFloaterMessageLog::onCheckBeautifyMessages, this, _2));
+	getChild<LLUICtrl>("clear_log_btn")->setCommitCallback(boost::bind(&LLFloaterMessageLog::onClickClearLog, this));
+	getChild<LLUICtrl>("msg_builder_send_btn")->setCommitCallback(boost::bind(&LLFloaterMessageLog::onClickSendToMessageBuilder, this));
+	getChild<LLLineEditor>("filter_edit")->setText(mMessageLogFilter.asString());
+
+	startApplyingFilter(mMessageLogFilter.asString(), TRUE);
+
+	updateGlobalNetList(true);
+	mNetListTimer.reset(new LLMessageLogNetMan(this));
+
+	setInfoPaneMode(IPANE_NET);
+	wrapInfoPaneText(true);
+
 	return TRUE;
 }
-BOOL LLFloaterMessageLog::tick()
+
+void LLFloaterMessageLog::onOpen(/*const LLSD& key*/)
 {
-	refreshNetList();
-	refreshNetInfo(FALSE);
-	return FALSE;
+	LLMessageLog::setCallback(onLog);
 }
-LLNetListItem* LLFloaterMessageLog::findNetListItem(LLHost host)
+
+void LLFloaterMessageLog::onClose(bool app_quiting)
 {
-	std::list<LLNetListItem*>::iterator end = sNetListItems.end();
-	for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != end; ++iter)
-		if((*iter)->mCircuitData && (*iter)->mCircuitData->getHost() == host)
-			return (*iter);
-	return NULL;
+	LLMessageLog::setCallback(nullptr);
+	if (!app_quiting) onClickClearLog();
 }
-LLNetListItem* LLFloaterMessageLog::findNetListItem(LLUUID id)
+
+void LLFloaterMessageLog::draw()
 {
-	std::list<LLNetListItem*>::iterator end = sNetListItems.end();
-	for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != end; ++iter)
-		if((*iter)->mID == id)
-			return (*iter);
-	return NULL;
+    if (mStatusText)
+{
+        LLStringUtil::format_map_t map;
+        map["TOTAL"] = std::to_string(mMessagesLogged);
+
+        if (mMessageLogFilter.empty())
+        {
+            mStatusText->setText(getString("no_filter_status", map));
+        }
+        else
+        {
+            map["MESSAGES"] = std::to_string(mFloaterMessageLogItems.size());
+            mStatusText->setText(getString("filter_status", map));
+        }
+    }
+    LLFloater::draw();
 }
-void LLFloaterMessageLog::refreshNetList()
+
+void LLFloaterMessageLog::clearFloaterMessageItems(bool dying)
 {
-	LLScrollListCtrl* scrollp = getChild<LLScrollListCtrl>("net_list");
+	if(!dying)
+	{
+		childSetEnabled("msg_builder_send_btn", false);
+		mMessagelogScrollListCtrl->clearRows();
+}
+
+	sIncompleteHTTPConvoMutex->lock();
+	mIncompleteHTTPConvos.clear();
+	sIncompleteHTTPConvoMutex->unlock();
+
+	mFloaterMessageLogItems.clear();
+}
+
+void LLFloaterMessageLog::clearMessageLogEntries()
+{
+	LLMutexLock lock(sMessageListMutex);
+
+	sMessageLogEntries.clear();
+	mMessagesLogged = 0;
+}
+
+void LLFloaterMessageLog::updateGlobalNetList(bool starting)
+{
+	//something tells me things aren't deallocated properly here, but
+	//valgrind isn't complaining
+
+	LLMutexLock lock(sNetListMutex);
+
 	// Update circuit data of net list items
-	std::vector<LLCircuitData*> circuits = gMessageSystem->mCircuitInfo.getCircuitDataList();
+	std::vector<LLCircuitData*> circuits = gMessageSystem->getCircuit()->getCircuitDataList();
 	std::vector<LLCircuitData*>::iterator circuits_end = circuits.end();
 	for(std::vector<LLCircuitData*>::iterator iter = circuits.begin(); iter != circuits_end; ++iter)
 	{
@@ -570,63 +246,102 @@ void LLFloaterMessageLog::refreshNetList()
 		itemp->mCircuitData = (*iter);
 	}
 	// Clear circuit data of items whose circuits are gone
-	std::list<LLNetListItem*>::iterator items_end = sNetListItems.end();
-	for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != items_end; ++iter)
+	for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != sNetListItems.end(); ++iter)
 	{
 		if(std::find(circuits.begin(), circuits.end(), (*iter)->mCircuitData) == circuits.end())
-			(*iter)->mCircuitData = NULL;
+			(*iter)->mCircuitData = nullptr;
 	}
 	// Remove net list items that are totally useless now
 	for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != sNetListItems.end();)
 	{
-		if((*iter)->mCircuitData == NULL)
+		if((*iter)->mCircuitData == nullptr)
+		{
+			delete *iter;
 			iter = sNetListItems.erase(iter);
+		}
 		else ++iter;
 	}
-	// Update names of net list items
-	items_end = sNetListItems.end();
-	for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != items_end; ++iter)
+
+	if(!starting)
 	{
-		LLNetListItem* itemp = (*iter);
-		if(itemp->mAutoName)
+		refreshNetList();
+		refreshNetInfo(FALSE);
+	}
+}
+
+LLNetListItem* LLFloaterMessageLog::findNetListItem(LLHost host)
+{
+	std::list<LLNetListItem*>::iterator end = sNetListItems.end();
+	for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != end; ++iter)
+		if((*iter)->mCircuitData && (*iter)->mCircuitData->getHost() == host)
+			return (*iter);
+	return nullptr;
+}
+
+LLNetListItem* LLFloaterMessageLog::findNetListItem(LLUUID id)
+{
+	std::list<LLNetListItem*>::iterator end = sNetListItems.end();
+	for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != end; ++iter)
+		if((*iter)->mID == id)
+			return (*iter);
+	return nullptr;
+}
+
+void LLFloaterMessageLog::refreshNetList()
+{
+	LLScrollListCtrl* scrollp = getChild<LLScrollListCtrl>("net_list");
+
+	// Update names of net list items
+	for (LLNetListItem* itemp : sNetListItems)
+	{
+		if(itemp->mAutoName && itemp->mCircuitData)
 		{
-			if(itemp->mCircuitData)
+			LLViewerRegion* regionp = LLWorld::getInstance()->getRegion(itemp->mCircuitData->getHost());
+			if(regionp)
 			{
-				LLViewerRegion* regionp = LLWorld::getInstance()->getRegion(itemp->mCircuitData->getHost());
-				if(regionp)
-				{
-					std::string name = regionp->getName();
-					if(name == "") name = llformat("%s (awaiting region name)", itemp->mCircuitData->getHost().getString().c_str());
-					itemp->mName = name;
-					itemp->mPreviousRegionName = name;
-				}
-				else
-				{
-					itemp->mName = itemp->mCircuitData->getHost().getString();
-					if(itemp->mPreviousRegionName != "")
-						itemp->mName.append(llformat(" (was %s)", itemp->mPreviousRegionName.c_str()));
-				}
+				std::string name = regionp->getName();
+			if(name.empty())
+				name = llformat("%s (awaiting region name)", itemp->mCircuitData->getHost().getString().c_str());
+				itemp->mName = name;
+				itemp->mPreviousRegionName = name;
+				itemp->mHandle = regionp->getHandle();
 			}
 			else
 			{
-				// an item just for an event queue, not handled yet
-				itemp->mName = "Something else";
+				itemp->mName = itemp->mCircuitData->getHost().getString();
+				if(!itemp->mPreviousRegionName.empty())
+					itemp->mName.append(llformat(" (was %s)", itemp->mPreviousRegionName.c_str()));
 			}
+		}
+		else
+		{
+			// an item just for an event queue, not handled yet
+			itemp->mName = "Something else";
 		}
 	}
 	// Rebuild scroll list from scratch
-	LLUUID selected_id = scrollp->getFirstSelected() ? scrollp->getFirstSelected()->getUUID() : LLUUID::null;
-	S32 scroll_pos = scrollp->getScrollPos();
+	const LLUUID& selected_id = scrollp->getFirstSelected() ? scrollp->getFirstSelected()->getUUID() : LLUUID::null;
+	const S32 scroll_pos = scrollp->getScrollPos();
 	scrollp->clearRows();
-	for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != items_end; ++iter)
+	for (LLNetListItem* itemp : sNetListItems)
 	{
-		LLNetListItem* itemp = (*iter);
+		std::string text_suffix;
+		bool has_live_circuit = false;
+		if (itemp->mCircuitData)
+		{
+			has_live_circuit = itemp->mCircuitData->isAlive();
+			if (itemp->mCircuitData->getHost() == gAgent.getRegionHost())
+			{
+				text_suffix = " (main)";
+			}
+		}
+
 		LLSD element;
 		element["id"] = itemp->mID;
 		LLSD& text_column = element["columns"][0];
 		text_column["column"] = "text";
-		text_column["value"] = itemp->mName + (itemp->mCircuitData->getHost() == gAgent.getRegionHost() ? " (main)" : "");
-		for(int i = 0; i < 2; i++)
+		text_column["value"] = itemp->mName + text_suffix;
+		for(S32 i = 0; i < 2; ++i)
 		{
 			LLSD& icon_column = element["columns"][i + 1];
 			icon_column["column"] = llformat("icon%d", i);
@@ -634,39 +349,47 @@ void LLFloaterMessageLog::refreshNetList()
 			icon_column["value"] = "";
 		}
 		LLScrollListItem* scroll_itemp = scrollp->addElement(element);
-		BOOL has_live_circuit = itemp->mCircuitData && itemp->mCircuitData->isAlive();
 		if(has_live_circuit)
 		{
-			LLScrollListIcon* icon = (LLScrollListIcon*)scroll_itemp->getColumn(1);
+			LLScrollListIcon* icon = static_cast<LLScrollListIcon*>(scroll_itemp->getColumn(1));
 			icon->setValue("icon_net_close_circuit.tga");
-			icon->setClickCallback(boost::bind(&LLFloaterMessageLog::onClickCloseCircuit, itemp));
+			icon->setColor(LLColor4(1.0f,0.0f,0.0f,0.7f));
+			icon->setClickCallback(boost::bind(&LLFloaterMessageLog::onClickCloseCircuit, static_cast<void*>(itemp)));
 		}
 		else
 		{
-			LLScrollListIcon* icon = (LLScrollListIcon*)scroll_itemp->getColumn(1);
+			LLScrollListIcon* icon = static_cast<LLScrollListIcon*>(scroll_itemp->getColumn(1));
 			icon->setValue("icon_net_close_circuit_gray.tga");
-			//icon->setClickCallback(NULL);
+			icon->setColor(LLColor4(1.0f,1.0f,1.0f,0.5f));
+			icon->setClickCallback(NULL);
 		}
 		// Event queue isn't even supported yet... FIXME
-		LLScrollListIcon* icon = (LLScrollListIcon*)scroll_itemp->getColumn(2);
+		LLScrollListIcon* icon = static_cast<LLScrollListIcon*>(scroll_itemp->getColumn(2));
 		icon->setValue("icon_net_close_eventpoll_gray.tga");
-		//icon->setClickCallback(NULL);
+		icon->setColor(LLColor4(0.1f,0.1f,0.1f,0.7f));
+		icon->setClickCallback(NULL);
 	}
-	if(selected_id.notNull()) scrollp->selectByID(selected_id);
-	if(scroll_pos < scrollp->getItemCount()) scrollp->setScrollPos(scroll_pos);
+	if(selected_id.notNull())
+		scrollp->selectByID(selected_id);
+	if(scroll_pos < scrollp->getItemCount())
+		scrollp->setScrollPos(scroll_pos);
 }
+
 void LLFloaterMessageLog::refreshNetInfo(BOOL force)
 {
-	if(mNetInfoMode != NI_NET) return;
-	LLScrollListCtrl* scrollp = getChild<LLScrollListCtrl>("net_list");
-	LLScrollListItem* selected_itemp = scrollp->getFirstSelected();
+	if(mInfoPaneMode != IPANE_NET) return;
+	const LLScrollListCtrl* scrollp = getChild<LLScrollListCtrl>("net_list");
+	const LLScrollListItem* selected_itemp = scrollp->getFirstSelected();
 	if(selected_itemp)
 	{
-		if(!force) if(getChild<LLTextEditor>("net_info")->hasSelection()) return;
-		LLNetListItem* itemp = findNetListItem(selected_itemp->getUUID());
+		const LLTextEditor* net_info = getChild<LLTextEditor>("net_info");
+		if(!force && (net_info->hasSelection() || net_info->hasFocus())) return;
+		const LLNetListItem* itemp = findNetListItem(selected_itemp->getUUID());
 		if(itemp)
 		{
-			std::string info(llformat("%s\n--------------------------------\n\n", itemp->mName.c_str()));
+            std::string info;
+            info.reserve(512);
+		    (llformat("%s, %d\n--------------------------------\n\n", itemp->mName.c_str(), itemp->mHandle));
 			if(itemp->mCircuitData)
 			{
 				LLCircuitData* cdp = itemp->mCircuitData;
@@ -682,141 +405,265 @@ void LLFloaterMessageLog::refreshNetInfo(BOOL force)
 				info.append(llformat(" * Blocked: %s\n", cdp->isBlocked() ? "yes" : "no"));
 				info.append(llformat(" * Allow timeout: %s\n", cdp->getAllowTimeout() ? "yes" : "no"));
 				info.append(llformat(" * Trusted: %s\n", cdp->getTrusted() ? "yes" : "no"));
-				info.append(llformat(" * Ping delay: %d\n", cdp->getPingDelay()));
+				info.append(llformat(" * Ping delay: %d\n", cdp->getPingDelay().value()));
 				info.append(llformat(" * Packets out: %d\n", cdp->getPacketsOut()));
-				info.append(llformat(" * Bytes out: %d\n", cdp->getBytesOut()));
+				info.append(llformat(" * Bytes out: %d\n", cdp->getBytesOut().value()));
 				info.append(llformat(" * Packets in: %d\n", cdp->getPacketsIn()));
-				info.append(llformat(" * Bytes in: %d\n", cdp->getBytesIn()));
+				info.append(llformat(" * Bytes in: %d\n", cdp->getBytesIn().value()));
 				info.append(llformat(" * Endpoint ID: %s\n", cdp->getLocalEndPointID().asString().c_str()));
 				info.append(llformat(" * Remote ID: %s\n", cdp->getRemoteID().asString().c_str()));
-				info.append(llformat(" * Remote session ID: %s\n", cdp->getRemoteSessionID().asString().c_str()));
+				info.append(llformat(" * Remote session ID: %s\n\n", cdp->getRemoteSessionID().asString().c_str()));
 			}
-			childSetText("net_info", info);
+
+			getChild<LLTextEditor>("net_info")->setText(info);
 		}
-		else childSetText("net_info", std::string(""));
+		else
+			getChild<LLTextEditor>("net_info")->setText(LLStringUtil::null);
 	}
-	else childSetText("net_info", std::string(""));
+	else
+		getChild<LLTextEditor>("net_info")->setText(LLStringUtil::null);
 }
-void LLFloaterMessageLog::setNetInfoMode(ENetInfoMode mode)
+
+void LLFloaterMessageLog::setInfoPaneMode(EInfoPaneMode mode)
 {
-	mNetInfoMode = mode;
-	if(mNetInfoMode == NI_NET)
+	mInfoPaneMode = mode;
+	if(mode == IPANE_NET)
 		refreshNetInfo(TRUE);
+
+	//we hide the regular net_info editor and show two panes for http log mode
+	getChild<LLView>("net_info")->setVisible(mode != IPANE_HTTP_LOG);
+	/* Singu TODO: Add the layout stacks and readjust the elements in the xml
+	getChild<LLView>("conv_stack")->setVisible(mode == IPANE_HTTP_LOG);*/
+	getChild<LLView>("conv_response")->setVisible(mode == IPANE_HTTP_LOG);
+	getChild<LLView>("conv_request")->setVisible(mode == IPANE_HTTP_LOG);
+	getChild<LLView>("msg_builder_send_btn")->setEnabled(mode != IPANE_NET);
 }
+
 // static
-void LLFloaterMessageLog::onLog(LLMessageLogEntry entry)
+void LLFloaterMessageLog::onLog(LogPayload& entry)
 {
-	//don't mess with the queue while a filter's being applied, or face invalid iterators
-	if(!sBusyApplyingFilter)
+	LLFloaterMessageLog* floaterp = findInstance();
+	if (!floaterp)
 	{
+		return;
+	}
+	if (entry->mType != LLMessageLogEntry::HTTP_RESPONSE)
+	{
+		sMessageListMutex->lock();
+
+		++floaterp->mMessagesLogged;
 		sMessageLogEntries.push_back(entry);
-		conditionalLog(LLFloaterMessageLogItem(entry));
+
+		sMessageListMutex->unlock();
+		floaterp->conditionalLog(entry);
+	}
+	else //this is a response, try to add it to the relevant request
+	{
+		floaterp->pairHTTPResponse(entry);
 	}
 }
-// static
-void LLFloaterMessageLog::conditionalLog(LLFloaterMessageLogItem item)
-{	
-	if(!sBusyApplyingFilter)
-		sInstance->childSetText("log_status_text", llformat("Showing %d messages from %d", sFloaterMessageLogItems.size(), sMessageLogEntries.size()));
-	std::string find_name = item.mName;
-	LLStringUtil::toLower(find_name);
-	if(sMessageLogFilter.mPositiveNames.size())
-		if(std::find(sMessageLogFilter.mPositiveNames.begin(), sMessageLogFilter.mPositiveNames.end(), find_name) == sMessageLogFilter.mPositiveNames.end())
-			return;
-	if(std::find(sMessageLogFilter.mNegativeNames.begin(), sMessageLogFilter.mNegativeNames.end(), find_name) != sMessageLogFilter.mNegativeNames.end())
-		return;
-	sFloaterMessageLogItems.push_back(item); // moved from beginning...
-	BOOL outgoing = item.isOutgoing();
-	std::string net_name("\?\?\?");
-	if(item.mType == LLFloaterMessageLogItem::TEMPLATE)
-	{
-		LLHost find_host = outgoing ? item.mToHost : item.mFromHost;
-		net_name = find_host.getIPandPort();
-		std::list<LLNetListItem*>::iterator end = sNetListItems.end();
-		for(std::list<LLNetListItem*>::iterator iter = sNetListItems.begin(); iter != end; ++iter)
+
+void LLFloaterMessageLog::conditionalLog(LogPayload entry)
+{
+	FloaterMessageItem item = std::make_shared<FloaterMessageItem::element_type>(entry, mEasyMessageReader);
+
+	bool have_positive = false;
+    const auto message_type = (*item)()->mType;
+
+	for (const std::string& msg_name : item->mNames)
+	{	
+		std::string find_name = msg_name;
+		LLStringUtil::toLower(find_name);
+
+		//keep the message if we allowed its name so long as one of its other names hasn't been blacklisted
+		if (!have_positive && !mMessageLogFilter.mPositiveNames.empty())
 		{
-			if((*iter)->mCircuitData->getHost() == find_host)
+            if (std::find(mMessageLogFilter.mPositiveNames.begin(), mMessageLogFilter.mPositiveNames.end(), find_name) != mMessageLogFilter.mPositiveNames.end())
+            {
+                have_positive = true;
+            }
+		}
+		if (!mMessageLogFilter.mNegativeNames.empty())
+		{
+			if (std::find(mMessageLogFilter.mNegativeNames.begin(), mMessageLogFilter.mNegativeNames.end(), find_name) != mMessageLogFilter.mNegativeNames.end())
 			{
-				net_name = (*iter)->mName;
-				break;
+				return;
 			}
 		}
+		//we don't have any negative filters and we have a positive match
+        else if (have_positive)
+        {
+            break;
+        }
 	}
+
+	//we had a positive filter but no positive matches
+	if(!mMessageLogFilter.mPositiveNames.empty() && !have_positive)
+	{
+			return;
+	}
+
+	mFloaterMessageLogItems.push_back(item); // moved from beginning...
+
+	if (message_type == LLMessageLogEntry::HTTP_REQUEST)
+	{
+		LLMutexLock lock(sIncompleteHTTPConvoMutex);
+		mIncompleteHTTPConvos.insert(HTTPConvoMap::value_type((*item)()->mRequestId, item));
+	}
+
+	std::string net_name;
+	if (item->mRegionHosts.size() > 0)
+	{
+		//LLHost find_host = outgoing ? item->mToHost : item->mFromHost;
+		//net_name = find_host.getIPandPort();
+		for (const auto& host : item->mRegionHosts)
+		{
+			std::string region_name = LLStringUtil::null;
+			for (LLNetListItem* list_item : sNetListItems)
+			{
+				if (host == list_item->mCircuitData->getHost())
+				{
+					region_name += list_item->mName;
+					break;
+				}
+			}
+			if(region_name.empty())
+				region_name = host.getIPandPort();
+			if(!net_name.empty())
+				net_name += ", ";
+			net_name += region_name;
+		}
+	}
+	else
+	{
+		// This is neither a region CAP nor an LLUDP message.
+		net_name = "\?\?\?";
+	}
+
+	//add the message to the messagelog scroller
 	LLSD element;
-	element["id"] = item.mID;
+	element["id"] = item->mID;
+
 	LLSD& sequence_column = element["columns"][0];
 	sequence_column["column"] = "sequence";
-	sequence_column["value"] = llformat("%u", item.mSequenceID);
-	LLSD& type_column = element["columns"][1];
-	type_column["column"] = "type";
-	type_column["value"] = item.mType == LLFloaterMessageLogItem::TEMPLATE ? "UDP" : "\?\?\?";
-	LLSD& direction_column = element["columns"][2];
-	direction_column["column"] = "direction";
-	direction_column["value"] = outgoing ? "to" : "from";
+    sequence_column["value"] = llformat("%u", item->mSequenceID);
+
+	LLSD& protocol_column = element["columns"][1];
+    protocol_column["column"] = "protocol";
+    switch (message_type)
+    {
+    case LLMessageLogEntry::TEMPLATE:
+        protocol_column["value"] = "UDP";
+        break;
+    case LLMessageLogEntry::HTTP_REQUEST:
+        protocol_column["value"] = "HTTP";
+        break;
+    default:
+        protocol_column["value"] = "\?\?\?";
+        break;
+    }
+
+    LLSD& verb_column = element["columns"][2];
+    verb_column["column"] = "verb";
+	switch (message_type)
+	{
+	case LLMessageLogEntry::TEMPLATE:
+        verb_column["value"] = item->isOutgoing() ? "out" : "in";
+		break;
+	case LLMessageLogEntry::HTTP_REQUEST:
+        verb_column["value"] = httpMethodAsVerb((*item)()->mMethod);
+		break;
+	default:
+        break;
+	}
+
 	LLSD& net_column = element["columns"][3];
 	net_column["column"] = "net";
 	net_column["value"] = net_name;
+
 	LLSD& name_column = element["columns"][4];
 	name_column["column"] = "name";
-	name_column["value"] = item.mName;
-	/*
-	LLSD& zer_column = element["columns"][5];
-	zer_column["column"] = "flag_zer";
-	zer_column["type"] = "icon";
-	zer_column["value"] = (item.mFlags & LL_ZERO_CODE_FLAG) ? "flag_zer.tga" : "";
-	LLSD& rel_column = element["columns"][6];
-	rel_column["column"] = "flag_rel";
-	rel_column["type"] = "icon";
-	rel_column["value"] = (item.mFlags & LL_RELIABLE_FLAG) ? "flag_rel.tga" : "";
-	LLSD& rsd_column = element["columns"][7];
-	rsd_column["column"] = "flag_rsd";
-	rsd_column["type"] = "icon";
-	rsd_column["value"] = (item.mFlags & LL_RESENT_FLAG) ? "flag_rsd.tga" : "";
-	LLSD& ack_column = element["columns"][8];
-	ack_column["column"] = "flag_ack";
-	ack_column["type"] = "icon";
-	ack_column["value"] = (item.mFlags & LL_ACK_FLAG) ? "flag_ack.tga" : "";
-	*/
-	LLSD& summary_column = element["columns"][5];
-	summary_column["column"] = "summary";
-	summary_column["value"] = item.mSummary;
-	LLScrollListCtrl* scrollp = sInstance->getChild<LLScrollListCtrl>("message_log");
-	S32 scroll_pos = scrollp->getScrollPos();
-	scrollp->addElement(element);
-	if(scroll_pos > scrollp->getItemCount() - scrollp->getPageLines() - 4)
-		scrollp->setScrollPos(scrollp->getItemCount());
+	name_column["value"] = item->getName();
+
+	S32 scroll_pos = mMessagelogScrollListCtrl->getScrollPos();
+
+	mMessagelogScrollListCtrl->addElement(element, ADD_BOTTOM);
+
+	if (scroll_pos > mMessagelogScrollListCtrl->getItemCount() - mMessagelogScrollListCtrl->getLinesPerPage() - 4)
+		mMessagelogScrollListCtrl->setScrollPos(mMessagelogScrollListCtrl->getItemCount());
 }
-// static
-void LLFloaterMessageLog::onCommitNetList(LLUICtrl* ctrl, void* user_data)
+
+void LLFloaterMessageLog::pairHTTPResponse(LogPayload entry)
 {
-	LLFloaterMessageLog* floaterp = (LLFloaterMessageLog*)user_data;
-	floaterp->setNetInfoMode(NI_NET);
-	floaterp->refreshNetInfo(TRUE);
-}
-// static
-void LLFloaterMessageLog::onCommitMessageLog(LLUICtrl* ctrl, void* user_data)
-{
-	LLFloaterMessageLog* floaterp = (LLFloaterMessageLog*)user_data;
-	LLScrollListCtrl* scrollp = floaterp->getChild<LLScrollListCtrl>("message_log");
-	LLScrollListItem* selected_itemp = scrollp->getFirstSelected();
-	if(!selected_itemp) return;
-	LLUUID id = selected_itemp->getUUID();
-	std::vector<LLFloaterMessageLogItem>::iterator end = sFloaterMessageLogItems.end();
-	for(std::vector<LLFloaterMessageLogItem>::iterator iter = sFloaterMessageLogItems.begin(); iter != end; ++iter)
+	LLMutexLock lock(sIncompleteHTTPConvoMutex);
+	HTTPConvoMap::iterator iter = mIncompleteHTTPConvos.find(entry->mRequestId);
+
+	if(iter != mIncompleteHTTPConvos.end())
 	{
-		if(iter->mID == id)
+		iter->second->setResponseMessage(entry);
+
+		//if this message was already selected in the message log,
+		//redisplay it to show the response as well.
+		const LLScrollListItem* itemp = mMessagelogScrollListCtrl->getFirstSelected();
+
+		if(itemp && itemp->getUUID() == iter->second->mID)
 		{
-			floaterp->setNetInfoMode(NI_LOG);
-			floaterp->childSetText("net_info", iter->getFull(FALSE));
+			showMessage(iter->second);
+		}
+		mIncompleteHTTPConvos.erase(iter);
+	}
+}
+
+void LLFloaterMessageLog::onCommitNetList(LLUICtrl* ctrl)
+{
+	setInfoPaneMode(IPANE_NET);
+	refreshNetInfo(TRUE);
+}
+
+void LLFloaterMessageLog::onCommitMessageLog(LLUICtrl* ctrl)
+{
+	showSelectedMessage();
+}
+
+void LLFloaterMessageLog::showSelectedMessage()
+{
+	const LLScrollListItem* selected_itemp = mMessagelogScrollListCtrl->getFirstSelected();
+	if(!selected_itemp) return;
+	const LLUUID& id = selected_itemp->getUUID();
+	for (FloaterMessageItem entryp : mFloaterMessageLogItems)
+	{
+		if(entryp->mID == id)
+		{
+			showMessage(entryp);
 			break;
 		}
 	}
 }
+
+void LLFloaterMessageLog::showMessage(FloaterMessageItem item)
+{
+	switch ((*item)()->mType)
+	{
+		case LLMessageLogEntry::TEMPLATE:
+			setInfoPaneMode(IPANE_TEMPLATE_LOG);
+			getChild<LLTextEditor>("net_info")->setText(item->getFull(mBeautifyMessages));
+			break;
+		case LLMessageLogEntry::HTTP_REQUEST:
+			setInfoPaneMode(IPANE_HTTP_LOG);
+			getChild<LLTextEditor>("conv_request")->setText(item->getFull(mBeautifyMessages));
+			getChild<LLTextEditor>("conv_response")->setText(item->getResponseFull(mBeautifyMessages));
+			break;
+		case LLMessageLogEntry::HTTP_RESPONSE:
+		default:
+			break;
+	}
+}
+
 // static
 BOOL LLFloaterMessageLog::onClickCloseCircuit(void* user_data)
 {
-	LLNetListItem* itemp = (LLNetListItem*)user_data;
-	LLCircuitData* cdp = (LLCircuitData*)itemp->mCircuitData;
+	LLNetListItem* itemp = static_cast<LLNetListItem*>(user_data);
+	LLCircuitData* cdp = static_cast<LLCircuitData*>(itemp->mCircuitData);
 	if(!cdp) return FALSE;
 	LLHost myhost = cdp->getHost();
 	LLSD args;
@@ -826,12 +673,14 @@ BOOL LLFloaterMessageLog::onClickCloseCircuit(void* user_data)
 	LLNotificationsUtil::add("GenericAlertYesCancel", args, payload, onConfirmCloseCircuit);
 	return TRUE;
 }
+
 // static
-bool LLFloaterMessageLog::onConfirmCloseCircuit(const LLSD& notification, const LLSD& response )
+void LLFloaterMessageLog::onConfirmCloseCircuit(const LLSD& notification, const LLSD& response)
 {
 	S32 option = LLNotificationsUtil::getSelectedOption(notification, response);
+
 	LLCircuitData* cdp = gMessageSystem->mCircuitInfo.findCircuit(LLHost(notification["payload"]["circuittoclose"].asString()));
-	if(!cdp) return false;
+	if(!cdp) return;
 	LLViewerRegion* regionp = LLWorld::getInstance()->getRegion(cdp->getHost());
 	switch(option)
 	{
@@ -840,8 +689,7 @@ bool LLFloaterMessageLog::onConfirmCloseCircuit(const LLSD& notification, const 
 		gMessageSystem->sendReliable(cdp->getHost());
 		break;
 	case 2: // cancel
-		return false;
-		break;
+		return;
 	case 1: // no
 	default:
 		break;
@@ -849,7 +697,7 @@ bool LLFloaterMessageLog::onConfirmCloseCircuit(const LLSD& notification, const 
 	if(gMessageSystem->findCircuitCode(cdp->getHost()))
 		gMessageSystem->disableCircuit(cdp->getHost());
 	else
-		gMessageSystem->mCircuitInfo.removeCircuitData(cdp->getHost());
+		gMessageSystem->getCircuit()->removeCircuitData(cdp->getHost());
 	if(regionp)
 	{
 		LLHost myhost = regionp->getHost();
@@ -859,102 +707,136 @@ bool LLFloaterMessageLog::onConfirmCloseCircuit(const LLSD& notification, const 
 		payload["regionhost"] = myhost.getString();
 		LLNotificationsUtil::add("GenericAlertYesCancel", args, payload, onConfirmRemoveRegion);
 	}
-	return false;
 }
+
 // static
-bool LLFloaterMessageLog::onConfirmRemoveRegion(const LLSD& notification, const LLSD& response )
+void LLFloaterMessageLog::onConfirmRemoveRegion(const LLSD& notification, const LLSD& response)
 {
 	S32 option = LLNotificationsUtil::getSelectedOption(notification, response);
 	if(option == 0) // yes
 		LLWorld::getInstance()->removeRegion(LLHost(notification["payload"]["regionhost"].asString()));
-	return false;
 }
-// static
-void LLFloaterMessageLog::onClickFilterApply(void* user_data)
+
+void LLFloaterMessageLog::onClickFilterApply()
 {
-	LLFloaterMessageLog* floaterp = (LLFloaterMessageLog*)user_data;
-	floaterp->startApplyingFilter(floaterp->childGetValue("filter_edit"), FALSE);
+	startApplyingFilter(childGetValue("filter_edit"), TRUE);
 }
-void LLFloaterMessageLog::startApplyingFilter(std::string filter, BOOL force)
+																  
+void LLFloaterMessageLog::startApplyingFilter(const std::string& filter, BOOL force)
 {
-	LLMessageLogFilter new_filter = LLMessageLogFilter();
-	sMessageLogFilterString = filter;
-	new_filter.set(sMessageLogFilterString);
-	if(!filter.length() || filter.at(filter.length()-1) != ' ')
-		childSetText("filter_edit", filter + " ");
+	LLMessageLogFilter new_filter(filter);
 	if(force
-		|| (new_filter.mNegativeNames != sMessageLogFilter.mNegativeNames)
-		|| (new_filter.mPositiveNames != sMessageLogFilter.mPositiveNames))
+	    || (new_filter.mNegativeNames != mMessageLogFilter.mNegativeNames)
+		|| (new_filter.mPositiveNames != mMessageLogFilter.mPositiveNames))
 	{
 		stopApplyingFilter();
-		sMessageLogFilter = new_filter;
-		sFloaterMessageLogItems.clear();
-		getChild<LLScrollListCtrl>("message_log")->clearRows();
-		sBusyApplyingFilter = TRUE;
-		childSetVisible("message_log", false);
-		//childSetVisible("log_status_text", true);
-		mMessageLogFilterApply = new LLMessageLogFilterApply();
+		mMessageLogFilter = new_filter;
+
+		clearFloaterMessageItems();
+
+		sMessageListMutex->lock();
+		mMessagesLogged = sMessageLogEntries.size();
+		for (auto& entry : sMessageLogEntries)
+			conditionalLog(entry);
+		sMessageListMutex->unlock();
 	}
 }
-void LLFloaterMessageLog::stopApplyingFilter()
+																  
+void LLFloaterMessageLog::stopApplyingFilter(bool quitting)
 {
-	if(mMessageLogFilterApply)
-	{
-		if(!(mMessageLogFilterApply->mFinished))
-			mMessageLogFilterApply->cancel();
-		//delete mMessageLogFilterApply;
-		sBusyApplyingFilter = FALSE;
-		//childSetVisible("log_status_text", false);
-		childSetVisible("message_log", true);
-		childSetText("log_status_text", llformat("Showing %d messages from %d", sFloaterMessageLogItems.size(), sMessageLogEntries.size()));
-	}
 }
+																  
 void LLFloaterMessageLog::updateFilterStatus()
 {
-	if(!mMessageLogFilterApply || !sBusyApplyingFilter) return;
-	S32 progress = mMessageLogFilterApply->mProgress;
-	S32 packets = sMessageLogEntries.size();
-	S32 matches = sFloaterMessageLogItems.size();
-	std::string text = llformat("Applying filter ( %d / %d ), %d matches ...", progress, packets, matches);
-	childSetText("log_status_text", text);
+	if (!mMessageLogFilter.empty()) return;
 }
-// static
-void LLFloaterMessageLog::onCommitFilter(LLUICtrl* ctrl, void* user_data)
+
+void LLFloaterMessageLog::onCommitFilter()
 {
-	LLFloaterMessageLog* floaterp = (LLFloaterMessageLog*)user_data;
-	floaterp->startApplyingFilter(floaterp->childGetValue("filter_edit"), FALSE);
+	startApplyingFilter(childGetValue("filter_edit"), FALSE);
 }
-// static
-void LLFloaterMessageLog::onClickClearLog(void* user_data)
+
+void LLFloaterMessageLog::onClickClearLog()
 {
-	LLFloaterMessageLog* floaterp = (LLFloaterMessageLog*)user_data;
-	floaterp->stopApplyingFilter();
-	floaterp->getChild<LLScrollListCtrl>("message_log")->clearRows();
-	floaterp->setNetInfoMode(NI_NET);
-	sMessageLogEntries.clear();
-	sFloaterMessageLogItems.clear();
+	stopApplyingFilter();
+	mMessagelogScrollListCtrl->clearRows();
+	setInfoPaneMode(IPANE_NET);
+	clearMessageLogEntries();
+	clearFloaterMessageItems();
 }
-// static
-void LLFloaterMessageLog::onClickFilterChoice(void* user_data)
+
+void LLFloaterMessageLog::onClickFilterChoice()
 {
-	LLMenuGL* menu = new LLMenuGL(LLStringUtil::null);
-	menu->addChild(new LLMenuItemCallGL("No filter", onClickFilterMenu, NULL, (void*)""));
-	menu->addChild(new LLMenuItemCallGL("Fewer spammy messages", onClickFilterMenu, NULL, (void*)"!StartPingCheck !CompletePingCheck !PacketAck !SimulatorViewerTimeMessage !SimStats !AgentUpdate !AgentAnimation !AvatarAnimation !ViewerEffect !CoarseLocationUpdate !LayerData !CameraConstraint !ObjectUpdateCached !RequestMultipleObjects !ObjectUpdate !ObjectUpdateCompressed !ImprovedTerseObjectUpdate !KillObject !ImagePacket !SendXferPacket !ConfirmXferPacket !TransferPacket"));
-	menu->addChild(new LLMenuItemCallGL("Fewer spammy messages (minus sound crap)", onClickFilterMenu, NULL, (void*)"!StartPingCheck !CompletePingCheck !PacketAck !SimulatorViewerTimeMessage !SimStats !AgentUpdate !AgentAnimation !AvatarAnimation !ViewerEffect !CoarseLocationUpdate !LayerData !CameraConstraint !ObjectUpdateCached !RequestMultipleObjects !ObjectUpdate !ObjectUpdateCompressed !ImprovedTerseObjectUpdate !KillObject !ImagePacket !SendXferPacket !ConfirmXferPacket !TransferPacket !SoundTrigger !AttachedSound !PreloadSound"));
-	menu->addChild(new LLMenuItemCallGL("Object updates", onClickFilterMenu, NULL, (void*)"ObjectUpdateCached ObjectUpdate ObjectUpdateCompressed ImprovedTerseObjectUpdate KillObject RequestMultipleObjects"));
-	menu->addChild(new LLMenuItemCallGL("Abnormal", onClickFilterMenu, NULL, (void*)"Invalid TestMessage AddCircuitCode NeighborList AvatarTextureUpdate SimulatorMapUpdate SimulatorSetMap SubscribeLoad UnsubscribeLoad SimulatorReady SimulatorPresentAtLocation SimulatorLoad SimulatorShutdownRequest RegionPresenceRequestByRegionID RegionPresenceRequestByHandle RegionPresenceResponse UpdateSimulator LogDwellTime FeatureDisabled LogFailedMoneyTransaction UserReportInternal SetSimStatusInDatabase SetSimPresenceInDatabase OpenCircuit CloseCircuit DirFindQueryBackend DirPlacesQueryBackend DirClassifiedQueryBackend DirLandQueryBackend DirPopularQueryBackend GroupNoticeAdd DataHomeLocationRequest DataHomeLocationReply DerezContainer ObjectCategory ObjectExportSelected StateSave ReportAutosaveCrash AgentAlertMessage NearestLandingRegionRequest NearestLandingRegionReply NearestLandingRegionUpdated TeleportLandingStatusChanged ConfirmEnableSimulator KickUserAck SystemKickUser AvatarPropertiesRequestBackend UpdateParcel RemoveParcel MergeParcel LogParcelChanges CheckParcelSales ParcelSales StartAuction ConfirmAuctionStart CompleteAuction CancelAuction CheckParcelAuctions ParcelAuctions ChatPass EdgeDataPacket SimStatus ChildAgentUpdate ChildAgentAlive ChildAgentPositionUpdate ChildAgentDying ChildAgentUnknown AtomicPassObject KillChildAgents ScriptSensorRequest ScriptSensorReply DataServerLogout RequestInventoryAsset InventoryAssetResponse TransferInventory TransferInventoryAck EventLocationRequest EventLocationReply MoneyTransferBackend RoutedMoneyBalanceReply SetStartLocation NetTest SetCPURatio SimCrashed NameValuePair RemoveNameValuePair UpdateAttachment RemoveAttachment EmailMessageRequest EmailMessageReply InternalScriptMail ScriptDataRequest ScriptDataReply InviteGroupResponse TallyVotes LiveHelpGroupRequest LiveHelpGroupReply GroupDataUpdate LogTextMessage CreateTrustedCircuit ParcelRename SystemMessage RpcChannelRequest RpcChannelReply RpcScriptRequestInbound RpcScriptRequestInboundForward RpcScriptReplyInbound ScriptMailRegistration Error"));
-	menu->updateParent(LLMenuGL::sMenuContainer);
-	menu->setCanTearOff(FALSE);
-	LLView* buttonp = sInstance->getChild<LLView>("filter_choice_btn");
+	LLMenuGL* menu = LLUICtrlFactory::getInstance()->buildMenu("menu_message_log_filter.xml", LLMenuGL::sMenuContainer);
+	LLView* buttonp = getChild<LLView>("filter_choice_btn");
 	S32 x = buttonp->getRect().mLeft;
 	S32 y = buttonp->getRect().mBottom;
-	LLMenuGL::showPopup(sInstance, menu, x, y);
+	LLMenuGL::showPopup(this, menu, x, y);
 }
-// static
-void LLFloaterMessageLog::onClickFilterMenu(void* user_data)
+
+void LLFloaterMessageLog::onClickFilterMenu(const LLSD& user_data)
 {
-	std::string filter = std::string((char*)user_data);
-	sInstance->childSetText("filter_edit", filter);
-	sInstance->startApplyingFilter(filter, FALSE);
+	getChild<LLLineEditor>("filter_edit")->setText(user_data.asString());
+	startApplyingFilter(user_data.asString(), FALSE);
 }
-// </edit>
+
+void LLFloaterMessageLog::onClickSendToMessageBuilder()
+{
+	const LLScrollListItem* selected_itemp = mMessagelogScrollListCtrl->getFirstSelected();
+
+	if(!selected_itemp) return;
+
+	const LLUUID& id = selected_itemp->getUUID();
+	for(FloaterMessageItem entry : mFloaterMessageLogItems)
+	{
+		if(entry->mID == id)
+		{
+			const std::string& message_text = entry->getFull(getBeautifyMessages());
+			LLFloaterMessageBuilder::show(message_text);
+			break;
+		}
+	}
+}
+
+void LLFloaterMessageLog::onCheckWrapNetInfo(const LLSD& value)
+{
+	wrapInfoPaneText(value.asBoolean());
+}
+
+void LLFloaterMessageLog::onCheckBeautifyMessages(const LLSD& value)
+{
+	mBeautifyMessages = value.asBoolean();
+
+	//if we already had a message selected, we need to set the full
+	//text of the message again
+	showSelectedMessage();
+}
+
+void LLFloaterMessageLog::wrapInfoPaneText(bool wrap)
+{
+	getChild<LLTextEditor>("net_info")->setWordWrap(wrap);
+	getChild<LLTextEditor>("conv_request")->setWordWrap(wrap);
+	getChild<LLTextEditor>("conv_response")->setWordWrap(wrap);
+}
+
+S32 LLFloaterMessageLog::sortMessageList(S32 col_idx, const LLScrollListItem* i1, const LLScrollListItem* i2)
+{
+	const LLScrollListCell *cell1 = i1->getColumn(col_idx);
+	const LLScrollListCell *cell2 = i2->getColumn(col_idx);
+
+	//do a numeric sort on the sequence num
+	if(col_idx == 0)
+	{
+		S32 cell1_i = cell1->getValue().asInteger();
+		S32 cell2_i = cell2->getValue().asInteger();
+
+		if(cell1_i == cell2_i)
+			return 0;
+		if(cell1_i > cell2_i)
+			return 1;
+
+		return -1;
+	}
+
+	return LLStringUtil::compareDict(cell1->getValue().asString(), cell2->getValue().asString());
+}

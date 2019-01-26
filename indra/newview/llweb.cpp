@@ -60,7 +60,7 @@ bool on_load_url_external_response(const LLSD& notification, const LLSD& respons
 
 class URLLoader : public LLAlertDialog::URLLoader
 {
-	virtual void load(const std::string& url , bool force_open_externally)
+	void load(const std::string& url , bool force_open_externally) override
 	{
 		if (force_open_externally)
 		{

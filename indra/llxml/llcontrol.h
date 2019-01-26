@@ -29,45 +29,16 @@
 
 #include "llboost.h"
 #include "llevent.h"
-#include "llnametable.h"
-#include "llmap.h"
 #include "llstring.h"
 #include "llrect.h"
-#include "v4color.h"
-#include "v4coloru.h"
-#include "llinstancetracker.h"
 #include "llrefcount.h"
+#include "llinstancetracker.h"
 
 #include "llcontrolgroupreader.h"
 
 #include <vector>
 
-// *NOTE: boost::visit_each<> generates warning 4675 on .net 2003
-// Disable the warning for the boost includes.
-#if LL_WINDOWS
-# if (_MSC_VER >= 1300 && _MSC_VER < 1400)
-#   pragma warning(push)
-#   pragma warning( disable : 4675 )
-# endif
-#endif
-
-#include <boost/bind.hpp>
-
-#if LL_WINDOWS
-	#pragma warning (push)
-	#pragma warning (disable : 4263) // boost::signals2::expired_slot::what() has const mismatch
-	#pragma warning (disable : 4264) 
-#endif
 #include <boost/signals2.hpp>
-#if LL_WINDOWS
-	#pragma warning (pop)
-#endif
-
-#if LL_WINDOWS
-# if (_MSC_VER >= 1300 && _MSC_VER < 1400)
-#   pragma warning(pop)
-# endif
-#endif
 
 #if LL_RELEASE_WITH_DEBUG_INFO
 #define PROF_CTRL_CALLS
@@ -75,9 +46,8 @@
 
 class LLVector3;
 class LLVector3d;
+class LLColor4;
 class LLColor3;
-
-const BOOL NO_PERSIST = FALSE;
 
 // Saved at end of session
 class LLControlGroup; //Defined further down
@@ -111,11 +81,18 @@ public:
 	typedef boost::signals2::signal<bool(LLControlVariable* control, const LLSD&), boost_boolean_combiner> validate_signal_t;
 	typedef boost::signals2::signal<void(LLControlVariable* control, const LLSD&)> commit_signal_t;
 
+	enum ePersist
+	{
+		PERSIST_NO,                 // don't save this var
+		PERSIST_NONDFT,             // save this var if differs from default
+		PERSIST_ALWAYS              // save this var even if has default value
+	};
+
 private:
 	std::string		mName;
 	std::string		mComment;
 	eControlType	mType;
-	bool			mPersist;
+	ePersist		mPersist;
 	bool			mHideFromSettingsEditor;
 	std::vector<LLSD> mValues;
 	
@@ -129,7 +106,7 @@ private:
 public:
 	LLControlVariable(const std::string& name, eControlType type,
 					  LLSD initial, const std::string& comment,
-					  bool persist = true, bool hidefromsettingseditor = false, bool IsCOA = false);
+					  ePersist persist = PERSIST_NONDFT, bool hidefromsettingseditor = false, bool IsCOA = false);
 
 	virtual ~LLControlVariable();
 	
@@ -147,7 +124,8 @@ public:
 
 	bool isDefault() { return (mValues.size() == 1); }
 	bool isSaveValueDefault();
-	bool isPersisted() { return mPersist; }
+	bool shouldSave(bool nondefault_only);
+	bool isPersisted() { return mPersist != PERSIST_NO; }
 	bool isHiddenFromSettingsEditor() { return mHideFromSettingsEditor; }
 	LLSD get()			const	{ return getValue(); }
 	LLSD getValue()		const	{ return mValues.back(); }
@@ -157,7 +135,7 @@ public:
 	void set(const LLSD& val)	{ setValue(val); }
 	void setValue(const LLSD& value, bool saved_value = TRUE);
 	void setDefaultValue(const LLSD& value);
-	void setPersist(bool state);
+	void setPersist(ePersist);
 	void setHiddenFromSettingsEditor(bool hide);
 	void setComment(const std::string& comment);
 
@@ -169,9 +147,9 @@ public:
 	//COA stuff
 	bool isCOA()		const	{ return mIsCOA; }
 	bool isCOAParent()	const	{ return mIsCOAParent; }
-	LLControlVariable *getCOAConnection() const	{ return mCOAConnectedVar; }
+	LLControlVariable* getCOAConnection() const { return mCOAConnectedVar; }
 	LLControlVariable* getCOAActive();
-	LLControlVariable const* getCOAActive() const;
+	const LLControlVariable* getCOAActive() const;
 	void setIsCOA(bool IsCOA)  { mIsCOA=IsCOA; }
 	void setCOAConnect(LLControlVariable *pConnect, bool IsParent) 
 	{
@@ -215,27 +193,32 @@ T convert_from_llsd(const LLSD& sd, eControlType type, const std::string& contro
 	// needs specialization
 	return T(sd);
 }
+
 //const U32 STRING_CACHE_SIZE = 10000;
 class LLControlGroup : public LLInstanceTracker<LLControlGroup, std::string>
 {
 	LOG_CLASS(LLControlGroup);
+
 protected:
 	typedef std::map<std::string, LLControlVariablePtr > ctrl_name_table_t;
 	ctrl_name_table_t mNameTable;
 	std::set<std::string> mWarnings;
-	std::string mTypeString[TYPE_COUNT];
+	static const std::string mTypeString[TYPE_COUNT];
 
-	eControlType typeStringToEnum(const std::string& typestr);
-	std::string typeEnumToString(eControlType typeenum);
-	std::set<std::string> mIncludedFiles; //To prevent perpetual recursion.
+	std::set<std::string> mIncludedFiles; // <alchemy/> - To prevent perpetual recursion.
+
 public:
+	static eControlType typeStringToEnum(const std::string& typestr);
+	static std::string typeEnumToString(eControlType typeenum);	
+
 	LLControlGroup(const std::string& name);
 	~LLControlGroup();
 	void cleanup();
 	
 	typedef LLInstanceTracker<LLControlGroup, std::string>::instance_iter instance_iter;
-	LLControlVariable* getControl(std::string const& name);
-	LLControlVariable const* getControl(std::string const& name) const;
+
+	LLControlVariablePtr getControl(const std::string& name);
+	LLPointer<const LLControlVariable> getControl(const std::string& name) const;
 
 	struct ApplyFunctor
 	{
@@ -244,45 +227,46 @@ public:
 	};
 	void applyToAll(ApplyFunctor* func);
 
-	BOOL declareControl(const std::string& name, eControlType type, const LLSD initial_val, const std::string& comment, BOOL persist, BOOL hidefromsettingseditor = FALSE, bool IsCOA = false);
-	BOOL declareU32(const std::string& name, U32 initial_val, const std::string& comment, BOOL persist = TRUE);
-	BOOL declareS32(const std::string& name, S32 initial_val, const std::string& comment, BOOL persist = TRUE);
-	BOOL declareF32(const std::string& name, F32 initial_val, const std::string& comment, BOOL persist = TRUE);
-	BOOL declareBOOL(const std::string& name, BOOL initial_val, const std::string& comment, BOOL persist = TRUE);
-	BOOL declareString(const std::string& name, const std::string &initial_val, const std::string& comment, BOOL persist = TRUE);
-	BOOL declareVec3(const std::string& name, const LLVector3 &initial_val,const std::string& comment,  BOOL persist = TRUE);
-	BOOL declareVec3d(const std::string& name, const LLVector3d &initial_val, const std::string& comment, BOOL persist = TRUE);
-	BOOL declareRect(const std::string& name, const LLRect &initial_val, const std::string& comment, BOOL persist = TRUE);
-	BOOL declareColor4(const std::string& name, const LLColor4 &initial_val, const std::string& comment, BOOL persist = TRUE);
-	BOOL declareColor3(const std::string& name, const LLColor3 &initial_val, const std::string& comment, BOOL persist = TRUE);
-	BOOL declareLLSD(const std::string& name, const LLSD &initial_val, const std::string& comment, BOOL persist = TRUE);
+	LLControlVariable* declareControl(const std::string& name, eControlType type, const LLSD initial_val, const std::string& comment, LLControlVariable::ePersist persist, BOOL hidefromsettingseditor = FALSE, bool IsCOA = false);
+	LLControlVariable* declareU32(const std::string& name, U32 initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareS32(const std::string& name, S32 initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareF32(const std::string& name, F32 initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareBOOL(const std::string& name, BOOL initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareString(const std::string& name, const std::string &initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareVec3(const std::string& name, const LLVector3 &initial_val,const std::string& comment,  LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareVec3d(const std::string& name, const LLVector3d &initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareRect(const std::string& name, const LLRect &initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareColor4(const std::string& name, const LLColor4 &initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareColor3(const std::string& name, const LLColor3 &initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
+	LLControlVariable* declareLLSD(const std::string& name, const LLSD &initial_val, const std::string& comment, LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT);
 	
-	std::string 	findString(const std::string& name);
+	std::string 	findString(const std::string& name) const;
 
 	std::string getString(const std::string& name) const;
-	std::string getText(const std::string& name);
-	BOOL		getBOOL(const std::string& name);
-	S32			getS32(const std::string& name);
-	F32			getF32(const std::string& name);
-	U32			getU32(const std::string& name);
+	std::string getText(const std::string& name) const;
+	BOOL		getBOOL(const std::string& name) const;
+	bool		getBool(const std::string& name) const;
+	S32			getS32(const std::string& name) const;
+	F32			getF32(const std::string& name) const;
+	U32			getU32(const std::string& name) const;
 	
-	LLWString	getWString(const std::string& name);
-	LLVector3	getVector3(const std::string& name);
-	LLVector3d	getVector3d(const std::string& name);
-	LLRect		getRect(const std::string& name);
-	LLSD        getLLSD(const std::string& name);
+	LLWString	getWString(const std::string& name) const;
+	LLVector3	getVector3(const std::string& name) const;
+	LLVector3d	getVector3d(const std::string& name) const;
+	LLRect		getRect(const std::string& name) const;
+	LLSD        getLLSD(const std::string& name) const;
 
 
 	// Note: If an LLColor4U control exists, it will cast it to the correct
 	// LLColor4 for you.
-	LLColor4	getColor(const std::string& name);
-	LLColor4	getColor4(const std::string& name);
-	LLColor3	getColor3(const std::string& name);
+	LLColor4	getColor(const std::string& name) const;
+	LLColor4	getColor4(const std::string& name) const;
+	LLColor3	getColor3(const std::string& name) const;
 
 	// generic getter
 	template<typename T> T get(const std::string& name) const
 	{
-		const LLControlVariable* control = getControl(name);
+		const auto& control = getControl(name);
 		LLSD value;
 		eControlType type = TYPE_COUNT;
 
@@ -339,9 +323,7 @@ public:
  	U32	loadFromFile(const std::string& filename, bool default_values = false, bool save_values = true);
 	void	resetToDefaults();
 
-	
 	// Ignorable Warnings
-	
 	// Add a config variable to be reset on resetWarnings()
 	LLControlVariable *addWarning(const std::string& name);
 	BOOL getWarning(const std::string& name);
@@ -415,17 +397,16 @@ private:
 		LLControlVariablePtr controlp = group.getControl(name);
 		mType = controlp->type();
 		mCachedValue = convert_from_llsd<T>(controlp->get(), mType, name);
-		
+
 		// Add a listener to the controls signal...
 		// and store the connection...
 		mConnection = controlp->getSignal()->connect(
-			boost::bind(&LLControlCache<T>::handleValueChange, this, _2),
+			std::bind(&LLControlCache<T>::handleValueChange, this, std::placeholders::_2),
 			boost::signals2::at_front //make sure cachedctrl slots are inserted before anything else.
 			);
 		mType = controlp->type();
 		mControl = controlp;
 	}
-	
 	bool declareTypedControl(LLControlGroup& group,
 							const std::string& name, 
 							 const T& default_value,
@@ -436,7 +417,7 @@ private:
 		init_value = convert_to_llsd(default_value);
 		if(type < TYPE_COUNT)
 		{
-			group.declareControl(name, type, init_value, comment, FALSE);
+			group.declareControl(name, type, init_value, comment, LLControlVariable::PERSIST_NO);
 			return true;
 		}
 		return false;
@@ -449,10 +430,10 @@ private:
 	}
 
 private:
-    T mCachedValue;
+    T							mCachedValue;
     LLPointer<LLControlVariable> mControl;	//Hold a pointer to the control so setters are possible in cachedctrl
 	eControlType				mType;
-    boost::signals2::scoped_connection mConnection;
+    boost::signals2::scoped_connection	mConnection;
 };
 
 template <typename T>
@@ -480,7 +461,7 @@ public:
 	}
 	
 	LLCachedControl(LLControlGroup& group,
-					const std::string& name, 
+					const std::string& name,
 					const T& default_value, 
 					const std::string& comment = "Declared In Code")
 	{
@@ -502,7 +483,7 @@ public:
 	}
 
 	operator const T&() const { return mCachedControlPtr->getValue(); }
-	operator boost::function<const T&()> () const { return boost::function<const T&()>(*this); }
+	operator std::function<const T&()> () const { return std::function<const T&()>(*this); }
 	const T& operator()() const { return mCachedControlPtr->getValue(); }
 	/*	Sometimes implicit casting doesn't work.
 		For instance, something like "LLCachedControl<LLColor4> color("blah",LLColor4()); color.getValue();" 
@@ -561,4 +542,5 @@ template<> LLSD convert_from_llsd<LLSD>(const LLSD& sd, eControlType type, const
 #ifdef TEST_CACHED_CONTROL
 void test_cached_control();
 #endif // TEST_CACHED_CONTROL
+
 #endif

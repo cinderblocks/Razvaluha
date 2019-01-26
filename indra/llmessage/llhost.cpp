@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llhost.cpp
  * @brief Encapsulates an IP address and a port.
@@ -31,8 +33,7 @@
 #include "llerror.h"
 
 #if LL_WINDOWS
-	#define WIN32_LEAN_AND_MEAN
-	#include <winsock2.h>
+	#include "llwin32headerslean.h"
 #else
 	#include <netdb.h>
 	#include <netinet/in.h>	// ntonl()
@@ -43,7 +44,7 @@
 
 LLHost::LLHost(const std::string& ip_and_port)
 {
-	std::string::size_type colon_index = ip_and_port.find(":");
+	std::string::size_type colon_index = ip_and_port.find(':');
 	if (colon_index == std::string::npos)
 	{
 		mIP = ip_string_to_u32(ip_and_port.c_str());
@@ -57,12 +58,11 @@ LLHost::LLHost(const std::string& ip_and_port)
 		mIP = ip_string_to_u32(ip_str.c_str());
 		mPort = atol(port_str.c_str());
 	}
-	mHostNotFound = false;
 }
 
 std::string LLHost::getString() const
 {
-	return llformat("%s:%hu", u32_to_ip_string(mIP), mPort);
+	return llformat("%s:%u", u32_to_ip_string(mIP), mPort);
 }
 
 
@@ -86,25 +86,16 @@ std::string LLHost::getHostName() const
 		LL_WARNS() << "LLHost::getHostName() : Invalid IP address" << LL_ENDL;
 		return std::string();
 	}
-	if (mHostNotFound)
-	{
-		// We already checked this... avoid freezing the viewer 5 seconds again and again.
-		LL_WARNS() << "LLHost::getHostName() : Returning cached HOST_NOT_FOUND." << LL_ENDL;
-		return std::string();
-	}
 	he = gethostbyaddr((char *)&mIP, sizeof(mIP), AF_INET);
 	if (!he)
 	{
 #if LL_WINDOWS
-		int err = WSAGetLastError();
-		int err_host_not_found = WSAHOST_NOT_FOUND;
+		LL_WARNS() << "LLHost::getHostName() : Couldn't find host name for address " << mIP << ", Error: " 
+			<< WSAGetLastError() << LL_ENDL;
 #else
-		int err = h_errno;
-		int err_host_not_found = HOST_NOT_FOUND;
+		LL_WARNS() << "LLHost::getHostName() : Couldn't find host name for address " << mIP << ", Error: " 
+			<< h_errno << LL_ENDL;
 #endif
-		LL_WARNS() << "LLHost::getHostName() : Couldn't find host name for address " << mIP << ", Error: " << err << LL_ENDL;
-		if (err == err_host_not_found)
-			mHostNotFound = true;
 		return std::string();
 	}
 	else
@@ -133,7 +124,6 @@ BOOL LLHost::setHostByName(const std::string& hostname)
 	if (he)
 	{
 		mIP = *(U32 *)he->h_addr_list[0];
-		mHostNotFound = false;
 		return TRUE;
 	}
 	else 

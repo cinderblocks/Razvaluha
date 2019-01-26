@@ -29,14 +29,11 @@
 
 #include "llinitparam.h"
 #include "llsdparam.h"
-#include "llwin32headerslean.h"
-#include "apr_thread_proc.h"
-#include <boost/shared_ptr.hpp>
+#include "llapr.h"
+#include "llexception.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/optional.hpp>
-#include <boost/noncopyable.hpp>
 #include <iosfwd>                   // std::ostream
-#include <stdexcept>
 
 #if LL_WINDOWS
 #include "llwin32headerslean.h"	// for HANDLE
@@ -51,7 +48,7 @@ class LLEventPump;
 class LLProcess;
 /// LLProcess instances are created on the heap by static factory methods and
 /// managed by ref-counted pointers.
-typedef boost::shared_ptr<LLProcess> LLProcessPtr;
+typedef std::shared_ptr<LLProcess> LLProcessPtr;
 
 /**
  * LLProcess handles launching an external process with specified command line
@@ -69,7 +66,7 @@ typedef boost::shared_ptr<LLProcess> LLProcessPtr;
  * indra/llcommon/tests/llprocess_test.cpp for an example of waiting for
  * child-process termination in a standalone test context.
  */
-class LL_COMMON_API LLProcess: public boost::noncopyable
+class LL_COMMON_API LLProcess
 {
 	LOG_CLASS(LLProcess);
 public:
@@ -167,6 +164,7 @@ public:
 			args("args"),
 			cwd("cwd"),
 			autokill("autokill", true),
+			attached("attached", true),
 			files("files"),
 			postend("postend"),
 			desc("desc")
@@ -183,9 +181,31 @@ public:
 		Multiple<std::string> args;
 		/// current working directory, if need it changed
 		Optional<std::string> cwd;
-		/// implicitly kill process on destruction of LLProcess object
-		/// (default true)
+		/// implicitly kill child process on termination of parent, whether
+		/// voluntary or crash (default true)
 		Optional<bool> autokill;
+		/// implicitly kill process on destruction of LLProcess object
+		/// (default same as autokill)
+		///
+		/// Originally, 'autokill' conflated two concepts: kill child process on
+		/// - destruction of its LLProcess object, and
+		/// - termination of parent process, voluntary or otherwise.
+		///
+		/// It's useful to tease these apart. Some child processes are sent a
+		/// "clean up and terminate" message before the associated LLProcess
+		/// object is destroyed. A child process launched with attached=false
+		/// has an extra time window from the destruction of its LLProcess
+		/// until parent-process termination in which to perform its own
+		/// orderly shutdown, yet autokill=true still guarantees that we won't
+		/// accumulate orphan instances of such processes indefinitely. With
+		/// attached=true, if a child process cannot clean up between the
+		/// shutdown message and LLProcess destruction (presumably very soon
+		/// thereafter), it's forcibly killed anyway -- which can lead to
+		/// distressing user-visible crash indications.
+		///
+		/// (The usefulness of attached=true with autokill=false is less
+		/// clear, but we don't prohibit that combination.)
+		Optional<bool> attached;
 		/**
 		 * Up to three FileParam items: for child stdin, stdout, stderr.
 		 * Passing two FileParam entries means default treatment for stderr,
@@ -236,6 +256,9 @@ public:
 	 */
 	static LLProcessPtr create(const LLSDOrParams& params);
 	virtual ~LLProcess();
+	
+	LLProcess(const LLProcess&) = delete;
+	LLProcess& operator=(const LLProcess&) = delete;
 
 	/// Is child process still running?
 	bool isRunning() const;
@@ -449,7 +472,7 @@ public:
 		 * - "len" entire length of pending data, regardless of setLimit()
 		 * - "slot" this ReadPipe's FILESLOT, e.g. LLProcess::STDOUT
 		 * - "name" e.g. "stdout"
-		 * - "desc" e.g. "SLPlugin (pid) stdout"
+		 * - "desc" e.g. "AlchemyPlugin (pid) stdout"
 		 * - "eof" @c true means there no more data will arrive on this pipe,
 		 *   therefore no more events on this pump
 		 *
@@ -479,9 +502,9 @@ public:
 
 	/// Exception thrown by getWritePipe(), getReadPipe() if you didn't ask to
 	/// create a pipe at the corresponding FILESLOT.
-	struct NoPipe: public std::runtime_error
+	struct NoPipe: public LLException
 	{
-		NoPipe(const std::string& what): std::runtime_error(what) {}
+		NoPipe(const std::string& what): LLException(what) {}
 	};
 
 	/**
@@ -540,7 +563,7 @@ private:
 	std::string mDesc;
 	std::string mPostend;
 	apr_proc_t mProcess;
-	bool mAutokill;
+	bool mAutokill, mAttached;
 	Status mStatus;
 	// explicitly want this ptr_vector to be able to store NULLs
 	typedef boost::ptr_vector< boost::nullable<BasePipe> > PipeVector;

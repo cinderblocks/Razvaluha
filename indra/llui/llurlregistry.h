@@ -33,9 +33,6 @@
 #include "llsingleton.h"
 #include "llstring.h"
 
-#include <string>
-#include <vector>
-
 /// This default callback for findUrl() simply ignores any label updates
 void LLUrlRegistryNullCallback(const std::string &url,
 							   const std::string &label,
@@ -62,9 +59,9 @@ void LLUrlRegistryNullCallback(const std::string &url,
 ///
 class LLUrlRegistry : public LLSingleton<LLUrlRegistry>
 {
-public:
+	LLSINGLETON(LLUrlRegistry);
 	~LLUrlRegistry();
-
+public:
 	/// add a new Url handler to the registry (will be freed on destruction)
 	/// optionally force it to the front of the list, making it take
 	/// priority over other regular expression matches for URLs
@@ -88,9 +85,6 @@ public:
 	bool isUrl(const LLWString &text);
 
 private:
-	LLUrlRegistry();
-	friend class LLSingleton<LLUrlRegistry>;
-
 	std::vector<LLUrlEntryBase *> mUrlEntry;
 };
 

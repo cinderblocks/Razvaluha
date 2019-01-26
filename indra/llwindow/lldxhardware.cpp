@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lldxhardware.cpp
  * @brief LLDXHardware implementation
@@ -5,7 +7,7 @@
  * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
@@ -35,6 +37,7 @@
 #undef INITGUID
 
 #include <wbemidl.h>
+#include <comdef.h>
 
 #include <boost/tokenizer.hpp>
 
@@ -46,7 +49,7 @@
 #include "llstl.h"
 #include "lltimer.h"
 
-void (*gWriteDebug)(const char* msg) = NULL;
+void (*gWriteDebug)(const char* msg) = nullptr;
 LLDXHardware gDXHardware;
 
 //-----------------------------------------------------------------------------
@@ -57,153 +60,305 @@ LLDXHardware gDXHardware;
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
 
 typedef BOOL ( WINAPI* PfnCoSetProxyBlanket )( IUnknown* pProxy, DWORD dwAuthnSvc, DWORD dwAuthzSvc,
-											   OLECHAR* pServerPrincName, DWORD dwAuthnLevel, DWORD dwImpLevel,
-											   RPC_AUTH_IDENTITY_HANDLE pAuthInfo, DWORD dwCapabilities );
+                                               OLECHAR* pServerPrincName, DWORD dwAuthnLevel, DWORD dwImpLevel,
+                                               RPC_AUTH_IDENTITY_HANDLE pAuthInfo, DWORD dwCapabilities );
 
 HRESULT GetVideoMemoryViaWMI( WCHAR* strInputDeviceID, DWORD* pdwAdapterRam )
 {
-	HRESULT hr;
-	bool bGotMemory = false;
+    HRESULT hr;
+    bool bGotMemory = false;
+    HRESULT hrCoInitialize = S_OK;
+    IWbemLocator* pIWbemLocator = nullptr;
+    IWbemServices* pIWbemServices = nullptr;
+    BSTR pNamespace = nullptr;
+
+    *pdwAdapterRam = 0;
+    hrCoInitialize = CoInitialize( nullptr );
+
+    hr = CoCreateInstance( CLSID_WbemLocator,
+                           nullptr,
+                           CLSCTX_INPROC_SERVER,
+                           IID_IWbemLocator,
+                           ( LPVOID* )&pIWbemLocator );
+#ifdef PRINTF_DEBUGGING
+    if( FAILED( hr ) ) wprintf( L"WMI: CoCreateInstance failed: 0x%0.8x\n", hr );
+#endif
+
+    if( SUCCEEDED( hr ) && pIWbemLocator )
+    {
+        // Using the locator, connect to WMI in the given namespace.
+        pNamespace = SysAllocString( L"\\\\.\\root\\cimv2" );
+
+        hr = pIWbemLocator->ConnectServer( pNamespace, nullptr, nullptr, nullptr,
+                                           0L, nullptr, nullptr, &pIWbemServices );
+#ifdef PRINTF_DEBUGGING
+        if( FAILED( hr ) ) wprintf( L"WMI: pIWbemLocator->ConnectServer failed: 0x%0.8x\n", hr );
+#endif
+        if( SUCCEEDED( hr ) && pIWbemServices != nullptr )
+        {
+            HINSTANCE hinstOle32 = LoadLibraryW( L"ole32.dll" );
+            if( hinstOle32 )
+            {
+                PfnCoSetProxyBlanket pfnCoSetProxyBlanket = nullptr;
+
+                pfnCoSetProxyBlanket = ( PfnCoSetProxyBlanket )GetProcAddress( hinstOle32, "CoSetProxyBlanket" );
+                if( pfnCoSetProxyBlanket != nullptr )
+                {
+                    // Switch security level to IMPERSONATE. 
+                    pfnCoSetProxyBlanket( pIWbemServices, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, nullptr,
+                                          RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, 0 );
+                }
+
+                FreeLibrary( hinstOle32 );
+            }
+
+            IEnumWbemClassObject* pEnumVideoControllers = nullptr;
+            BSTR pClassName = nullptr;
+
+            pClassName = SysAllocString( L"Win32_VideoController" );
+
+            hr = pIWbemServices->CreateInstanceEnum( pClassName, 0,
+                                                     nullptr, &pEnumVideoControllers );
+#ifdef PRINTF_DEBUGGING
+            if( FAILED( hr ) ) wprintf( L"WMI: pIWbemServices->CreateInstanceEnum failed: 0x%0.8x\n", hr );
+#endif
+
+            if( SUCCEEDED( hr ) && pEnumVideoControllers )
+            {
+                IWbemClassObject* pVideoControllers[10] = {nullptr};
+                DWORD uReturned = 0;
+                BSTR pPropName = nullptr;
+
+                // Get the first one in the list
+                pEnumVideoControllers->Reset();
+                hr = pEnumVideoControllers->Next( 5000,             // timeout in 5 seconds
+                                                  10,                  // return the first 10
+                                                  pVideoControllers,
+                                                  &uReturned );
+#ifdef PRINTF_DEBUGGING
+                if( FAILED( hr ) ) wprintf( L"WMI: pEnumVideoControllers->Next failed: 0x%0.8x\n", hr );
+                if( uReturned == 0 ) wprintf( L"WMI: pEnumVideoControllers uReturned == 0\n" );
+#endif
+
+                VARIANT var;
+                if( SUCCEEDED( hr ) )
+                {
+                    bool bFound = false;
+                    for( UINT iController = 0; iController < uReturned; iController++ )
+                    {
+                        if ( !pVideoControllers[iController] )
+                            continue;
+
+                        pPropName = SysAllocString( L"PNPDeviceID" );
+                        hr = pVideoControllers[iController]->Get( pPropName, 0L, &var, nullptr, nullptr );
+#ifdef PRINTF_DEBUGGING
+                        if( FAILED( hr ) )
+                            wprintf( L"WMI: pVideoControllers[iController]->Get PNPDeviceID failed: 0x%0.8x\n", hr );
+#endif
+                        if( SUCCEEDED( hr ) )
+                        {
+                            if( wcsstr( var.bstrVal, strInputDeviceID ) != nullptr )
+                                bFound = true;
+                        }
+                        VariantClear( &var );
+                        if( pPropName ) SysFreeString( pPropName );
+
+                        if( bFound )
+                        {
+                            pPropName = SysAllocString( L"AdapterRAM" );
+                            hr = pVideoControllers[iController]->Get( pPropName, 0L, &var, nullptr, nullptr );
+#ifdef PRINTF_DEBUGGING
+                            if( FAILED( hr ) )
+                                wprintf( L"WMI: pVideoControllers[iController]->Get AdapterRAM failed: 0x%0.8x\n",
+                                         hr );
+#endif
+                            if( SUCCEEDED( hr ) )
+                            {
+                                bGotMemory = true;
+                                *pdwAdapterRam = var.ulVal;
+                            }
+                            VariantClear( &var );
+                            if( pPropName ) SysFreeString( pPropName );
+                            break;
+                        }
+                        SAFE_RELEASE( pVideoControllers[iController] );
+                    }
+                }
+                SAFE_RELEASE( pEnumVideoControllers );
+            }
+
+            if( pClassName )
+                SysFreeString( pClassName );
+        }
+
+        if( pNamespace )
+            SysFreeString( pNamespace );
+        SAFE_RELEASE( pIWbemServices );
+    }
+
+    SAFE_RELEASE( pIWbemLocator );
+
+    if( SUCCEEDED( hrCoInitialize ) )
+        CoUninitialize();
+
+    if( bGotMemory )
+        return S_OK;
+    else
+        return E_FAIL;
+}
+
+//Getting the version of graphics controller driver via WMI
+std::string LLDXHardware::getDriverVersionWMI()
+{
+	std::string mDriverVersion;
 	HRESULT hrCoInitialize = S_OK;
-	IWbemLocator* pIWbemLocator = nullptr;
-	IWbemServices* pIWbemServices = nullptr;
-	BSTR pNamespace = nullptr;
+	HRESULT hres;
+	hrCoInitialize = CoInitialize(0);
+	IWbemLocator *pLoc = NULL;
 
-	*pdwAdapterRam = 0;
-	hrCoInitialize = CoInitialize( 0 );
-
-	hr = CoCreateInstance( CLSID_WbemLocator,
-						   nullptr,
-						   CLSCTX_INPROC_SERVER,
-						   IID_IWbemLocator,
-						   ( LPVOID* )&pIWbemLocator );
-#ifdef PRINTF_DEBUGGING
-	if( FAILED( hr ) ) wprintf( L"WMI: CoCreateInstance failed: 0x%0.8x\n", hr );
-#endif
-
-	if( SUCCEEDED( hr ) && pIWbemLocator )
+	hres = CoCreateInstance(
+		CLSID_WbemLocator,
+		0,
+		CLSCTX_INPROC_SERVER,
+		IID_IWbemLocator, (LPVOID *)&pLoc);
+	
+	if (FAILED(hres))
 	{
-		// Using the locator, connect to WMI in the given namespace.
-		pNamespace = SysAllocString( L"\\\\.\\root\\cimv2" );
-
-		hr = pIWbemLocator->ConnectServer( pNamespace, nullptr, nullptr, 0L,
-										   0L, nullptr, nullptr, &pIWbemServices );
-#ifdef PRINTF_DEBUGGING
-		if( FAILED( hr ) ) wprintf( L"WMI: pIWbemLocator->ConnectServer failed: 0x%0.8x\n", hr );
-#endif
-		if( SUCCEEDED( hr ) && pIWbemServices != 0 )
-		{
-			HINSTANCE hinstOle32 = nullptr;
-
-			hinstOle32 = LoadLibraryW( L"ole32.dll" );
-			if( hinstOle32 )
-			{
-				PfnCoSetProxyBlanket pfnCoSetProxyBlanket = nullptr;
-
-				pfnCoSetProxyBlanket = ( PfnCoSetProxyBlanket )GetProcAddress( hinstOle32, "CoSetProxyBlanket" );
-				if( pfnCoSetProxyBlanket != 0 )
-				{
-					// Switch security level to IMPERSONATE.
-					pfnCoSetProxyBlanket( pIWbemServices, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, nullptr,
-										  RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, 0 );
-				}
-
-				FreeLibrary( hinstOle32 );
-			}
-
-			IEnumWbemClassObject* pEnumVideoControllers = nullptr;
-			BSTR pClassName = nullptr;
-
-			pClassName = SysAllocString( L"Win32_VideoController" );
-
-			hr = pIWbemServices->CreateInstanceEnum( pClassName, 0,
-													 nullptr, &pEnumVideoControllers );
-#ifdef PRINTF_DEBUGGING
-			if( FAILED( hr ) ) wprintf( L"WMI: pIWbemServices->CreateInstanceEnum failed: 0x%0.8x\n", hr );
-#endif
-
-			if( SUCCEEDED( hr ) && pEnumVideoControllers )
-			{
-				IWbemClassObject* pVideoControllers[10] = {0};
-				DWORD uReturned = 0;
-				BSTR pPropName = nullptr;
-
-				// Get the first one in the list
-				pEnumVideoControllers->Reset();
-				hr = pEnumVideoControllers->Next( 5000,             // timeout in 5 seconds
-												  10,                  // return the first 10
-												  pVideoControllers,
-												  &uReturned );
-#ifdef PRINTF_DEBUGGING
-				if( FAILED( hr ) ) wprintf( L"WMI: pEnumVideoControllers->Next failed: 0x%0.8x\n", hr );
-				if( uReturned == 0 ) wprintf( L"WMI: pEnumVideoControllers uReturned == 0\n" );
-#endif
-
-				VARIANT var;
-				if( SUCCEEDED( hr ) )
-				{
-					bool bFound = false;
-					for( UINT iController = 0; iController < uReturned; iController++ )
-					{
-						if ( !pVideoControllers[iController] )
-							continue;
-
-						pPropName = SysAllocString( L"PNPDeviceID" );
-						hr = pVideoControllers[iController]->Get( pPropName, 0L, &var, nullptr, nullptr );
-#ifdef PRINTF_DEBUGGING
-						if( FAILED( hr ) )
-							wprintf( L"WMI: pVideoControllers[iController]->Get PNPDeviceID failed: 0x%0.8x\n", hr );
-#endif
-						if( SUCCEEDED( hr ) )
-						{
-							if( wcsstr( var.bstrVal, strInputDeviceID ) != 0 )
-								bFound = true;
-						}
-						VariantClear( &var );
-						if( pPropName ) SysFreeString( pPropName );
-
-						if( bFound )
-						{
-							pPropName = SysAllocString( L"AdapterRAM" );
-							hr = pVideoControllers[iController]->Get( pPropName, 0L, &var, nullptr, nullptr );
-#ifdef PRINTF_DEBUGGING
-							if( FAILED( hr ) )
-								wprintf( L"WMI: pVideoControllers[iController]->Get AdapterRAM failed: 0x%0.8x\n",
-										 hr );
-#endif
-							if( SUCCEEDED( hr ) )
-							{
-								bGotMemory = true;
-								*pdwAdapterRam = var.ulVal;
-							}
-							VariantClear( &var );
-							if( pPropName ) SysFreeString( pPropName );
-							break;
-						}
-						SAFE_RELEASE( pVideoControllers[iController] );
-					}
-				}
-			}
-
-			if( pClassName )
-				SysFreeString( pClassName );
-            SAFE_RELEASE( pEnumVideoControllers );
-		}
-
-		if( pNamespace )
-			SysFreeString( pNamespace );
-		SAFE_RELEASE( pIWbemServices );
+		LL_DEBUGS("AppInit") << "Failed to initialize COM library. Error code = 0x" << hres << LL_ENDL;
+		return std::string();                  // Program has failed.
 	}
 
-	SAFE_RELEASE( pIWbemLocator );
+	IWbemServices *pSvc = NULL;
 
-	if( SUCCEEDED( hrCoInitialize ) )
+	// Connect to the root\cimv2 namespace with
+	// the current user and obtain pointer pSvc
+	// to make IWbemServices calls.
+	hres = pLoc->ConnectServer(
+		_bstr_t(L"ROOT\\CIMV2"), // Object path of WMI namespace
+		NULL,                    // User name. NULL = current user
+		NULL,                    // User password. NULL = current
+		0,                       // Locale. NULL indicates current
+		NULL,                    // Security flags.
+		0,                       // Authority (e.g. Kerberos)
+		0,                       // Context object 
+		&pSvc                    // pointer to IWbemServices proxy
+		);
+
+	if (FAILED(hres))
+	{
+		LL_WARNS("AppInit") << "Could not connect. Error code = 0x" << hres << LL_ENDL;
+		pLoc->Release();
 		CoUninitialize();
+		return std::string();                // Program has failed.
+	}
 
-	if( bGotMemory )
-		return S_OK;
-	else
-		return E_FAIL;
+	LL_DEBUGS("AppInit") << "Connected to ROOT\\CIMV2 WMI namespace" << LL_ENDL;
+
+	// Set security levels on the proxy -------------------------
+	hres = CoSetProxyBlanket(
+		pSvc,                        // Indicates the proxy to set
+		RPC_C_AUTHN_WINNT,           // RPC_C_AUTHN_xxx
+		RPC_C_AUTHZ_NONE,            // RPC_C_AUTHZ_xxx
+		NULL,                        // Server principal name 
+		RPC_C_AUTHN_LEVEL_CALL,      // RPC_C_AUTHN_LEVEL_xxx 
+		RPC_C_IMP_LEVEL_IMPERSONATE, // RPC_C_IMP_LEVEL_xxx
+		NULL,                        // client identity
+		EOAC_NONE                    // proxy capabilities 
+		);
+
+	if (FAILED(hres))
+	{
+		LL_WARNS("AppInit") << "Could not set proxy blanket. Error code = 0x" << hres << LL_ENDL;
+		pSvc->Release();
+		pLoc->Release();
+		CoUninitialize();
+		return std::string();               // Program has failed.
+	}
+	IEnumWbemClassObject* pEnumerator = NULL;
+
+	// Get the data from the query
+	ULONG uReturn = 0;
+	hres = pSvc->ExecQuery( 
+		bstr_t("WQL"),
+		bstr_t("SELECT * FROM Win32_VideoController"), //Consider using Availability to filter out disabled controllers
+		WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+		NULL,
+		&pEnumerator);
+
+	if (FAILED(hres))
+	{
+		LL_WARNS("AppInit") << "Query for operating system name failed." << " Error code = 0x" << hres << LL_ENDL;
+		pSvc->Release();
+		pLoc->Release();
+		CoUninitialize();
+		return std::string();               // Program has failed.
+	}
+
+	while (pEnumerator)
+	{
+		IWbemClassObject *pclsObj = NULL;
+		HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1,
+			&pclsObj, &uReturn);
+
+		if (0 == uReturn)
+		{
+			break;               // If quantity less then 1.
+		}
+
+		VARIANT vtProp;
+
+		// Get the value of the Name property
+		hr = pclsObj->Get(L"DriverVersion", 0, &vtProp, 0, 0);
+
+		if (FAILED(hr))
+		{
+			LL_WARNS("AppInit") << "Query for name property failed." << " Error code = 0x" << hr << LL_ENDL;
+			pSvc->Release();
+			pLoc->Release();
+			CoUninitialize();
+			return std::string();               // Program has failed.
+		}
+
+		// use characters in the returned driver version
+		BSTR driverVersion(vtProp.bstrVal);
+
+		//convert BSTR to std::string
+		std::wstring ws(driverVersion, SysStringLen(driverVersion));
+		std::string str(ws.begin(), ws.end());
+		LL_INFOS("AppInit") << " DriverVersion : " << str << LL_ENDL;
+
+		if (mDriverVersion.empty())
+		{
+			mDriverVersion = str;
+		}
+		else if (mDriverVersion != str)
+		{
+			LL_WARNS("DriverVersion") << "Different versions of drivers. Version of second driver : " << str << LL_ENDL;
+		}
+
+		VariantClear(&vtProp);
+		pclsObj->Release();
+	}
+
+	// Cleanup
+	// ========
+	if (pSvc)
+	{
+		pSvc->Release();
+	}
+	if (pLoc)
+	{
+		pLoc->Release();
+	}
+	if (pEnumerator)
+	{
+		pEnumerator->Release();
+	}
+	if (SUCCEEDED(hrCoInitialize))
+	{
+		CoUninitialize();
+	}
+	return mDriverVersion;
 }
 
 void get_wstring(IDxDiagContainer* containerp, const WCHAR* wszPropName, WCHAR* wszPropValue, int outputSize)
@@ -219,10 +374,10 @@ void get_wstring(IDxDiagContainer* containerp, const WCHAR* wszPropName, WCHAR* 
 		switch( var.vt )
 		{
 			case VT_UI4:
-				swprintf( wszPropValue, L"%d", var.ulVal );	/* Flawfinder: ignore */
+				swprintf(wszPropValue, outputSize, L"%d", var.ulVal);	/* Flawfinder: ignore */
 				break;
 			case VT_I4:
-				swprintf( wszPropValue, L"%d", var.lVal );	/* Flawfinder: ignore */
+				swprintf(wszPropValue, outputSize, L"%d", var.lVal);	/* Flawfinder: ignore */
 				break;
 			case VT_BOOL:
 				wcscpy( wszPropValue, (var.boolVal) ? L"true" : L"false" );	/* Flawfinder: ignore */
@@ -239,7 +394,7 @@ void get_wstring(IDxDiagContainer* containerp, const WCHAR* wszPropName, WCHAR* 
 
 std::string get_string(IDxDiagContainer *containerp, const WCHAR *wszPropName)
 {
-	WCHAR wszPropValue[256];
+    WCHAR wszPropValue[256];
 	get_wstring(containerp, wszPropName, wszPropValue, 256);
 
 	return utf16str_to_utf8str(wszPropValue);
@@ -377,13 +532,13 @@ LLDXDriverFile *LLDXDevice::findDriver(const std::string &driver)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 LLDXHardware::LLDXHardware()
 {
 	mVRAM = 0;
-	gWriteDebug = NULL;
+	gWriteDebug = nullptr;
 }
 
 void LLDXHardware::cleanup()
@@ -449,20 +604,26 @@ BOOL LLDXHardware::getInfo(BOOL vram_only)
 	BOOL ok = FALSE;
     HRESULT       hr;
 
-    CoInitialize(NULL);
+    hr = CoInitialize(nullptr);
+	if (FAILED(hr))
+	{
+		LL_WARNS() << "COM initialization failure!" << LL_ENDL;
+		gWriteDebug("COM initialization failure!\n");
+		return ok;
+	}
 
-    IDxDiagProvider *dx_diag_providerp = NULL;
-    IDxDiagContainer *dx_diag_rootp = NULL;
-	IDxDiagContainer *devices_containerp = NULL;
+    IDxDiagProvider *dx_diag_providerp = nullptr;
+    IDxDiagContainer *dx_diag_rootp = nullptr;
+	IDxDiagContainer *devices_containerp = nullptr;
 	// IDxDiagContainer *system_device_containerp= NULL;
-	IDxDiagContainer *device_containerp = NULL;
-	IDxDiagContainer *file_containerp = NULL;
-	IDxDiagContainer *driver_containerp = NULL;
+	IDxDiagContainer *device_containerp = nullptr;
+	//IDxDiagContainer *file_containerp = NULL;
+	IDxDiagContainer *driver_containerp = nullptr;
 
     // CoCreate a IDxDiagProvider*
 	LL_DEBUGS("AppInit") << "CoCreateInstance IID_IDxDiagProvider" << LL_ENDL;
     hr = CoCreateInstance(CLSID_DxDiagProvider,
-                          NULL,
+                          nullptr,
                           CLSCTX_INPROC_SERVER,
                           IID_IDxDiagProvider,
                           (LPVOID*) &dx_diag_providerp);
@@ -485,7 +646,7 @@ BOOL LLDXHardware::getInfo(BOOL vram_only)
         dx_diag_init_params.dwSize                  = sizeof(DXDIAG_INIT_PARAMS);
         dx_diag_init_params.dwDxDiagHeaderVersion   = DXDIAG_DX9_SDK_VERSION;
         dx_diag_init_params.bAllowWHQLChecks        = TRUE;
-        dx_diag_init_params.pReserved               = NULL;
+        dx_diag_init_params.pReserved               = nullptr;
 
 		LL_DEBUGS("AppInit") << "dx_diag_providerp->Initialize" << LL_ENDL;
         hr = dx_diag_providerp->Initialize(&dx_diag_init_params);
@@ -500,8 +661,6 @@ BOOL LLDXHardware::getInfo(BOOL vram_only)
 		{
             goto LCleanup;
 		}
-
-		HRESULT hr;
 
 		// Get display driver information
 		LL_DEBUGS("AppInit") << "dx_diag_rootp->GetChildContainer" << LL_ENDL;
@@ -523,9 +682,9 @@ BOOL LLDXHardware::getInfo(BOOL vram_only)
 
 		WCHAR deviceID[512];
 
-		get_wstring(device_containerp, TEXT("szDeviceID"), deviceID, 512);
-
-		if (SUCCEEDED(GetVideoMemoryViaWMI(deviceID, &vram)))
+		get_wstring(device_containerp, L"szDeviceID", deviceID, 512);
+		
+		if (SUCCEEDED(GetVideoMemoryViaWMI(deviceID, &vram))) 
 		{
 			mVRAM = vram/(1024*1024);
 		}
@@ -692,7 +851,7 @@ LCleanup:
 		gWriteDebug("DX9 probe failed\n");
 	}
 
-	SAFE_RELEASE(file_containerp);
+	//SAFE_RELEASE(file_containerp);
 	SAFE_RELEASE(driver_containerp);
 	SAFE_RELEASE(device_containerp);
 	SAFE_RELEASE(devices_containerp);
@@ -709,22 +868,28 @@ LLSD LLDXHardware::getDisplayInfo()
 	LLTimer hw_timer;
     HRESULT       hr;
 	LLSD ret;
-    CoInitialize(NULL);
+    hr = CoInitialize(nullptr);
+	if (FAILED(hr))
+	{
+		LL_WARNS() << "COM initialization failure!" << LL_ENDL;
+		gWriteDebug("COM initialization failure!\n");
+		return ret;
+	}
 
-    IDxDiagProvider *dx_diag_providerp = NULL;
-    IDxDiagContainer *dx_diag_rootp = NULL;
-	IDxDiagContainer *devices_containerp = NULL;
-	IDxDiagContainer *device_containerp = NULL;
-	IDxDiagContainer *file_containerp = NULL;
-	IDxDiagContainer *driver_containerp = NULL;
+    IDxDiagProvider *dx_diag_providerp = nullptr;
+    IDxDiagContainer *dx_diag_rootp = nullptr;
+	IDxDiagContainer *devices_containerp = nullptr;
+	IDxDiagContainer *device_containerp = nullptr;
+	IDxDiagContainer *file_containerp = nullptr;
+	IDxDiagContainer *driver_containerp = nullptr;
 
     // CoCreate a IDxDiagProvider*
 	LL_INFOS() << "CoCreateInstance IID_IDxDiagProvider" << LL_ENDL;
     hr = CoCreateInstance(CLSID_DxDiagProvider,
-                          NULL,
+                          nullptr,
                           CLSCTX_INPROC_SERVER,
                           IID_IDxDiagProvider,
-                          (LPVOID*) &dx_diag_providerp);
+                          reinterpret_cast<void**>(&dx_diag_providerp));
 
 	if (FAILED(hr))
 	{
@@ -743,8 +908,8 @@ LLSD LLDXHardware::getDisplayInfo()
 
         dx_diag_init_params.dwSize                  = sizeof(DXDIAG_INIT_PARAMS);
         dx_diag_init_params.dwDxDiagHeaderVersion   = DXDIAG_DX9_SDK_VERSION;
-        dx_diag_init_params.bAllowWHQLChecks        = TRUE;
-        dx_diag_init_params.pReserved               = NULL;
+        dx_diag_init_params.bAllowWHQLChecks        = FALSE;
+        dx_diag_init_params.pReserved               = nullptr;
 
 		LL_INFOS() << "dx_diag_providerp->Initialize" << LL_ENDL;
         hr = dx_diag_providerp->Initialize(&dx_diag_init_params);
@@ -759,8 +924,6 @@ LLSD LLDXHardware::getDisplayInfo()
 		{
             goto LCleanup;
 		}
-
-		HRESULT hr;
 
 		// Get display driver information
 		LL_INFOS() << "dx_diag_rootp->GetChildContainer" << LL_ENDL;
@@ -806,8 +969,8 @@ LLSD LLDXHardware::getDisplayInfo()
                 // get the value
                 DWORD dwType = REG_SZ;
                 DWORD dwSize = sizeof(WCHAR) * RV_SIZE;
-                if(ERROR_SUCCESS == RegQueryValueEx(hKey, TEXT("ReleaseVersion"), 
-                    NULL, &dwType, (LPBYTE)release_version, &dwSize))
+                if(ERROR_SUCCESS == RegQueryValueEx(hKey, TEXT("ReleaseVersion"),
+                    nullptr, &dwType, (LPBYTE)release_version, &dwSize))
                 {
                     // print the value
                     // windows doesn't guarantee to be null terminated

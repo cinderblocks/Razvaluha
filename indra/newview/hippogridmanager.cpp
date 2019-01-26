@@ -355,6 +355,7 @@ void HippoGridInfo::onXmlCharacterData(void* userData, const XML_Char* s, int le
 	}
 }
 
+#include "llsdutil.h"
 // Throws AIAlert::ErrorCode with the http status as 'code' (HTTP_OK on XML parse error).
 void HippoGridInfo::getGridInfo()
 {
@@ -366,18 +367,24 @@ void HippoGridInfo::getGridInfo()
 
 	// Make sure the uri ends on a '/'.
 	std::string uri = mLoginUri;
-	if (uri.compare(uri.length() - 1, 1, "/") != 0)
-	{
-		uri += '/';
-	}
+	if (uri.back() != '/') uri += '/';
+	uri += "get_grid_info";
 
-	LLSD response = (new LLCoreHttpUtil::HttpCoroutineAdapter("HippoGridManager", LLCore::HttpRequest::DEFAULT_POLICY_ID))->getAndSuspend(LLCore::HttpRequest::ptr_t(new LLCore::HttpRequest), uri + "get_grid_info");
-	int result = LLCoreHttpUtil::HttpCoroutineAdapter::getStatusFromLLSD(response).getStatus();
-	std::string reply = response[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS_CONTENT];
-	if (result != HTTP_OK)
+	using namespace LLCoreHttpUtil;
+	LLCore::HttpRequest::policy_t httpPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID);
+	HttpCoroutineAdapter::ptr_t httpAdapter(new HttpCoroutineAdapter("GridInfoRequest", httpPolicy));
+	LLCore::HttpRequest::ptr_t httpRequest(new LLCore::HttpRequest);
+	LLCore::HttpOptions::ptr_t httpOptions(new LLCore::HttpOptions);
+	httpOptions->setTimeout(5);
+
+	LLSD result = httpAdapter->getRawAndSuspend(httpRequest, uri, httpOptions);
+	LLCore::HttpStatus status = HttpCoroutineAdapter::getStatusFromLLSD(result[HttpCoroutineAdapter::HTTP_RESULTS]);
+	const LLSD::Binary &rawBody = result[HttpCoroutineAdapter::HTTP_RESULTS_RAW].asBinary();
+	std::string reply(rawBody.cbegin(), rawBody.cend());
+	if (!status)
 	{
 		char const* xml_desc;
-		switch (result)
+		switch (status.getStatus())
 		{
 			case HTTP_NOT_FOUND:
 				xml_desc = "GridInfoErrorNotFound";
@@ -399,7 +406,7 @@ void HippoGridInfo::getGridInfo()
 	XML_SetElementHandler(parser, onXmlElementStart, onXmlElementEnd);
 	XML_SetCharacterDataHandler(parser, onXmlCharacterData);
 	mXmlState = XML_VOID;
-	if (!XML_Parse(parser, reply.data(), reply.size(), TRUE)) 
+	if (!XML_Parse(parser, reply.data(), reply.size(), TRUE))
 	{
 		THROW_ALERTC(HTTP_OK, "GridInfoParseError", AIArgs("[XML_ERROR]", XML_ErrorString(XML_GetErrorCode(parser))));
 	}
@@ -409,14 +416,14 @@ void HippoGridInfo::getGridInfo()
 std::string HippoGridInfo::getUploadFee() const
 {
 	std::string fee;
-	formatFee(fee, LLGlobalEconomy::Singleton::getInstance()->getPriceUpload(), true);
+	formatFee(fee, LLGlobalEconomy::getInstance()->getPriceUpload(), true);
 	return fee;
 }
 
 std::string HippoGridInfo::getGroupCreationFee() const
 {
 	std::string fee;
-	formatFee(fee, LLGlobalEconomy::Singleton::getInstance()->getPriceGroupCreate(), false);
+	formatFee(fee, LLGlobalEconomy::getInstance()->getPriceGroupCreate(), false);
 	return fee;
 }
 
@@ -781,21 +788,24 @@ void HippoGridManager::parseUrl()
 
 	// query update server
 	std::string escaped_url = LLWeb::escapeURL(url);
-	LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t httpAdapter(new LLCoreHttpUtil::HttpCoroutineAdapter("HippoGridManager", LLCore::HttpRequest::DEFAULT_POLICY_ID));
-	LLSD response = httpAdapter->getAndSuspend(LLCore::HttpRequest::ptr_t(new LLCore::HttpRequest), url);
+	const std::string&& name = "HippoGridManager";
+	LLCoros::instance().launch(name, [=] {
+		LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t httpAdapter(new LLCoreHttpUtil::HttpCoroutineAdapter(name, LLCore::HttpRequest::DEFAULT_POLICY_ID));
+		LLSD response = httpAdapter->getAndSuspend(LLCore::HttpRequest::ptr_t(new LLCore::HttpRequest), url);
 
-	// check response, return on error
-	S32 status = response["status"].asInteger();
-	if ((status != 200) || !response["body"].isArray()) 
-	{
-		LL_INFOS() << "GridInfo Update failed (" << status << "): "
-			<< (response["body"].isString()? response["body"].asString(): "<unknown error>")
-			<< LL_ENDL;
-		return;
-	}
+		// check response, return on error
+		S32 status = response["status"].asInteger();
+		if ((status != 200) || !response["body"].isArray())
+		{
+			LL_INFOS() << "GridInfo Update failed (" << status << "): "
+				<< (response["body"].isString() ? response["body"].asString() : "<unknown error>")
+				<< LL_ENDL;
+			return;
+		}
 
-	// Force load, if list of grids is empty.
-	parseData(response["body"], !mGridInfo.empty());
+		// Force load, if list of grids is empty.
+		parseData(response["body"], !mGridInfo.empty());
+	});
 }
 
 void HippoGridManager::parseFile(const std::string& fileName, bool mergeIfNewer)

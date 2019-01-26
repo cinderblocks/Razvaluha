@@ -1,28 +1,44 @@
+
 # -*- cmake -*-
 
 project(llcommon)
 
 include(00-Common)
+include(CXXFeatureDetection)
 include(LLCommon)
+include(LLMath)
 include(Linking)
 include(Boost)
+include(OpenSSL)
 include(LLSharedLibs)
-include(JsonCpp)
+include(Json)
 include(GoogleBreakpad)
 include(Copy3rdPartyLibs)
 include(ZLIB)
+include(URIPARSER)
 
 include_directories(
     ${EXPAT_INCLUDE_DIRS}
     ${LLCOMMON_INCLUDE_DIRS}
-    ${JSONCPP_INCLUDE_DIR}
+    ${OPENSSL_INCLUDE_DIRS}
+    ${JSON_INCLUDE_DIR}
     ${ZLIB_INCLUDE_DIRS}
     ${BREAKPAD_INCLUDE_DIRECTORIES}
+    ${URIPARSER_INCLUDE_DIRS}
+    ${LLMATH_INCLUDE_DIRS}
     )
 
+include_directories(
+    SYSTEM
+    ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
+    )
+
+# add_executable(lltreeiterators lltreeiterators.cpp)
+# 
+# target_link_libraries(lltreeiterators
+#     ${LLCOMMON_LIBRARIES})
+
 set(llcommon_SOURCE_FILES
-    aisyncclient.cpp
-    imageids.cpp
     indra_constants.cpp
     llallocator.cpp
     llallocator_heap_profile.cpp
@@ -31,13 +47,16 @@ set(llcommon_SOURCE_FILES
     llassettype.cpp
     llbase32.cpp
     llbase64.cpp
+    llbitpack.cpp
     llcallbacklist.cpp
+    llcallstack.cpp
+    llcleanup.cpp
     llcommon.cpp
     llcommonutils.cpp
+    llcoro_get_id.cpp
     llcoros.cpp
     llcrc.cpp
     llcriticaldamp.cpp
-    llcursortypes.cpp
     lldate.cpp
     lldeadmantimer.cpp
     lldependencies.cpp
@@ -51,6 +70,7 @@ set(llcommon_SOURCE_FILES
     lleventfilter.cpp
     llevents.cpp
     lleventtimer.cpp
+    llexception.cpp
     llfasttimer.cpp
     llfile.cpp
     llfindlocale.cpp
@@ -58,13 +78,14 @@ set(llcommon_SOURCE_FILES
     llformat.cpp
     llframetimer.cpp
     llheartbeat.cpp
+    llheteromap.cpp
     llinitparam.cpp
+    llinitdestroyclass.cpp
     llinstancetracker.cpp
     llleap.cpp
     llleaplistener.cpp
     llliveappconfig.cpp
     lllivefile.cpp
-    lllog.cpp
     llmd5.cpp
     llmemory.cpp
     llmemorystream.cpp
@@ -72,12 +93,11 @@ set(llcommon_SOURCE_FILES
     llmetricperformancetester.cpp
     llmortician.cpp
     llmutex.cpp
-    lloptioninterface.cpp
+    llptrto.cpp 
     llpredicate.cpp
     llprocess.cpp
     llprocessor.cpp
     llprocinfo.cpp
-    llptrto.cpp 
     llqueuedthread.cpp
     llrand.cpp
     llrefcount.cpp
@@ -88,10 +108,10 @@ set(llcommon_SOURCE_FILES
     llsdserialize.cpp
     llsdserialize_xml.cpp
     llsdutil.cpp
-    llsecondlifeurls.cpp
     llsingleton.cpp
     llstacktrace.cpp
     llstat.cpp
+    llstreamqueue.cpp
     llstreamtools.cpp
     llstring.cpp
     llstringtable.cpp
@@ -102,58 +122,50 @@ set(llcommon_SOURCE_FILES
     lltimer.cpp
     lltrace.cpp
     lltraceaccumulators.cpp
-    lltracerecording.cpp
-    lltracethreadrecorder.cpp
     lluri.cpp
+    lluriparser.cpp
     lluuid.cpp
     llworkerthread.cpp
-    metaclass.cpp
-    metaproperty.cpp
-    reflective.cpp
     timing.cpp
     u64.cpp
+    StackWalker.cpp
     )
     
 set(llcommon_HEADER_FILES
     CMakeLists.txt
 
-    airecursive.h
-    aisyncclient.h
-    bitpack.h
-    ctype_workaround.h
     fix_macros.h
-    imageids.h
     indra_constants.h
+    is_approx_equal_fraction.h
     linden_common.h
-    llaccountingcost.h
     llalignedarray.h
-    llagentconstants.h
     llallocator.h
     llallocator_heap_profile.h
     llapp.h
     llapr.h
     llassettype.h
-    llassoclist.h
     llatomic.h
-    llavatarconstants.h
     llbase32.h
     llbase64.h
+    llbitpack.h
     llboost.h
     llcallbacklist.h
-    llchat.h
+    llcallstack.h
+    llcleanup.h
     llclickaction.h
     llcommon.h
     llcommonutils.h
+    llcoro_get_id.h
     llcoros.h
     llcrc.h
     llcriticaldamp.h
-    llcursortypes.h
     lldate.h
     lldeadmantimer.h
     lldefs.h
     lldependencies.h
     lldepthstack.h
     lldictionary.h
+    lldoubledispatch.h
     llendianswizzle.h
     llerror.h
     llerrorcontrol.h
@@ -162,10 +174,11 @@ set(llcommon_HEADER_FILES
     lleventapi.h
     lleventcoro.h
     lleventdispatcher.h
-    lleventemitter.h
     lleventfilter.h
     llevents.h
+    lleventemitter.h
     lleventtimer.h
+    llexception.h
     llfasttimer.h
     llfile.h
     llfindlocale.h
@@ -174,20 +187,17 @@ set(llcommon_HEADER_FILES
     llframetimer.h
     llhandle.h
     llheartbeat.h
+    llheteromap.h
     llindexedvector.h
+    llinitdestroyclass.h
     llinitparam.h
     llinstancetracker.h
     llkeythrottle.h
     llleap.h
     llleaplistener.h
-    lllinkedqueue.h
+    lllistenerwrapper.h
     llliveappconfig.h
     lllivefile.h
-    lllocalidhashmap.h
-    lllog.h
-    lllslconstants.h
-    llmap.h
-    llmake.h
     llmd5.h
     llmemory.h
     llmemorystream.h
@@ -196,8 +206,8 @@ set(llcommon_HEADER_FILES
     llmortician.h
     llmutex.h
     llnametable.h
-    lloptioninterface.h
     llpointer.h
+    llpounceable.h
     llpredicate.h
     llpreprocessor.h
     llpriqueuemap.h
@@ -218,21 +228,19 @@ set(llcommon_HEADER_FILES
     llsdserialize.h
     llsdserialize_xml.h
     llsdutil.h
-    llsecondlifeurls.h
     llsimplehash.h
     llsingleton.h
-    llskiplist.h
-    llskipmap.h
     llsortedvector.h
     llstacktrace.h
     llstat.h
-    llstatenums.h
     llstl.h
+    llstreamqueue.h
     llstreamtools.h
     llstrider.h
     llstring.h
     llstringtable.h
     llstaticstringtable.h
+    llstatsaccumulator.h
     llsys.h
     llthread.h
     llthreadlocalstorage.h
@@ -240,40 +248,35 @@ set(llcommon_HEADER_FILES
     lltimer.h
     lltrace.h
     lltraceaccumulators.h
-    lltracerecording.h
-    lltracethreadrecorder.h
     lltreeiterators.h
     llunits.h
     llunittype.h
-    lltypeinfolookup.h
     lluri.h
+    lluriparser.h
     lluuid.h
-    llwin32headers.h
-    llwin32headerslean.h
     llworkerthread.h
-    metaclass.h
-    metaclasst.h
-    metaproperty.h
-    metapropertyt.h
-    reflective.h
-    reflectivet.h
-    stdenums.h
+    namedtimerfactory.h
     stdtypes.h
     stringize.h
     timer.h
     u64.h
+    StackWalker.h
     )
+
+if (WINDOWS)
+  list(APPEND llcommon_HEADER_FILES llwin32headers.h llwin32headerslean.h)
+endif (WINDOWS)
+
+if (DARWIN)
+  list(APPEND llcommon_HEADER_FILES llsys_objc.h)
+  list(APPEND llcommon_SOURCE_FILES llsys_objc.mm)
+endif (DARWIN)
 
 set_source_files_properties(${llcommon_HEADER_FILES}
                             PROPERTIES HEADER_FILE_ONLY TRUE)
 
 list(APPEND llcommon_SOURCE_FILES ${llcommon_HEADER_FILES})
 
-if(NOT WORD_SIZE EQUAL 32)
-  if(NOT WINDOWS)
-    add_definitions(-fPIC)
-  endif(NOT WINDOWS)
-endif(NOT WORD_SIZE EQUAL 32)
 if(LLCOMMON_LINK_SHARED)
   add_library (llcommon SHARED ${llcommon_SOURCE_FILES})
   if(WINDOWS)
@@ -285,28 +288,30 @@ else(LLCOMMON_LINK_SHARED)
     add_library (llcommon ${llcommon_SOURCE_FILES})
 endif(LLCOMMON_LINK_SHARED)
 
+set_target_properties(llcommon PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+target_compile_features(llcommon PRIVATE cxx_nullptr cxx_range_for)
+target_compile_features(llcommon PUBLIC cxx_nullptr cxx_static_assert)
+
 target_link_libraries(
     llcommon
     ${BREAKPAD_EXCEPTION_HANDLER_LIBRARIES}
     ${APRUTIL_LIBRARIES}
     ${APR_LIBRARIES}
     ${EXPAT_LIBRARIES}
-    ${JSONCPP_LIBRARIES}
+    ${OPENSSL_LIBRARIES}
+    ${CRYPTO_LIBRARIES}
     ${ZLIB_LIBRARIES}
     ${WINDOWS_LIBRARIES}
     ${BOOST_COROUTINE_LIBRARY}
     ${BOOST_CONTEXT_LIBRARY}
     ${BOOST_PROGRAM_OPTIONS_LIBRARY}
     ${BOOST_REGEX_LIBRARY}
-    ${BOOST_THREAD_LIBRARY}
     ${BOOST_CHRONO_LIBRARY}
+    ${BOOST_THREAD_LIBRARY}
     ${BOOST_SYSTEM_LIBRARY}
-    )
 
-if (DARWIN)
-  include(CMakeFindFrameworks)
-  find_library(CARBON_LIBRARY Carbon)
-  target_link_libraries(llcommon ${CARBON_LIBRARY})
-endif (DARWIN)
+    ${URIPARSER_LIBRARY}
+    )
 
 add_dependencies(llcommon stage_third_party_libs)

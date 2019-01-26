@@ -34,11 +34,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>5c8df43ff04799f3f675b8a0f328f184</string>
+              <string>bc252239e646840302db1b0ce598bc2b</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/SDL-1.2.15-linux64-201603241005.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/SDL-1.2.15-linux64-201609250149.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -46,6 +46,52 @@
         </map>
         <key>version</key>
         <string>1.2.15</string>
+      </map>
+      <key>SDL2</key>
+      <map>
+        <key>copyright</key>
+        <string>Copyright (C) 1997-2016 Sam Lantinga slouken@libsdl.org</string>
+        <key>description</key>
+        <string>Simple DirectMedia Layer is a cross-platform multimedia library designed to provide low level access to audio, keyboard, mouse, joystick, 3D hardware via OpenGL, and 2D video framebuffer.</string>
+        <key>license</key>
+        <string>zlib</string>
+        <key>license_file</key>
+        <string>LICENSES/SDL2.txt</string>
+        <key>name</key>
+        <string>SDL2</string>
+        <key>platforms</key>
+        <map>
+          <key>windows</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>5d652419a4a251eca69294a3adbc256b</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/SDL2-2.0.5-windows-201703090609.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>dde061b19e45a66c9564709091ad9b5a</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc141/SDL2-2.0.5-windows64-201703081654.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>2.0.5</string>
       </map>
       <key>apr_suite</key>
       <map>
@@ -66,11 +112,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>1eca2a268913083596127b46570779ab</string>
+              <string>61cf6b90ab5adc1391420e887cdcc90d</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/apr_suite-1.5.2-darwin-201511222106.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/apr_suite-1.6.3-1.6.1-1.2.2-darwin-201712261955.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -92,11 +138,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>cd30af9b015c373bed5062b1642a1b3e</string>
+              <string>eb459340baa20516097bf7897b5d85d1</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/apr_suite-1.5.2-linux64-201603240800.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/apr_suite-1.5.2-linux64-201609250304.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -106,11 +152,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>76186b09770cab66dba6586cb1d2123f</string>
+              <string>d0cf074a2c95a65b8833350dad77c0ae</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/apr_suite-1.5.2-windows-201603261507.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/apr_suite-1.5.2-windows-201703090634.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -120,18 +166,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>586739a99e1366cd9e270dc7c9a4e519</string>
+              <string>1e7eb1da6e3e792db85f59012680a877</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/apr_suite-1.5.2-windows64-201603261452.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/apr_suite-1.6.3-1.6.1-1.2.2-windows64-201712260041.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.5.2</string>
+        <string>1.6.3-1.6.1-1.2.2</string>
       </map>
       <key>ares</key>
       <map>
@@ -238,11 +284,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>5e6a0930ca5c9e3c26970ac8589a538c</string>
+              <string>af53c487e3635f5c0eb6cf05c9424eb3</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/boost-1.59.0-darwin-201601091139.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/boost-1.66.0-darwin-201712261623.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -264,11 +310,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>74a88afa7ff50462059c17321f91a359</string>
+              <string>8796ed4ef8b99cc305f2dfa1fe67848e</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/boost-1.60.0-linux64-201603241316.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/boost-1.63.0-linux64-201706220306.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -278,11 +324,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>d606e5c39d13f2c23d23ac498520cbac</string>
+              <string>ae0998e5d108c77c5cea2a68ad928151</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/boost-1.60.0-windows-201601152308.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/boost-1.63.0-windows-201703281813.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -292,18 +338,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>f2ff62721cffd4556d18cbec67152de1</string>
+              <string>6faba32dcfb80c26bafd4a3e06cff268</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/boost-1.60.0-windows64-201601160313.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/boost-1.66.0-windows64-201712260832.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.60.0</string>
+        <string>1.66.0</string>
       </map>
       <key>colladadom</key>
       <map>
@@ -322,11 +368,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>d6e279fb5ce9093c89819803be5562db</string>
+              <string>6ee41a4d6aa045d3cd2e0f4ae9cc23b4</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/colladadom-2.3-darwin-201601091204.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/colladadom-2.3-darwin-201712261921.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -348,11 +394,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>c84d1be467d7198103d905f710fa31d3</string>
+              <string>5c9bf2dc7952e9103a0924d4ef9e230c</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/colladadom-2.3-linux64-201603241731.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/colladadom-2.3-linux64-201706220338.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux</string>
@@ -362,11 +408,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>90a37cec15019bff53a165b90f0180a7</string>
+              <string>60bd2dbac5559141e05be6c424cf9cd0</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/colladadom-2.3-windows-201601152346.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/colladadom-2.3-windows-201703281922.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -376,11 +422,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>46e48bcb7643c4819bf6f35f518a0db7</string>
+              <string>65628150b732274f0bdd0fa33d6ca650</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/colladadom-2.3-windows64-201601160353.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/colladadom-2.3-windows64-201712260938.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -392,7 +438,7 @@
       <key>curl</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 1996 - 2016, Daniel Stenberg, (daniel@haxx.se).</string>
+        <string>Copyright (c) 1996 - 2017, Daniel Stenberg,(daniel@haxx.se), and many contributors.</string>
         <key>description</key>
         <string>Library for transferring data specified with URL syntax</string>
         <key>license</key>
@@ -408,11 +454,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>cc59e267a98b1b433574470a07737609</string>
+              <string>5ad49b3dc23e5ce67452d968d503be6e</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/curl-7.48.0-darwin-201603231616.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/curl-7.57.0-darwin-201712262218.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -434,11 +480,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>24a88e015ee9c1806e7aeb46887d38f5</string>
+              <string>9d5e31cbe4b3d129cb458edb3cf271d4</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/curl-7.48.0-linux64-201603240914.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/curl-7.55.1-linux64-201709282020.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -448,11 +494,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>f20491b59795d311cf8d730556cd141e</string>
+              <string>da5be630ca350a7ed4c0e99250451d41</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/curl-7.48.0-windows-201603231720.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/curl-7.56.1-windows-201711241310.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -462,18 +508,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>86feef4905c2e46a9cbdc7a1df23d83f</string>
+              <string>7b56b59c56389a8943a04b24bb22ada4</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/curl-7.48.0-windows64-201603231658.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/curl-7.57.0-windows64-201712260745.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>7.48.0</string>
+        <string>7.57.0</string>
       </map>
       <key>dbus-glib</key>
       <map>
@@ -510,7 +556,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib/dbus_glib-0.76-linux64-201501030130.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib/dbus_glib-0.76-linux64-201501030130.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -542,7 +588,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/common/lib/dictionaries-1-common-201412301501.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/common/lib/dictionaries-1-common-201412301501.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -551,10 +597,84 @@
         <key>version</key>
         <string>1</string>
       </map>
+      <key>dullahan</key>
+      <map>
+        <key>copyright</key>
+        <string>Copyright (c) 2017, Linden Research, Inc.</string>
+        <key>description</key>
+        <string>A headless browser SDK that uses the Chromium Embedded Framework (CEF). It is designed to make it easier to write applications that render modern web content directly to a memory buffer, inject synthesized mouse and keyboard events as well as interact with web based features like JavaScript or cookies.</string>
+        <key>license</key>
+        <string>MPL</string>
+        <key>license_file</key>
+        <string>LICENSES/dullahan.txt</string>
+        <key>name</key>
+        <string>dullahan</string>
+        <key>platforms</key>
+        <map>
+          <key>darwin</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>e5b0cf5bea4c3c0316ac1e795176b1a8</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/dullahan-1.1.930-3.3239.1706.gcd33baa-darwin-201712262122.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>darwin</string>
+          </map>
+          <key>linux64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>e893ffee34808092ba824b61ee0efc57</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/dullahan-1.1.820-3.3163.1670.g934eaba-linux64-201709282247.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>linux64</string>
+          </map>
+          <key>windows</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>f00d72eeb1b4669004ccdea9e495fc92</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/dullahan-1.1.888-3.3202.1686.gd665578-windows-201711211427.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>c66ba6d26542a48aa12c63874bada4aa</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/dullahan-1.1.930-3.3239.1706.gcd33baa-windows64-201712260156.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>1.1.930-3.3239.1706.gcd33baa</string>
+      </map>
       <key>expat</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd and Clark Cooper - Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Expat maintainers.</string>
+        <string>Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper - Copyright (c) 2001-2017 Expat maintainers</string>
         <key>description</key>
         <string>Expat is an XML parser library written in C</string>
         <key>license</key>
@@ -570,11 +690,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>fc3e46e4737b326b0ca926534ddce9f3</string>
+              <string>0e5411becdb72bb67b49a6f57e1056de</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/expat-2.1.1-darwin-201603271445.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/expat-2.2.5-darwin-201712261952.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -596,11 +716,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>3ed12f7d7b1a3bda07a3c6d8227a3bf2</string>
+              <string>ff3ecb893d879a380408db963aa0afea</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/expat-2.1.1-linux64-201603232308.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/expat-2.2.0-linux64-201609241339.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -610,11 +730,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>454170939e4d1ba07060b73d6f81b9fc</string>
+              <string>f10218f7c28d63a3d9f1fb683d116bf8</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/expat-2.1.1-windows-201603261409.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/expat-2.2.0-windows-201703090626.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -624,23 +744,23 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>0cf6f4529ade22b7ae78da5d6303ed87</string>
+              <string>db56a24bbac59d9ad8b98d40b7140c29</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/expat-2.1.1-windows64-201603261406.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/expat-2.2.5-windows64-201712251923.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>2.1.1</string>
+        <string>2.2.5</string>
       </map>
       <key>fmodstudio</key>
       <map>
         <key>copyright</key>
-        <string>FMOD Studio, copyright © Firelight Technologies Pty, Ltd., 1994-2015.</string>
+        <string>FMOD Studio, copyright (c) Firelight Technologies Pty, Ltd., 2012-2017.</string>
         <key>description</key>
         <string>FMOD Studio audio system library</string>
         <key>license</key>
@@ -656,11 +776,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>a2badcf46277f7547bab0963fe262696</string>
+              <string>a3ccf7916d1e0b6f01370978b661c139</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/fmodstudio-1.08.01-darwin-201604080928.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/fmodstudio-1.10.02-darwin-201712262058.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -674,7 +794,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux/lib/fmodstudio-1.06.07-linux-201507231333.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux/lib/fmodstudio-1.06.07-linux-201507231333.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux</string>
@@ -684,11 +804,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>be09dc1f144c936790236b94190815b4</string>
+              <string>54dbd41322a08a1fc333ca6d96af5502</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib/fmodstudio-1.08.04-linux64-201605301500.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib/fmodstudio-1.10.00-linux64-201709282320.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -698,11 +818,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>fe50f650c97e6350bedfd90102d3321f</string>
+              <string>b23a30967666da49346983658ed50e92</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib/fmodstudio-1.08.04-windows-201605291158.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib/fmodstudio-1.10.00-windows-201709290225.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -712,18 +832,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>13ac02d0444e46c17fa20c20a9828647</string>
+              <string>c2c45c2ebd9fd930098aa2a3b85bbe5f</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib/fmodstudio-1.08.04-windows64-201605291157.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib/fmodstudio-1.10.02-windows64-201712251435.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.08.04</string>
+        <string>1.10.02</string>
       </map>
       <key>fontconfig</key>
       <map>
@@ -756,18 +876,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>25726244f5bcd05f412514b030098c3c</string>
+              <string>cc2e5245ab87978ddb2d3f1f6bcc8b73</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/fontconfig-2.11.0-linux64-201603241804.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/fontconfig-2.12.1-linux64-201709282143.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
           </map>
         </map>
         <key>version</key>
-        <string>2.11.0</string>
+        <string>2.12.1</string>
       </map>
       <key>freeglut</key>
       <map>
@@ -818,7 +938,7 @@
       <key>freetype</key>
       <map>
         <key>copyright</key>
-        <string>Copyright 2006-2016 by David Turner, Robert Wilhelm, and Werner Lemberg.</string>
+        <string>Copyright 2006-2017 by David Turner, Robert Wilhelm, and Werner Lemberg.</string>
         <key>description</key>
         <string>Font rendering library</string>
         <key>license</key>
@@ -834,11 +954,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>8d41fe8cb821e7e080160586a53feec8</string>
+              <string>19a429c1e4b49ef6dc07870eb3741345</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/freetype-2.6.1-darwin-201511222222.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/freetype-2.8.1-darwin-201712262206.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -860,11 +980,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>b10ba0775b9f1033daf580a2cb55789d</string>
+              <string>539aa588f0f6d60b7361321006c32bbc</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/freetype-2.6.3-linux64-201603241755.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/freetype-2.8.0-linux64-201709282140.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -874,11 +994,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e5be5197f12f9ca8078ba9ce4f1bce10</string>
+              <string>bdbfc3b58cfc2f125881be748d092645</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/freetype-2.6.3-windows-201603011805.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/freetype-2.8.0-windows-201710192344.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -888,18 +1008,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e8c0acbe631d7a4cb1a2890b90e5bc8c</string>
+              <string>7c028ec152b1dee1313c084d96a5d276</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/freetype-2.6.3-windows64-201603011807.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/freetype-2.8.1-windows64-201712260751.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>2.6.3</string>
+        <string>2.8.1</string>
       </map>
       <key>glext</key>
       <map>
@@ -984,11 +1104,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>6c6b3b06a4305c2da0aad1de132e6a07</string>
+              <string>fd6ace9b654318ea8e441e1c4ffb91e0</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/glod-1.0pre4-darwin-201511222034.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/glod-1.0pre4-darwin-201712262108.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -1010,11 +1130,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>f7172928ba2201d4b9aeb2c70d7a55b9</string>
+              <string>72d9df7676a1238f6f59b308e49b4a6e</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/glod-1.0pre4-linux64-201603240031.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/glod-1.0pre4-linux64-201609240327.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1024,11 +1144,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>05134ab3cf05fbfb4bed996b53a0d472</string>
+              <string>37035aad7d066dfe6f26dc009aa9dcea</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/glod-1.0pre4-windows-201601151027.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/glod-1.0pre4-windows-201703090622.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1038,11 +1158,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>2da9e546e4f574ec79ea8962f2c962da</string>
+              <string>c5c04c164ff057a43928de2f2b83470e</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/glod-1.0pre4-windows64-201512092328.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/glod-1.0pre4-windows64-201712251340.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -1074,7 +1194,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/google_breakpad-9e60a27-darwin-201511222009.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/google_breakpad-9e60a27-darwin-201511222009.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -1096,11 +1216,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>3709a51d4d5dff5ec0c4656623eaa05d</string>
+              <string>be9721099a72762ab87f98506b0d9201</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/google_breakpad-9e60a27-linux64-201603240004.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/google_breakpad-7398ce15b79da-linux64-201609260309.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1110,11 +1230,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>19147e19b5cfaaaeb83ff1d9025c06df</string>
+              <string>fa7f683ba4ddd7db777c78c8213d2e46</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/google_breakpad-9e60a27-windows-201601151025.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/google_breakpad-7398ce15b79da-windows-201703090621.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1124,18 +1244,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e74e54c2042b1539a81012501e4b67af</string>
+              <string>71ffc5cae4da7e2e7aac856da44cb8c4</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/google_breakpad-9e60a27-windows64-201512101817.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc141/google_breakpad-7398ce15b79da-windows64-201703081616.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>9e60a27</string>
+        <string>7398ce15b79da</string>
       </map>
       <key>gperftools</key>
       <map>
@@ -1170,7 +1290,7 @@
               <key>hash</key>
               <string>e81d9e4526ceac49f1532d6518085985</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs/downloads/gperftools-2.1-windows-20140120.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib/gperftools-2.1-windows-20140120.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1182,7 +1302,7 @@
               <key>hash</key>
               <string>da6ec7472ed69fe3231eb95432a789d9</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs/downloads/gperftools-2.2-windows64-20140605.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib/gperftools-2.2-windows64-20140605.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1212,7 +1332,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/common/lib/gstreamer-0.10.6.201501032013-common-201501032013.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/common/lib/gstreamer-0.10.6.201501032013-common-201501032013.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -1252,18 +1372,30 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>9678056c5ad714aa7ba1ba4ffcb09859</string>
+              <string>4e3acd35ff384ebc6f399585c0aeb77a</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/gtk_atk_pango_glib-0.0.2-linux64-201603241949.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/gtk_atk_pango_glib-0.0.3-linux64-201711061729.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
           </map>
+          <key>windows</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>c257d718abdde8cfe8a0af26175161a7</string>
+              <key>url</key>
+              <string>http://s3.amazonaws.com/viewer-source-downloads/install_pkgs/gtk-atk-pango-glib-windows-20101001a.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows</string>
+          </map>
         </map>
         <key>version</key>
-        <string>0.0.2</string>
+        <string>0.0.3</string>
       </map>
       <key>jpeglib</key>
       <map>
@@ -1338,104 +1470,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>982395e50a36334899b900d563003b83</string>
+              <string>d60f195778344b88cc47dc5e19af2cf8</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/jpeglib-1.4.2-windows64-201512092307.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/jpeglib-1.5.3-windows64-201712251431.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.4.2</string>
-      </map>
-      <key>jsoncpp</key>
-      <map>
-        <key>copyright</key>
-        <string>Copyright (c) 2007-2010 by Baptiste Lepilleur</string>
-        <key>description</key>
-        <string>JsonCpp is an implementation of a JSON (http://json.org) reader and writer in C++.</string>
-        <key>license</key>
-        <string>Public Domain</string>
-        <key>license_file</key>
-        <string>LICENSES/jsoncpp.txt</string>
-        <key>name</key>
-        <string>jsoncpp</string>
-        <key>platforms</key>
-        <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>3243745940e8419f93abf39fd3358158</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/jsoncpp-1.6.5-darwin-201511222000.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>840cd9455638c0ea52c613cfddd07d5b</string>
-              <key>url</key>
-              <string>http://s3.amazonaws.com/viewer-source-downloads/install_pkgs/jsoncpp-0.5.0-linux-20110315.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
-          </map>
-          <key>linux64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>3ebbace19eb931d9236432ba537c3727</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/jsoncpp-1.6.5-linux64-201603232323.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>de7bd51771d3d45185c4977e6aec3a37</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/jsoncpp-1.6.5-windows-201601151019.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
-          </map>
-          <key>windows64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>4cfc311430b84c8a9eba472fd4469f2e</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/jsoncpp-1.6.5-windows64-201512092309.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows64</string>
-          </map>
-        </map>
-        <key>version</key>
-        <string>1.6.5</string>
+        <string>1.5.3</string>
       </map>
       <key>libhunspell</key>
       <map>
@@ -1456,11 +1502,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>c897e44b3f5ac33436a028e6e3a5b29b</string>
+              <string>28103465d761e6c33b793afdcbc8a8fd</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/libhunspell-1.3.3-darwin-201511222015.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libhunspell-1.6.2-darwin-201712262132.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -1482,11 +1528,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>f58652f3217c1e897e9051aa19d99139</string>
+              <string>41b4202721b33290181424d3a69ed97d</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/libhunspell-1.3.3-linux64-201603240026.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/libhunspell-1.6.0-linux64-201703121035.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1496,11 +1542,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>440a81e502be320c789337653ad1af7c</string>
+              <string>cfce0b7d65b28b34fd0643cbcf7b0bac</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/libhunspell-1.3.3-windows-201601151018.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libhunspell-1.6.0-windows-201703090619.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1510,18 +1556,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>202ec606e90c6a705bc075c334d76f86</string>
+              <string>46e0276052dc614fe890f2a5d6f814b9</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/libhunspell-1.3.3-windows64-201512100002.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libhunspell-1.6.2-windows64-201712251236.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.3.3</string>
+        <string>1.6.2</string>
       </map>
       <key>libidn</key>
       <map>
@@ -1616,11 +1662,71 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>37da82fd6de8673a46c2c0860b54d6bf</string>
+              <string>3ac8047b38b617ad686591e00100d6af</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/libndofdev-0.1-windows64-201512122040.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libndofdev-0.1-windows64-201712251124.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>0.1</string>
+      </map>
+      <key>libndofdev</key>
+      <map>
+        <key>copyright</key>
+        <string>Copyright (c) 2007, 3Dconnexion, Inc. - All rights reserved.</string>
+        <key>description</key>
+        <string>3DConnexion SDK</string>
+        <key>license</key>
+        <string>BSD</string>
+        <key>license_file</key>
+        <string>LICENSES/libndofdev.txt</string>
+        <key>name</key>
+        <string>libndofdev</string>
+        <key>platforms</key>
+        <map>
+          <key>darwin</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>53f242d753b0781b78e3320bff9751bf</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libndofdev-0.1-darwin-201712262016.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>darwin</string>
+          </map>
+          <key>windows</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>e2927116641e2c74ada092bfb6b49a8d</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libndofdev-0.1-windows-201703090613.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>3ac8047b38b617ad686591e00100d6af</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libndofdev-0.1-windows64-201712251124.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -1648,11 +1754,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>d3fd1dab78123c39391b0afb372e5cf1</string>
+              <string>70117b955d1a89e8ad97a0a010168f8c</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/libndofdev_open-0.8-linux64-201603241018.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/libndofdev_open-0.8-linux64-201609250211.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1664,7 +1770,7 @@
       <key>libpng</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 2004, 2006-2016 Glenn Randers-Pehrson</string>
+        <string>Copyright (c) 2000-2002, 2004, 2006-2017 Glenn Randers-Pehrson</string>
         <key>description</key>
         <string>PNG Reference library</string>
         <key>license</key>
@@ -1680,11 +1786,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>7c315d3fee9f9bf7e36c4251c41fa378</string>
+              <string>2919c647bd11448e2878ab8c9ceac1af</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/libpng-1.6.19-darwin-201511222146.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libpng-1.6.34-darwin-201712262200.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -1706,11 +1812,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>cd64cda7107b967279d5af03b0d46a8f</string>
+              <string>a3615cbbb3aa02bb561f3ee0ba7897ba</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/libpng-1.6.21-linux64-201603240933.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/libpng-1.6.34-linux64-201711051519.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1720,11 +1826,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>5e7b3ea13fec60f6c9a8965a390cfbd5</string>
+              <string>9aad0afaf2c1895224454c1dc433f481</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/libpng-1.6.21-windows-201603011800.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libpng-1.6.34-windows-201710172201.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1734,18 +1840,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>b2f166e496fc19958777c92ffd032331</string>
+              <string>528889464c0766d762bd528cf82558db</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/libpng-1.6.21-windows64-201603011809.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libpng-1.6.34-windows64-201712260746.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.6.21</string>
+        <string>1.6.34</string>
       </map>
       <key>libxml2</key>
       <map>
@@ -1766,11 +1872,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>242ffec9e9f8fca818b750c578eba0dd</string>
+              <string>678b5278e7faf956024f68816b3f05d4</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/libxml2-2.9.3-darwin-201511222121.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libxml2-2.9.7-darwin-201712261252.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -1792,11 +1898,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>61351b10787b06045a70c905a58ca2f6</string>
+              <string>e33e5ea00d88e32a458ac66af497ebbe</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/libxml2-2.9.3-linux64-201603241216.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/libxml2-2.9.4-linux64-201703120604.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1806,11 +1912,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>6f1e3fcceab669df5c3d1c66821b2f24</string>
+              <string>a3f7c3421e9e4921dda3558c3b36dc59</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/libxml2-2.9.3-windows-201601151053.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libxml2-2.9.4-windows-201703090740.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1820,92 +1926,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>4453be9f68208147e4a7d508db677583</string>
+              <string>f69b1d4ec7ffdeec4429413ea640583d</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/libxml2-2.9.3-windows64-201512122133.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libxml2-2.9.7-windows64-201712260755.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>2.9.3</string>
-      </map>
-      <key>llceflib</key>
-      <map>
-        <key>copyright</key>
-        <string>Copyright (c) 2014-2015, Linden Research, Inc.</string>
-        <key>description</key>
-        <string>LLCefLib implements a headless web browser, rendering modern web content to a memory buffer and providing an API for injecting mouse and keyboard events. It uses the Chromium Embedded Framework (https://bitbucket.org/chromiumembedded/cef)</string>
-        <key>license</key>
-        <string>LGPL</string>
-        <key>license_file</key>
-        <string>LICENSES/llceflib.txt</string>
-        <key>name</key>
-        <string>llceflib</string>
-        <key>platforms</key>
-        <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>9551150830531abc405888066437e2c2</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/llceflib-3.2526.1364.gf6bf57b-darwin-201601160847.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>0e7613b2e038e18488452c2a9882144d</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/llceflib-3.2526.1373.gb660893-linux64-201603281900.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>30bbc702d7533f8e2c56bdd0f5f22b59</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/llceflib-3.2526.1364.gf6bf57b-windows-201601160235.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
-          </map>
-          <key>windows64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>230e4ccb442bd538eabe2167f351a20d</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/llceflib-3.2526.1364.gf6bf57b-windows64-201601160304.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows64</string>
-          </map>
-        </map>
-        <key>version</key>
-        <string>3.2526.1373.gb660893</string>
+        <string>2.9.7</string>
       </map>
       <key>llphysicsextensions_stub</key>
       <map>
@@ -2002,9 +2034,9 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>22c50a5d362cad311b4f413cfcffbba2</string>
+              <string>1f600840463c7327ea17486821425750</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/mesa_3p-update-mesa/rev/297294/arch/Linux/installer/mesa-7.11.1.297294-linux-297294.tar.bz2</string>
+              <string>http://s3.amazonaws.com/viewer-source-downloads/install_pkgs/mesa-7.0-linux-20100930.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux</string>
@@ -2012,6 +2044,38 @@
         </map>
         <key>version</key>
         <string>7.11.1.297294</string>
+      </map>
+      <key>modernjson</key>
+      <map>
+        <key>copyright</key>
+        <string>Copyright (c) 2013-2017 Niels Lohmann</string>
+        <key>description</key>
+        <string>JSON for Modern C++</string>
+        <key>license</key>
+        <string>MIT</string>
+        <key>license_file</key>
+        <string>LICENSES/modernjson.txt</string>
+        <key>name</key>
+        <string>modernjson</string>
+        <key>platforms</key>
+        <map>
+          <key>common</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>f8d65c59733104c65207c3227501591e</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/common/lib/modernjson-3.0.1-common-201712311003.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>common</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>3.0.1</string>
       </map>
       <key>nvapi</key>
       <map>
@@ -2030,11 +2094,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>f70cc94b1f43c4889b0dfff33f40fb11</string>
+              <string>f868a1d50735ca3151b3ea5835bd203f</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>file:///c:/devel/secondlife/packages/windows/nvapi-R361v2-windows-201604020339.tar.bz2</string>
+              <string>file:///c:/devel/secondlife/packages/windows/nvapi-R384-windows-201712260642.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2044,18 +2108,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>3058f1de30b4738bb087a21561cdd9a8</string>
+              <string>619598988143e12ad0d1a271f881b3bd</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>file:///c:/devel/secondlife/packages/windows64/nvapi-R361v2-windows64-201604020338.tar.bz2</string>
+              <string>file:///c:/devel/secondlife/packages/windows64/nvapi-R384-windows64-201712260642.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>R361v2</string>
+        <string>R384</string>
       </map>
       <key>ogg_vorbis</key>
       <map>
@@ -2076,11 +2140,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>83959618755a09d1af245e402f4b6232</string>
+              <string>6b4945c0d9a102a67756196810f20370</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/ogg_vorbis-1.3.2-1.3.5-darwin-201511222036.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/ogg_vorbis-1.3.2-1.3.5-darwin-201712262100.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -2102,11 +2166,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>d847ea384530e0bbb3774065dbdae65c</string>
+              <string>1c6258ddd8d3794402fefcd53e7a8ca0</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/ogg_vorbis-1.3.2-1.3.5-linux64-201603240037.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/ogg_vorbis-1.3.2-1.3.5-linux64-201609241255.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2116,11 +2180,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e8c42c8ee03d570fa5e7fb88e7e1bc92</string>
+              <string>41d090321853ea941c5ca57ba0d471d0</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/ogg_vorbis-1.3.2-1.3.5-windows-201601151012.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/ogg_vorbis-1.3.2-1.3.5-windows-201703090612.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2130,11 +2194,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>c22591d8db9dc3353e4d3dc3d1a2b264</string>
+              <string>01ae2d298489ea66597c5e302e8e4525</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/ogg_vorbis-1.3.2-1.3.5-windows64-201512122053.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/ogg_vorbis-1.3.2-1.3.5-windows64-201712251411.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2166,7 +2230,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/openal-1.16.0-1.1.0-darwin-201412160747.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/openal-1.16.0-1.1.0-darwin-201412160747.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -2190,11 +2254,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>7fea13f8caab7bf9184e0790eab9c2f3</string>
+              <string>53ed6e94703e929fb7b0f51041f8347e</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/openal-1.17.2-1.1.0-linux64-201603232035.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/openal-1.17.2-1.1.0-linux64-201609241409.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2208,7 +2272,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib/openal-1.16.0-1.1.0-windows-201504270536.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib/openal-1.16.0-1.1.0-windows-201504270536.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2222,14 +2286,100 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib/openal-1.16.0-1.1.0-windows64-201504270534.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib/openal-1.16.0-1.1.0-windows64-201504270534.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.16.0-1.1.0</string>
+        <string>1.17.2-1.1.0</string>
+      </map>
+      <key>openjpeg</key>
+      <map>
+        <key>copyright</key>
+        <string>Copyright (c) 2002-2012, Communications and Remote Sensing Laboratory, Universite catholique de Louvain (UCL), Belgium, Copyright (c) 2002-2012, Professor Benoit Macq, Copyright (c) 2003-2012, Antonin Descampe, Copyright (c) 2003-2009, Francois-Olivier Devaux, Copyright (c) 2005, Herve Drolon, FreeImage Team, Copyright (c) 2002-2003, Yannick Verschueren, Copyright (c) 2001-2003, David Janssens</string>
+        <key>description</key>
+        <string>The OpenJPEG library is an open-source JPEG 2000 codec written in C language.</string>
+        <key>license</key>
+        <string>BSD</string>
+        <key>license_file</key>
+        <string>LICENSES/openjpeg.txt</string>
+        <key>name</key>
+        <string>openjpeg</string>
+        <key>platforms</key>
+        <map>
+          <key>darwin</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>f1386e2390eeaf2440df69783b99ba48</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/openjpeg-1.5.1-darwin-201712262138.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>darwin</string>
+          </map>
+          <key>linux</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>fb2382014c79e0049746e4e29bd834f9</string>
+              <key>url</key>
+              <string>http://s3.amazonaws.com/viewer-source-downloads/install_pkgs/openjpeg-1.4-linux-20110314.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>linux</string>
+          </map>
+          <key>linux64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>2855cc01de820f3f9c1c43845aa8f308</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/openjpeg-1.5.1-linux64-201609240352.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>linux64</string>
+          </map>
+          <key>windows</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>1dd583ca386e5c324fe2ec2046919153</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/openjpeg-1.5.1-windows-201705200855.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>9453baff03d282d3ba060510697d9141</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/openjpeg-1.5.1-windows64-201712251137.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>1.5.1</string>
       </map>
       <key>openssl</key>
       <map>
@@ -2250,11 +2400,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>d415e218a7f3d0d1e3dd4f99d6129e6c</string>
+              <string>c9dbec48da7f8ebc3cdcc40cc70586c4</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/openssl-1.0.2g-darwin-201603010806.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/openssl-1.1.0g-darwin-201712261237.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -2276,11 +2426,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>2a50dcb704f6af595fff44defc4b65df</string>
+              <string>5dbb6b1e1081976871a31c22ced194c5</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/openssl-1.0.2g-linux64-201603240821.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/openssl-1.1.0f-linux64-201706212104.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2290,11 +2440,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>91b9fa570258f627a9265452d9e65231</string>
+              <string>0d25e1794f5d86b675484bf5eda799e4</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/openssl-1.0.2g-windows-201603011823.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/openssl-1.1.0g-windows-201711200028.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2304,50 +2454,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>ec86d96ffcbdc10e715e27b4b0bbda43</string>
+              <string>bd35903f309ccf026a2c448fd8613cc0</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/openssl-1.0.2g-windows64-201603011842.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/openssl-1.1.0g-windows64-201712260729.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.0.2g</string>
-      </map>
-      <key>quicktime</key>
-      <map>
-        <key>copyright</key>
-        <string>2010 Apple</string>
-        <key>description</key>
-        <string>QuickTime 7.3 SDK for Windows</string>
-        <key>license</key>
-        <string>unknown</string>
-        <key>license_file</key>
-        <string>LICENSES/quicktime.txt</string>
-        <key>name</key>
-        <string>quicktime</string>
-        <key>platforms</key>
-        <map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>66600ab94087d295e48e326ec8961ac5</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib/quicktime-7.3-windows-201504280653.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
-          </map>
-        </map>
-        <key>version</key>
-        <string>7.3</string>
+        <string>1.1.0g</string>
       </map>
       <key>slvoice</key>
       <map>
@@ -2368,11 +2486,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>68a8fab5ad3a180487598d3a3e0d57b1</string>
+              <string>3dd9bf4185bf2df413d890ca9eeab76c</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/slvoice_3p-update-slvoice/rev/298329/arch/Darwin/installer/slvoice-4.6.0017.21209.298329-darwin-298329.tar.bz2</string>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/vivox_3p-slvoice/rev/302004/arch/Darwin/installer/slvoice-4.6.0017.22050.302004-darwin-302004.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -2384,7 +2502,7 @@
               <key>hash</key>
               <string>9f60e56aba35ec90b3045e9d049ac284</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux/lib/slvoice-4.5.0009.17865-linux-20141214.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux/lib/slvoice-4.5.0009.17865-linux-20141214.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux</string>
@@ -2398,7 +2516,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib/slvoice-4.6.0009.20030-linux64-201501031918.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib/slvoice-4.6.0009.20030-linux64-201501031918.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2408,32 +2526,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>399afab7047e6fa62e7b2fb1768059ea</string>
+              <string>47a3316dae47cc4e7c1ea7b74ba8dd1e</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/slvoice_3p-update-slvoice/rev/298329/arch/CYGWIN/installer/slvoice-4.6.0017.21209.298329-windows-298329.tar.bz2</string>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/vivox_3p-slvoice/rev/302004/arch/CYGWIN/installer/slvoice-4.6.0017.22050.302004-windows-302004.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
           </map>
-          <key>windows64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>dabbc146137c13ec2ea026aa69e1f045</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib/slvoice-4.6.0017.21209.298329-windows64-298329.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows64</string>
-          </map>
         </map>
         <key>version</key>
-        <string>4.6.0017.21209.298329</string>
+        <string>4.6.0017.22050</string>
       </map>
       <key>tut</key>
       <map>
@@ -2458,7 +2562,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/common/lib/tut-2008.11.30-common-201504282317.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/common/lib/tut-2008.11.30-common-201504282317.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -2490,7 +2594,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/uriparser-0.8.4-darwin-201511221948.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/uriparser-0.8.4-darwin-201511221948.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -2512,11 +2616,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>69224d9285e5a26fc7a9aca5d3da7543</string>
+              <string>cf21d9f7ed7949d2230413e8a391fb73</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/uriparser-0.8.4-linux64-201603240044.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/uriparser-0.8.4-linux64-201609241428.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2526,11 +2630,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>f9f82fbd29751a969e9ab55a1f33ac7b</string>
+              <string>89f3fc7f3fe396439d306f099d1a12d3</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/uriparser-0.8.4-windows-201601151009.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/uriparser-0.8.4-windows-201703090606.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2540,11 +2644,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>dae3118551880f593f8ee907c122f097</string>
+              <string>ad1a435de73b7ee6d07f6c81a4cb1910</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/uriparser-0.8.4-windows64-201512081840.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/uriparser-0.8.4-windows64-201712251116.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2572,11 +2676,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>960953da9ab7c335a0f4f97e9bf8341c</string>
+              <string>f193ec9e594d857d22c067c6e52622a9</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/vcredist-14.0.23506.0-windows-201601191536.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/vcredist-14.10.25017.0-windows-201705270440.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2586,18 +2690,74 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>918588215463f36836eeefd9d3891868</string>
+              <string>e895f4b5d24b372a360c3a8fe3bc0398</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/vcredist-14.0.23506.0-windows64-201601191536.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/vcredist-14.12.25810.0-windows64-201712251445.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>14.0.23506.0</string>
+        <string>14.12.25810.0</string>
+      </map>
+      <key>vlc-bin</key>
+      <map>
+        <key>copyright</key>
+        <string>Copyright (C) 1998-2016 VLC authors and VideoLAN</string>
+        <key>license</key>
+        <string>GPL2</string>
+        <key>license_file</key>
+        <string>LICENSES/vlc.txt</string>
+        <key>name</key>
+        <string>vlc-bin</string>
+        <key>platforms</key>
+        <map>
+          <key>linux</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>2f410640df3f9812d1abff02a414cfa8</string>
+              <key>url</key>
+              <string>https://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3p-vlc-bin/rev/315283/arch/Linux/vlc_bin-2.2.3-linux-201606011750-r10.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>linux</string>
+          </map>
+          <key>windows</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>05a4adbea67c24b058485570cc7fbeb8</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc142/vlc_bin-2.2.8.201712260144-windows-201712260144.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>bbf6d7dd58b6482d2e9d34a961ffc667</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/vlc_bin-2.2.8.201712260141-windows64-201712260141.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>2.2.8.201712260144</string>
       </map>
       <key>xmlrpc-epi</key>
       <map>
@@ -2618,11 +2778,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>408e34531c6a8ac20ccc8c917435071f</string>
+              <string>8e0408fc38d55f665d78b2186e3385a2</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/xmlrpc_epi-0.54.2-darwin-201603271451.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/xmlrpc_epi-0.54.2-darwin-201712262005.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -2644,11 +2804,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>0465334ff0f1d57cf354867fd21ee137</string>
+              <string>f711601f801e9321481ee0116a629a32</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/xmlrpc_epi-0.54.2-linux64-201603240753.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/xmlrpc_epi-0.54.2-linux64-201609250229.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2658,11 +2818,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>7a619778a2ea5c3113549529dd4f7288</string>
+              <string>4cd5d80362fef95fe486b5bc1c373174</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/xmlrpc_epi-0.54.2-windows-201603261505.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/xmlrpc_epi-0.54.2-windows-201703090632.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2672,11 +2832,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>1afa5a6bdbc5689e14120628dc0fc124</string>
+              <string>59f0be2732e93eceaa155d98c2fcee9c</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/xmlrpc_epi-0.54.2-windows64-201603261459.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/xmlrpc_epi-0.54.2-windows64-201712260035.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2688,7 +2848,7 @@
       <key>zlib</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler</string>
+        <string>Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler</string>
         <key>description</key>
         <string>Zlib Data Compression Library</string>
         <key>license</key>
@@ -2704,11 +2864,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>635ee875ba478b17b6c64d9698cdf0dd</string>
+              <string>8659403827b2395bd92998718138689c</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/zlib-1.2.8-darwin-201511221937.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/zlib-1.2.11-darwin-201712261200.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -2730,11 +2890,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>1eaee9888043648d5f09716b771dcb4b</string>
+              <string>a11a8de934a96eede6fadc6e1639efb6</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/zlib-1.2.8-linux64-201603240746.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/zlib-1.2.11-linux64-201703120446.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2744,11 +2904,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>a26a7a9d550dc6988528e2e70bb5e85b</string>
+              <string>75651f8b2fa45545461f73ba583180bb</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/zlib-1.2.8-windows-201601150945.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/zlib-1.2.11-windows-201703090604.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2758,24 +2918,24 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>5b3a58a6a939e83f94137171b7f814de</string>
+              <string>ed6da4296e2fdfc132b4f12d35890ada</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/zlib-1.2.8-windows64-201512071625.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/zlib-1.2.11-windows64-201712260711.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.2.8</string>
+        <string>1.2.11</string>
       </map>
     </map>
     <key>package_description</key>
     <map>
       <key>copyright</key>
-      <string>Copyright (c) 2010-2016, Singularity Viewer Team</string>
+      <string>Copyright (c) 2010-2018, Singularity Viewer Team</string>
       <key>description</key>
       <string>Singularity Viewer</string>
       <key>license</key>
@@ -3013,7 +3173,7 @@
         <key>windows</key>
         <map>
           <key>build_directory</key>
-          <string>build-vc140</string>
+          <string>build-vc141</string>
           <key>configurations</key>
           <map>
             <key>RelWithDebInfo</key>
@@ -3041,20 +3201,12 @@
                 <key>arguments</key>
                 <array>
                   <string>..\indra</string>
-                  <string>&amp;&amp;</string>
-                  <string>..\indra\tools\vstool\VSTool.exe</string>
-                  <string>--solution</string>
-                  <string>Singularity.sln</string>
-                  <string>--config</string>
-                  <string>RelWithDebInfo</string>
-                  <string>--startup</string>
-                  <string>singularity-bin</string>
                 </array>
                 <key>options</key>
                 <array>
                   <string>-G</string>
-                  <string>"Visual Studio 14"</string>
-                  <string>-DCMAKE_SYSTEM_VERSION="10.0.10586.0"</string>
+                  <string>"Visual Studio 15"</string>
+                  <string>-DCMAKE_SYSTEM_VERSION="10.0.16299.0"</string>
                   <string>-DINSTALL_PROPRIETARY=FALSE</string>
                 </array>
               </map>
@@ -3088,20 +3240,12 @@
                 <key>arguments</key>
                 <array>
                   <string>..\indra</string>
-                  <string>&amp;&amp;</string>
-                  <string>..\indra\tools\vstool\VSTool.exe</string>
-                  <string>--solution</string>
-                  <string>Singularity.sln</string>
-                  <string>--config</string>
-                  <string>Release</string>
-                  <string>--startup</string>
-                  <string>singularity-bin</string>
                 </array>
                 <key>options</key>
                 <array>
                   <string>-G</string>
-                  <string>"Visual Studio 14"</string>
-                  <string>-DCMAKE_SYSTEM_VERSION="10.0.10586.0"</string>
+                  <string>"Visual Studio 15"</string>
+                  <string>-DCMAKE_SYSTEM_VERSION="10.0.16299.0"</string>
                   <string>-DINSTALL_PROPRIETARY=FALSE</string>
                 </array>
               </map>
@@ -3115,7 +3259,7 @@
         <key>windows64</key>
         <map>
           <key>build_directory</key>
-          <string>build-vc140-x86_64</string>
+          <string>build-vc141-x86_64</string>
           <key>configurations</key>
           <map>
             <key>RelWithDebInfo</key>
@@ -3143,20 +3287,12 @@
                 <key>arguments</key>
                 <array>
                   <string>..\indra</string>
-                  <string>&amp;&amp;</string>
-                  <string>..\indra\tools\vstool\VSTool.exe</string>
-                  <string>--solution</string>
-                  <string>Singularity.sln</string>
-                  <string>--config</string>
-                  <string>RelWithDebInfo</string>
-                  <string>--startup</string>
-                  <string>singularity-bin</string>
                 </array>
                 <key>options</key>
                 <array>
                   <string>-G</string>
-                  <string>"Visual Studio 14 Win64"</string>
-                  <string>-DCMAKE_SYSTEM_VERSION="10.0.10586.0"</string>
+                  <string>"Visual Studio 15 Win64"</string>
+                  <string>-DCMAKE_SYSTEM_VERSION="10.0.16299.0"</string>
                   <string>-DWORD_SIZE:STRING=64</string>
                   <string>-DINSTALL_PROPRIETARY=FALSE</string>
                 </array>
@@ -3191,20 +3327,12 @@
                 <key>arguments</key>
                 <array>
                   <string>..\indra</string>
-                  <string>&amp;&amp;</string>
-                  <string>..\indra\tools\vstool\VSTool.exe</string>
-                  <string>--solution</string>
-                  <string>Singularity.sln</string>
-                  <string>--config</string>
-                  <string>Release</string>
-                  <string>--startup</string>
-                  <string>singularity-bin</string>
                 </array>
                 <key>options</key>
                 <array>
                   <string>-G</string>
-                  <string>"Visual Studio 14 Win64"</string>
-                  <string>-DCMAKE_SYSTEM_VERSION="10.0.10586.0"</string>
+                  <string>"Visual Studio 15 Win64"</string>
+                  <string>-DCMAKE_SYSTEM_VERSION="10.0.16299.0"</string>
                   <string>-DWORD_SIZE:STRING=64</string>
                   <string>-DINSTALL_PROPRIETARY=FALSE</string>
                 </array>

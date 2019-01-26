@@ -10,15 +10,15 @@ include(Variables)
 # Portable compilation flags.
 set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG -DLL_DEBUG=1")
 set(CMAKE_CXX_FLAGS_RELEASE
-    "-DLL_RELEASE=1 -DLL_RELEASE_FOR_DOWNLOAD=1 -D_SECURE_SCL=0 -DNDEBUG")
+    "-DLL_RELEASE=1 -DLL_RELEASE_FOR_DOWNLOAD=1 -DNDEBUG")
 set(CMAKE_C_FLAGS_RELEASE
     "${CMAKE_CXX_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 
-    "-DLL_RELEASE=1 -D_SECURE_SCL=0 -DNDEBUG -DLL_RELEASE_WITH_DEBUG_INFO=1")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
+    "-DLL_RELEASE=1 -DNDEBUG -DLL_RELEASE_WITH_DEBUG_INFO=1")
 
 # Configure crash reporting
-set(RELEASE_CRASH_REPORTING OFF CACHE BOOL "Enable use of crash reporting in release builds")
-set(NON_RELEASE_CRASH_REPORTING OFF CACHE BOOL "Enable use of crash reporting in developer builds")
+option(RELEASE_CRASH_REPORTING "Enable use of crash reporting in release builds" OFF)
+option(NON_RELEASE_CRASH_REPORTING "Enable use of crash reporting in developer builds" OFF)
 
 if(RELEASE_CRASH_REPORTING)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DLL_SEND_CRASH_REPORTS=1")
@@ -33,20 +33,18 @@ endif()
 set(CMAKE_CONFIGURATION_TYPES "RelWithDebInfo;Release;Debug" CACHE STRING
     "Supported build types." FORCE)
 
-
 # Platform-specific compilation flags.
-
 if (WINDOWS)
   # Don't build DLLs.
   set(BUILD_SHARED_LIBS OFF)
 
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od /Zi /MDd /MP"
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od /Zi /MDd /MP -D_SCL_SECURE_NO_WARNINGS=1"
       CACHE STRING "C++ compiler debug options" FORCE)
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 
-      "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Od /Zi /MD /MP"
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
+      "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Od /Zi /MD /MP /Ob0 -D_ITERATOR_DEBUG_LEVEL=0"
       CACHE STRING "C++ compiler release-with-debug options" FORCE)
   set(CMAKE_CXX_FLAGS_RELEASE
-      "${CMAKE_CXX_FLAGS_RELEASE} ${LL_CXX_FLAGS} /O2 /Zi /Zo /MD /MP /Ob2 /Zc:inline /fp:fast -D_ITERATOR_DEBUG_LEVEL=0"
+      "${CMAKE_CXX_FLAGS_RELEASE} ${LL_CXX_FLAGS} /O2 /Oi /Ot /Zi /Zo /MD /MP /Ob2 /Zc:inline /fp:fast -D_ITERATOR_DEBUG_LEVEL=0"
       CACHE STRING "C++ compiler release options" FORCE)
   set(CMAKE_C_FLAGS_RELEASE
       "${CMAKE_C_FLAGS_RELEASE} ${LL_C_FLAGS} /O2 /Zi /MD /MP /fp:fast"
@@ -85,15 +83,26 @@ if (WINDOWS)
       /DNOMINMAX
       /DUNICODE
       /D_UNICODE
+      /D_CRT_SECURE_NO_WARNINGS
+	  /D_CRT_NONSTDC_NO_DEPRECATE
+      /D_WINSOCK_DEPRECATED_NO_WARNINGS
+      )
+
+  add_compile_options(
       /GS
       /TP
       /W3
       /c
+      /Zc:externConstexpr
       /Zc:forScope
+      /Zc:referenceBinding
       /Zc:rvalueCast
+      /Zc:strictStrings
+      /Zc:throwingNew
       /Zc:wchar_t
       /nologo
       /Oy-
+      /fp:fast
       /Zm140
       /wd4267
       /wd4244
@@ -123,20 +132,25 @@ endif (WINDOWS)
 set (GCC_EXTRA_OPTIMIZATIONS "-ffast-math")
 
 if (LINUX)
+  option(CONSERVE_MEMORY "Optimize for memory usage during link stage for memory-starved systems" OFF)
   set(CMAKE_SKIP_RPATH TRUE)
 
+  add_compile_options(
+    -fvisibility=hidden
+    -fexceptions
+    -fno-math-errno
+    -fno-strict-aliasing
+    -fsigned-char
+    -g
+    -pthread
+    )
+
   add_definitions(
-      -DLL_LINUX=1
-      -DAPPID=secondlife
-      -D_REENTRANT
-      -fexceptions
-      -fno-math-errno
-      -fno-strict-aliasing
-      -fsigned-char
-      -fvisibility=hidden
-      -g
-      -pthread
-      )
+    -DLL_LINUX=1
+    -DAPPID=secondlife
+    -DLL_IGNORE_SIGCHLD
+    -D_REENTRANT
+  )
 
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
@@ -248,25 +262,18 @@ endif (LINUX)
 
 if (DARWIN)
   add_definitions(-DLL_DARWIN=1)
-  set(CMAKE_CXX_LINK_FLAGS "-Wl,-no_compact_unwind -Wl,-headerpad_max_install_names,-search_paths_first")
+  set(CMAKE_CXX_LINK_FLAGS "-Wl,-headerpad_max_install_names,-search_paths_first")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
   set(DARWIN_extra_cstar_flags "-g")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DARWIN_extra_cstar_flags} -ftemplate-depth=256")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DARWIN_extra_cstar_flags}")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  ${DARWIN_extra_cstar_flags}")
   # NOTE: it's critical that the optimization flag is put in front.
   # NOTE: it's critical to have both CXX_FLAGS and C_FLAGS covered.
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O0 ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
   set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O0 ${CMAKE_C_FLAGS_RELWITHDEBINFO}")
-  set(CMAKE_XCODE_ATTRIBUTE_CLANG_X86_VECTOR_INSTRUCTIONS SSE3)
-  set(CMAKE_XCODE_ATTRIBUTE_GCC_OPTIMIZATION_LEVEL -O3)
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -msse3 ${CMAKE_CXX_FLAGS_RELEASE}")
-  set(CMAKE_C_FLAGS_RELEASE "-O3 -msse3 ${CMAKE_C_FLAGS_RELEASE}")
-  if (XCODE_VERSION GREATER 4.2)
-    set(ENABLE_SIGNING TRUE)
-    set(SIGNING_IDENTITY "Developer ID Application: Linden Research, Inc.")
-  endif (XCODE_VERSION GREATER 4.2)
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 ${CMAKE_CXX_FLAGS_RELEASE}")
+  set(CMAKE_C_FLAGS_RELEASE "-O3 ${CMAKE_C_FLAGS_RELEASE}")
 endif (DARWIN)
-
 
 
 if (LINUX OR DARWIN)
@@ -306,8 +313,8 @@ else (STANDALONE)
   set(${ARCH}_linux_INCLUDES
       atk-1.0
       cairo
-      glib-2.0
       gdk-pixbuf-2.0
+      glib-2.0
       gstreamer-0.10
       gtk-2.0
       pango-1.0

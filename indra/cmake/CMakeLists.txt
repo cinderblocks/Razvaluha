@@ -11,6 +11,7 @@ set(cmake_SOURCE_FILES
     APR.cmake
     Audio.cmake
     Boost.cmake
+    BuildBranding.cmake
     BuildVersion.cmake
     CEFPlugin.cmake
     CMakeCopyIfDifferent.cmake
@@ -18,8 +19,10 @@ set(cmake_SOURCE_FILES
     Colladadom.cmake
     ConfigurePkgConfig.cmake
     Copy3rdPartyLibs.cmake
+    CXXFeatureDetection.cmake
     DBusGlib.cmake
     DeploySharedLibs.cmake
+    DragDrop.cmake
     EXPAT.cmake
     ExamplePlugin.cmake
     FMODSTUDIO.cmake
@@ -30,10 +33,10 @@ set(cmake_SOURCE_FILES
     FindGoogleBreakpad.cmake
     FindGooglePerfTools.cmake
     FindHunSpell.cmake
-    FindJsonCpp.cmake
     FindNDOF.cmake
     FindOpenJPEG.cmake
     FindTut.cmake
+    FindURIPARSER.cmake
     FindXmlRpcEpi.cmake
     FreeType.cmake
     GLOD.cmake
@@ -44,7 +47,7 @@ set(cmake_SOURCE_FILES
     GooglePerfTools.cmake
     Hunspell.cmake
     JPEG.cmake
-    JsonCpp.cmake
+    Json.cmake
     LLAddBuildTest.cmake
     LLAppearance.cmake
     LLAudio.cmake
@@ -66,6 +69,7 @@ set(cmake_SOURCE_FILES
     LLVFS.cmake
     LLWindow.cmake
     LLXML.cmake
+    LibXML2.cmake
     LScript.cmake
     Linking.cmake
     MediaPluginBase.cmake
@@ -80,15 +84,16 @@ set(cmake_SOURCE_FILES
     Prebuilt.cmake
     PulseAudio.cmake
     Python.cmake
-    QuickTimePlugin.cmake
     RunBuildTest.cmake
     TemplateCheck.cmake
     Tut.cmake
     UI.cmake
     UnixInstall.cmake
+    URIPARSER.cmake
     Variables.cmake
     ViewerMiscLibs.cmake
     WinManifest.cmake
+    LibVLCPlugin.cmake
     XmlRpcEpi.cmake
     ZLIB.cmake
     )

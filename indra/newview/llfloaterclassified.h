@@ -39,10 +39,10 @@
 
 class LLPanelClassifiedInfo;
 
-class LLFloaterClassifiedInfo : LLFloater
+class LLFloaterClassifiedInfo : public LLFloater, public LLInstanceTracker<LLFloaterClassifiedInfo, LLUUID>
 {
 public:
-	LLFloaterClassifiedInfo(const std::string& name, const LLUUID &id );
+	LLFloaterClassifiedInfo(const LLUUID &id);
 	virtual ~LLFloaterClassifiedInfo();
 
 	void displayClassifiedInfo(const LLUUID& classified_id);
@@ -52,7 +52,6 @@ public:
 	static void* createClassifiedDetail(void* userdata);
 
 private:
-
 	LLPanelClassifiedInfo*	mClassifiedPanel;
 	LLUUID				mClassifiedID;
 

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmessageconfig.cpp
  * @brief Live file handling for messaging
@@ -33,48 +35,6 @@
 #include "llsdutil.h"
 #include "llsdserialize.h"
 #include "message.h"
-
-static const char messageConfigFileName[] = "message.xml";
-static const F32 messageConfigRefreshRate = 5.0; // seconds
-
-static std::string sServerName = "";
-static std::string sConfigDir = "";
-
-static std::string sServerDefault;
-static LLSD sMessages;
-
-
-class LLMessageConfigFile : public LLLiveFile
-{
-public:
-	LLMessageConfigFile() :
-		LLLiveFile(filename(), messageConfigRefreshRate),
-		mMaxQueuedEvents(0)
-            { }
-
-	static std::string filename();
-
-	LLSD mMessages;
-	std::string mServerDefault;
-	
-	static LLMessageConfigFile& instance();
-		// return the singleton configuration file
-
-	/* virtual */ bool loadFile();
-	void loadServerDefaults(const LLSD& data);
-	void loadMaxQueuedEvents(const LLSD& data);
-	void loadMessages(const LLSD& data);
-	void loadCapBans(const LLSD& blacklist);
-	void loadMessageBans(const LLSD& blacklist);
-	bool isCapBanned(const std::string& cap_name) const;
-
-public:
-	LLSD mCapBans;
-	S32 mMaxQueuedEvents;
-
-private:
-	static const S32 DEFAULT_MAX_QUEUED_EVENTS = 100;
-};
 
 std::string LLMessageConfigFile::filename()
 {

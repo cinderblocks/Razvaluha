@@ -41,7 +41,6 @@
 #include "indra_constants.h"		// for key and mask constants
 #include "llfontgl.h"
 #include "llmd5.h"
-#include "llsecondlifeurls.h"
 #include "v4color.h"
 
 #include "llappviewer.h"
@@ -827,7 +826,7 @@ bool LLPanelLogin::newAccountAlertCallback(const LLSD& notification, const LLSD&
 	if (0 == LLNotification::getSelectedOption(notification, response))
 	{
 		LL_INFOS() << "Going to account creation URL" << LL_ENDL;
-		LLWeb::loadURLExternal(CREATE_ACCOUNT_URL);
+		LLWeb::loadURLExternal("http://secondlife.com/registration/");
 	}
 	return false;
 }
@@ -920,50 +919,48 @@ void LLPanelLogin::refreshLoginPage()
 //void LLPanelLogin::onSelectServer()
 void LLPanelLogin::onSelectGrid(LLUICtrl *ctrl)
 {
-	std::string grid(ctrl->getValue().asString());
-	LLStringUtil::trim(grid); // Guard against copy paste
-	if (!gHippoGridManager->getGrid(grid)) // We can't get an input grid by name or nick, perhaps a Login URI was entered
+	std::string val(ctrl->getValue().asString());
+	LLStringUtil::trim(val); // Guard against copy paste
+	if (val.empty()) return;
+	if (!gHippoGridManager->getGrid(val)) // We can't get an input grid by name or nick, perhaps a Login URI was entered
 	{
-		HippoGridInfo* info(new HippoGridInfo("")); // Start off with empty grid name, otherwise we don't know what to name
-		info->setLoginUri(grid);
-		try
-		{
-			info->getGridInfo();
+		auto handle = ctrl->getHandle();
+		LLCoros::instance().launch("HippoGridManager", [=]{
+			HippoGridInfo* info(new HippoGridInfo("")); // Start off with empty grid name, otherwise we don't know what to name
+			info->setLoginUri(val);
+			std::string grid(val);
+			try
+			{
+				info->getGridInfo();
 
-			grid = info->getGridName();
-			if (HippoGridInfo* nick_info = gHippoGridManager->getGrid(info->getGridNick())) // Grid of same nick exists
+				grid = info->getGridName();
+				if (HippoGridInfo* nick_info = gHippoGridManager->getGrid(info->getGridNick())) // Grid of same nick exists
+				{
+					delete info;
+					grid = nick_info->getGridName();
+				}
+				else // Guess not, try adding this grid
+				{
+					gHippoGridManager->addGrid(info); // deletes info if not needed (existing or no name)
+				}
+			}
+			catch(AIAlert::ErrorCode const& error)
 			{
+				// Inform the user of the problem, but only if something was entered that at least looks like a Login URI.
+				std::string::size_type pos1 = grid.find('.');
+				if (grid.substr(0, 4) == "http" || (pos1 != std::string::npos && pos1 != grid.find_last_of(".:")))
+				{
+					void spawn_gridinfo_error(const AIAlert::ErrorCode& error);
+					spawn_gridinfo_error(error);
+				}
 				delete info;
-				grid = nick_info->getGridName();
+				grid = gHippoGridManager->getCurrentGridName();
 			}
-			else // Guess not, try adding this grid
-			{
-				gHippoGridManager->addGrid(info); // deletes info if not needed (existing or no name)
-			}
-		}
-		catch(AIAlert::ErrorCode const& error)
-		{
-			// Inform the user of the problem, but only if something was entered that at least looks like a Login URI.
-			std::string::size_type pos1 = grid.find('.');
-			std::string::size_type pos2 = grid.find_last_of(".:");
-			if (grid.substr(0, 4) == "http" || (pos1 != std::string::npos && pos1 != pos2))
-			{
-				if (error.getCode() == HTTP_METHOD_NOT_ALLOWED || error.getCode() == HTTP_OK)
-				{
-					AIAlert::add("GridInfoError", error);
-				}
-				else
-				{
-					// Append GridInfoErrorInstruction to error message.
-					AIAlert::add("GridInfoError", AIAlert::Error(AIAlert::Prefix(), AIAlert::not_modal, error, "GridInfoErrorInstruction"));
-				}
-			}
-			delete info;
-			grid = gHippoGridManager->getCurrentGridName();
-		}
+			gHippoGridManager->setCurrentGrid(grid);
+			if (auto ctrl = handle.get())
+				ctrl->setValue(grid);
+		});
 	}
-	gHippoGridManager->setCurrentGrid(grid);
-	ctrl->setValue(grid);
 }
 
 void LLPanelLogin::onLocationSLURL()

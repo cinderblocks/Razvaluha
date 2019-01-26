@@ -29,8 +29,6 @@
 
 #include <string>
 
-#include "stdenums.h" 	// for EDragAndDropType
-
 class LL_COMMON_API LLAssetType
 {
 public:
@@ -82,21 +80,7 @@ public:
 
 		AT_BODYPART = 13,
 			// A collection of textures and parameters that can be worn by an avatar.
-		
-		//AT_TRASH = 14,
-			// This asset type is meant to only be used as a marker for a
-			// category preferred type. Using this, we can throw things in
-			// the trash before completely deleting.
-			
-		//AT_SNAPSHOT_CATEGORY = 15,
-			// This is a marker for a folder meant for snapshots. No
-			// actual assets will be snapshots, though if there were, you
-			// could interpret them as textures.
 
-		//AT_LOST_AND_FOUND = 16,
-			// This is used to stuff lost&found items into
-
-		// uncompressed sound
 		AT_SOUND_WAV = 17,
 			// Uncompressed sound.
 
@@ -122,10 +106,16 @@ public:
 
 		AT_LINK_FOLDER = 25,
 			// Inventory folder link
-	
+		
         AT_MARKETPLACE_FOLDER = 26,
             // Marketplace folder. Same as an AT_CATEGORY but different display methods.
- 
+        
+		AT_WIDGET = 40,
+			// UI Widget: this is *not* an inventory asset type, only a viewer side asset (e.g. button, other ui items...)
+		
+		AT_PERSON = 45,
+			// A user uuid  which is not an inventory asset type, used in viewer only for adding a person to a chat via drag and drop.
+
 		AT_CURRENT_OUTFIT = 46,
 
 		AT_OUTFIT = 47,
@@ -168,7 +158,7 @@ public:
 
 	static bool 				lookupIsAssetFetchByIDAllowed(EType asset_type); // the asset allows direct download
 	static bool 				lookupIsAssetIDKnowable(EType asset_type); // asset data can be known by the viewer
-	
+
 	static const std::string&	badLookup(); // error string when a lookup fails
 
 protected:

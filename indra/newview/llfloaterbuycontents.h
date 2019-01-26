@@ -42,6 +42,7 @@
 #include "llfloater.h"
 #include "llvoinventorylistener.h"
 #include "llinventory.h"
+#include "llsafehandle.h"
 
 class LLViewerObject;
 class LLObjectSelection;
@@ -49,10 +50,10 @@ class LLObjectSelection;
 class LLFloaterBuyContents
 : public LLFloater, public LLVOInventoryListener, public LLSingleton<LLFloaterBuyContents>
 {
+	LLSINGLETON(LLFloaterBuyContents);
 public:
 	static void show(const LLSaleInfo& sale_info);
 
-	LLFloaterBuyContents();
 	~LLFloaterBuyContents();
 	/*virtual*/	BOOL	postBuild();
 	

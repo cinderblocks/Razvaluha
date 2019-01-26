@@ -34,6 +34,7 @@
 #define LL_ALERTDIALOG_H
 
 #include "llpanel.h"
+#include "llinitdestroyclass.h"
 #include "llmodaldialog.h"
 #include "llmemory.h"
 #include "llui.h"

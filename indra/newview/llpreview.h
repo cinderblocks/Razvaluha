@@ -35,7 +35,6 @@
 
 #include "llmultifloater.h"
 #include "llresizehandle.h"
-#include "llmap.h"
 #include "lluuid.h"
 #include "llviewerinventory.h"
 #include "lltabcontainer.h"

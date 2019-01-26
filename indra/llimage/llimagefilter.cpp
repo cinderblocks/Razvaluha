@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llimagefilter.cpp
  * @brief Simple Image Filtering. See https://wiki.lindenlab.com/wiki/SL_Viewer_Image_Filters for complete documentation.
@@ -49,9 +51,9 @@ LLImageFilter::LLImageFilter(const std::string& file_path) :
     mHistoBrightness(NULL),
     mStencilBlendMode(STENCIL_BLEND_MODE_BLEND),
     mStencilShape(STENCIL_SHAPE_UNIFORM),
-    mStencilGamma(1.0),
     mStencilMin(0.0),
-    mStencilMax(1.0)
+    mStencilMax(1.0),
+    mStencilGamma(1.0)
 {
     // Load filter description from file
 	llifstream filter_xml(file_path.c_str());

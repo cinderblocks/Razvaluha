@@ -107,33 +107,26 @@ static std::map<LLUUID, LLVector3d> mClosestAgentsAtLastClick; // <exodus/>
 
 LLNetMap::LLNetMap(const std::string& name) :
 	LLPanel(name),
+	mUpdateObjectImage(false),
+	mUpdateParcelImage(false),
 	mScale(128.f),
 	mObjectMapTPM(1.f),
 	mObjectMapPixels(255.f),
 	mPickRadius(gSavedSettings, "ExodusMinimapAreaEffect"), // <exodus/>
+	mPanning(false),
 	mTargetPan(0.f, 0.f),
 	mCurPan(0.f, 0.f),
 	mStartPan(0.f, 0.f),
 	mMouseDown(0, 0),
-	mPanning(false),
-//	mUpdateNow( false ),
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
-	mUpdateObjectImage(false),
-	mUpdateParcelImage(false),
-// [/SL:KB]
 	mObjectImageCenterGlobal( gAgentCamera.getCameraPositionGlobal() ),
 	mObjectRawImagep(),
 	mObjectImagep(),
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 	mParcelImageCenterGlobal( gAgentCamera.getCameraPositionGlobal() ),
 	mParcelRawImagep(),
 	mParcelImagep(),
-// [/SL:KB]
 	mClosestAgentToCursor(),
-	mPopupMenu(NULL)
+	mPopupMenu(nullptr)
 {
-	mPixelsPerMeter = mScale / REGION_WIDTH_METERS;
-	mDotRadius = llmax(DOT_SCALE * mPixelsPerMeter, MIN_DOT_RADIUS);
 	setScale(gSavedSettings.getF32("MiniMapScale"));
 
 	LLUICtrlFactory::getInstance()->buildPanel(this, "panel_mini_map.xml");
@@ -192,10 +185,7 @@ void LLNetMap::setScale( F32 scale )
 		F32 height = (F32)(getRect().getHeight());
 		F32 diameter = sqrt(width * width + height * height);
 		F32 region_widths = diameter / mScale;
-// <FS:CR> Aurora Sim
-		//F32 meters = region_widths * LLWorld::getInstance()->getRegionWidthInMeters();
 		F32 meters = region_widths * REGION_WIDTH_METERS;
-// </FS:CR> Aurora Sim
 		F32 num_pixels = (F32)mObjectImagep->getWidth();
 		mObjectMapTPM = num_pixels / meters;
 		mObjectMapPixels = diameter;
@@ -232,14 +222,15 @@ void LLNetMap::mm_setcolor(LLUUID key,LLColor4 col)
 }
 void LLNetMap::draw()
 {
-	LLViewerRegion* region = gAgent.getRegion();
-
-	if (region == NULL) return;
+	LLViewerRegion* curregionp = gAgent.getRegion();
+	if (!curregionp)
+		return;
 
  	static LLFrameTimer map_timer;
 	static LLUIColor map_track_color = gTrackColor;
 	static const LLCachedControl<LLColor4> map_frustum_color(gColors, "NetMapFrustum", LLColor4::white);
 	static const LLCachedControl<LLColor4> map_frustum_rotating_color(gColors, "NetMapFrustumRotating", LLColor4::white);
+
 // [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-08-17 (Catznip-3.3.0)
 	static const LLCachedControl<LLColor4> map_property_line("MiniMapPropertyLine", LLColor4::white);
 // [/SL:KB]
@@ -247,111 +238,102 @@ void LLNetMap::draw()
 	static const LLCachedControl<LLColor4> map_chat_ring_color("MiniMapChatRingColor", LLColor4(0.f,0.f,1.f,0.5f));
 	static const LLCachedControl<LLColor4> map_shout_ring_color("MiniMapShoutRingColor", LLColor4(1.f,0.f,0.f,0.5f));
 
+	static LLCachedControl<bool> use_world_map_image(gSavedSettings, "MiniMapWorldMapTextures");
+
 	if (mObjectImagep.isNull())
 	{
 		createObjectImage();
 	}
-
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 	if (mParcelImagep.isNull())
 	{
 		createParcelImage();
 	}
-// [/SL:KB]
 
 	static LLUICachedControl<S32> center("MiniMapCenter");
 	if (center != MAP_CENTER_NONE)
 	{
-		mCurPan = lerp(mCurPan, mTargetPan, LLCriticalDamp::getInterpolant(0.1f));
+		mCurPan = lerp(mCurPan, mTargetPan, LLSmoothInterpolation::getInterpolant(0.1f));
 	}
 
 	// Prepare a scissor region
-	F32 rotation = 0;
+	F32 rotation = 0.f;
 
-	gGL.pushMatrix();
 	gGL.pushUIMatrix();
-	
-	LLVector3 offset = gGL.getUITranslation();
-	LLVector3 scale = gGL.getUIScale();
 
-	gGL.loadIdentity();
-	gGL.loadUIIdentity();
-	gGL.scalef(scale.mV[0], scale.mV[1], scale.mV[2]);
-	gGL.translatef(offset.mV[0], offset.mV[1], offset.mV[2]);
 	{
 		LLLocalClipRect clip(getLocalRect());
 		{
 			gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
-			gGL.matrixMode(LLRender::MM_MODELVIEW);
 
-			// Draw background rectangle.
+			// Draw background rectangle
 			if(isBackgroundVisible())
 			{
-				LLColor4 background_color = isBackgroundOpaque() ? getBackgroundColor().mV : getTransparentColor().mV;
+				const LLColor4 background_color = LLColor4(isBackgroundOpaque() ? getBackgroundColor().mV : getTransparentColor().mV);
 				gGL.color4fv( background_color.mV );
 				gl_rect_2d(0, getRect().getHeight(), getRect().getWidth(), 0);
 			}
 		}
 
-		// Region 0,0 is in the middle.
+		// region 0,0 is in the middle
 		S32 center_sw_left = getRect().getWidth() / 2 + llfloor(mCurPan.mV[VX]);
 		S32 center_sw_bottom = getRect().getHeight() / 2 + llfloor(mCurPan.mV[VY]);
 
-		gGL.pushMatrix();
-		gGL.translatef( (F32) center_sw_left, (F32) center_sw_bottom, 0.f);
+		gGL.pushUIMatrix();
+		gGL.translateUI( (F32) center_sw_left, (F32) center_sw_bottom, 0.f);
 
 		static LLCachedControl<bool> rotate_map("MiniMapRotate", true);
 		if (rotate_map)
 		{
-			// Rotate subsequent draws to agent rotation.
+			// rotate subsequent draws to agent rotation
 			rotation = atan2( LLViewerCamera::getInstance()->getAtAxis().mV[VX], LLViewerCamera::getInstance()->getAtAxis().mV[VY] );
-			gGL.rotatef( rotation * RAD_TO_DEG, 0.f, 0.f, 1.f);
+			LLQuaternion rot(rotation, LLVector3(0.f, 0.f, 1.f));
+			gGL.rotateUI(rot);
 		}
 
-		// Figure out where agent is.
+		// figure out where agent is
 		static const LLCachedControl<LLColor4> this_region_color(gColors, "NetMapThisRegion");
 		static const LLCachedControl<LLColor4> live_region_color(gColors, "NetMapLiveRegion");
 		static const LLCachedControl<LLColor4> dead_region_color(gColors, "NetMapDeadRegion");
-// <FS:CR> Aurora Sim
-		//S32 region_width = ll_round(LLWorld::getInstance()->getRegionWidthInMeters());
 		S32 region_width = REGION_WIDTH_UNITS;
-// </FS:CR> Aurora Sim
 
+		LLWorld::region_list_t::const_iterator end_it = LLWorld::getInstance()->getRegionList().cend();
 		for (LLWorld::region_list_t::const_iterator iter = LLWorld::getInstance()->getRegionList().begin();
-			 iter != LLWorld::getInstance()->getRegionList().end(); ++iter)
+			 iter != end_it; ++iter)
 		{
 			LLViewerRegion* regionp = *iter;
-
 			// Find x and y position relative to camera's center.
 			LLVector3 origin_agent = regionp->getOriginAgent();
 			LLVector3 rel_region_pos = origin_agent - gAgentCamera.getCameraPositionAgent();
 			F32 relative_x = (rel_region_pos.mV[0] / region_width) * mScale;
 			F32 relative_y = (rel_region_pos.mV[1] / region_width) * mScale;
-
 			const F32 real_width(regionp->getWidth());
-			// Background region rectangle.
+
+			// background region rectangle
 			F32 bottom =	relative_y;
 			F32 left =		relative_x;
-// <FS:CR> Aurora Sim
-			//F32 top =		bottom + mScale ;
-			//F32 right =		left + mScale ;
 			F32 top =		bottom + (real_width / REGION_WIDTH_METERS) * mScale ;
 			F32 right =		left + (real_width / REGION_WIDTH_METERS) * mScale ;
-// </FS:CR> Aurora Sim
 
-			if (regionp == region) gGL.color4fv(this_region_color().mV);
-			else if (!regionp->isAlive()) gGL.color4fv(dead_region_color().mV);
-			else gGL.color4fv(live_region_color().mV);
+			if (regionp == curregionp)
+			{
+				gGL.color4fv(this_region_color().mV);
+			}
+			else if (!regionp->isAlive())
+			{
+				gGL.color4fv(dead_region_color().mV);
+			}
+			else
+			{
+				gGL.color4fv(live_region_color().mV);
+			}
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-07-26 (Catznip-3.3)
-			static LLCachedControl<bool> s_fUseWorldMapTextures(gSavedSettings, "MiniMapWorldMapTextures");
-			bool fRenderTerrain = true;
-
-			if (s_fUseWorldMapTextures)
+			// <alchemy>
+			bool render_land_textures = true;
+			if (use_world_map_image)
 			{
 				const LLViewerRegion::tex_matrix_t& tiles(regionp->getWorldMapTiles());
-
-				for (S32 i(0), scaled_width((S32)real_width/region_width), square_width(scaled_width*scaled_width); i < square_width; ++i)
+				for (S32 i(0), scaled_width((S32)real_width / region_width), square_width(scaled_width * scaled_width);
+					 i < square_width; ++i)
 				{
 					const F32 y(i / (F32)scaled_width);
 					const F32 x(i - y*scaled_width);
@@ -359,80 +341,74 @@ void LLNetMap::draw()
 					const F32 local_right(local_left + mScale);
 					const F32 local_bottom(bottom + y*mScale);
 					const F32 local_top(local_bottom + mScale);
-					LLViewerTexture* pRegionImage = tiles[x*scaled_width+y];
-					if (pRegionImage && pRegionImage->hasGLTexture())
+					LLViewerTexture* img = tiles[x*scaled_width+y];
+					if (img && img->hasGLTexture())
 					{
-						gGL.getTexUnit(0)->bind(pRegionImage);
-						gGL.begin(LLRender::QUADS);
+						gGL.getTexUnit(0)->bind(img);
+						gGL.begin(LLRender::TRIANGLE_STRIP);
 							gGL.texCoord2f(0.f, 1.f);
 							gGL.vertex2f(local_left, local_top);
 							gGL.texCoord2f(0.f, 0.f);
 							gGL.vertex2f(local_left, local_bottom);
-							gGL.texCoord2f(1.f, 0.f);
-							gGL.vertex2f(local_right, local_bottom);
 							gGL.texCoord2f(1.f, 1.f);
 							gGL.vertex2f(local_right, local_top);
+							gGL.texCoord2f(1.f, 0.f);
+							gGL.vertex2f(local_right, local_bottom);
 						gGL.end();
-
-						pRegionImage->setBoostLevel(LLViewerTexture::BOOST_MAP_VISIBLE);
-						fRenderTerrain = false;
+						img->setBoostLevel(LLViewerTexture::BOOST_MAP_VISIBLE);
+						render_land_textures = false;
 					}
 				}
 			}
-// [/SL:KB]
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-07-26 (Catznip-3.3)
-			if (fRenderTerrain)
-			{
-// [/SL:KB]
-			// Draw using texture.
-			gGL.getTexUnit(0)->bind(regionp->getLand().getSTexture());
-			gGL.begin(LLRender::QUADS);
-				gGL.texCoord2f(0.f, 1.f);
-				gGL.vertex2f(left, top);
-				gGL.texCoord2f(0.f, 0.f);
-				gGL.vertex2f(left, bottom);
-				gGL.texCoord2f(1.f, 0.f);
-				gGL.vertex2f(right, bottom);
-				gGL.texCoord2f(1.f, 1.f);
-				gGL.vertex2f(right, top);
-			gGL.end();
 
-			// Draw water
-			gGL.setAlphaRejectSettings(LLRender::CF_GREATER, ABOVE_WATERLINE_ALPHA / 255.f);
+			if (render_land_textures)
 			{
-				if (regionp->getLand().getWaterTexture())
+				// Draw using texture.
+				if (LLViewerTexture* stexture = regionp->getLand().getSTexture())
 				{
-					gGL.getTexUnit(0)->bind(regionp->getLand().getWaterTexture());
-					gGL.begin(LLRender::QUADS);
+					gGL.getTexUnit(0)->bind(stexture);
+					gGL.begin(LLRender::TRIANGLE_STRIP);
 						gGL.texCoord2f(0.f, 1.f);
 						gGL.vertex2f(left, top);
 						gGL.texCoord2f(0.f, 0.f);
 						gGL.vertex2f(left, bottom);
-						gGL.texCoord2f(1.f, 0.f);
-						gGL.vertex2f(right, bottom);
 						gGL.texCoord2f(1.f, 1.f);
 						gGL.vertex2f(right, top);
+						gGL.texCoord2f(1.f, 0.f);
+						gGL.vertex2f(right, bottom);
 					gGL.end();
 				}
+
+				// Draw water
+				gGL.setAlphaRejectSettings(LLRender::CF_GREATER, ABOVE_WATERLINE_ALPHA / 255.f);
+				{
+					if (LLViewerTexture* wtexture = regionp->getLand().getWaterTexture())
+					{
+						gGL.getTexUnit(0)->bind(wtexture);
+						gGL.begin(LLRender::TRIANGLE_STRIP);
+							gGL.texCoord2f(0.f, 1.f);
+							gGL.vertex2f(left, top);
+							gGL.texCoord2f(0.f, 0.f);
+							gGL.vertex2f(left, bottom);
+							gGL.texCoord2f(1.f, 1.f);
+							gGL.vertex2f(right, top);
+							gGL.texCoord2f(1.f, 0.f);
+							gGL.vertex2f(right, bottom);
+						gGL.end();
+					}
+				}
+				gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT);
 			}
-			gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT);
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-07-26 (Catznip-3.3)
-			}
-// [/SL:KB]
 		}
+		// <//alchemy> 
 
 		// Redraw object layer periodically
-//		if (mUpdateNow || (map_timer.getElapsedTimeF32() > 0.5f))
-//		{
-//			mUpdateNow = false;
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
-		// Locate the center
-		LLVector3 posCenter = globalPosToView(gAgentCamera.getCameraPositionGlobal());
-		posCenter.mV[VX] -= mCurPan.mV[VX];
-		posCenter.mV[VY] -= mCurPan.mV[VY];
-		posCenter.mV[VZ] = 0.f;
-		LLVector3d posCenterGlobal = viewPosToGlobal(llfloor(posCenter.mV[VX]), llfloor(posCenter.mV[VY]));
+		LLVector3 pos_center = globalPosToView(gAgentCamera.getCameraPositionGlobal());
+		pos_center.mV[VX] -= mCurPan.mV[VX];
+		pos_center.mV[VY] -= mCurPan.mV[VY];
+		pos_center.mV[VZ] = 0.f;
+		LLVector3d pos_center_global = viewPosToGlobal(llfloor(pos_center.mV[VX]), llfloor(pos_center.mV[VY]));
 
 		static LLCachedControl<bool> s_fShowObjects(gSavedSettings, "ShowMiniMapObjects") ;
 		if ( (s_fShowObjects) && ((mUpdateObjectImage) || ((map_timer.getElapsedTimeF32() > 0.5f))) )
@@ -447,7 +423,7 @@ void LLNetMap::draw()
 //			new_center.mV[VZ] = 0.f;
 //			mObjectImageCenterGlobal = viewPosToGlobal(llfloor(new_center.mV[VX]), llfloor(new_center.mV[VY]));
 // [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
-			mObjectImageCenterGlobal = posCenterGlobal;
+			mObjectImageCenterGlobal = pos_center_global;
 // [/SL:KB]
 
 			// Create the base texture.
@@ -458,29 +434,28 @@ void LLNetMap::draw()
 			gObjectList.renderObjectsForMap(*this);
 
 			mObjectImagep->setSubImage(mObjectRawImagep, 0, 0, mObjectImagep->getWidth(), mObjectImagep->getHeight());
+
 			map_timer.reset();
 		}
 
 // [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 		static LLCachedControl<bool> s_fShowPropertyLines(gSavedSettings, "MiniMapPropertyLines") ;
-		if ( (s_fShowPropertyLines) && ((mUpdateParcelImage) || (dist_vec_squared2D(mParcelImageCenterGlobal, posCenterGlobal) > 9.0f)) )
+		if ( (s_fShowPropertyLines) && ((mUpdateParcelImage) || (dist_vec_squared2D(mParcelImageCenterGlobal, pos_center_global) > 9.0f)) )
 		{
 			mUpdateParcelImage = false;
-			mParcelImageCenterGlobal = posCenterGlobal;
+			mParcelImageCenterGlobal = pos_center_global;
 
-			U8* pTextureData = mParcelRawImagep->getData();
-			memset(pTextureData, 0, mParcelImagep->getWidth() * mParcelImagep->getHeight() * mParcelImagep->getComponents());
+			U8* texture_data = mParcelRawImagep->getData();
+			memset(texture_data, 0, mParcelImagep->getWidth() * mParcelImagep->getHeight() * mParcelImagep->getComponents());
 
 			// Process each region
-			for (LLWorld::region_list_t::const_iterator itRegion = LLWorld::getInstance()->getRegionList().begin();
-					itRegion != LLWorld::getInstance()->getRegionList().end(); ++itRegion)
+			for (LLWorld::region_list_t::const_iterator itr = LLWorld::getInstance()->getRegionList().begin();
+		         itr != LLWorld::getInstance()->getRegionList().end(); 
+                 ++itr)
 			{
-				const LLViewerRegion* pRegion = *itRegion; LLColor4U clrOverlay;
-				if (pRegion->isAlive())
-					clrOverlay = map_property_line.get();
-				else
-					clrOverlay = LLColor4U(255, 128, 128, 255);
-				renderPropertyLinesForRegion(pRegion, clrOverlay);
+				LLViewerRegion* region = *itr;
+				LLColor4U overlay_color = region->isAlive() ? map_property_line.get() :  LLColor4U(255, 128, 128, 255);
+				renderPropertyLinesForRegion(region, overlay_color);
 			}
 
 			mParcelImagep->setSubImage(mParcelRawImagep, 0, 0, mParcelImagep->getWidth(), mParcelImagep->getHeight());
@@ -502,15 +477,15 @@ void LLNetMap::draw()
 		{
 			gGL.getTexUnit(0)->bind(mObjectImagep);
 // [/SL:KB]
-		gGL.begin(LLRender::QUADS);
+		gGL.begin(LLRender::TRIANGLE_STRIP);
 			gGL.texCoord2f(0.f, 1.f);
 			gGL.vertex2f(map_center_agent.mV[VX] - image_half_width, image_half_height + map_center_agent.mV[VY]);
 			gGL.texCoord2f(0.f, 0.f);
 			gGL.vertex2f(map_center_agent.mV[VX] - image_half_width, map_center_agent.mV[VY] - image_half_height);
-			gGL.texCoord2f(1.f, 0.f);
-			gGL.vertex2f(image_half_width + map_center_agent.mV[VX], map_center_agent.mV[VY] - image_half_height);
 			gGL.texCoord2f(1.f, 1.f);
 			gGL.vertex2f(image_half_width + map_center_agent.mV[VX], image_half_height + map_center_agent.mV[VY]);
+			gGL.texCoord2f(1.f, 0.f);
+			gGL.vertex2f(image_half_width + map_center_agent.mV[VX], map_center_agent.mV[VY] - image_half_height);
 		gGL.end();
 // [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-07-26 (Catznip-3.3)
 		}
@@ -524,20 +499,20 @@ void LLNetMap::draw()
 			map_center_agent.mV[VY] *= mScale / region_width;
 
 			gGL.getTexUnit(0)->bind(mParcelImagep);
-			gGL.begin(LLRender::QUADS);
+			gGL.begin(LLRender::TRIANGLE_STRIP);
 				gGL.texCoord2f(0.f, 1.f);
 				gGL.vertex2f(map_center_agent.mV[VX] - image_half_width, image_half_height + map_center_agent.mV[VY]);
 				gGL.texCoord2f(0.f, 0.f);
 				gGL.vertex2f(map_center_agent.mV[VX] - image_half_width, map_center_agent.mV[VY] - image_half_height);
-				gGL.texCoord2f(1.f, 0.f);
-				gGL.vertex2f(image_half_width + map_center_agent.mV[VX], map_center_agent.mV[VY] - image_half_height);
 				gGL.texCoord2f(1.f, 1.f);
 				gGL.vertex2f(image_half_width + map_center_agent.mV[VX], image_half_height + map_center_agent.mV[VY]);
+				gGL.texCoord2f(1.f, 0.f);
+				gGL.vertex2f(image_half_width + map_center_agent.mV[VX], map_center_agent.mV[VY] - image_half_height);
 			gGL.end();
 		}
 // [/SL:KB]
 
-		gGL.popMatrix();
+		gGL.popUIMatrix();
 
 		// Mouse pointer in local coordinates
 		S32 local_mouse_x;
@@ -603,17 +578,14 @@ void LLNetMap::draw()
 			if (uuid.notNull())
 			{
 				bool selected = false;
-				uuid_vec_t::iterator sel_iter = gmSelected.begin();
-
-				for (; sel_iter != gmSelected.end(); sel_iter++)
+				for (const auto& sel_uuid : gmSelected)
 				{
-					if(*sel_iter == uuid)
+					if (sel_uuid == uuid)
 					{
 						selected = true;
 						break;
 					}
 				}
-
 				if (selected)
 				{
 					if( (pos_map.mV[VX] < 0) ||
@@ -623,14 +595,17 @@ void LLNetMap::draw()
 					{
 						S32 x = ll_round( pos_map.mV[VX] );
 						S32 y = ll_round( pos_map.mV[VY] );
-
 						LLWorldMapView::drawTrackingCircle( getRect(), x, y, color, 1, 10);
 					}
-					else LLWorldMapView::drawTrackingDot(pos_map.mV[VX],pos_map.mV[VY],color,0.f);
+					else
+					{
+						LLWorldMapView::drawTrackingDot(pos_map.mV[VX],pos_map.mV[VY],color,0.f);
+					}
 				}
 			}
 
-			F32 dist_to_cursor_squared = dist_vec_squared(LLVector2(pos_map.mV[VX], pos_map.mV[VY]), LLVector2(local_mouse_x,local_mouse_y));
+			F32	dist_to_cursor_squared = dist_vec_squared(LLVector2(pos_map.mV[VX], pos_map.mV[VY]),
+										  LLVector2(local_mouse_x,local_mouse_y));
 			if (dist_to_cursor_squared < min_pick_dist_squared && dist_to_cursor_squared < closest_dist_squared)
 			{
 				closest_dist_squared = dist_to_cursor_squared;
@@ -645,22 +620,23 @@ void LLNetMap::draw()
 		}
 		else
 		{
-			LLTracker::ETrackingStatus tracking_status = LLTracker::getTrackingStatus();
+			LLTracker& tracker = LLTracker::instance();
+			LLTracker::ETrackingStatus tracking_status = tracker.getTrackingStatus();
 			if (  LLTracker::TRACKING_AVATAR == tracking_status )
 			{
 				drawTracking( LLAvatarTracker::instance().getGlobalPos(), map_track_color );
 			} 
-			else if ( LLTracker::TRACKING_LANDMARK == tracking_status ||
-					LLTracker::TRACKING_LOCATION == tracking_status )
+			else if ( LLTracker::TRACKING_LANDMARK == tracking_status 
+					|| LLTracker::TRACKING_LOCATION == tracking_status )
 			{
-				drawTracking( LLTracker::getTrackedPositionGlobal(), map_track_color );
+				drawTracking(tracker.getTrackedPositionGlobal(), map_track_color);
 			}
 		}
 
+		// Draw dot for self avatar position
 		pos_map = globalPosToView(gAgent.getPositionGlobal());
 		S32 dot_width = ll_round(mDotRadius * 2.f);
 		LLUIImagePtr you = LLWorldMapView::sAvatarYouLargeImage;
-
 		if (you)
 		{
 			you->draw(ll_round(pos_map.mV[VX] - mDotRadius),
@@ -670,7 +646,6 @@ void LLNetMap::draw()
 
 			F32	dist_to_cursor_squared = dist_vec_squared(LLVector2(pos_map.mV[VX], pos_map.mV[VY]),
 										  LLVector2(local_mouse_x,local_mouse_y));
-
 			if (dist_to_cursor_squared < min_pick_dist_squared && dist_to_cursor_squared < closest_dist_squared)
 			{
 				mClosestAgentToCursor = gAgent.getID();
@@ -689,16 +664,13 @@ void LLNetMap::draw()
 			drawRing(LFSimFeatureHandler::getInstance()->shoutRange(), pos_map, map_shout_ring_color);
 
 		// Draw frustum
-// <FS:CR> Aurora Sim
-		//F32 meters_to_pixels = mScale/ LLWorld::getInstance()->getRegionWidthInMeters();
 		F32 meters_to_pixels = mScale/ REGION_WIDTH_METERS;
-// </FS:CR> Aurora Sim
 
 		F32 horiz_fov = LLViewerCamera::getInstance()->getView() * LLViewerCamera::getInstance()->getAspect();
 		F32 far_clip_meters = LLViewerCamera::getInstance()->getFar();
 		F32 far_clip_pixels = far_clip_meters * meters_to_pixels;
 
-		F32 half_width_meters = far_clip_meters * tan( horiz_fov / 2 );
+		F32 half_width_meters = far_clip_meters * tan( horiz_fov / 2.f );
 		F32 half_width_pixels = half_width_meters * meters_to_pixels;
 		
 		F32 ctr_x = (F32)center_sw_left;
@@ -707,37 +679,29 @@ void LLNetMap::draw()
 
 		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 
-		if (rotate_map)
-		{
-			LLColor4 c = map_frustum_color();
+		LLColor4 c = rotate_map ? map_frustum_color() : map_frustum_rotating_color();
 
-			gGL.begin( LLRender::TRIANGLES  );
-				gGL.color4fv(c.mV);
-				gGL.vertex2f( ctr_x, ctr_y );
-				c.mV[VW] *= .1f;
-				gGL.color4fv(c.mV);
-				gGL.vertex2f( ctr_x - half_width_pixels, ctr_y + far_clip_pixels );
-				gGL.vertex2f( ctr_x + half_width_pixels, ctr_y + far_clip_pixels );
-			gGL.end();
-		}
-		else
-		{
-			LLColor4 c = map_frustum_rotating_color();
+		gGL.pushUIMatrix();
 
-			// If we don't rotate the map, we have to rotate the frustum.
-			gGL.pushMatrix();
-				gGL.translatef( ctr_x, ctr_y, 0 );
-				gGL.rotatef( atan2( LLViewerCamera::getInstance()->getAtAxis().mV[VX], LLViewerCamera::getInstance()->getAtAxis().mV[VY] ) * RAD_TO_DEG, 0.f, 0.f, -1.f);
-				gGL.begin( LLRender::TRIANGLES  );
-					gGL.color4fv(c.mV);
-					gGL.vertex2f( 0.f, 0.f );
-					c.mV[VW] *= .1f;
-					gGL.color4fv(c.mV);
-					gGL.vertex2f( -half_width_pixels, far_clip_pixels );
-					gGL.vertex2f(  half_width_pixels, far_clip_pixels );
-				gGL.end();
-			gGL.popMatrix();
+		gGL.translateUI(ctr_x, ctr_y, 0);
+
+		// If we don't rotate the map, we have to rotate the frustum.
+		if (!rotate_map)
+		{
+			LLQuaternion rot(atan2(LLViewerCamera::getInstance()->getAtAxis().mV[VX], LLViewerCamera::getInstance()->getAtAxis().mV[VY]), LLVector3(0.f, 0.f, -1.f));
+			gGL.rotateUI(rot);
 		}
+
+		gGL.begin( LLRender::TRIANGLES  );
+			gGL.color4fv(c.mV);
+			gGL.vertex2f( 0.f, 0.f );
+			c.mV[VW] *= .1f;
+			gGL.color4fv(c.mV);
+			gGL.vertex2f( half_width_pixels, far_clip_pixels );
+			gGL.vertex2f( -half_width_pixels, far_clip_pixels );
+		gGL.end();
+
+		gGL.popUIMatrix();
 
 		// <exodus> Draw mouse radius
 		static const LLCachedControl<LLColor4> map_avatar_rollover_color("ExodusMapRolloverCircleColor");
@@ -746,8 +710,7 @@ void LLNetMap::draw()
 		gl_circle_2d(local_mouse_x, local_mouse_y, min_pick_dist, 32, true);
 		// </exodus>
 	}
-	
-	gGL.popMatrix();
+	;
 	gGL.popUIMatrix();
 
 	// Rotation of 0 means that North is up
@@ -780,9 +743,6 @@ LLVector3 LLNetMap::globalPosToView(const LLVector3d& global_pos)
 	LLVector3 pos_local;
 	pos_local.setVec(relative_pos_global);  // convert to floats from doubles
 
-// <FS:CR> Aurora Sim
-	mPixelsPerMeter = mScale / REGION_WIDTH_METERS;
-// </FS:CR> Aurora Sim
 	pos_local.mV[VX] *= mPixelsPerMeter;
 	pos_local.mV[VY] *= mPixelsPerMeter;
 	// leave Z component in meters
@@ -803,21 +763,15 @@ LLVector3 LLNetMap::globalPosToView(const LLVector3d& global_pos)
 
 void LLNetMap::drawRing(const F32 radius, const LLVector3 pos_map, const LLColor4& color)
 {
-// <FS:CR> Aurora Sim
-	F32 meters_to_pixels = mScale / LLWorld::getInstance()->getRegionWidthInMeters();
-	//F32 meters_to_pixels = mScale / REGION_WIDTH_METERS;
-// </FS:CR> Aurora Sim
-	F32 radius_pixels = radius * meters_to_pixels;
+	F32 radius_pixels = radius * mPixelsPerMeter;
 
-	gGL.matrixMode(LLRender::MM_MODELVIEW);
-	gGL.pushMatrix();
-	gGL.translatef((F32)pos_map.mV[VX], (F32)pos_map.mV[VY], 0.f);
-	gl_ring(radius_pixels, WIDTH_PIXELS, color, color, CIRCLE_STEPS, FALSE);
-	gGL.popMatrix();
+	gGL.pushUIMatrix();
+	gGL.translateUI(pos_map.mV[VX], pos_map.mV[VY], 0.f);
+	gl_washer_2d(radius_pixels, radius_pixels-WIDTH_PIXELS, CIRCLE_STEPS, color, color);
+	gGL.popUIMatrix();
 }
 
-void LLNetMap::drawTracking(const LLVector3d& pos_global, const LLColor4& color,
-							BOOL draw_arrow )
+void LLNetMap::drawTracking(const LLVector3d& pos_global, const LLColor4& color, BOOL draw_arrow )
 {
 	LLVector3 pos_local = globalPosToView(pos_global);
 	if( (pos_local.mV[VX] < 0) ||
@@ -858,13 +812,11 @@ LLVector3d LLNetMap::viewPosToGlobal( S32 x, S32 y )
 		pos_local.rotVec( rot );
 	}
 
-// <FS:CR> Aurora Sim
-	//pos_local *= ( LLWorld::getInstance()->getRegionWidthInMeters() / mScale );
 	pos_local *= ( REGION_WIDTH_METERS / mScale );
-// </FS:CR> Aurora Sim
 	
 	LLVector3d pos_global;
 	pos_global.setVec( pos_local );
+
 	pos_global += gAgentCamera.getCameraPositionGlobal();
 
 	return pos_global;
@@ -927,12 +879,10 @@ BOOL LLNetMap::handleToolTip( S32 x, S32 y, std::string& tool_tip, LLRect* stick
 
 				LLVector3d myPosition = gAgent.getPositionGlobal();
 
-				std::map<LLUUID, LLVector3d>::iterator current = mClosestAgentsToCursor.begin();
-				std::map<LLUUID, LLVector3d>::iterator end = mClosestAgentsToCursor.end();
-				for (; current != end; ++current)
+				for (auto& agent : mClosestAgentsToCursor)
 				{
-					LLUUID targetUUID = (*current).first;
-					LLVector3d targetPosition = (*current).second;
+					LLUUID targetUUID = agent.first;
+					LLVector3d targetPosition = agent.second;
 
 					std::string fullName;
 					if (targetUUID.notNull() && LLAvatarNameCache::getNSName(targetUUID, fullName))
@@ -1112,121 +1062,128 @@ void LLNetMap::renderPoint(const LLVector3 &pos_local, const LLColor4U &color,
 	}
 }
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
-void LLNetMap::renderPropertyLinesForRegion(const LLViewerRegion* pRegion, const LLColor4U& clrOverlay)
+void LLNetMap::renderPropertyLinesForRegion(const LLViewerRegion* region, const LLColor4U& overlay_color)
 {
-	const S32 imgWidth = (S32)mParcelImagep->getWidth();
-	const S32 imgHeight = (S32)mParcelImagep->getHeight();
+	const S32 img_width = mParcelImagep->getWidth();
+	const S32 img_height = mParcelImagep->getHeight();
 
-	const LLVector3 originLocal(pRegion->getOriginGlobal() - mParcelImageCenterGlobal);
-	const S32 originX = ll_round(originLocal.mV[VX] * mObjectMapTPM + imgWidth / 2);
-	const S32 originY = ll_round(originLocal.mV[VY] * mObjectMapTPM + imgHeight / 2);
+	const LLVector3 origin_local(region->getOriginGlobal() - mParcelImageCenterGlobal);
+	const S32 origin_x = ll_round(origin_local.mV[VX] * mObjectMapTPM + img_width / 2);
+	const S32 origin_y = ll_round(origin_local.mV[VY] * mObjectMapTPM + img_height / 2);
 
-	U32* pTextureData = (U32*)mParcelRawImagep->getData();
+	U32* texture_data = reinterpret_cast<U32*>(mParcelRawImagep->getData());
 
 	//
 	// Draw the north and east region borders
 	//
-	const F32 real_width(pRegion->getWidth());
-const S32 borderY = originY + ll_round(real_width * mObjectMapTPM);
-	if ( (borderY >= 0) && (borderY < imgHeight) )
+	const F32 real_width(region->getWidth());
+	const S32 border_y = origin_y + ll_round(real_width * mObjectMapTPM);
+	if ( (border_y >= 0) && (border_y < img_height) )
 	{
-		S32 curX = llclamp(originX, 0, imgWidth), endX = llclamp(originX + ll_round(real_width * mObjectMapTPM), 0, imgWidth - 1);
-		for (; curX <= endX; curX++)
-			pTextureData[borderY * imgWidth + curX] = clrOverlay.mAll;
+        S32 cur_x = llclamp(origin_x, 0, img_width);
+	    S32 end_x = llclamp(origin_x + ll_round(real_width * mObjectMapTPM), 0, img_width - 1);
+		for (; cur_x <= end_x; cur_x++)
+			texture_data[border_y * img_width + cur_x] = overlay_color.mAll;
 	}
-	const S32 borderX = originX + ll_round(real_width * mObjectMapTPM);
-	if ( (borderX >= 0) && (borderX < imgWidth) )
+	const S32 border_x = origin_x + ll_round(real_width * mObjectMapTPM);
+	if ( (border_x >= 0) && (border_x < img_width) )
 	{
-		S32 curY = llclamp(originY, 0, imgHeight), endY = llclamp(originY + ll_round(real_width * mObjectMapTPM), 0, imgHeight - 1);
-		for (; curY <= endY; curY++)
-			pTextureData[curY * imgWidth + borderX] = clrOverlay.mAll;
+        S32 cur_y = llclamp(origin_y, 0, img_height);
+	    S32 end_y = llclamp(origin_y + ll_round(real_width * mObjectMapTPM), 0, img_height - 1);
+		for (; cur_y <= end_y; cur_y++)
+			texture_data[cur_y * img_width + border_x] = overlay_color.mAll;
 	}
 
 	//
 	// Render parcel lines
 	//
-	static const F32 GRID_STEP = PARCEL_GRID_STEP_METERS;
-	static const S32 GRIDS_PER_EDGE = real_width / GRID_STEP;
+	const F32 GRID_STEP = PARCEL_GRID_STEP_METERS;
+	const S32 GRIDS_PER_EDGE = real_width / GRID_STEP;
 
-	const U8* pOwnership = pRegion->getParcelOverlay()->getOwnership();
-	const U8* pCollision = (pRegion->getHandle() == LLViewerParcelMgr::instance().getCollisionRegionHandle()) ? LLViewerParcelMgr::instance().getCollisionBitmap() : NULL;
+	const U8* ownership = region->getParcelOverlay()->getOwnership();
+	const U8* collision = (region->getHandle() == LLViewerParcelMgr::instance().getCollisionRegionHandle()) ? LLViewerParcelMgr::instance().getCollisionBitmap() : NULL;
 	for (S32 idxRow = 0; idxRow < GRIDS_PER_EDGE; idxRow++)
 	{
 		for (S32 idxCol = 0; idxCol < GRIDS_PER_EDGE; idxCol++)
 		{
-			S32 overlay = pOwnership[idxRow * GRIDS_PER_EDGE + idxCol];
-			S32 idxCollision = idxRow * GRIDS_PER_EDGE + idxCol;
-			bool fForSale = ((overlay & PARCEL_COLOR_MASK) == PARCEL_FOR_SALE);
-			bool fCollision = (pCollision) && (pCollision[idxCollision / 8] & (1 << (idxCollision % 8)));
-			if ( (!fForSale) && (!fCollision) && (0 == (overlay & (PARCEL_SOUTH_LINE | PARCEL_WEST_LINE))) )
+			S32 overlay = ownership[idxRow * GRIDS_PER_EDGE + idxCol];
+			S32 idx_collision = idxRow * GRIDS_PER_EDGE + idxCol;
+			bool for_sale = ((overlay & PARCEL_COLOR_MASK) == PARCEL_FOR_SALE);
+			bool auction = ((overlay & PARCEL_COLOR_MASK) == PARCEL_AUCTION);
+			bool collides = (collision) && (collision[idx_collision / 8] & (1 << (idx_collision % 8)));
+			if ( (!for_sale) && (!collides) && (!auction) && (0 == (overlay & (PARCEL_SOUTH_LINE | PARCEL_WEST_LINE))) )
 				continue;
 
-			const S32 posX = originX + ll_round(idxCol * GRID_STEP * mObjectMapTPM);
-			const S32 posY = originY + ll_round(idxRow * GRID_STEP * mObjectMapTPM);
+			const S32 pos_x = origin_x + ll_round(idxCol * GRID_STEP * mObjectMapTPM);
+			const S32 pos_y = origin_y + ll_round(idxRow * GRID_STEP * mObjectMapTPM);
 
-			static LLCachedControl<bool> s_fForSaleParcels(gSavedSettings, "MiniMapForSaleParcels");
-			static LLCachedControl<bool> s_fShowCollisionParcels(gSavedSettings, "MiniMapCollisionParcels");
-			if ( ((s_fForSaleParcels) && (fForSale)) || ((s_fShowCollisionParcels) && (fCollision)) )
+			static LLCachedControl<bool> sShowForSaleParcels(gSavedSettings, "MiniMapForSaleParcels");
+			static LLCachedControl<bool> sShowCollisionParcels(gSavedSettings, "MiniMapCollisionParcels");
+			if ( ((sShowForSaleParcels) && (for_sale || auction)) || ((sShowCollisionParcels) && (collides)) )
 			{
-				S32 curY = llclamp(posY, 0, imgHeight), endY = llclamp(posY + ll_round(GRID_STEP * mObjectMapTPM), 0, imgHeight - 1);
-				for (; curY <= endY; curY++)
+                S32 cur_y = llclamp(pos_y, 0, img_height);
+			    S32 end_y = llclamp(pos_y + ll_round(GRID_STEP * mObjectMapTPM), 0, img_height - 1);
+				for (; cur_y <= end_y; cur_y++)
 				{
-					S32 curX = llclamp(posX, 0, imgWidth) , endX = llclamp(posX + ll_round(GRID_STEP * mObjectMapTPM), 0, imgWidth - 1);
-					for (; curX <= endX; curX++)
+                    S32 cur_x = llclamp(pos_x, 0, img_width);
+				    S32 end_x = llclamp(pos_x + ll_round(GRID_STEP * mObjectMapTPM), 0, img_width - 1);
+					for (; cur_x <= end_x; cur_x++)
 					{
-						pTextureData[curY * imgWidth + curX] = (fForSale) ? LLColor4U(255, 255, 128, 192).mAll
-						                                                  : LLColor4U(255, 128, 128, 192).mAll;
+						U32 texcolor = LLColor4U(255, 128, 128, 192).mAll;
+						if (for_sale)
+						{
+							texcolor = LLColor4U(255, 255, 128, 192).mAll;
+						}
+						else if (auction)
+						{
+							texcolor = LLColor4U(128, 0, 255, 102).mAll;
+						}
+
+						texture_data[cur_y * img_width + cur_x] = texcolor;
 					}
 				}
 			}
 			if (overlay & PARCEL_SOUTH_LINE)
 			{
-				if ( (posY >= 0) && (posY < imgHeight) )
+				if ( (pos_y >= 0) && (pos_y < img_height) )
 				{
-					S32 curX = llclamp(posX, 0, imgWidth), endX = llclamp(posX + ll_round(GRID_STEP * mObjectMapTPM), 0, imgWidth - 1);
-					for (; curX <= endX; curX++)
-						pTextureData[posY * imgWidth + curX] = clrOverlay.mAll;
+                    S32 cur_x = llclamp(pos_x, 0, img_width);
+				    S32 end_x = llclamp(pos_x + ll_round(GRID_STEP * mObjectMapTPM), 0, img_width - 1);
+					for (; cur_x <= end_x; cur_x++)
+						texture_data[pos_y * img_width + cur_x] = overlay_color.mAll;
 				}
 			}
 			if (overlay & PARCEL_WEST_LINE)
 			{
-				if ( (posX >= 0) && (posX < imgWidth) )
+				if ( (pos_x >= 0) && (pos_x < img_width) )
 				{
-					S32 curY = llclamp(posY, 0, imgHeight), endY = llclamp(posY + ll_round(GRID_STEP * mObjectMapTPM), 0, imgHeight - 1);
-					for (; curY <= endY; curY++)
-						pTextureData[curY * imgWidth + posX] = clrOverlay.mAll;
+                    S32 cur_y = llclamp(pos_y, 0, img_height);
+				    S32 end_y = llclamp(pos_y + ll_round(GRID_STEP * mObjectMapTPM), 0, img_height - 1);
+					for (; cur_y <= end_y; cur_y++)
+						texture_data[cur_y * img_width + pos_x] = overlay_color.mAll;
 				}
 			}
 		}
 	}
 }
-// [/SL:KB]
 
-//void LLNetMap::createObjectImage()
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 bool LLNetMap::createImage(LLPointer<LLImageRaw>& rawimagep) const
-// [/SL:KB]
 {
 	// Find the size of the side of a square that surrounds the circle that surrounds getRect().
 	// ... which is, the diagonal of the rect.
-	F32 width = (F32)getRect().getWidth();
-	F32 height = (F32)getRect().getHeight();
+	F32 width = getRect().getWidth();
+	F32 height = getRect().getHeight();
 	S32 square_size = ll_round( sqrt(width*width + height*height) );
 
 	// Find the least power of two >= the minimum size.
 	const S32 MIN_SIZE = 64;
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-07-28 (Catznip-3.3)
 	const S32 MAX_SIZE = 512;
-// [/SL:KB]
-//	const S32 MAX_SIZE = 256;
 	S32 img_size = MIN_SIZE;
 	while( (img_size*2 < square_size ) && (img_size < MAX_SIZE) )
 	{
 		img_size <<= 1;
 	}
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 	if( rawimagep.isNull() || (rawimagep->getWidth() != img_size) || (rawimagep->getHeight() != img_size) )
 	{
 		rawimagep = new LLImageRaw(img_size, img_size, 4);
@@ -1235,21 +1192,8 @@ bool LLNetMap::createImage(LLPointer<LLImageRaw>& rawimagep) const
 		return true;
 	}
 	return false;
-// [/SL:KB]
-//	if( mObjectImagep.isNull() ||
-//		(mObjectImagep->getWidth() != img_size) ||
-//		(mObjectImagep->getHeight() != img_size) )
-//	{
-//		mObjectRawImagep = new LLImageRaw(img_size, img_size, 4);
-//		U8* data = mObjectRawImagep->getData();
-//		memset( data, 0, img_size * img_size * 4 );
-//		mObjectImagep = LLViewerTextureManager::getLocalTexture( mObjectRawImagep.get(), FALSE);
-//	}
-//	setScale(mScale);
-//	mUpdateNow = true;
 }
 
-// [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 void LLNetMap::createObjectImage()
 {
 	if (createImage(mObjectRawImagep))
@@ -1264,7 +1208,6 @@ void LLNetMap::createParcelImage()
 		mParcelImagep = LLViewerTextureManager::getLocalTexture( mParcelRawImagep.get(), FALSE);
 	mUpdateParcelImage = true;
 }
-// [/SL:KB]
 
 BOOL LLNetMap::handleMouseDown( S32 x, S32 y, MASK mask )
 {
@@ -1303,7 +1246,7 @@ BOOL LLNetMap::handleMouseUp( S32 x, S32 y, MASK mask )
 			mTargetPan.setZero();
 		}
 		gViewerWindow->showCursor();
-		gFocusMgr.setMouseCapture(NULL);
+		gFocusMgr.setMouseCapture(nullptr);
 		return TRUE;
 	}
 	return FALSE;
@@ -1348,9 +1291,9 @@ BOOL LLNetMap::handleDoubleClick( S32 x, S32 y, MASK mask )
 	if (double_click_teleport || double_click_show_world_map)
 	{
 		// If we're not tracking a beacon already, double-click will set one
-		if (!LLTracker::isTracking())
+		if (!LLTracker::getInstance()->isTracking())
 		{
-			LLFloaterWorldMap* world_map = gFloaterWorldMap;
+			LLFloaterWorldMap* world_map = LLFloaterWorldMap::getInstance();
 			if (world_map)
 			{
 				world_map->trackLocation(pos_global);
@@ -1450,9 +1393,7 @@ bool LLNetMap::LLScaleMap::handleEvent(LLPointer<LLEvent> event, const LLSD& use
 //moymod - minimap color shit
 void markMassAgents(const LLColor4& color)
 {
-	std::map<LLUUID, LLVector3d>::iterator current = mClosestAgentsAtLastClick.begin();
-	std::map<LLUUID, LLVector3d>::iterator end = mClosestAgentsAtLastClick.end();
-	for(; current != end; ++current) LLNetMap::mm_setcolor((*current).first, color);
+	for(const auto& agent : mClosestAgentsAtLastClick) LLNetMap::mm_setcolor(agent.first, color);
 }
 
 bool LLNetMap::mmsetred::handleEvent(LLPointer<LLEvent>, const LLSD&)
@@ -1477,17 +1418,13 @@ bool LLNetMap::mmsetcustom::handleEvent(LLPointer<LLEvent>, const LLSD&)
 }
 bool LLNetMap::mmsetunmark::handleEvent(LLPointer<LLEvent>, const LLSD&)
 {
-	std::map<LLUUID, LLVector3d>::iterator it = mClosestAgentsAtLastClick.begin();
-	std::map<LLUUID, LLVector3d>::iterator end = mClosestAgentsAtLastClick.end();
-	for(; it!= end; ++it) mm_MarkerColors.erase((*it).first);
+	for(const auto& agent : mClosestAgentsAtLastClick) mm_MarkerColors.erase(agent.first);
 	return true;
 }
 bool LLNetMap::mmenableunmark::handleEvent(LLPointer<LLEvent>, const LLSD& userdata)
 {
 	bool enabled(false);
-	std::map<LLUUID, LLVector3d>::iterator it = mClosestAgentsAtLastClick.begin();
-	std::map<LLUUID, LLVector3d>::iterator end = mClosestAgentsAtLastClick.end();
-	for(; it != end && !enabled; ++it) enabled = mm_MarkerColors.find((*it).first) != mm_MarkerColors.end();
+	for (const auto& agent : mClosestAgentsAtLastClick) enabled = mm_MarkerColors.find(agent.first) != mm_MarkerColors.end();
 	mPtr->findControl(userdata["control"].asString())->setValue(enabled);
 	return true;
 }
@@ -1510,11 +1447,8 @@ bool LLNetMap::LLCenterMap::handleEvent(LLPointer<LLEvent> event, const LLSD& us
 
 bool LLNetMap::LLCheckCenterMap::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
-	LLNetMap *self = mPtr;
-	EMiniMapCenter center = (EMiniMapCenter)userdata["data"].asInteger();
-	BOOL enabled = (gSavedSettings.getS32("MiniMapCenter") == center);
-
-	self->findControl(userdata["control"].asString())->setValue(enabled);
+	mPtr->findControl(userdata["control"].asString())->
+		setValue(gSavedSettings.getS32("MiniMapCenter") == userdata["data"].asInteger());
 	return true;
 }
 
@@ -1539,43 +1473,36 @@ bool LLNetMap::LLCheckChatRings::handleEvent(LLPointer<LLEvent> event, const LLS
 	BOOL shout_enabled = gSavedSettings.getBOOL("MiniMapShoutRing");
 	BOOL all_enabled = whisper_enabled && chat_enabled && shout_enabled;
 
-	LLNetMap *self = mPtr;
-	self->findControl(userdata["control"].asString())->setValue(all_enabled);
+	mPtr->findControl(userdata["control"].asString())->setValue(all_enabled);
 	return true;
 }
 
 bool LLNetMap::LLStopTracking::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
-	LLTracker::stopTracking(false);
+	LLTracker::instance().stopTracking(false);
 	return true;
 }
 
 bool LLNetMap::LLEnableTracking::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
-	LLNetMap *self = mPtr;
-	self->findControl(userdata["control"].asString())->setValue(LLTracker::isTracking());
+	mPtr->findControl(userdata["control"].asString())->setValue(LLTracker::instance().isTracking());
 	return true;
 }
 
 
 bool LLNetMap::LLCamFollow::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
-	LLNetMap *self = mPtr;
-	LLFloaterAvatarList::lookAtAvatar(self->mClosestAgentAtLastRightClick);
+	LLFloaterAvatarList::lookAtAvatar(mPtr->mClosestAgentAtLastRightClick);
 	return true;
 }
 
 
 bool LLNetMap::LLShowAgentProfile::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
-	LLNetMap *self = mPtr;
 // [RLVa:KB] - Version: 1.23.4 | Checked: 2009-07-08 (RLVa-1.0.0e) | Modified: RLVa-0.2.0b
 	if (!gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES))
-	{
-		LLAvatarActions::showProfile(self->mClosestAgentAtLastRightClick);
-	}
 // [/RLVa:KB]
-	//LLAvatarActions::showProfile(self->mClosestAgentAtLastRightClick);
+		LLAvatarActions::showProfile(mPtr->mClosestAgentAtLastRightClick);
 	return true;
 }
 
@@ -1592,7 +1519,7 @@ bool LLNetMap::LLEnableProfile::handleEvent(LLPointer<LLEvent> event, const LLSD
 
 bool LLNetMap::LLToggleControl::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
-	std::string control_name = userdata.asString();
+	const std::string& control_name = userdata.asString();
 	gSavedSettings.setBOOL(control_name, !gSavedSettings.getBOOL(control_name));
 	return true;
 }

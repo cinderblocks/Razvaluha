@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llcallbacklist.cpp
  * @brief A simple list of callback functions to call.
@@ -26,7 +28,6 @@
 
 #include "llcallbacklist.h"
 #include "lleventtimer.h"
-#include "llerrorlegacy.h"
 
 // Globals
 //
@@ -50,6 +51,7 @@ void LLCallbackList::addFunction( callback_t func, void *data)
 {
 	if (!func)
 	{
+		LL_WARNS() << "LLCallbackList::addFunction - function is NULL" << LL_ENDL;
 		return;
 	}
 
@@ -66,7 +68,6 @@ void LLCallbackList::addFunction( callback_t func, void *data)
 
 bool LLCallbackList::containsFunction( callback_t func, void *data)
 {
-	callback_pair_t t(func, data);
 	callback_list_t::iterator iter = find(func,data);
 	if (iter != mCallbackList.end())
 	{
@@ -191,7 +192,7 @@ public:
 	}
 
 private:
-	BOOL tick()
+	BOOL tick() override
 	{
 		mCallable();
 		return TRUE;
@@ -215,7 +216,7 @@ public:
 	{
 	}
 private:
-	BOOL tick()
+	BOOL tick() override
 	{
 		return mCallable();
 	}
@@ -228,3 +229,78 @@ void doPeriodically(bool_func_t callable, F32 seconds)
 {
 	new BoolFuncEventTimer(callable, seconds);
 }
+
+#ifdef _DEBUG
+
+void test1(void *data)
+{
+	S32 *s32_data = (S32 *)data;
+	LL_INFOS() << "testfunc1 " << *s32_data << LL_ENDL;
+}
+
+
+void test2(void *data)
+{
+	S32 *s32_data = (S32 *)data;
+	LL_INFOS() << "testfunc2 " << *s32_data << LL_ENDL;
+}
+
+
+void
+LLCallbackList::test()
+{
+	S32 a = 1;
+	S32 b = 2;
+	LLCallbackList *list = new LLCallbackList;
+
+	LL_INFOS() << "Testing LLCallbackList" << LL_ENDL;
+
+	if (!list->deleteFunction(nullptr))
+	{
+		LL_INFOS() << "passed 1" << LL_ENDL;
+	}
+	else
+	{
+		LL_INFOS() << "error, removed function from empty list" << LL_ENDL;
+	}
+
+	// LL_INFOS() << "This should crash" << LL_ENDL;
+	// list->addFunction(NULL);
+
+	list->addFunction(&test1, &a);
+	list->addFunction(&test1, &a);
+
+	LL_INFOS() << "Expect: test1 1, test1 1" << LL_ENDL;
+	list->callFunctions();
+
+	list->addFunction(&test1, &b);
+	list->addFunction(&test2, &b);
+
+	LL_INFOS() << "Expect: test1 1, test1 1, test1 2, test2 2" << LL_ENDL;
+	list->callFunctions();
+
+	if (list->deleteFunction(&test1, &b))
+	{
+		LL_INFOS() << "passed 3" << LL_ENDL;
+	}
+	else
+	{
+		LL_INFOS() << "error removing function" << LL_ENDL;
+	}
+
+	LL_INFOS() << "Expect: test1 1, test1 1, test2 2" << LL_ENDL;
+	list->callFunctions();
+
+	list->deleteAllFunctions();
+
+	LL_INFOS() << "Expect nothing" << LL_ENDL;
+	list->callFunctions();
+
+	LL_INFOS() << "nothing :-)" << LL_ENDL;
+
+	delete list;
+
+	LL_INFOS() << "test complete" << LL_ENDL;
+}
+
+#endif  // _DEBUG

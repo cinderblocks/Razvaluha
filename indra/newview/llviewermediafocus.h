@@ -41,8 +41,8 @@ class LLViewerMediaFocus :
 	public LLFocusableElement, 
 	public LLSingleton<LLViewerMediaFocus>
 {
+	LLSINGLETON(LLViewerMediaFocus);
 public:
-	LLViewerMediaFocus();
 	~LLViewerMediaFocus();
 	
 	// Set/clear the face that has media focus (takes keyboard input and has the full set of controls)

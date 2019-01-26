@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file   llxmlrpclistener.cpp
  * @author Nat Goodspeed
@@ -31,15 +33,10 @@
 #include "llviewerprecompiledheaders.h"
 // associated header
 #include "llxmlrpclistener.h"
-// STL headers
-#include <map>
-#include <set>
-// std headers
 // external library headers
 #include <boost/scoped_ptr.hpp>
-#include <boost/range.hpp>          // boost::begin(), boost::end()
 #include <xmlrpc-epi/xmlrpc.h>
-#include "curl/curl.h"
+#include <curl/curl.h>
 
 // other Linden headers
 #include "llerror.h"
@@ -271,7 +268,7 @@ public:
         XMLRPC_REQUEST request = XMLRPC_RequestNew();
         XMLRPC_RequestSetMethodName(request, mMethod.c_str());
         XMLRPC_RequestSetRequestType(request, xmlrpc_request_call);
-        XMLRPC_VALUE xparams = XMLRPC_CreateVector(NULL, xmlrpc_vector_struct);
+        XMLRPC_VALUE xparams = XMLRPC_CreateVector(nullptr, xmlrpc_vector_struct);
         LLSD params(command["params"]);
         if (params.isMap())
         {
@@ -312,8 +309,8 @@ public:
         }
         XMLRPC_RequestSetData(request, xparams);
 
-        mTransaction.reset(new LLXMLRPCTransaction(mUri, request));
-		mPreviousStatus = mTransaction->status(NULL);
+        mTransaction.reset(new LLXMLRPCTransaction(mUri, request, true, command.has("http_params")? LLSD(command["http_params"]) : LLSD()));
+		mPreviousStatus = mTransaction->status(nullptr);
 
         // Free the XMLRPC_REQUEST object and the attached data values.
         XMLRPC_RequestFree(request, 1);
@@ -322,7 +319,7 @@ public:
         mBoundListener =
             LLEventPumps::instance().
             obtain("mainloop").
-            listen(LLEventPump::inventName(), boost::bind(&Poller::poll, this, _1));
+            listen(LLEventPump::ANONYMOUS, boost::bind(&Poller::poll, this, _1));
 
         LL_INFOS("LLXMLRPCListener") << mMethod << " request sent to " << mUri << LL_ENDL;
     }
@@ -379,14 +376,9 @@ public:
 		{
 			case CURLE_SSL_PEER_CERTIFICATE:
 			case CURLE_SSL_CACERT:
-			{
-				LLPointer<LLCertificate> error_cert(mTransaction->getErrorCert());
-				if(error_cert)
-				{
-					data["certificate"] = error_cert->getPem();
-				}
+                data["certificate"] = mTransaction->getErrorCertData();
 				break;
-			}
+
 			default:
 				break;
 		}

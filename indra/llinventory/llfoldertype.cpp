@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfoldertype.cpp
  * @brief Implementatino of LLFolderType functionality.
@@ -51,10 +53,9 @@ struct FolderEntry : public LLDictionaryEntry
 class LLFolderDictionary : public LLSingleton<LLFolderDictionary>,
 						   public LLDictionary<LLFolderType::EType, FolderEntry>
 {
-public:
-	LLFolderDictionary();
+	LLSINGLETON(LLFolderDictionary);
 protected:
-	virtual LLFolderType::EType notFound() const
+	LLFolderType::EType notFound() const override
 	{
 		return LLFolderType::FT_NONE;
 	}
@@ -94,14 +95,15 @@ LLFolderDictionary::LLFolderDictionary()
 
 	addEntry(LLFolderType::FT_INBOX, 				new FolderEntry("inbox",	TRUE));
 	addEntry(LLFolderType::FT_OUTBOX, 				new FolderEntry("outbox",	TRUE));
-
+	
 	addEntry(LLFolderType::FT_BASIC_ROOT,			new FolderEntry("basic_rt", TRUE));
 
 	addEntry(LLFolderType::FT_MARKETPLACE_LISTINGS, new FolderEntry("merchant", FALSE));
 	addEntry(LLFolderType::FT_MARKETPLACE_STOCK,    new FolderEntry("stock",    FALSE));
 	addEntry(LLFolderType::FT_MARKETPLACE_VERSION,  new FolderEntry("version",    FALSE));
-
 	addEntry(LLFolderType::FT_SUITCASE,				new FolderEntry("suitcase",	FALSE));
+	addEntry(LLFolderType::FT_ANIM_OVERRIDES,		new FolderEntry("animover", TRUE));
+
 		 
 	addEntry(LLFolderType::FT_NONE, 				new FolderEntry("-1",		FALSE));
 };

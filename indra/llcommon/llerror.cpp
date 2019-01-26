@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llerror.cpp
  * @date   December 2006
@@ -42,7 +44,6 @@
 #include <vector>
 
 #include "llapp.h"
-#include "llapr.h"
 #include "llfile.h"
 #include "lllivefile.h"
 #include "llsd.h"
@@ -50,6 +51,7 @@
 #include "llsingleton.h"
 #include "llstl.h"
 #include "lltimer.h"
+#include "llwin32headerslean.h"
 
 namespace {
 #if LL_WINDOWS
@@ -128,9 +130,9 @@ namespace {
 		}
 		
 		bool okay() { return mFile.good(); }
-		
-		virtual void recordMessage(LLError::ELevel level,
-									const std::string& message)
+
+		void recordMessage(LLError::ELevel level,
+									const std::string& message) override
 		{
 			mFile << message << std::endl;
 		}
@@ -147,9 +149,9 @@ namespace {
 		{
 			mWantsTime = timestamp;
 		}
-		
-		virtual void recordMessage(LLError::ELevel level,
-					   const std::string& message)
+
+		void recordMessage(LLError::ELevel level,
+					   const std::string& message) override
 		{
 			if (ANSI_PROBE == mUseANSI)
 				mUseANSI = (checkANSI() ? ANSI_YES : ANSI_NO);
@@ -184,7 +186,7 @@ namespace {
 			ANSI_NO
 		}					mUseANSI;
 
-		void colorANSI(const std::string color)
+		void colorANSI(const std::string& color)
 		{
 			// ANSI color code escape sequence
 			fprintf(stderr, "\033[%sm", color.c_str() );
@@ -207,9 +209,9 @@ namespace {
 	{
 	public:
 		RecordToFixedBuffer(LLLineBuffer* buffer) : mBuffer(buffer) { }
-		
-		virtual void recordMessage(LLError::ELevel level,
-								   const std::string& message)
+
+		void recordMessage(LLError::ELevel level,
+								   const std::string& message) override
 		{
 			mBuffer->addLine(message);
 		}
@@ -225,8 +227,8 @@ namespace {
 		RecordToWinDebug()
 		{}
 
-		virtual void recordMessage(LLError::ELevel level,
-								   const std::string& message)
+		void recordMessage(LLError::ELevel level,
+								   const std::string& message) override
 		{
 			debugger_print(message);
 		}
@@ -238,6 +240,14 @@ namespace {
 namespace
 {
 	std::string className(const std::type_info& type)
+	{
+		return LLError::Log::demangle(type.name());
+	}
+} // anonymous
+
+namespace LLError
+{
+	std::string Log::demangle(const char* mangled)
 	{
 #ifdef __GNUC__
 		// GCC: type_info::name() returns a mangled class name,st demangle
@@ -252,31 +262,34 @@ namespace
 			// but gcc 3.3 libstc++'s implementation of demangling is broken
 			// and fails without.
 			
-		char* name = abi::__cxa_demangle(type.name(),
+		char* name = abi::__cxa_demangle(mangled,
 										abi_name_buf, &abi_name_len, &status);
 			// this call can realloc the abi_name_buf pointer (!)
 
-		return name ? name : type.name();
+		return name ? name : mangled;
 
 #elif LL_WINDOWS
 		// DevStudio: type_info::name() includes the text "class " at the start
 
 		static const std::string class_prefix = "class ";
-
-		std::string name = type.name();
-		std::string::size_type p = name.find(class_prefix);
-		if (p == std::string::npos)
+		std::string name = mangled;
+		if (0 != name.compare(0, class_prefix.length(), class_prefix))
 		{
+			LL_DEBUGS() << "Did not see '" << class_prefix << "' prefix on '"
+					   << name << "'" << LL_ENDL;
 			return name;
 		}
 
-		return name.substr(p + class_prefix.size());
+		return name.substr(class_prefix.length());
 
-#else		
-		return type.name();
+#else
+		return mangled;
 #endif
 	}
+} // LLError
 
+namespace
+{
 	std::string functionName(const std::string& preprocessor_name)
 	{
 #if LL_WINDOWS
@@ -301,9 +314,9 @@ namespace
 		LOG_CLASS(LogControlFile);
 	
 	public:
-		static LogControlFile& fromDirectory(const std::string& dir);
-		
-		virtual bool loadFile();
+		static LogControlFile& fromDirectory(const std::string& user_dir, const std::string& app_dir);
+
+		bool loadFile() override;
 		
 	private:
 		LogControlFile(const std::string &filename)
@@ -311,13 +324,12 @@ namespace
 			{ }
 	};
 
-	LogControlFile& LogControlFile::fromDirectory(const std::string& dir)
+	LogControlFile& LogControlFile::fromDirectory(const std::string& user_dir, const std::string& app_dir)
 	{
-		std::string dirBase = dir + "/";
 			// NB: We have no abstraction in llcommon  for the "proper"
 			// delimiter but it turns out that "/" works on all three platforms
 			
-		std::string file = dirBase + "logcontrol-dev.xml";
+		std::string file = user_dir + "/logcontrol-dev.xml";
 		
 		llstat stat_info;
 		if (LLFile::stat(file, &stat_info)) {
@@ -325,7 +337,7 @@ namespace
 			// if it doesn't exist.  LLFile has no better abstraction for 
 			// testing for file existence.
 			
-			file = dirBase + "logcontrol.xml";
+			file = app_dir + "/logcontrol.xml";
 		}
 		return * new LogControlFile(file);
 			// NB: This instance is never freed
@@ -352,7 +364,7 @@ namespace
 		}
 		
 		LLError::configure(configuration);
-		LL_INFOS() << "logging reconfigured from " << filename() << LL_ENDL;
+		LL_INFOS("LogControlFile") << "logging reconfigured from " << filename() << LL_ENDL;
 		return true;
 	}
 
@@ -363,9 +375,8 @@ namespace
 
 	class Globals : public LLSingleton<Globals>
 	{
+		LLSINGLETON(Globals);
 	public:
-		Globals();
-
 		std::ostringstream messageStream;
 		bool messageStreamInUse;
 
@@ -438,11 +449,10 @@ namespace LLError
 
 	class Settings : public LLSingleton<Settings>
 	{
+		LLSINGLETON(Settings);
 	public:
-		Settings();
-
 		SettingsConfigPtr getSettingsConfig();
-		
+
 		void reset();
 		SettingsStoragePtr saveAndReset();
 		void restore(SettingsStoragePtr pSettingsStorage);
@@ -450,7 +460,7 @@ namespace LLError
 	private:
 		SettingsConfigPtr mSettingsConfig;
 	};
-	
+
 	SettingsConfig::SettingsConfig()
 		: LLRefCount(),
 		mPrintLocation(false),
@@ -460,8 +470,7 @@ namespace LLError
 		mFileLevelMap(),
 		mTagLevelMap(),
 		mUniqueLogMessages(),
-		mCrashFunction(NULL),
-		mTimeFunction(NULL),
+		mTimeFunction(nullptr),
 		mRecorders(),
 		mFileRecorder(),
 		mFixedBufferRecorder(),
@@ -475,60 +484,64 @@ namespace LLError
 		mRecorders.clear();
 	}
 
-	Settings::Settings()
-		: LLSingleton<Settings>(),
+	Settings::Settings():
 		mSettingsConfig(new SettingsConfig())
 	{
 	}
-	
+
 	SettingsConfigPtr Settings::getSettingsConfig()
 	{
 		return mSettingsConfig;
 	}
-	
+
 	void Settings::reset()
 	{
 		Globals::getInstance()->invalidateCallSites();
 		mSettingsConfig = new SettingsConfig();
 	}
-	
+
 	SettingsStoragePtr Settings::saveAndReset()
 	{
 		SettingsStoragePtr oldSettingsConfig(mSettingsConfig.get());
 		reset();
 		return oldSettingsConfig;
 	}
-	
+
 	void Settings::restore(SettingsStoragePtr pSettingsStorage)
 	{
 		Globals::getInstance()->invalidateCallSites();
 		SettingsConfigPtr newSettingsConfig(dynamic_cast<SettingsConfig *>(pSettingsStorage.get()));
 		mSettingsConfig = newSettingsConfig;
 	}
+
+	bool is_available()
+	{
+		return Settings::instanceExists() && Globals::instanceExists();
+	}
 }
 
 namespace LLError
 {
 	CallSite::CallSite(ELevel level,
-		const char* file,
-		int line,
-		const std::type_info& class_info,
-		const char* function,
-		bool printOnce,
-		const char** tags,
-		size_t tag_count)
-		: mLevel(level),
-		mFile(file),
+					const char* file,
+					int line,
+					const std::type_info& class_info, 
+					const char* function, 
+					bool printOnce,
+					const char** tags, 
+					size_t tag_count)
+	:	mLevel(level), 
+		mFile(file), 
 		mLine(line),
-		mClassInfo(class_info),
+		mClassInfo(class_info), 
 		mFunction(function),
-		mCached(false),
-		mShouldLog(false),
-		mPrintOnce(printOnce),
-		mTags(new const char*[tag_count]),
-		mTagCount(tag_count)
+		mTags(new const char* [tag_count]),
+		mTagCount(tag_count),
+        mPrintOnce(printOnce),
+        mCached(false),
+        mShouldLog(false)
 	{
-		for (size_t i = 0; i < tag_count; i++)
+		for (int i = 0; i < tag_count; i++)
 		{
 			mTags[i] = tags[i];
 		}
@@ -543,26 +556,26 @@ namespace LLError
 		};
 
 		mLocationString = llformat("%s(%d) :", abbreviateFile(mFile).c_str(), mLine);
-		if (mFunction)
-		{
 #if LL_WINDOWS
-			// DevStudio: __FUNCTION__ already includes the full class name
+		// DevStudio: __FUNCTION__ already includes the full class name
 #else
 #if LL_LINUX
-			// gross, but typeid comparison seems to always fail here with gcc4.1
-			if (0 != strcmp(mClassInfo.name(), typeid(NoClassInfo).name()))
+		// gross, but typeid comparison seems to always fail here with gcc4.1
+		if (0 != strcmp(mClassInfo.name(), typeid(NoClassInfo).name()))
 #else
-			if (mClassInfo != typeid(NoClassInfo))
+		if (mClassInfo != typeid(NoClassInfo))
 #endif // LL_LINUX
-			{
-				mFunctionString = className(mClassInfo) + "::";
+		{
+			mFunctionString = className(mClassInfo) + "::";
 		}
 #endif
-			mFunctionString += std::string(mFunction) + ":";
-			for (size_t i = 0; i < mTagCount; i++)
-			{
-				mTagString += std::string("#") + mTags[i] + ((i == mTagCount - 1) ? "" : ",");
-			}
+		mFunctionString += std::string(mFunction) + ":";
+        const std::string tag_hash("#");
+		for (size_t i = 0; i < mTagCount; i++)
+		{
+            mTagString.append(tag_hash);
+			mTagString.append(mTags[i]);
+            mTagString.append((i == mTagCount - 1) ? ";" : ",");
 		}
 	}
 
@@ -605,7 +618,7 @@ namespace
 	}
 	
 	
-	void commonInit(const std::string& dir, bool log_to_stderr = true)
+	void commonInit(const std::string& user_dir, const std::string& app_dir, bool log_to_stderr = true)
 	{
 		LLError::Settings::getInstance()->reset();
 		
@@ -625,7 +638,7 @@ namespace
 		LLError::addRecorder(recordToWinDebug);
 #endif
 
-		LogControlFile& e = LogControlFile::fromDirectory(dir);
+		LogControlFile& e = LogControlFile::fromDirectory(user_dir, app_dir);
 
 		// NOTE: We want to explicitly load the file before we add it to the event timer
 		// that checks for changes to the file.  Else, we're not actually loading the file yet,
@@ -641,23 +654,9 @@ namespace
 
 namespace LLError
 {
-	void initForServer(const std::string& identity)
+	void initForApplication(const std::string& user_dir, const std::string& app_dir, bool log_to_stderr)
 	{
-		std::string dir = "/opt/linden/etc";
-		if (LLApp::instance())
-		{
-			dir = LLApp::instance()->getOption("configdir").asString();
-		}
-		commonInit(dir);
-#if !LL_WINDOWS
-		LLError::RecorderPtr recordToSyslog(new RecordToSyslog(identity));
-		addRecorder(recordToSyslog);
-#endif
-	}
-
-	void initForApplication(const std::string& dir, bool log_to_stderr)
-	{
-		commonInit(dir, log_to_stderr);
+		commonInit(user_dir, app_dir, log_to_stderr);
 	}
 
 	void setPrintLocation(bool print)
@@ -768,7 +767,7 @@ namespace LLError
 	{
 		Globals::getInstance()->invalidateCallSites();
 		SettingsConfigPtr s = Settings::getInstance()->getSettingsConfig();
-
+		
 		s->mFunctionLevelMap.clear();
 		s->mClassLevelMap.clear();
 		s->mFileLevelMap.clear();
@@ -848,7 +847,7 @@ namespace LLError
 		SettingsConfigPtr s = Settings::getInstance()->getSettingsConfig();
 		s->mRecorders.push_back(recorder);
 	}
-	
+
 	void removeRecorder(RecorderPtr recorder)
 	{
 		if (!recorder)
@@ -877,7 +876,7 @@ namespace LLError
 		}
 		
 		RecorderPtr recordToFile(new RecordToFile(file_name));
-		if (boost::dynamic_pointer_cast<RecordToFile>(recordToFile)->okay())
+		if (std::dynamic_pointer_cast<RecordToFile>(recordToFile)->okay())
 		{
 			s->mFileRecorderFileName = file_name;
 			s->mFileRecorder = recordToFile;
@@ -924,30 +923,25 @@ namespace
 			
 			std::ostringstream message_stream;
 
-			if (show_location && (r->wantsLocation() || level == LLError::LEVEL_ERROR || s->mPrintLocation))
-			{
-				message_stream << site.mLocationString << " ";
-			}
-
-			if (show_time && r->wantsTime() && s->mTimeFunction != NULL)
+			if (show_time && r->wantsTime() && s->mTimeFunction != nullptr)
 			{
 				message_stream << s->mTimeFunction() << " ";
 			}
 
 			if (show_level && r->wantsLevel())
-				{
-				message_stream << site.mLevelString;
-				}
-				
-			if (show_tags && r->wantsTags())
-			{
-				message_stream << site.mTagString;
-			}
-			if ((show_level && r->wantsLevel())||
-                (show_tags && r->wantsTags()))
             {
-                message_stream << " ";
+				message_stream << site.mLevelString << " ";
+            }
+				
+			if (show_tags && r->wantsTags() && !site.mTagString.empty())
+			{
+				message_stream << site.mTagString << " ";
 			}
+
+            if (show_location && (r->wantsLocation() || level == LLError::LEVEL_ERROR || s->mPrintLocation))
+            {
+                message_stream << site.mLocationString << " ";
+            }
 
 			if (show_function && r->wantsFunctionName())
 			{
@@ -961,8 +955,7 @@ namespace
 	}
 }
 
-LLMutex gLogMutex;
-LLMutex gCallStacksLogMutex;
+std::unique_ptr<LLMutex> gLogMutex;
 
 namespace {
 	bool checkLevelMap(const LevelMap& map, const std::string& key,
@@ -974,7 +967,7 @@ namespace {
 			return false;
 		}
 		
-			level = i->second;
+		level = i->second;
 		return true;
 	}
 	
@@ -1018,10 +1011,14 @@ namespace {
 	LogLock::LogLock()
 		: mLocked(false), mOK(false)
 	{
+		if (gLogMutex == nullptr)
+		{
+			gLogMutex = std::make_unique<LLMutex>();
+		}
 		const int MAX_RETRIES = 5;
 		for (int attempts = 0; attempts < MAX_RETRIES; ++attempts)
 		{
-			if (gLogMutex.try_lock())
+			if (gLogMutex->try_lock())
 			{
 				mLocked = true;
 				mOK = true;
@@ -1029,9 +1026,6 @@ namespace {
 			}
 
 			ms_sleep(1);
-			//apr_thread_yield();
-				// Just yielding won't necessarily work, I had problems with
-				// this on Linux - doug 12/02/04
 		}
 
 		// We're hosed, we can't get the mutex.  Blah.
@@ -1043,7 +1037,7 @@ namespace {
 	{
 		if (mLocked)
 		{
-			gLogMutex.unlock();
+			gLogMutex->unlock();
 		}
 	}
 }
@@ -1057,7 +1051,15 @@ namespace LLError
 		{
 			return false;
 		}
-		
+
+		// If we hit a logging request very late during shutdown processing,
+		// when either of the relevant LLSingletons has already been deleted,
+		// DO NOT resurrect them.
+		if (Settings::wasDeleted() || Globals::wasDeleted())
+		{
+			return false;
+		}
+
 		SettingsConfigPtr s = Settings::getInstance()->getSettingsConfig();
 		
 		s->mShouldLogCallCounter++;
@@ -1065,14 +1067,14 @@ namespace LLError
 		const std::string& class_name = className(site.mClassInfo);
 		std::string function_name = functionName(site.mFunction);
 #if LL_LINUX
-			// gross, but typeid comparison seems to always fail here with gcc4.1
-			if (0 != strcmp(site.mClassInfo.name(), typeid(NoClassInfo).name()))
+		// gross, but typeid comparison seems to always fail here with gcc4.1
+		if (0 != strcmp(site.mClassInfo.name(), typeid(NoClassInfo).name()))
 #else
-			if (site.mClassInfo != typeid(NoClassInfo))
+		if (site.mClassInfo != typeid(NoClassInfo))
 #endif // LL_LINUX
-			{
-				function_name = class_name + "::" + function_name;
-			}
+		{
+			function_name = class_name + "::" + function_name;
+		}
 
 		ELevel compareLevel = s->mDefaultLevel;
 
@@ -1096,7 +1098,10 @@ namespace LLError
 	std::ostringstream* Log::out()
 	{
 		LogLock lock;
-		if (lock.ok())
+		// If we hit a logging request very late during shutdown processing,
+		// when either of the relevant LLSingletons has already been deleted,
+		// DO NOT resurrect them.
+		if (lock.ok() && ! (Settings::wasDeleted() || Globals::wasDeleted()))
 		{
 			Globals* g = Globals::getInstance();
 
@@ -1106,41 +1111,49 @@ namespace LLError
 				return &g->messageStream;
 			}
 		}
-		
+
 		return new std::ostringstream;
 	}
-	
+
 	void Log::flush(std::ostringstream* out, char* message)
-    {
-       LogLock lock;
-       if (!lock.ok())
-       {
-           return;
-       }
-       
-	   if(strlen(out->str().c_str()) < 128)
-	   {
-		   strcpy(message, out->str().c_str());
-	   }
-	   else
-	   {
-		   strncpy(message, out->str().c_str(), 127);
-		   message[127] = '\0' ;
-	   }
-	   
-	   Globals* g = Globals::getInstance();
-       if (out == &g->messageStream)
-       {
-           g->messageStream.clear();
-           g->messageStream.str("");
-           g->messageStreamInUse = false;
-       }
-       else
-       {
-           delete out;
-       }
-	   return ;
-    }
+	{
+		LogLock lock;
+		if (!lock.ok())
+		{
+			return;
+		}
+
+		// If we hit a logging request very late during shutdown processing,
+		// when either of the relevant LLSingletons has already been deleted,
+		// DO NOT resurrect them.
+		if (Settings::wasDeleted() || Globals::wasDeleted())
+		{
+			return;
+		}
+
+		if(out->str().size() < 128)
+		{
+			strcpy(message, out->str().c_str());
+		}
+		else
+		{
+			strncpy(message, out->str().c_str(), 127);
+			message[127] = '\0' ;
+		}
+
+		Globals* g = Globals::getInstance();
+		if (out == &g->messageStream)
+		{
+			g->messageStream.clear();
+			g->messageStream.str("");
+			g->messageStreamInUse = false;
+		}
+		else
+		{
+			delete out;
+		}
+		return ;
+	}
 
 	void Log::flush(std::ostringstream* out, const CallSite& site)
 	{
@@ -1149,7 +1162,15 @@ namespace LLError
 		{
 			return;
 		}
-		
+
+		// If we hit a logging request very late during shutdown processing,
+		// when either of the relevant LLSingletons has already been deleted,
+		// DO NOT resurrect them.
+		if (Settings::wasDeleted() || Globals::wasDeleted())
+		{
+			return;
+		}
+
 		Globals* g = Globals::getInstance();
 		SettingsConfigPtr s = Settings::getInstance()->getSettingsConfig();
 
@@ -1164,7 +1185,7 @@ namespace LLError
 		{
 			delete out;
 		}
-		
+
 		if (site.mLevel == LEVEL_ERROR)
 		{
 			writeToRecorders(site, "error", true, true, true, false, false);
@@ -1172,20 +1193,6 @@ namespace LLError
 		
 		std::ostringstream message_stream;
 
-		bool need_function = site.mFunction;
-		if (need_function && !site.mTagString.empty())
-		{
-#if LL_DEBUG
-			// Suppress printing mFunction if mBroadTag is set, starts with
-			// "Plugin " and ends with "child": a debug message from a plugin.
-			size_t taglen = site.mTagString.length();
-			if (taglen >= 12 && strncmp(site.mTagString.c_str(), "Plugin ", 7) == 0 &&
-				strcmp(site.mTagString.c_str() + taglen - 5, "child") == 0)
-			{
-				need_function = false;
-			}
-#endif
-		}
 
 		if (site.mPrintOnce)
 		{
@@ -1287,7 +1294,7 @@ namespace LLError
 	void crashAndLoop(const std::string& message)
 	{
 		// Now, we go kaboom!
-		int* make_me_crash = NULL;
+		int* make_me_crash = nullptr;
 
 		*make_me_crash = 0;
 
@@ -1297,7 +1304,12 @@ namespace LLError
 		}
 		
 		// this is an attempt to let Coverity and other semantic scanners know that this function won't be returning ever.
+#if LL_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
 		exit(EXIT_FAILURE);
+#pragma clang diagnostic pop
+#endif
 	}
 #if LL_WINDOWS
 		#pragma optimize("", on)
@@ -1305,22 +1317,25 @@ namespace LLError
 
 	std::string utcTime()
 	{
-		time_t now = time(NULL);
+		time_t now = time(nullptr);
 		const size_t BUF_SIZE = 64;
 		char time_str[BUF_SIZE];	/* Flawfinder: ignore */
 		
-		int chars = strftime(time_str, BUF_SIZE, 
+		size_t chars = strftime(time_str, BUF_SIZE, 
 								  "%Y-%m-%dT%H:%M:%SZ",
 								  gmtime(&now));
 
 		return chars ? time_str : "time error";
 	}
 }
+#if !SINGLE_THREADED
+std::unique_ptr<LLMutex> gCallStacksLogMutexp;
+#endif
 
 namespace LLError
 {     
-	char** LLCallStacks::sBuffer = NULL;
-	S32    LLCallStacks::sIndex = 0;
+	char** LLCallStacks::sBuffer = nullptr ;
+	S32    LLCallStacks::sIndex  = 0 ;
 
 #define SINGLE_THREADED 1
 
@@ -1351,10 +1366,15 @@ namespace LLError
 	CallStacksLogLock::CallStacksLogLock()
 		: mLocked(false), mOK(false)
 	{
+		if (gCallStacksLogMutexp == nullptr)
+		{
+			gCallStacksLogMutexp = std::make_unique<LLMutex>();
+		}
+		
 		const int MAX_RETRIES = 5;
 		for (int attempts = 0; attempts < MAX_RETRIES; ++attempts)
 		{
-			if (gCallStacksLogMutex.try_lock())
+			if (gCallStacksLogMutexp->try_lock())
 			{
 				mLocked = true;
 				mOK = true;
@@ -1373,7 +1393,7 @@ namespace LLError
 	{
 		if (mLocked)
 		{
-			gCallStacksLogMutex.unlock();
+			gCallStacksLogMutexp->unlock();
 		}
 	}
 #endif
@@ -1381,7 +1401,7 @@ namespace LLError
 	//static
    void LLCallStacks::allocateStackBuffer()
    {
-	   if(sBuffer == NULL)
+	   if(sBuffer == nullptr)
 	   {
 		   sBuffer = new char*[512] ;
 		   sBuffer[0] = new char[512 * 128] ;
@@ -1395,11 +1415,11 @@ namespace LLError
 
    void LLCallStacks::freeStackBuffer()
    {
-	   if(sBuffer != NULL)
+	   if(sBuffer != nullptr)
 	   {
 		   delete [] sBuffer[0] ;
 		   delete [] sBuffer ;
-		   sBuffer = NULL ;
+		   sBuffer = nullptr ;
 	   }
    }
 
@@ -1412,7 +1432,7 @@ namespace LLError
            return;
        }
 
-	   if(sBuffer == NULL)
+	   if(sBuffer == nullptr)
 	   {
 		   allocateStackBuffer();
 	   }
@@ -1447,7 +1467,7 @@ namespace LLError
            return;
        }
 
-	   if(sBuffer == NULL)
+	   if(sBuffer == nullptr)
 	   {
 		   allocateStackBuffer();
 	   }
@@ -1469,19 +1489,19 @@ namespace LLError
            return;
        }
 
-       if(sIndex > 0)
-       {
-           LL_INFOS() << " ************* PRINT OUT LL CALL STACKS ************* " << LL_ENDL;
-           while(sIndex > 0)
-           {                  
-			   sIndex-- ;
-               LL_INFOS() << sBuffer[sIndex] << LL_ENDL;
-           }
-           LL_INFOS() << " *************** END OF LL CALL STACKS *************** " << LL_ENDL;
-       }
-
-	   if(sBuffer != NULL)
+	   if (sBuffer != nullptr)
 	   {
+		   if (sIndex > 0)
+		   {
+			   LL_INFOS() << " ************* PRINT OUT LL CALL STACKS ************* " << LL_ENDL;
+			   while (sIndex > 0)
+			   {
+				   sIndex--;
+				   LL_INFOS() << sBuffer[sIndex] << LL_ENDL;
+			   }
+			   LL_INFOS() << " *************** END OF LL CALL STACKS *************** " << LL_ENDL;
+		   }
+
 		   freeStackBuffer();
 	   }
    }
@@ -1498,4 +1518,21 @@ namespace LLError
 	   freeStackBuffer();
    }
 }
+
+bool debugLoggingEnabled(const std::string& tag)
+{
+    const char* tags[] = {tag.c_str()};
+    ::size_t tag_count = 1;
+    LLError::CallSite _site(LLError::LEVEL_DEBUG, __FILE__, __LINE__, 
+                            typeid(_LL_CLASS_TO_LOG), __FUNCTION__, false, tags, tag_count);
+    if (LL_UNLIKELY(_site.shouldLog()))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 

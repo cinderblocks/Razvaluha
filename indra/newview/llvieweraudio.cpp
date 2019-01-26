@@ -55,7 +55,10 @@ void precache_audio()
 	already_precached = true;
 
 	// load up our initial set of sounds we'll want so they're in memory and ready to be played
-	if (gAudiop && !gSavedSettings.getBOOL("MuteAudio") && !gSavedSettings.getBOOL("NoPreload"))
+
+	BOOL mute_audio = gSavedSettings.getBOOL("MuteAudio");
+
+	if (gAudiop && !mute_audio && !gSavedSettings.getBOOL("NoPreload"))
 	{
 		gAudiop->preloadSound(LLUUID(gSavedSettings.getString("UISndAlert")));
 		gAudiop->preloadSound(LLUUID(gSavedSettings.getString("UISndBadKeystroke")));

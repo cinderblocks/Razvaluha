@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llinventorytype.cpp
  * @brief Inventory item type, more specific than an asset type.
@@ -31,8 +33,6 @@
 #include "llmemory.h"
 #include "llsingleton.h"
 
-static const std::string empty_string;
-
 ///----------------------------------------------------------------------------
 /// Class LLInventoryType
 ///----------------------------------------------------------------------------
@@ -64,8 +64,7 @@ struct InventoryEntry : public LLDictionaryEntry
 class LLInventoryDictionary : public LLSingleton<LLInventoryDictionary>,
 							  public LLDictionary<LLInventoryType::EType, InventoryEntry>
 {
-public:
-	LLInventoryDictionary();
+	LLSINGLETON(LLInventoryDictionary);
 };
 
 LLInventoryDictionary::LLInventoryDictionary()
@@ -85,6 +84,8 @@ LLInventoryDictionary::LLInventoryDictionary()
 	addEntry(LLInventoryType::IT_ANIMATION,           new InventoryEntry("animation", "animation",     1, LLAssetType::AT_ANIMATION));  
 	addEntry(LLInventoryType::IT_GESTURE,             new InventoryEntry("gesture",   "gesture",       1, LLAssetType::AT_GESTURE)); 
 	addEntry(LLInventoryType::IT_MESH,                new InventoryEntry("mesh",      "mesh",          1, LLAssetType::AT_MESH));
+	addEntry(LLInventoryType::IT_WIDGET,              new InventoryEntry("widget",    "widget",        1, LLAssetType::AT_WIDGET));
+	addEntry(LLInventoryType::IT_PERSON,              new InventoryEntry("person",    "person",        1, LLAssetType::AT_PERSON));
 }
 
 
@@ -135,12 +136,12 @@ DEFAULT_ASSET_FOR_INV_TYPE[LLAssetType::AT_COUNT] =
 	LLInventoryType::IT_NONE,			// 37	AT_NONE
 	LLInventoryType::IT_NONE,			// 38	AT_NONE
 	LLInventoryType::IT_NONE,			// 39	AT_NONE
-	LLInventoryType::IT_NONE,			// 40	AT_NONE
+	LLInventoryType::IT_WIDGET,			// 40	AT_WIDGET
 	LLInventoryType::IT_NONE,			// 41	AT_NONE
 	LLInventoryType::IT_NONE,			// 42	AT_NONE
 	LLInventoryType::IT_NONE,			// 43	AT_NONE
 	LLInventoryType::IT_NONE,			// 44	AT_NONE
-	LLInventoryType::IT_NONE,			// 45	AT_NONE
+	LLInventoryType::IT_PERSON,			// 45	AT_PERSON
 	LLInventoryType::IT_NONE,			// 46	AT_NONE
 	LLInventoryType::IT_NONE,			// 47	AT_NONE
 	LLInventoryType::IT_NONE,			// 48	AT_NONE
@@ -151,7 +152,7 @@ DEFAULT_ASSET_FOR_INV_TYPE[LLAssetType::AT_COUNT] =
 const std::string &LLInventoryType::lookup(EType type)
 {
 	const InventoryEntry *entry = LLInventoryDictionary::getInstance()->lookup(type);
-	if (!entry) return empty_string;
+    if (!entry) return LLStringUtil::null;
 	return entry->mName;
 }
 
@@ -167,7 +168,7 @@ LLInventoryType::EType LLInventoryType::lookup(const std::string& name)
 const std::string &LLInventoryType::lookupHumanReadable(EType type)
 {
 	const InventoryEntry *entry = LLInventoryDictionary::getInstance()->lookup(type);
-	if (!entry) return empty_string;
+	if (!entry) return LLStringUtil::null;
 	return entry->mHumanName;
 }
 
@@ -212,7 +213,7 @@ bool inventory_and_asset_types_match(LLInventoryType::EType inventory_type,
 
 	for (InventoryEntry::asset_vec_t::const_iterator iter = entry->mAssetTypes.begin();
 		 iter != entry->mAssetTypes.end();
-		 iter++)
+		 ++iter)
 	{
 		const LLAssetType::EType type = (*iter);
 		if(type == asset_type)

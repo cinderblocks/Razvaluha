@@ -188,12 +188,12 @@
 ///
 
 #include "linden_common.h"		// Modifies curl/curl.h interfaces
-#include "boost/intrusive_ptr.hpp"
-#include "boost/shared_ptr.hpp"
-#include "boost/weak_ptr.hpp"
-#include "boost/function.hpp"
+#include "llsd.h"
+#include <boost/weak_ptr.hpp>
+#include <boost/function.hpp>
 #include <string>
 #include <curl/curl.h>
+#include <boost/make_shared.hpp>
 
 namespace LLCore
 {
@@ -296,28 +296,35 @@ enum HttpError
 struct HttpStatus
 {
 	typedef unsigned short type_enum_t;
-	
+	enum : type_enum_t
+	{
+		EXT_CURL_EASY = 0,  ///< mStatus is an error from a curl_easy_*() call
+		EXT_CURL_MULTI = 1, ///< mStatus is an error from a curl_multi_*() call
+		LLCORE = 2			///< mStatus is an HE_* error code
+							///< 100-999 directly represent HTTP status codes
+	};
+
 	HttpStatus()
 	{
-		mDetails = boost::shared_ptr<Details>(new Details(LLCORE, HE_SUCCESS));
+		mDetails = boost::make_shared<Details>(LLCORE, HE_SUCCESS);
     }
 
 	HttpStatus(type_enum_t type, short status)
 	{
-        mDetails = boost::shared_ptr<Details>(new Details(type, status));
+        mDetails = boost::make_shared<Details>(type, status);
 	}
 	
 	HttpStatus(int http_status)
 	{
-        mDetails = boost::shared_ptr<Details>(new Details(http_status, 
-			(http_status >= 200 && http_status <= 299) ? HE_SUCCESS : HE_REPLY_ERROR));
+        mDetails = boost::make_shared<Details>(http_status,
+                                               http_status >= 200 && http_status <= 299 ? HE_SUCCESS : HE_REPLY_ERROR);
 		llassert(http_status >= 100 && http_status <= 999);
 	}
 
 	HttpStatus(int http_status, const std::string &message)
 	{
-        mDetails = boost::shared_ptr<Details>(new Details(http_status,
-			(http_status >= 200 && http_status <= 299) ? HE_SUCCESS : HE_REPLY_ERROR));
+        mDetails = boost::make_shared<Details>(http_status,
+                                               http_status >= 200 && http_status <= 299 ? HE_SUCCESS : HE_REPLY_ERROR);
 		llassert(http_status >= 100 && http_status <= 999);
 		mDetails->mMessage = message;
 	}
@@ -339,14 +346,10 @@ struct HttpStatus
 
     HttpStatus & clone(const HttpStatus &rhs)
     {
-        mDetails = boost::shared_ptr<Details>(new Details(*rhs.mDetails));
+        mDetails = boost::make_shared<Details>(*rhs.mDetails);
         return *this;
     }
 	
-	static const type_enum_t EXT_CURL_EASY = 0;			///< mStatus is an error from a curl_easy_*() call
-	static const type_enum_t EXT_CURL_MULTI = 1;		///< mStatus is an error from a curl_multi_*() call
-	static const type_enum_t LLCORE = 2;				///< mStatus is an HE_* error code
-														///< 100-999 directly represent HTTP status codes
 	/// Test for successful status in the code regardless
 	/// of error source (internal, libcurl).
 	///
@@ -447,14 +450,14 @@ struct HttpStatus
 		mDetails->mMessage = message;
 	}
 
-	/// Retrieves an optionally recorded SSL certificate.
-	void * getErrorData() const
+	/// Retrieves data about an optionally recorded SSL certificate.
+	LLSD getErrorData() const
 	{
 		return mDetails->mErrorData;
 	}
 
 	/// Optionally sets an SSL certificate on this status.
-	void setErrorData(void *data)
+	void setErrorData(LLSD data)
 	{
 		mDetails->mErrorData = data;
 	}
@@ -467,7 +470,7 @@ private:
 			mType(type),
 			mStatus(status),
 			mMessage(),
-			mErrorData(NULL)
+			mErrorData()
 		{}
 
 		Details(const Details &rhs) :
@@ -477,6 +480,18 @@ private:
 			mErrorData(rhs.mErrorData)
 		{}
 
+        Details& operator=(const Details &rhs)
+        {
+            if (this != &rhs)
+            {
+                mType = rhs.mType;
+                mStatus = rhs.mStatus;
+                mMessage = rhs.mMessage;
+                mErrorData = rhs.mErrorData;
+            }
+            return *this;
+        }
+
         bool operator == (const Details &rhs) const
         {
             return (mType == rhs.mType) && (mStatus == rhs.mStatus);
@@ -485,7 +500,7 @@ private:
 		type_enum_t	mType;
 		short		mStatus;
 		std::string	mMessage;
-		void *		mErrorData;
+		LLSD		mErrorData;
 	};
 
     boost::shared_ptr<Details> mDetails;

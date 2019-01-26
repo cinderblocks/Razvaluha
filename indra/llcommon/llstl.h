@@ -31,7 +31,6 @@
 #include <functional>
 #include <algorithm>
 #include <map>
-#include <utility>
 #include <vector>
 #include <list>
 #include <set>
@@ -86,6 +85,7 @@ struct DeletePointer
 	template<typename T> void operator()(T* ptr) const
 	{
 		delete ptr;
+		ptr = NULL;
 	}
 };
 struct DeletePointerArray
@@ -93,6 +93,7 @@ struct DeletePointerArray
 	template<typename T> void operator()(T* ptr) const
 	{
 		delete[] ptr;
+		ptr = NULL;
 	}
 };
 
@@ -116,46 +117,6 @@ struct DeletePairedPointerArray
 	{
 		delete[] ptr.second;
 		ptr.second = NULL;
-	}
-};
-
-
-// Alternate version of the above so that has a more cumbersome
-// syntax, but it can be used with compositional functors.
-// NOTE: The functor retuns a bool because msdev bombs during the
-// composition if you return void. Once we upgrade to a newer
-// compiler, the second unary_function template parameter can be set
-// to void.
-//
-// Here's a snippet showing how you use this object:
-//
-// typedef std::map<int, widget*> map_type;
-// map_type widget_map;
-// ... // add elements
-// // delete them all
-// for_each(widget_map.begin(),
-//          widget_map.end(),
-//          llcompose1(DeletePointerFunctor<widget>(),
-//                     llselect2nd<map_type::value_type>()));
-
-template<typename T>
-struct DeletePointerFunctor : public std::unary_function<T*, bool>
-{
-	bool operator()(T* ptr) const
-	{
-		delete ptr;
-		return true;
-	}
-};
-
-// See notes about DeleteArray for why you should consider avoiding this.
-template<typename T>
-struct DeleteArrayFunctor : public std::unary_function<T*, bool>
-{
-	bool operator()(T* ptr) const
-	{
-		delete[] ptr;
-		return true;
 	}
 };
 
@@ -217,10 +178,17 @@ void delete_and_clear_array(T*& ptr)
 
 // helper function which returns true if key is in inmap.
 template <typename T>
-//Singu note: This has been generalized to support a broader range of map-esque containers
+// <alchemy/> - This has been generalized to support a broader range of map-esque containers
 inline bool is_in_map(const T& inmap, typename T::key_type const& key)
 {
-	return inmap.find(key) != inmap.end();
+	if(inmap.find(key) == inmap.end())
+	{
+		return false;
+}
+	else
+	{
+		return true;
+	}
 }
 
 // Similar to get_ptr_in_map, but for any type with a valid T(0) constructor.
@@ -228,7 +196,7 @@ inline bool is_in_map(const T& inmap, typename T::key_type const& key)
 //   get_if_there(map, key, 0)
 // WARNING: Make sure default_value (generally 0) is not a valid map entry!
 //
-//Singu note: This has been generalized to support a broader range of map-esque containers.
+// <alchemy/> - This has been generalized to support a broader range of map-esque containers.
 template <typename T>
 inline typename T::mapped_type get_if_there(const T& inmap, typename T::key_type const& key, typename T::mapped_type default_value)
 {
@@ -253,14 +221,13 @@ inline typename T::mapped_type get_if_there(const T& inmap, typename T::key_type
 //	foo[2] = "hello";
 // 	const char* bar = get_ptr_in_map(foo, 2); // bar -> "hello"
 //  const char* baz = get_ptr_in_map(foo, 3); // baz == NULL
-//Singu note: This has been generalized to support a broader range of map-esque containers
+// <alchemy/> - This has been generalized to support a broader range of map-esque containers
 template <typename T>
 inline typename T::mapped_type get_ptr_in_map(const T& inmap, typename T::key_type const& key)
 {
 	return get_if_there(inmap,key,NULL);
 };
 
-// Useful for replacing the removeObj() functionality of LLDynamicArray
 // Example:
 //  for (std::vector<T>::iterator iter = mList.begin(); iter != mList.end(); )
 //  {
@@ -270,16 +237,16 @@ inline typename T::mapped_type get_ptr_in_map(const T& inmap, typename T::key_ty
 //      ++iter;
 //  }
 //
-//Singu note: This has been generalized to support a broader range of sequence containers
+// <alchemy/> - This has been generalized to support a broader range of sequence containers
 template <typename T>
 inline typename T::iterator vector_replace_with_last(T& invec, typename T::iterator iter)
 {
-	typename T::iterator last = invec.end();
+	typename T::iterator last = invec.end(); --last;
 	if (iter == invec.end())
 	{
 		return iter;
 	}
-	else if (iter == --last)
+	else if (iter == last)
 	{
 		invec.pop_back();
 		return invec.end();
@@ -292,11 +259,10 @@ inline typename T::iterator vector_replace_with_last(T& invec, typename T::itera
 	}
 };
 
-// Useful for replacing the removeObj() functionality of LLDynamicArray
 // Example:
 //   vector_replace_with_last(mList, x);
 //
-//Singu note: This has been generalized to support a broader range of sequence containers
+// <alchemy/> - This has been generalized to support a broader range of sequence containers
 template <typename T>
 inline bool vector_replace_with_last(T& invec, typename T::value_type const& val)
 {
@@ -313,9 +279,9 @@ inline bool vector_replace_with_last(T& invec, typename T::value_type const& val
 
 // Append N elements to the vector and return a pointer to the first new element.
 template <typename T>
-inline T* vector_append(std::vector<T>& invec, S32 N)
+inline T* vector_append(std::vector<T>& invec, size_t N)
 {
-	U32 sz = invec.size();
+	size_t sz = invec.size();
 	invec.resize(sz+N);
 	return &(invec[sz]);
 }
@@ -380,131 +346,16 @@ OutputIter ll_transform_n(
  */
 
 
-// helper to deal with the fact that MSDev does not package
-// select... with the stl. Look up usage on the sgi website.
 
-template <class _Pair>
-struct _LLSelect1st : public std::unary_function<_Pair, typename _Pair::first_type> {
-  const typename _Pair::first_type& operator()(const _Pair& __x) const {
-	return __x.first;
-  }
-};
-
-template <class _Pair>
-struct _LLSelect2nd : public std::unary_function<_Pair, typename _Pair::second_type>
+/**
+ * Compare std::type_info* pointers a la std::less. We break this out as a
+ * separate function for use in two different std::less specializations.
+ */
+inline
+bool before(const std::type_info* lhs, const std::type_info* rhs)
 {
-  const typename _Pair::second_type& operator()(const _Pair& __x) const {
-	return __x.second;
-  }
-};
-
-template <class _Pair> struct llselect1st : public _LLSelect1st<_Pair> {};
-template <class _Pair> struct llselect2nd : public _LLSelect2nd<_Pair> {};
-
-// helper to deal with the fact that MSDev does not package
-// compose... with the stl. Look up usage on the sgi website.
-
-template <class _Operation1, class _Operation2>
-class ll_unary_compose :
-	public std::unary_function<typename _Operation2::argument_type,
-							   typename _Operation1::result_type>
-{
-protected:
-  _Operation1 __op1;
-  _Operation2 __op2;
-public:
-  ll_unary_compose(const _Operation1& __x, const _Operation2& __y)
-	: __op1(__x), __op2(__y) {}
-  typename _Operation1::result_type
-  operator()(const typename _Operation2::argument_type& __x) const {
-	return __op1(__op2(__x));
-  }
-};
-
-template <class _Operation1, class _Operation2>
-inline ll_unary_compose<_Operation1,_Operation2>
-llcompose1(const _Operation1& __op1, const _Operation2& __op2)
-{
-  return ll_unary_compose<_Operation1,_Operation2>(__op1, __op2);
-}
-
-template <class _Operation1, class _Operation2, class _Operation3>
-class ll_binary_compose
-  : public std::unary_function<typename _Operation2::argument_type,
-							   typename _Operation1::result_type> {
-protected:
-  _Operation1 _M_op1;
-  _Operation2 _M_op2;
-  _Operation3 _M_op3;
-public:
-  ll_binary_compose(const _Operation1& __x, const _Operation2& __y,
-					const _Operation3& __z)
-	: _M_op1(__x), _M_op2(__y), _M_op3(__z) { }
-  typename _Operation1::result_type
-  operator()(const typename _Operation2::argument_type& __x) const {
-	return _M_op1(_M_op2(__x), _M_op3(__x));
-  }
-};
-
-template <class _Operation1, class _Operation2, class _Operation3>
-inline ll_binary_compose<_Operation1, _Operation2, _Operation3>
-llcompose2(const _Operation1& __op1, const _Operation2& __op2,
-		 const _Operation3& __op3)
-{
-  return ll_binary_compose<_Operation1,_Operation2,_Operation3>
-	(__op1, __op2, __op3);
-}
-
-// helpers to deal with the fact that MSDev does not package
-// bind... with the stl. Again, this is from sgi.
-template <class _Operation>
-class llbinder1st :
-	public std::unary_function<typename _Operation::second_argument_type,
-							   typename _Operation::result_type> {
-protected:
-  _Operation op;
-  typename _Operation::first_argument_type value;
-public:
-  llbinder1st(const _Operation& __x,
-			  const typename _Operation::first_argument_type& __y)
-	  : op(__x), value(__y) {}
-	typename _Operation::result_type
-	operator()(const typename _Operation::second_argument_type& __x) const {
-		return op(value, __x);
-	}
-};
-
-template <class _Operation, class _Tp>
-inline llbinder1st<_Operation>
-llbind1st(const _Operation& __oper, const _Tp& __x)
-{
-  typedef typename _Operation::first_argument_type _Arg1_type;
-  return llbinder1st<_Operation>(__oper, _Arg1_type(__x));
-}
-
-template <class _Operation>
-class llbinder2nd
-	: public std::unary_function<typename _Operation::first_argument_type,
-								 typename _Operation::result_type> {
-protected:
-	_Operation op;
-	typename _Operation::second_argument_type value;
-public:
-	llbinder2nd(const _Operation& __x,
-				const typename _Operation::second_argument_type& __y)
-		: op(__x), value(__y) {}
-	typename _Operation::result_type
-	operator()(const typename _Operation::first_argument_type& __x) const {
-		return op(__x, value);
-	}
-};
-
-template <class _Operation, class _Tp>
-inline llbinder2nd<_Operation>
-llbind2nd(const _Operation& __oper, const _Tp& __x)
-{
-  typedef typename _Operation::second_argument_type _Arg2_type;
-  return llbinder2nd<_Operation>(__oper, _Arg2_type(__x));
+    // Just use before(), as we normally would
+    return lhs->before(*rhs) ? true : false;
 }
 
 /**
@@ -516,22 +367,20 @@ llbind2nd(const _Operation& __oper, const _Tp& __x)
 namespace std
 {
 	template <>
-	struct less<const std::type_info*>:
-		public std::binary_function<const std::type_info*, const std::type_info*, bool>
+	struct less<const std::type_info*>
 	{
 		bool operator()(const std::type_info* lhs, const std::type_info* rhs) const
 		{
-			return lhs->before(*rhs);
+			return before(lhs, rhs);
 		}
 	};
 
 	template <>
-	struct less<std::type_info*>:
-		public std::binary_function<std::type_info*, std::type_info*, bool>
+	struct less<std::type_info*>
 	{
 		bool operator()(std::type_info* lhs, std::type_info* rhs) const
 		{
-			return lhs->before(*rhs);
+			return before(lhs, rhs);
 		}
 	};
 } // std
@@ -547,10 +396,10 @@ namespace std
 template <typename T, typename U>
 struct ll_template_cast_impl
 {
-	T operator()(U)
-	{
-		return 0;
-	}
+    T operator()(U)
+    {
+        return 0;
+    }
 };
 
 /**
@@ -592,7 +441,7 @@ struct ll_template_cast_impl
 template <typename T, typename U>
 T ll_template_cast(U value)
 {
-	return ll_template_cast_impl<T, U>()(value);
+    return ll_template_cast_impl<T, U>()(value);
 }
 
 /**
@@ -603,10 +452,10 @@ T ll_template_cast(U value)
 template <typename T>
 struct ll_template_cast_impl<T, T>
 {
-	T operator()(T value)
-	{
-		return value;
-	}
+    T operator()(T value)
+    {
+        return value;
+    }
 };
 
 /**
@@ -676,10 +525,10 @@ struct ll_template_cast_impl<T, T>
 template <>                                     \
 struct ll_template_cast_impl<DEST, SOURCE>      \
 {                                               \
-	DEST operator()(SOURCE wrapper)             \
-	{                                           \
-		return wrapper;                         \
-	}                                           \
+    DEST operator()(SOURCE wrapper)             \
+    {                                           \
+        return wrapper;                         \
+    }                                           \
 }
 
 

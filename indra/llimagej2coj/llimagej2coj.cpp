@@ -1,4 +1,6 @@
-/**
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+/** 
  * @file llimagej2coj.cpp
  * @brief This is an implementation of JPEG2000 encode/decode using OpenJPEG.
  *
@@ -33,23 +35,16 @@
 #include "lltimer.h"
 //#include "llmemory.h"
 
-const char* fallbackEngineInfoLLImageJ2CImpl()
-{
-	static std::string version_string =
-		std::string("OpenJPEG: " /*OPENJPEG_VERSION ", Runtime: "*/)
-		+ opj_version();
-	return version_string.c_str();
-}
-
+// Factory function: see declaration in llimagej2c.cpp
 LLImageJ2CImpl* fallbackCreateLLImageJ2CImpl()
 {
 	return new LLImageJ2COJ();
 }
 
-void fallbackDestroyLLImageJ2CImpl(LLImageJ2CImpl* impl)
+std::string LLImageJ2COJ::getEngineInfo() const
 {
-	delete impl;
-	impl = NULL;
+	return std::string("OpenJPEG: " OPENJPEG_VERSION ", Runtime: ")
+		+ opj_version();
 }
 
 // Return string from message, eliminating final \n if present
@@ -107,36 +102,71 @@ LLImageJ2COJ::~LLImageJ2COJ()
 {
 }
 
-BOOL LLImageJ2COJ::initDecode(LLImageJ2C &base, LLImageRaw &raw_image, int discard_level, int* region)
+bool LLImageJ2COJ::initDecode(LLImageJ2C &base, LLImageRaw &raw_image, int discard_level, int* region)
 {
 	// No specific implementation for this method in the OpenJpeg case
-	return FALSE;
+	return false;
 }
 
-BOOL LLImageJ2COJ::initEncode(LLImageJ2C &base, LLImageRaw &raw_image, int blocks_size, int precincts_size, int levels)
+bool LLImageJ2COJ::initEncode(LLImageJ2C &base, LLImageRaw &raw_image, int blocks_size, int precincts_size, int levels)
 {
 	// No specific implementation for this method in the OpenJpeg case
-	return FALSE;
+	return false;
 }
 
-BOOL LLImageJ2COJ::decodeImpl(LLImageJ2C &base, LLImageRaw &raw_image, F32 decode_time, S32 first_channel, S32 max_channel_count)
+bool LLImageJ2COJ::decodeImpl(LLImageJ2C &base, LLImageRaw &raw_image, F32 decode_time, S32 first_channel, S32 max_channel_count)
 {
-	//
-	// FIXME: Get the comment field out of the texture
-	//
-
 	LLTimer decode_timer;
 
+	/* Extract metadata */
+	/* ---------------- */
+	U8* c_data = base.getData();
+	size_t c_size =  base.getDataSize();
+	size_t position = 0;
+	
+	while (position < 1024 && position < (c_size - 7)) // the comment field should be in the first 1024 bytes.
+	{
+		if (c_data[position] == 0xff && c_data[position + 1] == 0x64)
+		{
+			U8 high_byte = c_data[position + 2];
+			U8 low_byte = c_data[position + 3];
+			S32 c_length = (high_byte * 256) + low_byte; // This size also counts the markers, 00 01 and itself
+			if (c_length > 200) // sanity check
+			{
+				// While comments can be very long, anything longer then 200 is suspect.
+				break;
+			}
+			
+			if (position + 2 + c_length > c_size)
+			{
+				// comment extends past end of data, corruption, or all data not retrived yet.
+				break;
+			}
+			
+			// if the comment block does not end at the end of data, check to see if the next
+			// block starts with 0xFF
+			if (position + 2 + c_length < c_size && c_data[position + 2 + c_length] != 0xff)
+			{
+				// invalied comment block
+				break;
+			}
+			
+			// extract the comment minus the markers, 00 01
+			raw_image.mComment.assign((char*)c_data + position + 6, c_length - 4);
+			break;
+		}
+		++position;
+	}
+	
 	opj_dparameters_t parameters;	/* decompression parameters */
-	opj_event_mgr_t event_mgr;		/* event manager */
-	opj_image_t *image = NULL;
+	opj_event_mgr_t event_mgr = { };		/* event manager */
+	opj_image_t *image = nullptr;
 
-	opj_dinfo_t* dinfo = NULL;	/* handle to a decompressor */
-	opj_cio_t *cio = NULL;
+	opj_dinfo_t* dinfo = nullptr;	/* handle to a decompressor */
+	opj_cio_t *cio = nullptr;
 
 
 	/* configure the event callbacks (not required) */
-	memset(&event_mgr, 0, sizeof(opj_event_mgr_t));
 	event_mgr.error_handler = error_callback;
 	event_mgr.warning_handler = warning_callback;
 	event_mgr.info_handler = info_callback;
@@ -206,7 +236,7 @@ BOOL LLImageJ2COJ::decodeImpl(LLImageJ2C &base, LLImageRaw &raw_image, F32 decod
 			opj_image_destroy(image);
 		}
 		base.decodeFailed();
-		return TRUE; // done
+		return true; // done
 	}
 
 	// sometimes we get bad data out of the cache - check to see if the decode succeeded
@@ -220,7 +250,7 @@ BOOL LLImageJ2COJ::decodeImpl(LLImageJ2C &base, LLImageRaw &raw_image, F32 decod
 				opj_image_destroy(image);
 			}
 			base.decodeFailed();
-			return TRUE;
+			return true;
 		}
 	}
 	
@@ -232,7 +262,7 @@ BOOL LLImageJ2COJ::decodeImpl(LLImageJ2C &base, LLImageRaw &raw_image, F32 decod
 			opj_image_destroy(image);
 		}
 		base.decodeFailed();
-		return TRUE;
+		return true;
 	}
 
 	// Copy image data into our raw image format (instead of the separate channel format
@@ -255,6 +285,13 @@ BOOL LLImageJ2COJ::decodeImpl(LLImageJ2C &base, LLImageRaw &raw_image, F32 decod
 	S32 height = ceildivpow2(image->y1 - image->y0, f);
 	raw_image.resize(width, height, channels);
 	U8 *rawp = raw_image.getData();
+	if (!rawp)
+	{
+		opj_image_destroy(image);
+		base.setLastError("Memory error");
+		base.decodeFailed();
+		return true; // done
+	}
 
 	// first_channel is what channel to start copying from
 	// dest is what channel to copy to.  first_channel comes from the
@@ -282,29 +319,28 @@ BOOL LLImageJ2COJ::decodeImpl(LLImageJ2C &base, LLImageRaw &raw_image, F32 decod
 				opj_image_destroy(image);
 			}
 			base.decodeFailed();
-			return TRUE; // done
+			return true; // done
 		}
 	}
 
 	/* free image data structure */
 	opj_image_destroy(image);
 
-	return TRUE; // done
+	return true; // done
 }
 
 
-BOOL LLImageJ2COJ::encodeImpl(LLImageJ2C &base, const LLImageRaw &raw_image, const char* comment_text, F32 encode_time, BOOL reversible)
+bool LLImageJ2COJ::encodeImpl(LLImageJ2C &base, const LLImageRaw &raw_image, const char* comment_text, F32 encode_time, bool reversible)
 {
 	const S32 MAX_COMPS = 5;
 	opj_cparameters_t parameters;	/* compression parameters */
-	opj_event_mgr_t event_mgr;		/* event manager */
+	opj_event_mgr_t event_mgr = { };		/* event manager */
 
 
 	/* 
 	configure the event callbacks (not required)
 	setting of each callback is optional 
 	*/
-	memset(&event_mgr, 0, sizeof(opj_event_mgr_t));
 	event_mgr.error_handler = error_callback;
 	event_mgr.warning_handler = warning_callback;
 	event_mgr.info_handler = info_callback;
@@ -349,7 +385,7 @@ BOOL LLImageJ2COJ::encodeImpl(LLImageJ2C &base, const LLImageRaw &raw_image, con
 	//
 	OPJ_COLOR_SPACE color_space = CLRSPC_SRGB;
 	opj_image_cmptparm_t cmptparm[MAX_COMPS];
-	opj_image_t * image = NULL;
+	opj_image_t * image = nullptr;
 	S32 numcomps = llmin((S32)raw_image.getComponents(), MAX_COMPS);
 	S32 width = raw_image.getWidth();
 	S32 height = raw_image.getHeight();
@@ -393,7 +429,7 @@ BOOL LLImageJ2COJ::encodeImpl(LLImageJ2C &base, const LLImageRaw &raw_image, con
 	/* ---------------------------- */
 
 	int codestream_length;
-	opj_cio_t *cio = NULL;
+	opj_cio_t *cio = nullptr;
 
 	/* get a J2K compressor handle */
 	opj_cinfo_t* cinfo = opj_create_compress(CODEC_J2K);
@@ -406,15 +442,15 @@ BOOL LLImageJ2COJ::encodeImpl(LLImageJ2C &base, const LLImageRaw &raw_image, con
 
 	/* open a byte stream for writing */
 	/* allocate memory for all tiles */
-	cio = opj_cio_open((opj_common_ptr)cinfo, NULL, 0);
+	cio = opj_cio_open((opj_common_ptr)cinfo, nullptr, 0);
 
 	/* encode the image */
-	bool bSuccess = opj_encode(cinfo, cio, image, NULL);
+	bool bSuccess = opj_encode(cinfo, cio, image, nullptr);
 	if (!bSuccess)
 	{
 		opj_cio_close(cio);
 		LL_DEBUGS("Texture") << "Failed to encode image." << LL_ENDL;
-		return FALSE;
+		return false;
 	}
 	codestream_length = cio_tell(cio);
 
@@ -433,7 +469,7 @@ BOOL LLImageJ2COJ::encodeImpl(LLImageJ2C &base, const LLImageRaw &raw_image, con
 
 	/* free image data */
 	opj_image_destroy(image);
-	return TRUE;
+	return true;
 }
 
 inline S32 extractLong4( U8 const *aBuffer, int nOffset )
@@ -493,7 +529,7 @@ bool getMetadataFast( LLImageJ2C &aImage, S32 &aW, S32 &aH, S32 &aComps )
 	return true;
 }
 
-BOOL LLImageJ2COJ::getMetadata(LLImageJ2C &base)
+bool LLImageJ2COJ::getMetadata(LLImageJ2C &base)
 {
 	//
 	// FIXME: We get metadata by decoding the ENTIRE image.
@@ -509,21 +545,20 @@ BOOL LLImageJ2COJ::getMetadata(LLImageJ2C &base)
 	if ( getMetadataFast( base, width, height, img_components ) )
 	{
 		base.setSize(width, height, img_components);
-		return TRUE;
+		return true;
 	}
 
 	// Do it the old and slow way, decode the image with openjpeg
 
 	opj_dparameters_t parameters;	/* decompression parameters */
-	opj_event_mgr_t event_mgr;		/* event manager */
-	opj_image_t *image = NULL;
+	opj_event_mgr_t event_mgr = { };		/* event manager */
+	opj_image_t *image = nullptr;
 
-	opj_dinfo_t* dinfo = NULL;	/* handle to a decompressor */
-	opj_cio_t *cio = NULL;
+	opj_dinfo_t* dinfo = nullptr;	/* handle to a decompressor */
+	opj_cio_t *cio = nullptr;
 
 
 	/* configure the event callbacks (not required) */
-	memset(&event_mgr, 0, sizeof(opj_event_mgr_t));
 	event_mgr.error_handler = error_callback;
 	event_mgr.warning_handler = warning_callback;
 	event_mgr.info_handler = info_callback;
@@ -568,7 +603,7 @@ BOOL LLImageJ2COJ::getMetadata(LLImageJ2C &base)
 	if(!image)
 	{
 		LL_WARNS() << "ERROR -> getMetadata: failed to decode image!" << LL_ENDL;
-		return FALSE;
+		return false;
 	}
 
 	// Copy image data into our raw image format (instead of the separate channel format
@@ -580,5 +615,5 @@ BOOL LLImageJ2COJ::getMetadata(LLImageJ2C &base)
 
 	/* free image data structure */
 	opj_image_destroy(image);
-	return TRUE;
+	return true;
 }

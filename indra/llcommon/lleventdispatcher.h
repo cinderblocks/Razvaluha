@@ -47,29 +47,22 @@
 // namespace) that a global 'nil' macro breaks badly.
 #if defined(nil)
 // Capture the value of the macro 'nil', hoping int is an appropriate type.
-static const int nil_(nil);
+static const auto nil_(nil);
 // Now forget the macro.
 #undef nil
 // Finally, reintroduce 'nil' as a properly-scoped alias for the previously-
 // defined const 'nil_'. Make it static since otherwise it produces duplicate-
 // symbol link errors later.
-static const int& nil(nil_);
+static const auto& nil(nil_);
 #endif
 
 #include <string>
-#include <boost/shared_ptr.hpp>
-#ifndef BOOST_FUNCTION_HPP_INCLUDED
 #include <boost/function.hpp>
-#define BOOST_FUNCTION_HPP_INCLUDED
-#endif
-#include <boost/bind.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/function_types/is_nonmember_callable_builtin.hpp>
 #include <boost/function_types/parameter_types.hpp>
 #include <boost/function_types/function_arity.hpp>
-#include <boost/type_traits/remove_cv.hpp>
-#include <boost/type_traits/remove_reference.hpp>
 #include <boost/fusion/include/push_back.hpp>
 #include <boost/fusion/include/cons.hpp>
 #include <boost/fusion/include/invoke.hpp>
@@ -186,7 +179,7 @@ public:
      * instantiate, instead of directly storing an instance pointer, accept a
      * nullary callable returning a pointer/reference to the desired class
      * instance. If you already have an instance in hand,
-     * boost::lambda::var(instance) or boost::lambda::constant(instance_ptr)
+     * [&] { return instance; } 
      * produce suitable callables.
      *
      * When calling this name, pass an LLSD::Array. Each entry in turn will be
@@ -233,7 +226,7 @@ public:
      * instantiate, instead of directly storing an instance pointer, accept a
      * nullary callable returning a pointer/reference to the desired class
      * instance. If you already have an instance in hand,
-     * boost::lambda::var(instance) or boost::lambda::constant(instance_ptr)
+     * [&] { return instance; }
      * produce suitable callables.
      *
      * Pass an LLSD::Array of parameter names, and optionally another
@@ -302,8 +295,8 @@ private:
     // around, I want it to continue pointing to the same DispatchEntry
     // subclass object. However, I definitely want DispatchMap to destroy
     // DispatchEntry if no references are outstanding at the time an entry is
-    // removed. This looks like a job for boost::shared_ptr.
-    typedef std::map<std::string, boost::shared_ptr<DispatchEntry> > DispatchMap;
+    // removed. This looks like a job for std::shared_ptr.
+    typedef std::map<std::string, std::shared_ptr<DispatchEntry> > DispatchMap;
 
 public:
     /// We want the flexibility to redefine what data we store per name,
@@ -430,7 +423,7 @@ struct LLEventDispatcher::invoker
         // Instead of grabbing the first item from argsrc and making an
         // LLSDParam of it, call getter() and pass that as the instance param.
         invoker<Function, next_iter_type, To>::apply
-        ( func, argsrc, boost::fusion::push_back(boost::fusion::nil(), boost::ref(getter())));
+        ( func, argsrc, boost::fusion::push_back(boost::fusion::nil(), std::ref(getter())));
     }
 };
 

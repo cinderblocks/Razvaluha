@@ -26,8 +26,10 @@
  * $/LicenseInfo$
  */
 
-#if ! defined(LL_LLCOROS_H)
+#ifndef LL_LLCOROS_H
 #define LL_LLCOROS_H
+
+#include "llwin32headerslean.h"
 
 #include <boost/dcoroutine/coroutine.hpp>
 #include <boost/dcoroutine/future.hpp>
@@ -37,6 +39,7 @@
 #include <boost/thread/tss.hpp>
 #include <string>
 #include <stdexcept>
+#include "llcoro_get_id.h"          // for friend declaration
 
 // forward-declare helper class
 namespace llcoro
@@ -83,6 +86,7 @@ class Suspending;
  */
 class LL_COMMON_API LLCoros: public LLSingleton<LLCoros>
 {
+    LLSINGLETON(LLCoros);
 public:
     /// Canonical boost::dcoroutines::coroutine signature we use
     typedef boost::dcoroutines::coroutine<void()> coro;
@@ -173,13 +177,15 @@ public:
     class Future;
 
 private:
-    LLCoros();
-    friend class LLSingleton<LLCoros>;
     friend class llcoro::Suspending;
+    friend llcoro::id llcoro::get_id();
     std::string generateDistinctName(const std::string& prefix) const;
     bool cleanup(const LLSD&);
     struct CoroData;
     static void no_cleanup(CoroData*);
+#if LL_WINDOWS
+    static void winlevel(const callable_t& callable);
+#endif
     static void toplevel(coro::self& self, CoroData* data, const callable_t& callable);
     static CoroData& get_CoroData(const std::string& caller);
 
@@ -222,8 +228,22 @@ private:
     typedef boost::ptr_map<std::string, CoroData> CoroMap;
     CoroMap mCoros;
 
-    // identify the current coroutine's CoroData
-    static boost::thread_specific_ptr<LLCoros::CoroData> sCurrentCoro;
+    // Identify the current coroutine's CoroData. Use a little helper class so
+    // a caller can either use a temporary instance, or instantiate a named
+    // variable and access it multiple times.
+    class Current
+    {
+    public:
+        Current();
+
+        operator LLCoros::CoroData*() { return get(); }
+        LLCoros::CoroData* operator->() { return get(); }
+        LLCoros::CoroData* get() { return mCurrent->get(); }
+        void reset(LLCoros::CoroData* ptr) { mCurrent->reset(ptr); }
+
+    private:
+        boost::thread_specific_ptr<LLCoros::CoroData>* mCurrent;
+    };
 };
 
 namespace llcoro
@@ -236,6 +256,10 @@ class Suspending
 public:
     Suspending();
     ~Suspending();
+
+protected:
+    Suspending(const Suspending&) = delete;
+    Suspending& operator=(const Suspending&) = delete;
 
 private:
     LLCoros::CoroData* mSuspended;

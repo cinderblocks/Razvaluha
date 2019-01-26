@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llviewervisualparam.cpp
  * @brief Implementation of LLViewerVisualParam class
@@ -76,7 +78,7 @@ BOOL LLViewerVisualParamInfo::parseXml(LLXmlTreeNode *node)
 	static LLStdStringHandle edit_group_string = LLXmlTree::addAttributeString("edit_group");
 	if (!node->getFastAttributeString( edit_group_string, mEditGroup))
 	{
-		mEditGroup = "";
+		mEditGroup.clear();
 	}
 
 	static LLStdStringHandle cross_wearable_string = LLXmlTree::addAttributeString("cross_wearable");

@@ -49,6 +49,16 @@
 
 #include "hippogridmanager.h"
 
+// String equivalents of enum Categories - initialization order must match enum order!
+const std::array<std::string, 6> LLFloaterPermsDefault::sCategoryNames {{
+	"Objects",
+	"Uploads",
+	"Scripts",
+	"Notecards",
+	"Gestures",
+	"Wearables"
+}};
+
 //static
 U32 LLFloaterPerms::getGroupPerms(std::string prefix)
 {
@@ -141,18 +151,6 @@ LLFloaterPermsDefault::LLFloaterPermsDefault(const LLSD& seed)
 	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_perm_prefs.xml");
 }
 
-
-// String equivalents of enum Categories - initialization order must match enum order!
-const std::string LLFloaterPermsDefault::sCategoryNames[CAT_LAST] =
-{
-	"Objects",
-	"Uploads",
-	"Scripts",
-	"Notecards",
-	"Gestures",
-	"Wearables"
-};
-
 void LLFloaterPermsDefault::initCheckboxes(bool export_support, const std::string& type)
 {
 	const U32 next_owner_perms = LLFloaterPerms::getNextOwnerPerms(type);
@@ -178,7 +176,7 @@ BOOL LLFloaterPermsDefault::postBuild()
 	//handle_checkboxes
 	bool export_support = LFSimFeatureHandler::instance().simSupportsExport();
 	bool is_sl = gHippoGridManager->getCurrentGrid()->isSecondLife();
-	for (S32 i = 0; i < CAT_LAST; ++i)
+	for (S32 i = 0; i < sCategoryNames.size(); ++i)
 	{
 		const std::string& type(sCategoryNames[i]);
 		initCheckboxes(export_support, type);
@@ -242,6 +240,11 @@ void LLFloaterPermsDefault::sendInitialPerms()
 
 void LLFloaterPermsDefault::updateCap()
 {
+    if (!gAgent.getRegion())
+    {
+        LL_WARNS("Avatar") << "Region not set, cannot request capability update" << LL_ENDL;
+        return;
+    }
 	std::string object_url = gAgent.getRegion()->getCapability("AgentPreferences");
 
 	if(!object_url.empty())
@@ -250,7 +253,7 @@ void LLFloaterPermsDefault::updateCap()
             boost::bind(&LLFloaterPermsDefault::updateCapCoro, object_url));
 	}
     else
-	{
+    {
         LL_DEBUGS("ObjectPermissionsFloater") << "AgentPreferences cap not available." << LL_ENDL;
     }
 }
@@ -267,11 +270,11 @@ void LLFloaterPermsDefault::updateCapCoro(std::string url)
 
     LLSD postData = LLSD::emptyMap();
     postData["default_object_perm_masks"]["Group"] =
-		(LLSD::Integer)LLFloaterPerms::getGroupPerms(sCategoryNames[CAT_OBJECTS]);
+        (LLSD::Integer)LLFloaterPerms::getGroupPerms(sCategoryNames[0]);
     postData["default_object_perm_masks"]["Everyone"] =
-		(LLSD::Integer)LLFloaterPerms::getEveryonePerms(sCategoryNames[CAT_OBJECTS]);
+        (LLSD::Integer)LLFloaterPerms::getEveryonePerms(sCategoryNames[0]);
     postData["default_object_perm_masks"]["NextOwner"] =
-		(LLSD::Integer)LLFloaterPerms::getNextOwnerPerms(sCategoryNames[CAT_OBJECTS]);
+        (LLSD::Integer)LLFloaterPerms::getNextOwnerPerms(sCategoryNames[0]);
 
     {
         LL_DEBUGS("ObjectPermissionsFloater") << "Sending default permissions to '"
@@ -279,7 +282,7 @@ void LLFloaterPermsDefault::updateCapCoro(std::string url)
         std::ostringstream sent_perms_log;
         LLSDSerialize::toPrettyXML(postData, sent_perms_log);
         LL_CONT << sent_perms_log.str() << LL_ENDL;
-	}
+    }
 
     while (true)
     {
@@ -336,20 +339,20 @@ void LLFloaterPermsDefault::ok()
 
 void LLFloaterPermsDefault::cancel()
 {
-	for (U32 iter = CAT_OBJECTS; iter < CAT_LAST; iter++)
+	for (U32 iter = 0; iter < sCategoryNames.size() ; iter++)
 	{
-		gSavedSettings.setBOOL(sCategoryNames[iter]+"NextOwnerCopy",     mNextOwnerCopy[iter]);
-		gSavedSettings.setBOOL(sCategoryNames[iter]+"NextOwnerModify",   mNextOwnerModify[iter]);
-		gSavedSettings.setBOOL(sCategoryNames[iter]+"NextOwnerTransfer", mNextOwnerTransfer[iter]);
-		gSavedSettings.setBOOL(sCategoryNames[iter]+"ShareWithGroup",    mShareWithGroup[iter]);
-		gSavedSettings.setBOOL(sCategoryNames[iter]+"EveryoneCopy",      mEveryoneCopy[iter]);
+		gSavedSettings.setBOOL(sCategoryNames[iter]+"NextOwnerCopy",		mNextOwnerCopy[iter]);
+		gSavedSettings.setBOOL(sCategoryNames[iter]+"NextOwnerModify",		mNextOwnerModify[iter]);
+		gSavedSettings.setBOOL(sCategoryNames[iter]+"NextOwnerTransfer",	mNextOwnerTransfer[iter]);
+		gSavedSettings.setBOOL(sCategoryNames[iter]+"ShareWithGroup",		mShareWithGroup[iter]);
+		gSavedSettings.setBOOL(sCategoryNames[iter]+"EveryoneCopy",			mEveryoneCopy[iter]);
 		gSavedPerAccountSettings.setBOOL(sCategoryNames[iter]+"EveryoneExport", mEveryoneExport[iter]);
 	}
 }
 
 void LLFloaterPermsDefault::refresh()
 {
-	for (U32 iter = CAT_OBJECTS; iter < CAT_LAST; iter++)
+	for (U32 iter = 0; iter < sCategoryNames.size(); iter++)
 	{
 		mShareWithGroup[iter]    = gSavedSettings.getBOOL(sCategoryNames[iter]+"ShareWithGroup");
 		mEveryoneCopy[iter]      = gSavedSettings.getBOOL(sCategoryNames[iter]+"EveryoneCopy");

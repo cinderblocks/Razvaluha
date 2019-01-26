@@ -48,7 +48,7 @@ const U32	USEC_PER_HOUR	= USEC_PER_MIN * MIN_PER_HOUR;
 const U32	SEC_PER_HOUR	= SEC_PER_MIN * MIN_PER_HOUR;
 const F64 	SEC_PER_USEC 	= 1.0 / (F64) USEC_PER_SEC;
 
-class LL_COMMON_API LLTimer
+class LL_COMMON_API LLTimer 
 {
 public:
 	static LLTimer *sTimer;				// global timer
@@ -129,8 +129,6 @@ struct TimerInfo
 TimerInfo& get_timer_info();
 
 LL_COMMON_API U64 get_clock_count();
-LL_COMMON_API F64 calc_clock_frequency();
-LL_COMMON_API void update_clock_frequencies();
 
 // Sleep for milliseconds
 LL_COMMON_API void ms_sleep(U32 ms);
@@ -188,4 +186,5 @@ LL_COMMON_API void timeToFormattedString(time_t time, std::string format, std::s
 LL_COMMON_API void timeStructToFormattedString(struct tm * time, std::string format, std::string &timestr);
 
 U64MicrosecondsImplicit LL_COMMON_API totalTime();					// Returns current system time in microseconds
+
 #endif

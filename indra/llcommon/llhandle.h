@@ -28,8 +28,10 @@
 #define LLHANDLE_H
 
 #include "llpointer.h"
-#include <boost/type_traits/is_convertible.hpp>
-#include <boost/utility/enable_if.hpp>
+#include "llrefcount.h"
+#include "llexception.h"
+#include "llrefcount.h"
+#include <boost/throw_exception.hpp>
 
 /**
  * Helper object for LLHandle. Don't instantiate these directly, used
@@ -38,7 +40,7 @@
 class LLTombStone : public LLRefCount
 {
 public:
-	LLTombStone(void* target = NULL) : mTarget(target) {}
+	LLTombStone(void* target = nullptr) : mTarget(target) {}
 
 	void setTarget(void* target) { mTarget = target; }
 	void* getTarget() const { return mTarget; }
@@ -86,13 +88,13 @@ public:
 	LLHandle() : mTombStone(getDefaultTombStone()) {}
 
 	template<typename U>
-	LLHandle(const LLHandle<U>& other, typename boost::enable_if< typename boost::is_convertible<U*, T*> >::type* dummy = 0)
+	LLHandle(const LLHandle<U>& other, typename std::enable_if<std::is_convertible<U*, T*>::value>::type* dummy = nullptr)
 	: mTombStone(other.mTombStone)
 	{}
 
 	bool isDead() const 
 	{ 
-		return mTombStone->getTarget() == NULL; 
+		return mTombStone->getTarget() == nullptr; 
 	}
 
 	void markDead() 
@@ -195,7 +197,7 @@ public:
 	}
 
 	template <typename U>
-	LLHandle<U> getDerivedHandle(typename boost::enable_if< typename boost::is_convertible<U*, T*> >::type* dummy = 0) const
+	LLHandle<U> getDerivedHandle(typename std::enable_if<std::is_convertible<U*, T*>::value>::type* dummy = nullptr) const
 	{
 		LLHandle<U> downcast_handle;
 		downcast_handle.mTombStone = getHandle().mTombStone;
@@ -211,6 +213,84 @@ protected:
 
 private:
 	mutable LLRootHandle<T> mHandle;
+};
+
+
+
+class LLCheckedHandleBase
+{
+public:
+    class Stale : public LLException
+    {
+    public:
+        Stale() :
+            LLException("Attempt to access stale handle.")
+        {}
+    };
+
+protected:
+    LLCheckedHandleBase() { }
+
+};
+
+/**
+ * This is a simple wrapper for Handles, allowing direct calls to the underlying 
+ * pointer. The checked handle will throw a Stale if an attempt 
+ * is made to access the object referenced by the handle and that object has 
+ * been destroyed.
+ **/
+template <typename T> 
+class LLCheckedHandle: public LLCheckedHandleBase
+{
+public:
+
+    LLCheckedHandle(LLHandle<T> handle):
+        mHandle(handle)
+    { }
+
+    /**
+     * Test the underlying handle.  If it is no longer valid, throw a Stale exception.
+     */
+    void check() const
+    {
+        T* ptr = mHandle.get();
+        if (!ptr)
+            BOOST_THROW_EXCEPTION(Stale());
+    }
+
+    /**
+     * Cast back to an appropriate handle
+     */
+    operator LLHandle<T>() const
+    {
+        return mHandle;
+    }
+
+    /**
+     * Converts the LLCheckedHandle to a bool. Allows for if (chkdHandle) {} 
+     * Does not throw.
+     */
+    /*explicit*/ operator bool() const // explicit conversion operator not available with Linux compiler
+    {
+        return (mHandle.get() != NULL);
+    }
+
+    /**
+     * Attempt to call a method or access a member in the structure referenced 
+     * by the handle.  If the handle no longer points to a valid structure 
+     * throw a Stale.
+     */
+    T* operator ->() const
+    {
+        T* ptr = mHandle.get();
+        if (!ptr)
+            BOOST_THROW_EXCEPTION(Stale());
+        return ptr;
+    }
+
+private:
+
+    LLHandle<T> mHandle;
 };
 
 #endif

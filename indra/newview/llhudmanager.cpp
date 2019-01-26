@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llhudmanager.cpp
  * @brief LLHUDManager class implementation
  *
- * $LicenseInfo:firstyear=2002&license=viewergpl$
- * 
- * Copyright (c) 2002-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2002&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -40,6 +36,7 @@
 #include "llagent.h"
 #include "llhudeffect.h"
 #include "pipeline.h"
+#include "llui.h"
 #include "llviewercontrol.h"
 #include "llviewerobjectlist.h"
 
@@ -64,7 +61,7 @@ static LLTrace::BlockTimerStatHandle FTM_UPDATE_HUD_EFFECTS("Update Hud Effects"
 void LLHUDManager::updateEffects()
 {
 	LL_RECORD_BLOCK_TIME(FTM_UPDATE_HUD_EFFECTS);
-	U32 i;
+	S32 i;
 	for (i = 0; i < mHUDEffects.size(); i++)
 	{
 		LLHUDEffect *hep = mHUDEffects[i];
@@ -82,7 +79,7 @@ void LLHUDManager::sendEffects()
 	static LLCachedControl<bool> disable_pointat_effect(gSavedSettings, "DisablePointAtAndBeam", false);
 	static LLCachedControl<bool> broadcast_viewer_effects(gSavedSettings, "BroadcastViewerEffects", true);
 
-	U32 i;
+	S32 i;
 	for (i = 0; i < mHUDEffects.size(); i++)
 	{
 		LLHUDEffect *hep = mHUDEffects[i];
@@ -125,7 +122,7 @@ void LLHUDManager::sendEffects()
 			msg->nextBlockFast(_PREHASH_Effect);
 			hep->packData(msg);
 			hep->setNeedsSendToSim(FALSE);
-			if (!hep->isDead())
+			if (!hep->isDead()) // <alchemy/>
 				gAgent.sendMessage();
 		}
 	}
@@ -139,7 +136,7 @@ void LLHUDManager::shutdownClass()
 
 void LLHUDManager::cleanupEffects()
 {
-	U32 i = 0;
+	S32 i = 0;
 
 	while (i < mHUDEffects.size())
 	{
@@ -160,7 +157,7 @@ LLHUDEffect *LLHUDManager::createViewerEffect(const U8 type, BOOL send_to_sim, B
 	LLHUDEffect *hep = LLHUDObject::addHUDEffect(type);
 	if (!hep)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	LLUUID tmp;
@@ -177,7 +174,7 @@ LLHUDEffect *LLHUDManager::createViewerEffect(const U8 type, BOOL send_to_sim, B
 //static
 void LLHUDManager::processViewerEffect(LLMessageSystem *mesgsys, void **user_data)
 {
-	LLHUDEffect *effectp = NULL;
+	LLHUDEffect *effectp = nullptr;
 	LLUUID effect_id;
 	U8 effect_type = 0;
 	S32 number_blocks = mesgsys->getNumberOfBlocksFast(_PREHASH_Effect);
@@ -185,9 +182,9 @@ void LLHUDManager::processViewerEffect(LLMessageSystem *mesgsys, void **user_dat
 
 	for (k = 0; k < number_blocks; k++)
 	{
-		effectp = NULL;
+		effectp = nullptr;
 		LLHUDEffect::getIDType(mesgsys, k, effect_id, effect_type);
-		U32 i;
+		S32 i;
 		for (i = 0; i < LLHUDManager::getInstance()->mHUDEffects.size(); i++)
 		{
 			LLHUDEffect *cur_effectp = LLHUDManager::getInstance()->mHUDEffects[i];

@@ -33,6 +33,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "lldrawpoolavatar.h"
+#include "llskinningutil.h"
 #include "llrender.h"
 
 #include "llvoavatar.h"
@@ -70,6 +71,7 @@ F32 LLDrawPoolAvatar::sMinimumAlpha = 0.2f;
 
 static bool is_deferred_render = false;
 static bool is_post_deferred_render = false;
+static bool is_mats_render = false;
 
 extern BOOL gUseGLPick;
 
@@ -474,7 +476,7 @@ void LLDrawPoolAvatar::renderShadow(S32 pass)
 	
 	if (pass == 0)
 	{
-		avatarp->renderSkinned(AVATAR_RENDER_PASS_SINGLE);
+		avatarp->renderSkinned();
 	}
 	else
 	{
@@ -1356,7 +1358,7 @@ void LLDrawPoolAvatar::renderAvatars(LLVOAvatar* single_avatar, S32 pass)
 
 	if( !single_avatar || (avatarp == single_avatar) )
 	{
-		avatarp->renderSkinned(AVATAR_RENDER_PASS_SINGLE);
+		avatarp->renderSkinned();
 	}
 }
 
@@ -1462,6 +1464,9 @@ void LLDrawPoolAvatar::updateRiggedFaceVertexBuffer(LLVOAvatar* avatar, LLFace* 
 	}
 }
 
+extern int sMaxCacheHit;
+extern int sCurCacheHit;
+
 void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 {
 	if ((avatar->isSelf() && !gAgent.needsRenderAvatar()) || !gMeshRepo.meshRezEnabled())
@@ -1521,59 +1526,57 @@ void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 		if (buff)
 		{
 			if (sShaderLevel > 0)
-			{ //upload matrix palette to shader
-				LLMatrix4 mat[JOINT_COUNT];
-
-				U32 count = llmin((U32) skin->mJointNames.size(), (U32) JOINT_COUNT);
-
-				for (U32 i = 0; i < count; ++i)
+			{
+				auto& mesh_cache = avatar->getRiggedMatrixCache();
+				auto& mesh_id = skin->mMeshID;
+				auto rigged_matrix_data_iter = find_if(mesh_cache.begin(), mesh_cache.end(), [&mesh_id](decltype(mesh_cache[0]) & entry) { return entry.first == mesh_id; });
+				if (rigged_matrix_data_iter != avatar->getRiggedMatrixCache().cend())
 				{
-					LLJoint* joint = avatar->getJoint(skin->mJointNames[i]);
-					if(!joint)
-					{
-						joint = avatar->getJoint("mRoot");
-					}
-					if (joint)
-					{
-						LLMatrix4a tmp;
-						tmp.loadu((F32*)skin->mInvBindMatrix[i].mMatrix);
-						tmp.setMul(joint->getWorldMatrix(),tmp);
-						mat[i] = LLMatrix4(tmp.getF32ptr());
-					}
+					LLDrawPoolAvatar::sVertexProgram->uniformMatrix3x4fv(LLViewerShaderMgr::AVATAR_MATRIX,
+						rigged_matrix_data_iter->second.first,
+						FALSE,
+						(GLfloat*)rigged_matrix_data_iter->second.second.data());
+					LLDrawPoolAvatar::sVertexProgram->uniform1f(LLShaderMgr::AVATAR_MAX_WEIGHT, F32(rigged_matrix_data_iter->second.first - 1));
+
+					stop_glerror();
 				}
-				
-				stop_glerror();
-
-				F32 mp[JOINT_COUNT*12];
-
-				for (U32 i = 0; i < count; ++i)
+				else
 				{
-					F32* m = (F32*) mat[i].mMatrix;
+					// upload matrix palette to shader
+					LLMatrix4a mat[LL_MAX_JOINTS_PER_MESH_OBJECT];
+					U32 count = LLSkinningUtil::getMeshJointCount(skin);
+					LLSkinningUtil::initSkinningMatrixPalette(mat, count, skin, avatar);
 
-					U32 idx = i*12;
+					std::array<F32, LL_MAX_JOINTS_PER_MESH_OBJECT * 12> mp;
 
-					mp[idx+0] = m[0];
-					mp[idx+1] = m[1];
-					mp[idx+2] = m[2];
-					mp[idx+3] = m[12];
+					for (U32 i = 0; i < count; ++i)
+					{
+						F32* m = (F32*)mat[i].getF32ptr();
 
-					mp[idx+4] = m[4];
-					mp[idx+5] = m[5];
-					mp[idx+6] = m[6];
-					mp[idx+7] = m[13];
+						U32 idx = i * 12;
 
-					mp[idx+8] = m[8];
-					mp[idx+9] = m[9];
-					mp[idx+10] = m[10];
-					mp[idx+11] = m[14];
+						mp[idx + 0] = m[0];
+						mp[idx + 1] = m[1];
+						mp[idx + 2] = m[2];
+						mp[idx + 3] = m[12];
+
+						mp[idx + 4] = m[4];
+						mp[idx + 5] = m[5];
+						mp[idx + 6] = m[6];
+						mp[idx + 7] = m[13];
+
+						mp[idx + 8] = m[8];
+						mp[idx + 9] = m[9];
+						mp[idx + 10] = m[10];
+						mp[idx + 11] = m[14];
+					}
+					mesh_cache.emplace_back(std::make_pair( skin->mMeshID, std::make_pair(count, mp) ) );
+					LLDrawPoolAvatar::sVertexProgram->uniformMatrix3x4fv(LLViewerShaderMgr::AVATAR_MATRIX,
+						count,
+						FALSE,
+						(GLfloat*)mp.data());
+					LLDrawPoolAvatar::sVertexProgram->uniform1f(LLShaderMgr::AVATAR_MAX_WEIGHT, F32(count - 1));
 				}
-
-				LLDrawPoolAvatar::sVertexProgram->uniformMatrix3x4fv(LLViewerShaderMgr::AVATAR_MATRIX, 
-					count,
-					FALSE,
-					(GLfloat*) mp);
-
-				LLDrawPoolAvatar::sVertexProgram->uniform1f(LLShaderMgr::AVATAR_MAX_WEIGHT, F32(count-1));
 				
 				stop_glerror();
 			}
@@ -1595,7 +1598,7 @@ void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 			const LLTextureEntry* te = face->getTextureEntry();
 			LLMaterial* mat = te->getMaterialParams().get();
 
-			if (mat && is_deferred_render)
+			if (mat && is_mats_render)
 			{
 				gGL.getTexUnit(sDiffuseChannel)->bind(face->getTexture(LLRender::DIFFUSE_MAP));
 				gGL.getTexUnit(normal_channel)->bind(face->getTexture(LLRender::NORMAL_MAP));
@@ -1661,7 +1664,7 @@ void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 
 			if (face->mTextureMatrix && vobj->mTexAnimMode)
 			{
-				gGL.matrixMode(LLRender::MM_TEXTURE);
+				gGL.matrixMode(LLRender::MM_TEXTURE0 + sDiffuseChannel);
 				gGL.loadMatrix(*face->mTextureMatrix);
 				buff->setBuffer(data_mask);
 				buff->drawRange(LLRender::TRIANGLES, start, end, count, offset);
@@ -1691,7 +1694,9 @@ void LLDrawPoolAvatar::renderDeferredRiggedBump(LLVOAvatar* avatar)
 
 void LLDrawPoolAvatar::renderDeferredRiggedMaterial(LLVOAvatar* avatar, S32 pass)
 {
+	is_mats_render = true;
 	renderRigged(avatar, pass);
+	is_mats_render = false;
 }
 
 static LLTrace::BlockTimerStatHandle FTM_RIGGED_VBO("Rigged VBO");

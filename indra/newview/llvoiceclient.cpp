@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
  /** 
  * @file llvoiceclient.cpp
  * @brief Voice client delegation class implementation.
@@ -34,7 +36,9 @@
 #include "llhttpnode.h"
 #include "llnotificationsutil.h"
 #include "llsdserialize.h"
+#include "llui.h"
 #include "llkeyboard.h"
+#include "llagent.h"
 #include "rlvhandler.h"
 
 const F32 LLVoiceClient::OVERDRIVEN_POWER_LEVEL = 0.7f;
@@ -51,7 +55,7 @@ public:
 	// requests will be throttled from a non-trusted browser
 	LLVoiceHandler() : LLCommandHandler("voice", UNTRUSTED_THROTTLE) {}
 
-	bool handle(const LLSD& params, const LLSD& query_map, LLMediaCtrl* web)
+	bool handle(const LLSD& params, const LLSD& query_map, LLMediaCtrl* web) override
 	{
 		if (params[0].asString() == "effects")
 		{
@@ -80,28 +84,28 @@ std::string LLVoiceClientStatusObserver::status2string(LLVoiceClientStatusObserv
 {
 	std::string result = "UNKNOWN";
 	
-		// Prevent copy-paste errors when updating this list...
+	// Prevent copy-paste errors when updating this list...
 #define CASE(x)  case x:  result = #x;  break
-
+	
 	switch(inStatus)
 	{
-		CASE(STATUS_LOGIN_RETRY);
-		CASE(STATUS_LOGGED_IN);
-		CASE(STATUS_JOINING);
-		CASE(STATUS_JOINED);
-		CASE(STATUS_LEFT_CHANNEL);
-		CASE(STATUS_VOICE_DISABLED);
-		CASE(BEGIN_ERROR_STATUS);
-		CASE(ERROR_CHANNEL_FULL);
-		CASE(ERROR_CHANNEL_LOCKED);
-		CASE(ERROR_NOT_AVAILABLE);
-		CASE(ERROR_UNKNOWN);
-	default:
-		break;
+			CASE(STATUS_LOGIN_RETRY);
+			CASE(STATUS_LOGGED_IN);
+			CASE(STATUS_JOINING);
+			CASE(STATUS_JOINED);
+			CASE(STATUS_LEFT_CHANNEL);
+			CASE(STATUS_VOICE_DISABLED);
+			CASE(BEGIN_ERROR_STATUS);
+			CASE(ERROR_CHANNEL_FULL);
+			CASE(ERROR_CHANNEL_LOCKED);
+			CASE(ERROR_NOT_AVAILABLE);
+			CASE(ERROR_UNKNOWN);
+		default:
+			break;
 	}
-
+	
 #undef CASE
-
+	
 	return result;
 }
 
@@ -111,8 +115,8 @@ std::string LLVoiceClientStatusObserver::status2string(LLVoiceClientStatusObserv
 
 LLVoiceClient::LLVoiceClient()
 	:
-	mVoiceModule(NULL),
-	m_servicePump(NULL),
+	mVoiceModule(nullptr),
+	m_servicePump(nullptr),
 	mVoiceEffectEnabled(LLCachedControl<bool>(gSavedSettings, "VoiceMorphingEnabled", true)),
 	mVoiceEffectDefault(LLCachedControl<std::string>(gSavedPerAccountSettings, "VoiceEffectDefault", "00000000-0000-0000-0000-000000000000")),
 	mPTTDirty(true),
@@ -153,23 +157,27 @@ void LLVoiceClient::userAuthorized(const std::string& user_id, const LLUUID &age
 	}
 	else
 	{
-		mVoiceModule = NULL;
-		return;
+		mVoiceModule = nullptr;
+		return; 
 	}
-	mVoiceModule->init(m_servicePump);
+	mVoiceModule->init(m_servicePump);	
 	mVoiceModule->userAuthorized(user_id, agentID);
 }
-
 
 void LLVoiceClient::terminate()
 {
 	if (mVoiceModule) mVoiceModule->terminate();
-	mVoiceModule = NULL;
+	mVoiceModule = nullptr;
+    
+    if (LLSpeakerVolumeStorage::instanceExists())
+    {
+        LLSpeakerVolumeStorage::deleteSingleton();
+    }
 }
 
 const LLVoiceVersionInfo LLVoiceClient::getVersion()
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getVersion();
 	}
@@ -192,7 +200,10 @@ void LLVoiceClient::updateSettings()
 
 	updateMicMuteLogic();
 
-	if (mVoiceModule) mVoiceModule->updateSettings();
+	if (mVoiceModule)
+    {
+        mVoiceModule->updateSettings();
+    }
 }
 
 //--------------------------------------------------
@@ -210,7 +221,7 @@ void LLVoiceClient::tuningStop()
 
 bool LLVoiceClient::inTuningMode()
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->inTuningMode();
 	}
@@ -232,7 +243,7 @@ void LLVoiceClient::tuningSetSpeakerVolume(float volume)
 
 float LLVoiceClient::tuningGetEnergy(void)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->tuningGetEnergy();
 	}
@@ -248,7 +259,7 @@ float LLVoiceClient::tuningGetEnergy(void)
 
 bool LLVoiceClient::deviceSettingsAvailable()
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->deviceSettingsAvailable();
 	}
@@ -278,18 +289,18 @@ void LLVoiceClient::refreshDeviceLists(bool clearCurrentList)
 void LLVoiceClient::setCaptureDevice(const std::string& name)
 {
 	if (mVoiceModule) mVoiceModule->setCaptureDevice(name);
-
+	
 }
 
 void LLVoiceClient::setRenderDevice(const std::string& name)
 {
-	if (mVoiceModule) mVoiceModule->setRenderDevice(name);
+	if (mVoiceModule) mVoiceModule->setRenderDevice(name);	
 }
 
 const LLVoiceDeviceList& LLVoiceClient::getCaptureDevices()
 {
 	static LLVoiceDeviceList nullCaptureDevices;
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getCaptureDevices();
 	}
@@ -302,8 +313,8 @@ const LLVoiceDeviceList& LLVoiceClient::getCaptureDevices()
 
 const LLVoiceDeviceList& LLVoiceClient::getRenderDevices()
 {
-	static LLVoiceDeviceList nullRenderDevices;
-	if (mVoiceModule)
+	static LLVoiceDeviceList nullRenderDevices;	
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getRenderDevices();
 	}
@@ -319,23 +330,23 @@ const LLVoiceDeviceList& LLVoiceClient::getRenderDevices()
 
 void LLVoiceClient::getParticipantList(std::set<LLUUID> &participants)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
-		mVoiceModule->getParticipantList(participants);
+	  mVoiceModule->getParticipantList(participants);
 	}
 	else
 	{
-		participants = std::set<LLUUID>();
+	  participants = std::set<LLUUID>();
 	}
 }
 
 bool LLVoiceClient::isParticipant(const LLUUID &speaker_id)
 {
-	if(mVoiceModule)
-	{
-		return mVoiceModule->isParticipant(speaker_id);
-	}
-	return false;
+  if(mVoiceModule)
+    {
+      return mVoiceModule->isParticipant(speaker_id);
+    }
+  return false;
 }
 
 
@@ -345,45 +356,45 @@ bool LLVoiceClient::isParticipant(const LLUUID &speaker_id)
 
 BOOL LLVoiceClient::isSessionTextIMPossible(const LLUUID& id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->isSessionTextIMPossible(id);
 	}
 	else
 	{
 		return FALSE;
-	}
+	}	
 }
 
 BOOL LLVoiceClient::isSessionCallBackPossible(const LLUUID& id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->isSessionCallBackPossible(id);
 	}
 	else
 	{
 		return FALSE;
-	}
+	}	
 }
 
 /* obsolete
 BOOL LLVoiceClient::sendTextMessage(const LLUUID& participant_id, const std::string& message)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->sendTextMessage(participant_id, message);
 	}
 	else
 	{
 		return FALSE;
-	}
+	}	
 }
 */
 
 void LLVoiceClient::endUserIMSession(const LLUUID& participant_id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		// mVoiceModule->endUserIMSession(participant_id);  // A SLim leftover
 	}
@@ -394,7 +405,7 @@ void LLVoiceClient::endUserIMSession(const LLUUID& participant_id)
 
 bool LLVoiceClient::inProximalChannel()
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->inProximalChannel();
 	}
@@ -408,29 +419,41 @@ void LLVoiceClient::setNonSpatialChannel(
 	const std::string &uri,
 	const std::string &credentials)
 {
-	if (mVoiceModule) mVoiceModule->setNonSpatialChannel(uri, credentials);
+	if (mVoiceModule)
+    {
+        mVoiceModule->setNonSpatialChannel(uri, credentials);
+    }
 }
 
 void LLVoiceClient::setSpatialChannel(
 	const std::string &uri,
 	const std::string &credentials)
 {
-	if (mVoiceModule) mVoiceModule->setSpatialChannel(uri, credentials);
+	if (mVoiceModule)
+    {
+        mVoiceModule->setSpatialChannel(uri, credentials);
+    }
 }
 
 void LLVoiceClient::leaveNonSpatialChannel()
 {
-	if (mVoiceModule) mVoiceModule->leaveNonSpatialChannel();
+	if (mVoiceModule)
+    {
+        mVoiceModule->leaveNonSpatialChannel();
+    }
 }
 
 void LLVoiceClient::leaveChannel(void)
 {
-	if (mVoiceModule) mVoiceModule->leaveChannel();
+	if (mVoiceModule)
+    {
+        mVoiceModule->leaveChannel();
+	}
 }
 
 std::string LLVoiceClient::getCurrentChannel()
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getCurrentChannel();
 	}
@@ -451,7 +474,7 @@ void LLVoiceClient::callUser(const LLUUID &uuid)
 
 bool LLVoiceClient::isValidChannel(std::string &session_handle)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->isValidChannel(session_handle);
 	}
@@ -463,7 +486,7 @@ bool LLVoiceClient::isValidChannel(std::string &session_handle)
 
 bool LLVoiceClient::answerInvite(std::string &channelHandle)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->answerInvite(channelHandle);
 	}
@@ -499,7 +522,7 @@ void LLVoiceClient::setMicGain(F32 volume)
 
 bool LLVoiceClient::voiceEnabled()
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->voiceEnabled();
 	}
@@ -511,14 +534,17 @@ bool LLVoiceClient::voiceEnabled()
 
 void LLVoiceClient::setVoiceEnabled(bool enabled)
 {
-	if (mVoiceModule) mVoiceModule->setVoiceEnabled(enabled);
+	if (mVoiceModule)
+    {
+        mVoiceModule->setVoiceEnabled(enabled);
+	}
 }
 
 void LLVoiceClient::updateMicMuteLogic()
 {
 	// If not configured to use PTT, the mic should be open (otherwise the user will be unable to speak).
 	bool new_mic_mute = false;
-
+	
 	if(mUsePTT)
 	{
 		// If configured to use PTT, track the user state.
@@ -530,7 +556,7 @@ void LLVoiceClient::updateMicMuteLogic()
 		// Either of these always overrides any other PTT setting.
 		new_mic_mute = true;
 	}
-
+	
 	if (mVoiceModule) mVoiceModule->setMuteMic(new_mic_mute);
 }
 
@@ -543,7 +569,7 @@ BOOL LLVoiceClient::lipSyncEnabled()
 {
 	if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMETAGS)) return false; // RLVa:LF - You get nothing now!
 
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->lipSyncEnabled();
 	}
@@ -584,7 +610,7 @@ void LLVoiceClient::setUsePTT(bool usePTT)
 		mUserPTTState = false;
 	}
 	mUsePTT = usePTT;
-
+	
 	updateMicMuteLogic();
 }
 
@@ -627,12 +653,12 @@ void LLVoiceClient::inputUserControlState(bool down)
 {
 	if(mPTTIsToggle)
 	{
-		if(down) // toggle open-mic state on 'down'
+		if(down) // toggle open-mic state on 'down'                                                        
 		{
 			toggleUserPTTState();
 		}
 	}
-	else // set open-mic state as an absolute
+	else // set open-mic state as an absolute                                                                  
 	{
 		setUserPTTState(down);
 	}
@@ -644,31 +670,37 @@ void LLVoiceClient::toggleUserPTTState(void)
 }
 
 void LLVoiceClient::keyDown(KEY key, MASK mask)
-{
+{	
 	if (gKeyboard->getKeyRepeated(key))
 	{
-		// ignore auto-repeat keys
+		// ignore auto-repeat keys                                                                         
 		return;
 	}
-
-	if(!mPTTIsMiddleMouse)
+	
+	if (!mPTTIsMiddleMouse && LLAgent::isActionAllowed("speak") && (key == mPTTKey))
 	{
-		bool down = (mPTTKey != KEY_NONE) && gKeyboard->getKeyDown(mPTTKey);
-		if (down) { inputUserControlState(down); }
+		bool down = gKeyboard->getKeyDown(mPTTKey);
+		if (down)
+		{
+			inputUserControlState(down);
+		}
 	}
-
+	
 }
 void LLVoiceClient::keyUp(KEY key, MASK mask)
 {
-	if(!mPTTIsMiddleMouse)
+	if (!mPTTIsMiddleMouse && (key == mPTTKey))
 	{
-		bool down = (mPTTKey != KEY_NONE) && gKeyboard->getKeyDown(mPTTKey);
-		if (down) { inputUserControlState(down); }
+		bool down = gKeyboard->getKeyDown(mPTTKey);
+		if (!down)
+		{
+			inputUserControlState(down);
+		}
 	}
 }
 void LLVoiceClient::middleMouseState(bool down)
 {
-	if(mPTTIsMiddleMouse)
+	if(mPTTIsMiddleMouse && LLAgent::isActionAllowed("speak"))
 	{
 		inputUserControlState(down);
 	}
@@ -680,10 +712,10 @@ void LLVoiceClient::middleMouseState(bool down)
 
 BOOL LLVoiceClient::getVoiceEnabled(const LLUUID& id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getVoiceEnabled(id);
-	}
+	} 
 	else
 	{
 		return FALSE;
@@ -692,19 +724,19 @@ BOOL LLVoiceClient::getVoiceEnabled(const LLUUID& id)
 
 std::string LLVoiceClient::getDisplayName(const LLUUID& id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getDisplayName(id);
 	}
 	else
 	{
-		return std::string();
+	  return std::string();
 	}
 }
 
 bool LLVoiceClient::isVoiceWorking() const
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->isVoiceWorking();
 	}
@@ -713,7 +745,7 @@ bool LLVoiceClient::isVoiceWorking() const
 
 BOOL LLVoiceClient::isParticipantAvatar(const LLUUID& id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->isParticipantAvatar(id);
 	}
@@ -730,7 +762,7 @@ BOOL LLVoiceClient::isOnlineSIP(const LLUUID& id)
 
 BOOL LLVoiceClient::getIsSpeaking(const LLUUID& id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getIsSpeaking(id);
 	}
@@ -742,7 +774,7 @@ BOOL LLVoiceClient::getIsSpeaking(const LLUUID& id)
 
 BOOL LLVoiceClient::getIsModeratorMuted(const LLUUID& id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getIsModeratorMuted(id);
 	}
@@ -753,8 +785,8 @@ BOOL LLVoiceClient::getIsModeratorMuted(const LLUUID& id)
 }
 
 F32 LLVoiceClient::getCurrentPower(const LLUUID& id)
-{
-	if (mVoiceModule)
+{		
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getCurrentPower(id);
 	}
@@ -766,7 +798,7 @@ F32 LLVoiceClient::getCurrentPower(const LLUUID& id)
 
 BOOL LLVoiceClient::getOnMuteList(const LLUUID& id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getOnMuteList(id);
 	}
@@ -778,7 +810,7 @@ BOOL LLVoiceClient::getOnMuteList(const LLUUID& id)
 
 F32 LLVoiceClient::getUserVolume(const LLUUID& id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->getUserVolume(id);
 	}
@@ -828,7 +860,7 @@ void LLVoiceClient::removeObserver(LLVoiceClientParticipantObserver* observer)
 
 std::string LLVoiceClient::sipURIFromID(const LLUUID &id)
 {
-	if (mVoiceModule)
+	if (mVoiceModule) 
 	{
 		return mVoiceModule->sipURIFromID(id);
 	}
@@ -849,10 +881,11 @@ LLVoiceEffectInterface* LLVoiceClient::getVoiceEffectInterface() const
 class LLViewerRequiredVoiceVersion : public LLHTTPNode
 {
 	static BOOL sAlertedUser;
-	virtual void post(
+
+	void post(
 					  LLHTTPNode::ResponsePtr response,
 					  const LLSD& context,
-					  const LLSD& input) const
+					  const LLSD& input) const override
 	{
 		//You received this messsage (most likely on region cross or
 		//teleport)
@@ -860,10 +893,10 @@ class LLViewerRequiredVoiceVersion : public LLHTTPNode
 		{
 			int major_voice_version =
 			input["body"]["major_version"].asInteger();
-			//			int minor_voice_version =
-			//				input["body"]["minor_version"].asInteger();
+			// 			int minor_voice_version =
+			// 				input["body"]["minor_version"].asInteger();
 			LLVoiceVersionInfo versionInfo = LLVoiceClient::getInstance()->getVersion();
-
+			
 			if (major_voice_version > 1)
 			{
 				if (!sAlertedUser)
@@ -879,27 +912,27 @@ class LLViewerRequiredVoiceVersion : public LLHTTPNode
 
 class LLViewerParcelVoiceInfo : public LLHTTPNode
 {
-	virtual void post(
+	void post(
 					  LLHTTPNode::ResponsePtr response,
 					  const LLSD& context,
-					  const LLSD& input) const
+					  const LLSD& input) const override
 	{
 		//the parcel you are in has changed something about its
 		//voice information
-
+		
 		//this is a misnomer, as it can also be when you are not in
 		//a parcel at all.  Should really be something like
 		//LLViewerVoiceInfoChanged.....
 		if ( input.has("body") )
 		{
 			LLSD body = input["body"];
-
+			
 			//body has "region_name" (str), "parcel_local_id"(int),
 			//"voice_credentials" (map).
-
+			
 			//body["voice_credentials"] has "channel_uri" (str),
 			//body["voice_credentials"] has "channel_credentials" (str)
-
+			
 			//if we really wanted to be extra careful,
 			//we'd check the supplied
 			//local parcel id to make sure it's for the same parcel
@@ -909,7 +942,7 @@ class LLViewerParcelVoiceInfo : public LLHTTPNode
 				LLSD voice_credentials = body["voice_credentials"];
 				std::string uri;
 				std::string credentials;
-
+				
 				if ( voice_credentials.has("channel_uri") )
 				{
 					uri = voice_credentials["channel_uri"].asString();
@@ -917,9 +950,9 @@ class LLViewerParcelVoiceInfo : public LLHTTPNode
 				if ( voice_credentials.has("channel_credentials") )
 				{
 					credentials =
-						voice_credentials["channel_credentials"].asString();
+					voice_credentials["channel_credentials"].asString();
 				}
-
+				
 				LLVoiceClient::getInstance()->setSpatialChannel(uri, credentials);
 			}
 		}
@@ -957,7 +990,7 @@ void LLSpeakerVolumeStorage::storeSpeakerVolume(const LLUUID& speaker_id, F32 vo
 bool LLSpeakerVolumeStorage::getSpeakerVolume(const LLUUID& speaker_id, F32& volume)
 {
 	speaker_data_map_t::const_iterator it = mSpeakersData.find(speaker_id);
-
+	
 	if (it != mSpeakersData.end())
 	{
 		volume = it->second;
@@ -1030,15 +1063,15 @@ void LLSpeakerVolumeStorage::load()
 
 	LLSD settings_llsd;
 	llifstream file;
-	file.open(filename);
+	file.open(filename.c_str());
 	if (file.is_open())
 	{
 		if (LLSDParser::PARSE_FAILURE == LLSDSerialize::fromXML(settings_llsd, file))
         {
             LL_WARNS("Voice") << "failed to parse " << filename << LL_ENDL;
-
-		}
-
+            
+        }
+            
 	}
 
 	for (LLSD::map_const_iterator iter = settings_llsd.beginMap();
@@ -1073,7 +1106,7 @@ void LLSpeakerVolumeStorage::save()
 		}
 
 		llofstream file;
-		file.open(filename);
+		file.open(filename.c_str());
 		LLSDSerialize::toPrettyXML(settings_llsd, file);
 	}
 }
@@ -1081,9 +1114,9 @@ void LLSpeakerVolumeStorage::save()
 BOOL LLViewerRequiredVoiceVersion::sAlertedUser = FALSE;
 
 LLHTTPRegistration<LLViewerParcelVoiceInfo>
-    gHTTPRegistrationMessageParcelVoiceInfo(
-		"/message/ParcelVoiceInfo");
+gHTTPRegistrationMessageParcelVoiceInfo(
+										"/message/ParcelVoiceInfo");
 
 LLHTTPRegistration<LLViewerRequiredVoiceVersion>
-    gHTTPRegistrationMessageRequiredVoiceVersion(
-		"/message/RequiredVoiceVersion");
+gHTTPRegistrationMessageRequiredVoiceVersion(
+											 "/message/RequiredVoiceVersion");

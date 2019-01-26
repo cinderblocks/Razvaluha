@@ -27,11 +27,6 @@
 #ifndef LL_LLLFSTHREAD_H
 #define LL_LLLFSTHREAD_H
 
-#include <queue>
-#include <string>
-#include <map>
-#include <set>
-
 #include "llpointer.h"
 #include "llqueuedthread.h"
 
@@ -94,9 +89,9 @@ public:
 			return mFileName;
 		}
 		
-		/*virtual*/ bool processRequest();
-		/*virtual*/ void finishRequest(bool completed);
-		/*virtual*/ void deleteRequest();
+		/*virtual*/ bool processRequest() override;
+		/*virtual*/ void finishRequest(bool completed) override;
+		/*virtual*/ void deleteRequest() override;
 		
 	private:
 		LLLFSThread* mThread;

@@ -1,11 +1,11 @@
-/** 
+/**
  * @file llquaternion.h
  * @brief LLQuaternion class header file.
  *
  * $LicenseInfo:firstyear=2000&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
@@ -169,7 +169,7 @@ public:
 // checker
 inline BOOL	LLQuaternion::isFinite() const
 {
-	return (std::isfinite(mQ[VX]) && std::isfinite(mQ[VY]) && std::isfinite(mQ[VZ]) && std::isfinite(mQ[VS]));
+	return (llfinite(mQ[VX]) && llfinite(mQ[VY]) && llfinite(mQ[VZ]) && llfinite(mQ[VS]));
 }
 
 inline BOOL LLQuaternion::isIdentity() const

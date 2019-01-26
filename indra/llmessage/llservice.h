@@ -29,12 +29,6 @@
 #ifndef LL_LLSERVICE_H
 #define LL_LLSERVICE_H
 
-#include <string>
-#include <map>
-//#include <boost/intrusive_ptr.hpp>
-//#include <boost/shared_ptr.hpp>
-
-//#include "llframetimer.h"
 #include "lliopipe.h"
 #include "llchainio.h"
 
@@ -116,7 +110,7 @@ class LLService : public LLIOPipe
 public:
 	//typedef boost::intrusive_ptr<LLServiceCreator> creator_t;
 	//typedef boost::intrusive_ptr<LLService> service_t;
-	typedef boost::shared_ptr<LLChainIOFactory> creator_t;
+	typedef std::shared_ptr<LLChainIOFactory> creator_t;
 
 	/** 
 	 * @brief This method is used to register a protocol name with a

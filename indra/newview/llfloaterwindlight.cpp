@@ -49,6 +49,8 @@
 #include "llwlparamset.h"
 #include "llwlparammanager.h"
 
+#include <boost/tokenizer.hpp>
+
 LLFloaterWindLight* LLFloaterWindLight::sWindLight = NULL;
 
 std::set<std::string> LLFloaterWindLight::sDefaultPresets;
@@ -72,8 +74,8 @@ LLFloaterWindLight::LLFloaterWindLight() : LLFloater(std::string("windlight floa
 	// add the list of presets
 	// no editing or deleting of the blank string
 	sDefaultPresets.insert("");
-	boost_tokenizer tokens(getString("WLDefaultSkyNames"), boost::char_separator<char>(":"));
-	for (boost_tokenizer::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter)
+	boost::tokenizer<boost::char_separator<char> > tokens(getString("WLDefaultSkyNames"), boost::char_separator<char>(":"));
+	for (auto token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter)
 	{
 		std::string tok(*token_iter);
 		sDefaultPresets.insert(tok);

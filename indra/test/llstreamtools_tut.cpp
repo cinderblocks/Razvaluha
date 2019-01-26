@@ -1,34 +1,30 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llstreamtools_tut.cpp
  * @author Adroit
  * @date February 2007
  * @brief llstreamtools test cases.
  *
- * $LicenseInfo:firstyear=2007&license=viewergpl$
- * 
- * Copyright (c) 2007-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2007&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
  
@@ -155,10 +151,9 @@ namespace tut
 
 		is.clear();
 		is.str(str = "#    \r\n  #  SecondLife is a 3D World. ##");
-		skip_comments_and_emptyspace(is);
-		is.get(arr, 255, '\0');
-		expected_result = "";
-		ensure_equals("skip_comments_and_emptyspace: skip comment - 2", arr, expected_result);
+		ensure("should not be good()", ! skip_comments_and_emptyspace(is));
+		ensure("should be at eof()", is.eof());
+		// don't get(): given bad state, we can't rely on results
 
 		is.clear();
 		is.str(str = " \r\n  SecondLife is a 3D World. ##");
@@ -170,14 +165,12 @@ namespace tut
 		is.clear();
 		is.str(str = "");
 		ret = skip_comments_and_emptyspace(is);
-		is.get(arr, 255, '\0');
-		ensure("skip_comments_and_emptyspace: empty string", ret == false);
+		ensure("skip_comments_and_emptyspace: empty string", ! ret);
 
 		is.clear();
 		is.str(str = "  \r\n  \t # SecondLife is a 3D World");
 		ret = skip_comments_and_emptyspace(is);
-		is.get(arr, 255, '\0');
-		ensure("skip_comments_and_emptyspace: space newline comment empty", ret == false);
+		ensure("skip_comments_and_emptyspace: space newline comment empty", ! ret);
 	}
 	
 	//testcases for skip_line()
@@ -391,16 +384,15 @@ namespace tut
 		std::string expected_result;
 		std::string actual_result;
 		std::istringstream is;
-		bool ret;
 
 		is.clear();
 		is.str(str = "  First Second \t \r  \n Third  Fourth-ShouldThisBePartOfFourth  Fifth\n");
 		actual_result = "";
-		ret = get_word(actual_result, is); // First
+		get_word(actual_result, is); // First
 		actual_result = "";
-		ret = get_word(actual_result, is); // Second
+		get_word(actual_result, is); // Second
 		actual_result = "";
-		ret = get_word(actual_result, is); // Third
+		get_word(actual_result, is); // Third
 
 		// the current implementation of get_word seems inconsistent with
 		// skip_to_next_word. skip_to_next_word treats any character other
@@ -409,22 +401,22 @@ namespace tut
 		// carriage  return ('\r'), horizontal tab ('\t'), and vertical tab ('\v')
 		// as delimiters 
 		actual_result = "";
-		ret = get_word(actual_result, is); // will copy Fourth-ShouldThisBePartOfFourth
+		get_word(actual_result, is); // will copy Fourth-ShouldThisBePartOfFourth
 
 		actual_result = "";
-		ret = get_word(actual_result, is); // will copy Fifth
+		get_word(actual_result, is); // will copy Fifth
 
 		is.clear();
 		is.str(str = "  First Second \t \r  \n Third  Fourth_ShouldThisBePartOfFourth Fifth\n");
-		ret = skip_to_next_word(is);  // should now point to First
-		ret = skip_to_next_word(is);  // should now point to Second
-		ret = skip_to_next_word(is);  // should now point to Third
-		ret = skip_to_next_word(is);  // should now point to Fourth
-		ret = skip_to_next_word(is);  // should now point to ShouldThisBePartOfFourth
+		skip_to_next_word(is);  // should now point to First
+		skip_to_next_word(is);  // should now point to Second
+		skip_to_next_word(is);  // should now point to Third
+		skip_to_next_word(is);  // should now point to Fourth
+		skip_to_next_word(is);  // should now point to ShouldThisBePartOfFourth
 		expected_result = "";
 		// will copy ShouldThisBePartOfFourth, the fifth word, 
 		// while using get_word above five times result in getting "Fifth"
-		ret = get_word(expected_result, is); 
+		get_word(expected_result, is); 
 		ensure_equals("get_word: skip_to_next_word compatibility", actual_result, expected_result);
 	}
 
@@ -486,39 +478,38 @@ namespace tut
 		std::string expected_result;
 		std::string actual_result;
 		std::istringstream is;
-		bool ret;
 
 		is.clear();
 		is.str(str = "First Second \t \r\n Third  Fourth-ShouldThisBePartOfFourth  IsThisFifth\n");
 		actual_result = "";
-		ret = get_line(actual_result, is);
+		get_line(actual_result, is);
 		expected_result = "First Second \t \r\n";
 		ensure_equals("get_line: 1", actual_result, expected_result);
 
 		actual_result = "";
-		ret = get_line(actual_result, is);
+		get_line(actual_result, is);
 		expected_result = " Third  Fourth-ShouldThisBePartOfFourth  IsThisFifth\n";
 		ensure_equals("get_line: 2", actual_result, expected_result);
 
 		is.clear();
 		is.str(str = "\nFirst Line.\n\nSecond Line.\n");
 		actual_result = "";
-		ret = get_line(actual_result, is);
+		get_line(actual_result, is);
 		expected_result = "\n";
 		ensure_equals("get_line: First char as newline", actual_result, expected_result);
 
 		actual_result = "";
-		ret = get_line(actual_result, is);
+		get_line(actual_result, is);
 		expected_result = "First Line.\n";
 		ensure_equals("get_line: 3", actual_result, expected_result);
 
 		actual_result = "";
-		ret = get_line(actual_result, is);
+		get_line(actual_result, is);
 		expected_result = "\n";
 		ensure_equals("get_line: 4", actual_result, expected_result);
 
 		actual_result = "";
-		ret = get_line(actual_result, is);
+		get_line(actual_result, is);
 		expected_result = "Second Line.\n";
 		ensure_equals("get_line: 5", actual_result, expected_result);
 	}	
@@ -550,13 +541,12 @@ namespace tut
 		std::string expected_result;
 		std::string actual_result;
 		std::istringstream is;
-		bool ret;
 
 		// need to be check if this test case is wrong or the implementation is wrong.
 		is.clear();
 		is.str(str = "Should not skip lone \r.\r\n");
 		actual_result = "";
-		ret = get_line(actual_result, is);
+		get_line(actual_result, is);
 		expected_result = "Should not skip lone \r.\r\n";
 		ensure_equals("get_line: carriage return skipped even though not followed by newline", actual_result, expected_result);
 	}
@@ -569,12 +559,11 @@ namespace tut
 		std::string expected_result;
 		std::string actual_result;
 		std::istringstream is;
-		bool ret;
 
 		is.clear();
 		is.str(str = "\n");
 		actual_result = "";
-		ret = get_line(actual_result, is);
+		get_line(actual_result, is);
 		expected_result = "\n";
 		ensure_equals("get_line: Just newline", actual_result, expected_result);
 	}
@@ -588,36 +577,35 @@ namespace tut
 		std::string expected_result;
 		std::string actual_result;
 		std::istringstream is;
-		bool ret;
 
 		is.clear();
 		is.str(str = "First Line.\nSecond Line.\n");
 		actual_result = "";
-		ret = get_line(actual_result, is, 255);
+		get_line(actual_result, is, 255);
 		expected_result = "First Line.\n";
 		ensure_equals("get_line: Basic Operation", actual_result, expected_result);
 
 		actual_result = "";
-		ret = get_line(actual_result, is, sizeof("Second")-1);
+		get_line(actual_result, is, sizeof("Second")-1);
 		expected_result = "Second\n";
 		ensure_equals("get_line: Insufficient length 1", actual_result, expected_result);
 
 		actual_result = "";
-		ret = get_line(actual_result, is, 255);
+		get_line(actual_result, is, 255);
 		expected_result = " Line.\n";
 		ensure_equals("get_line: Remainder after earlier insufficient length", actual_result, expected_result);
 
 		is.clear();
 		is.str(str = "One Line only with no newline with limited length");
 		actual_result = "";
-		ret = get_line(actual_result, is, sizeof("One Line only with no newline with limited length")-1);
+		get_line(actual_result, is, sizeof("One Line only with no newline with limited length")-1);
 		expected_result = "One Line only with no newline with limited length\n";
 		ensure_equals("get_line: No newline with limited length", actual_result, expected_result);
 
 		is.clear();
 		is.str(str = "One Line only with no newline");
 		actual_result = "";
-		ret = get_line(actual_result, is, 255);
+		get_line(actual_result, is, 255);
 		expected_result = "One Line only with no newline";
 		ensure_equals("get_line: No newline", actual_result, expected_result);
 	}

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llxfer.cpp
  * @brief implementation of LLXfer class for a single xfer.
@@ -63,15 +65,15 @@ void LLXfer::init (S32 chunk_size)
 	mXferSize = 0;
 
 	mStatus = e_LL_XFER_UNINITIALIZED;
-	mNext = NULL;
+	mNext = nullptr;
 	mWaitingForACK = FALSE;
 	
-	mCallback = NULL;
-	mCallbackDataHandle = NULL;
+	mCallback = nullptr;
+	mCallbackDataHandle = nullptr;
 	mCallbackResult = 0;
 
 	mBufferContainsEOF = FALSE;
-	mBuffer = NULL;
+	mBuffer = nullptr;
 	mBufferLength = 0;
 	mBufferStartOffset = 0;
 
@@ -91,7 +93,7 @@ void LLXfer::cleanup ()
 	if (mBuffer)
 	{
 		delete[] mBuffer;
-		mBuffer = NULL;
+		mBuffer = nullptr;
 	}
 }
 
@@ -133,7 +135,7 @@ S32 LLXfer::receiveData (char *datap, S32 data_size)
 
 	if (!retval)
 	{
-		if (datap != NULL)
+		if (datap != nullptr)
 		{
 			memcpy(&mBuffer[mBufferLength],datap,data_size);	/*Flawfinder: ignore*/
 			mBufferLength += data_size;
@@ -294,7 +296,7 @@ S32 LLXfer::processEOF()
 	}
 	else
 	{
-		LL_INFOS() << "xfer from " << mRemoteHost << " failed, code "
+		LL_INFOS() << "xfer from " << mRemoteHost << " failed or aborted, code "
 				<< mCallbackResult << ": " << getFileName() << LL_ENDL;
 	}
 
@@ -341,7 +343,7 @@ void LLXfer::abort (S32 result_code)
 
 std::string LLXfer::getFileName() 
 {
-	return U64_to_str(mID);
+	return std::to_string(mID);
 }
 
 ///////////////////////////////////////////////////////////

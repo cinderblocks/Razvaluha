@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file slplugin.cpp
  * @brief Loader shell for plugins, intended to be launched by the plugin host application, which directly loads a plugin dynamic library.
@@ -39,8 +41,6 @@
 
 #include <iostream>
 #include <fstream>
-using namespace std;
-
 
 #if LL_DARWIN
 	#include "slplugin-objc.h"
@@ -49,20 +49,6 @@ using namespace std;
 #if LL_DARWIN || LL_LINUX
 	#include <signal.h>
 #endif
-
-/*
-	On Mac OS, since we call WaitNextEvent, this process will show up in the dock unless we set the LSBackgroundOnly or LSUIElement flag in the Info.plist.
-
-	Normally non-bundled binaries don't have an info.plist file, but it's possible to embed one in the binary by adding this to the linker flags:
-
-	-sectcreate __TEXT __info_plist /path/to/slplugin_info.plist
-
-	which means adding this to the gcc flags:
-
-	-Wl,-sectcreate,__TEXT,__info_plist,/path/to/slplugin_info.plist
-	
-	Now that SLPlugin is a bundled app on the Mac, this is no longer necessary (it can just use a regular Info.plist file), but I'm leaving this comment in for posterity.
-*/
 
 #if LL_DARWIN || LL_LINUX
 // Signal handlers to make crashes not show an OS dialog...
@@ -76,6 +62,7 @@ static void crash_handler(int sig)
 
 #if LL_WINDOWS
 #include "llwin32headerslean.h"
+#include <Werapi.h>
 ////////////////////////////////////////////////////////////////////////////////
 //	Our exception handler - will probably just exit and the host application
 //	will miss the heartbeat and log the error in the usual fashion.
@@ -94,10 +81,11 @@ LONG WINAPI myWin32ExceptionHandler( struct _EXCEPTION_POINTERS* exception_infop
 // patches things so that doesn't happen.
 static BOOL PreventSetUnhandledExceptionFilter()
 {
+// WARNING: This won't work on 64-bit Windows systems so we turn it off it.
 	HMODULE hKernel32 = LoadLibrary(TEXT("kernel32.dll"));
-	if (hKernel32 == NULL) return FALSE;
+	if (hKernel32 == nullptr) return FALSE;
 	void *pOrgEntry = GetProcAddress(hKernel32, "SetUnhandledExceptionFilter");
-	if (pOrgEntry == NULL) return FALSE;
+	if (pOrgEntry == nullptr) return FALSE;
 
 #ifdef _M_IX86
 	// Code for x86:
@@ -106,7 +94,7 @@ static BOOL PreventSetUnhandledExceptionFilter()
 	unsigned char szExecute[] = { 0x33, 0xC0, 0xC2, 0x04, 0x00 };
 #elif _M_X64
 	// 33 C0                xor         eax,eax 
-	// C3                   ret  
+
 	unsigned char szExecute[] = { 0x33, 0xC0, 0xC3 };
 #else
 #error "The following code only works for x86 and x64!"
@@ -123,6 +111,26 @@ static BOOL PreventSetUnhandledExceptionFilter()
 //	Hook our exception handler and replace the system one
 void initExceptionHandler()
 {
+	TCHAR szExeFileName[MAX_PATH];
+	GetModuleFileName(nullptr, szExeFileName, MAX_PATH);
+	std::wstring exename(szExeFileName);
+	size_t path_end = exename.find_last_of('\\');
+	if (path_end != std::string::npos)
+	{
+		exename = exename.substr(path_end + 1, std::string::npos);
+
+		if (S_OK == WerAddExcludedApplication(exename.c_str(), FALSE))
+		{
+			LL_INFOS() << "WerAddExcludedApplication() succeeded for " << utf16str_to_utf8str(exename) << LL_ENDL;
+		}
+		else
+		{
+			LL_INFOS() << "WerAddExcludedApplication() failed for " << utf16str_to_utf8str(exename) << LL_ENDL;
+		}
+	}
+
+	SetErrorMode(GetErrorMode() | SEM_NOGPFAULTERRORBOX);
+
 	LPTOP_LEVEL_EXCEPTION_FILTER prev_filter;
 
 	// save old exception handler in case we need to restore it at the end
@@ -144,10 +152,10 @@ bool checkExceptionHandler()
 		ok = false;
 	}
 
-	if (prev_filter == NULL)
+	if (prev_filter == nullptr)
 	{
 		ok = FALSE;
-		if (NULL == myWin32ExceptionHandler)
+		if (nullptr == myWin32ExceptionHandler)
 		{
 			LL_WARNS("AppInit") << "Exception handler uninitialized." << LL_ENDL;
 		}
@@ -175,7 +183,7 @@ int main(int argc, char **argv)
 
 	// Set up llerror logging
 	{
-		LLError::initForApplication(".");
+		LLError::initForApplication(".",".");
 		LLError::setDefaultLevel(LLError::LEVEL_INFO);
 //		LLError::setTagLevel("Plugin", LLError::LEVEL_DEBUG);
 //		LLError::logToFile("slplugin.log");
@@ -184,7 +192,7 @@ int main(int argc, char **argv)
 #if LL_WINDOWS
 	if( strlen( lpCmdLine ) == 0 )
 	{
-		LL_ERRS("slplugin") << "usage: " << "SLPlugin" << " launcher_port" << LL_ENDL;
+		LL_ERRS("slplugin") << "usage: " << "AlchemyPlugin" << " launcher_port" << LL_ENDL;
 	};
 
 	U32 port = 0;

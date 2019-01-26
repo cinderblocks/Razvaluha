@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file lldiriterator.cpp
  * @brief Iterator through directory entries matching the search pattern.
@@ -72,7 +74,7 @@ LLDirIterator::Impl::Impl(const std::string &dirname, const std::string &mask)
 
 	if (!is_dir)
 	{
-		LL_WARNS() << "Invalid path: \"" << dir_path.string() << "\"" << LL_ENDL;
+		LL_WARNS() << "Invalid path: \"" << dir_path.string().c_str() << "\"" << LL_ENDL;
 		return;
 	}
 
@@ -97,7 +99,7 @@ LLDirIterator::Impl::Impl(const std::string &dirname, const std::string &mask)
 	{
 		mFilterExp.assign(exp);
 	}
-	catch (boost::regex_error& e)
+	catch (const boost::regex_error& e)
 	{
 		LL_WARNS() << "\"" << exp << "\" is not a valid regular expression: "
 				<< e.what() << LL_ENDL;
@@ -113,7 +115,7 @@ LLDirIterator::Impl::~Impl()
 
 bool LLDirIterator::Impl::next(std::string &fname)
 {
-	fname = "";
+	fname.clear();
 
 	if (!mIsValid)
 	{

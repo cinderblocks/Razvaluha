@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmanip.cpp
  * @brief LLManip class implementation
@@ -47,13 +49,14 @@
 #include "llviewercamera.h"
 #include "llviewerjoint.h"
 #include "llviewerobject.h"
-#include "llviewerregion.h"
+#include "llviewerregion.h"	// getRegion()
 #include "llviewerwindow.h"
 #include "llvoavatar.h"
+#include "llworld.h"		// for LLWorld::getInstance()
 #include "llresmgr.h"
 #include "pipeline.h"
 #include "llglheaders.h"
-
+#include "lluiimage.h"
 // Local constants...
 const S32 VERTICAL_OFFSET = 50;
 
@@ -206,7 +209,7 @@ void LLManip::handleDeselect()
 {
 	mHighlightedPart = LL_NO_PART;
 	mManipPart = LL_NO_PART;
-	mObjectSelection = NULL;
+	mObjectSelection = nullptr;
 }
 
 LLObjectSelectionHandle LLManip::getSelection()

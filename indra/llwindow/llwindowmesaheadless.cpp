@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llwindowmesaheadless.cpp
  * @brief Platform-dependent implementation of llwindow
@@ -44,22 +46,25 @@ LLWindowMesaHeadless::LLWindowMesaHeadless(LLWindowCallbacks* callbacks,
 							 const S32 vsync_mode, BOOL ignore_pixel_depth)
 	: LLWindow(callbacks, fullscreen, flags)
 {
-	LL_INFOS() << "MESA Init" << LL_ENDL;
-	mMesaContext = OSMesaCreateContextExt( GL_RGBA, 32, 0, 0, NULL );
-
-	/* Allocate the image buffer */
-	mMesaBuffer = new unsigned char [width * height * 4 * MESA_CHANNEL_SIZE];
-	llassert(mMesaBuffer);
-
-	gMesaBuffer = (U16*)mMesaBuffer;
-
-	/* Bind the buffer to the context and make it current */
-	if (!OSMesaMakeCurrent( mMesaContext, mMesaBuffer, MESA_CHANNEL_TYPE, width, height ))
+	if (use_gl)
 	{
-		LL_ERRS() << "MESA: OSMesaMakeCurrent failed!" << LL_ENDL;
-	}
+		LL_INFOS() << "MESA Init" << LL_ENDL;
+		mMesaContext = OSMesaCreateContextExt( GL_RGBA, 32, 0, 0, NULL );
 
-	llverify(gGLManager.initGL());
+		/* Allocate the image buffer */
+		mMesaBuffer = new unsigned char [width * height * 4 * MESA_CHANNEL_SIZE];
+		llassert(mMesaBuffer);
+
+		gMesaBuffer = (U16*)mMesaBuffer;
+
+		/* Bind the buffer to the context and make it current */
+		if (!OSMesaMakeCurrent( mMesaContext, mMesaBuffer, MESA_CHANNEL_TYPE, width, height ))
+		{
+			LL_ERRS() << "MESA: OSMesaMakeCurrent failed!" << LL_ENDL;
+		}
+
+		llverify(gGLManager.initGL());
+	}
 }
 
 

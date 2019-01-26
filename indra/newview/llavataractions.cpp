@@ -67,6 +67,11 @@
 #include "llviewerwindow.h"
 #include "llwindow.h"
 
+// Flags for kick message
+const U32 KICK_FLAGS_DEFAULT	= 0x0;
+const U32 KICK_FLAGS_FREEZE		= 1 << 0;
+const U32 KICK_FLAGS_UNFREEZE	= 1 << 1;
+
 extern const S32 TRANS_GIFT;
 void give_money(const LLUUID& uuid, LLViewerRegion* region, S32 amount, BOOL is_group = FALSE, S32 trx_type = TRANS_GIFT, const std::string& desc = LLStringUtil::null);
 void handle_lure(const uuid_vec_t& ids);
@@ -93,7 +98,7 @@ void LLAvatarActions::requestFriendshipDialog(const LLUUID& id, const std::strin
 	//LLRecentPeople::instance().add(id);
 }
 
-void on_avatar_name_friendship(const LLUUID& id, const LLAvatarName av_name)
+static void on_avatar_name_friendship(const LLUUID& id, const LLAvatarName& av_name)
 {
 	LLAvatarActions::requestFriendshipDialog(id, av_name.getCompleteName());
 }
@@ -530,7 +535,6 @@ void LLAvatarActions::freeze(const LLUUID& id)
 	payload["avatar_id"] = id;
 	LLNotifications::instance().add("FreezeUser", LLSD(), payload, handleFreeze);
 }
-
 // static
 void LLAvatarActions::unfreeze(const LLUUID& id)
 {
@@ -544,9 +548,9 @@ void LLAvatarActions::csr(const LLUUID& id)
 {
 	std::string name;
 	if (!gCacheName->getFullName(id, name)) return;
-
+	
 	std::string url = "http://csr.lindenlab.com/agent/";
-
+	
 	// slow and stupid, but it's late
 	S32 len = name.length();
 	for (S32 i = 0; i < len; i++)
@@ -560,7 +564,7 @@ void LLAvatarActions::csr(const LLUUID& id)
 			url += name[i];
 		}
 	}
-
+	
 	LLWeb::loadURL(url);
 }
 
@@ -597,7 +601,7 @@ namespace action_give_inventory
 	static LLInventoryPanel* get_outfit_editor_inventory_panel()
 	{
 		LLPanelOutfitEdit* panel_outfit_edit = dynamic_cast<LLPanelOutfitEdit*>(LLFloaterSidePanelContainer::getPanel("appearance", "panel_outfit_edit"));
-		if (NULL == panel_outfit_edit) return NULL;
+		if (nullptr == panel_outfit_edit) return nullptr;
 
 		LLInventoryPanel* inventory_panel = panel_outfit_edit->findChild<LLInventoryPanel>("folder_view");
 		return inventory_panel;
@@ -663,13 +667,13 @@ namespace action_give_inventory
 		for (std::set<LLUUID>::const_iterator it = inventory_selected_uuids.begin(); ; )
 		{
 			LLViewerInventoryCategory* inv_cat = gInventory.getCategory(*it);
-			if (NULL != inv_cat)
+			if (nullptr != inv_cat)
 			{
 				items_string = inv_cat->getName();
 				break;
 			}
 			LLViewerInventoryItem* inv_item = gInventory.getItem(*it);
-			if (NULL != inv_item)
+			if (nullptr != inv_item)
 			{
 				items_string.append(inv_item->getName());
 			}
@@ -683,6 +687,8 @@ namespace action_give_inventory
 
 	struct LLShareInfo : public LLSingleton<LLShareInfo>
 	{
+		LLSINGLETON_EMPTY_CTOR(LLShareInfo);
+	public:
 		std::vector<LLAvatarName> mAvatarNames;
 		uuid_vec_t mAvatarUuids;
 	};
@@ -802,7 +808,7 @@ namespace action_give_inventory
 		for ( ; it != inventory_selected_uuids.end() && folders_count <=1 ; ++it)
 		{
 			LLViewerInventoryCategory* inv_cat = gInventory.getCategory(*it);
-			if (NULL != inv_cat)
+			if (nullptr != inv_cat)
 			{
 				folders_count++;
 			}
@@ -825,7 +831,7 @@ namespace action_give_inventory
 void LLAvatarActions::buildResidentsString(std::vector<LLAvatarName> avatar_names, std::string& residents_string)
 {
 	llassert(avatar_names.size() > 0);
-
+	
 	std::sort(avatar_names.begin(), avatar_names.end());
 	const std::string& separator = LLTrans::getString("words_separator");
 	for (std::vector<LLAvatarName>::const_iterator it = avatar_names.begin(); ; )
@@ -852,7 +858,7 @@ void LLAvatarActions::buildResidentsString(const uuid_vec_t& avatar_uuids, std::
 			avatar_names.push_back(av_name);
 		}
 	}
-
+	
 	// We should check whether the vector is not empty to pass the assertion
 	// that avatar_names.size() > 0 in LLAvatarActions::buildResidentsString.
 	if (!avatar_names.empty())
@@ -908,14 +914,13 @@ void LLAvatarActions::shareWithAvatars(LLView * panel)
 
 	picker->setOkBtnEnableCb(boost::bind(is_give_inventory_acceptable));
 	picker->openFriendsTab();
-
-	if (root_floater)
-	{
-		root_floater->addDependentFloater(picker);
-	}
+    
+    if (root_floater)
+    {
+        root_floater->addDependentFloater(picker);
+    }
 	LLNotificationsUtil::add("ShareNotification");
 }
-
 
 // static
 bool LLAvatarActions::canShareSelectedItems(LLInventoryPanel* inv_panel /* = NULL*/)
@@ -1236,7 +1241,7 @@ void LLAvatarActions::requestFriendship(const LLUUID& target_id, const std::stri
 //static
 bool LLAvatarActions::isFriend(const LLUUID& id)
 {
-	return ( NULL != LLAvatarTracker::instance().getBuddyInfo(id) );
+	return (nullptr != LLAvatarTracker::instance().getBuddyInfo(id) );
 }
 
 // static
@@ -1262,12 +1267,12 @@ bool LLAvatarActions::canBlock(const LLUUID& id)
 //static
 bool LLAvatarActions::isAgentMappable(const LLUUID& agent_id)
 {
-	const LLRelationship* buddy_info = NULL;
+	const LLRelationship* buddy_info = nullptr;
 	bool is_friend = LLAvatarActions::isFriend(agent_id);
-
+	
 	if (is_friend)
 		buddy_info = LLAvatarTracker::instance().getBuddyInfo(agent_id);
-
+	
 	return (buddy_info &&
 			buddy_info->isOnline() &&
 			buddy_info->isRightGrantedFrom(LLRelationship::GRANT_MAP_LOCATION)

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file qtoolalign.cpp
  * @brief A tool to align objects
@@ -9,6 +11,7 @@
 #include "qtoolalign.h"
 
 // Library includes
+//#include "llfloaterreg.h"
 #include "llbbox.h"
 #include "v3math.h"
 
@@ -23,19 +26,16 @@
 #include "llviewerobject.h"
 #include "llviewerwindow.h"
 
-
 const F32 MANIPULATOR_SIZE = 5.0;
 const F32 MANIPULATOR_SELECT_SIZE = 20.0;
 
-
-
 QToolAlign::QToolAlign()
 :	LLTool(std::string("Align"))
-{
-}
+	, mManipulatorSize(MANIPULATOR_SIZE)
+	, mHighlightedAxis(-1)
+	, mHighlightedDirection(0)
+	, mForce(false)
 
-
-QToolAlign::~QToolAlign()
 {
 }
 
@@ -96,8 +96,6 @@ void QToolAlign::pickCallback(const LLPickInfo& pick_info)
 	LLSelectMgr::getInstance()->promoteSelectionToRoot();
 }
 
-
-
 void QToolAlign::handleSelect()
 {
 	// no parts, please
@@ -107,11 +105,9 @@ void QToolAlign::handleSelect()
 	gFloaterTools->setStatusText("align");
 }
 
-
 void QToolAlign::handleDeselect()
 {
 }
-
 
 BOOL QToolAlign::findSelectedManipulator(S32 x, S32 y)
 {
@@ -182,23 +178,13 @@ BOOL QToolAlign::findSelectedManipulator(S32 x, S32 y)
 	return FALSE;
 }
 
-
 BOOL QToolAlign::handleHover(S32 x, S32 y, MASK mask)
 {
-	if (mask & MASK_SHIFT)
-	{
-		mForce = FALSE;
-	}
-	else
-	{
-		mForce = TRUE;
-	}
+	mForce = (mask & MASK_SHIFT) ? false : true;
 	
 	gViewerWindow->setCursor(UI_CURSOR_ARROW);
 	return findSelectedManipulator(x, y);
 }
-
-
 
 void setup_transforms_bbox(LLBBox bbox)
 {
@@ -219,7 +205,6 @@ void setup_transforms_bbox(LLBBox bbox)
 	LLVector3 scale = bbox.getMaxLocal() - bbox.getMinLocal();
 	gGL.scalef(scale.mV[VX], scale.mV[VY], scale.mV[VZ]);
 }
-
 
 void render_bbox(LLBBox bbox)
 {
@@ -363,7 +348,6 @@ void QToolAlign::renderManipulators()
 		}
 }
 
-
 void QToolAlign::render()
 {
 	mBBox = get_selection_axis_aligned_bbox();
@@ -413,8 +397,6 @@ BOOL bbox_overlap(LLBBox bbox1, LLBBox bbox2)
 			(fabs(delta.mV[VZ]) < half_extent.mV[VZ] - FUDGE));
 }
 
-
-
 // used to sort bboxes before packing
 class BBoxCompare
 {
@@ -438,7 +420,6 @@ public:
 	F32 mDirection;
 	std::map<LLPointer<LLViewerObject>, LLBBox >& mBBoxes;
 };
-
 
 void QToolAlign::align()
 {
@@ -493,7 +474,7 @@ void QToolAlign::align()
 	std::map<LLPointer<LLViewerObject>, LLBBox > new_bboxes = original_bboxes;
 
 	// find new positions
-	for (S32 i = 0; i < (S32)objects.size(); i++)
+	for (U32 i = 0; i < objects.size(); i++)
 	{
 		LLBBox target_bbox = mBBox;
 		LLVector3 target_corner = target_bbox.getCenterAgent() - 
@@ -507,7 +488,7 @@ void QToolAlign::align()
 
 		// for packing, we cycle over several possible positions, taking the smallest that does not overlap
 		F32 smallest = direction * 9999999;  // 999999 guarenteed not to be the smallest
-		for (S32 j = 0; j <= i; j++)
+		for (U32 j = 0; j <= i; j++)
 		{
 			// how far must it move?
 			LLVector3 delta = target_corner - this_corner;
@@ -530,7 +511,7 @@ void QToolAlign::align()
 			
 			if (!mForce) // well, don't check if in force mode
 			{
-				for (S32 k = 0; k < i; k++)
+				for (U32 k = 0; k < i; k++)
 				{
 					LLViewerObject* other_object = objects[k];
 					LLBBox other_bbox = new_bboxes[other_object];
@@ -561,7 +542,7 @@ void QToolAlign::align()
 			}
 
 			// update target for next time through the loop
-			if (j < (S32)objects.size())
+			if (j < objects.size())
 			{
 				LLBBox next_bbox = new_bboxes[objects[j]];
 				target_corner = next_bbox.getCenterAgent() +
@@ -569,10 +550,9 @@ void QToolAlign::align()
 			}
 		}
 	}
-
 	
 	// now move them
-	for (S32 i = 0; i < (S32)objects.size(); i++)
+	for (U32 i = 0; i < objects.size(); i++)
 	{
 		LLViewerObject* object = objects[i];
 
@@ -586,7 +566,6 @@ void QToolAlign::align()
 
 		object->setPosition(new_position);
 	}
-	
 	
 	LLSelectMgr::getInstance()->sendMultipleUpdate(UPD_POSITION);
 }

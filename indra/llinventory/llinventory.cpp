@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llinventory.cpp
  * @brief Implementation of the inventory system.
@@ -620,7 +622,7 @@ BOOL LLInventoryItem::importFile(LLFILE* fp)
 	mAssetUUID.setNull();
 	while(success && (!feof(fp)))
 	{
-		if (fgets(buffer, MAX_STRING, fp) == NULL)
+		if (fgets(buffer, MAX_STRING, fp) == nullptr)
 		{
 			buffer[0] = '\0';
 		}
@@ -1307,7 +1309,7 @@ void LLInventoryItem::unpackBinaryBucket(U8* bin_bucket, S32 bin_bucket_size)
 	// Early exit on an empty binary bucket.
 	if (bin_bucket_size <= 1) return;
 
-	if (NULL == bin_bucket)
+	if (nullptr == bin_bucket)
 	{
 		LL_ERRS() << "unpackBinaryBucket failed.  bin_bucket is NULL." << LL_ENDL;
 		return;
@@ -1333,11 +1335,11 @@ void LLInventoryItem::unpackBinaryBucket(U8* bin_bucket, S32 bin_bucket_size)
 	setUUID(item_id);
 
 	LLAssetType::EType type;
-	type = (LLAssetType::EType)(atoi((*(iter++)).c_str()));
+	type = static_cast<LLAssetType::EType>(std::stoi((*(iter++))));
 	setType( type );
 	
 	LLInventoryType::EType inv_type;
-	inv_type = (LLInventoryType::EType)(atoi((*(iter++)).c_str()));
+	inv_type = static_cast<LLInventoryType::EType>(std::stoi((*(iter++))));
 	setInventoryType( inv_type );
 
 	std::string name((*(iter++)).c_str());
@@ -1347,11 +1349,11 @@ void LLInventoryItem::unpackBinaryBucket(U8* bin_bucket, S32 bin_bucket_size)
 	LLUUID owner_id((*(iter++)).c_str());
 	LLUUID last_owner_id((*(iter++)).c_str());
 	LLUUID group_id((*(iter++)).c_str());
-	PermissionMask mask_base = strtoul((*(iter++)).c_str(), NULL, 16);
-	PermissionMask mask_owner = strtoul((*(iter++)).c_str(), NULL, 16);
-	PermissionMask mask_group = strtoul((*(iter++)).c_str(), NULL, 16);
-	PermissionMask mask_every = strtoul((*(iter++)).c_str(), NULL, 16);
-	PermissionMask mask_next = strtoul((*(iter++)).c_str(), NULL, 16);
+	PermissionMask mask_base = strtoul((*(iter++)).c_str(), nullptr, 16);
+	PermissionMask mask_owner = strtoul((*(iter++)).c_str(), nullptr, 16);
+	PermissionMask mask_group = strtoul((*(iter++)).c_str(), nullptr, 16);
+	PermissionMask mask_every = strtoul((*(iter++)).c_str(), nullptr, 16);
+	PermissionMask mask_next = strtoul((*(iter++)).c_str(), nullptr, 16);
 	LLPermissions perm;
 	perm.init(creator_id, owner_id, last_owner_id, group_id);
 	perm.initMasks(mask_base, mask_owner, mask_group, mask_every, mask_next);
@@ -1365,15 +1367,15 @@ void LLInventoryItem::unpackBinaryBucket(U8* bin_bucket, S32 bin_bucket_size)
 	setDescription(desc);
 	
 	LLSaleInfo::EForSale sale_type;
-	sale_type = (LLSaleInfo::EForSale)(atoi((*(iter++)).c_str()));
-	S32 price = atoi((*(iter++)).c_str());
+	sale_type = static_cast<LLSaleInfo::EForSale>(std::stoi((*(iter++))));
+	S32 price = std::stoi(*(iter++));
 	LLSaleInfo sale_info(sale_type, price);
 	setSaleInfo(sale_info);
 	
-	U32 flags = strtoul((*(iter++)).c_str(), NULL, 16);
+	U32 flags = strtoul((*(iter++)).c_str(), nullptr, 16);
 	setFlags(flags);
 
-	time_t now = time(NULL);
+	time_t now = time(nullptr);
 	setCreationDate(now);
 }
 
@@ -1435,6 +1437,10 @@ LLSD LLInventoryCategory::asLLSD() const
     return sd;
 }
 
+bool LLInventoryCategory::isPreferredTypeRoot() const
+{
+	return (mPreferredType == LLFolderType::FT_ROOT_INVENTORY || mPreferredType == 9);
+}
 
 // virtual
 void LLInventoryCategory::packMessage(LLMessageSystem* msg) const
@@ -1510,7 +1516,7 @@ BOOL LLInventoryCategory::importFile(LLFILE* fp)
 	valuestr[0] = '\0';
 	while(!feof(fp))
 	{
-		if (fgets(buffer, MAX_STRING, fp) == NULL)
+		if (fgets(buffer, MAX_STRING, fp) == nullptr)
 		{
 			buffer[0] = '\0';
 		}

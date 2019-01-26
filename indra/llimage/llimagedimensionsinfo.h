@@ -27,6 +27,8 @@
 #ifndef LL_LLIMAGEDIMENSIONSINFO_H
 #define LL_LLIMAGEDIMENSIONSINFO_H
 
+#include "llapr.h"
+
 //-----------------------------------------------------------------------------
 // LLImageDimensionsInfo
 // helper class to get image dimensions WITHOUT loading image to memore
@@ -35,10 +37,10 @@
 class LLImageDimensionsInfo
 {
 public:
-	LLImageDimensionsInfo():
-		mData(NULL)
-		,mHeight(0)
-		,mWidth(0)
+	LLImageDimensionsInfo()
+	: mData(nullptr)
+	, mWidth(0)
+	, mHeight(0)
 	{}
 	~LLImageDimensionsInfo()
 	{
@@ -59,7 +61,7 @@ protected:
 	{
 		mInfile.close();
 		delete[] mData;
-		mData = NULL;
+		mData = nullptr;
 		mWidth = 0;
 		mHeight = 0;
 	}
@@ -75,7 +77,7 @@ protected:
 		std::string error = message;
 		if (!filename.empty())
 			error += std::string(" FILE: ") + filename;
-		mLastError = error;
+		mLastError = std::move(error);
 	}
 
 
@@ -110,7 +112,7 @@ protected:
 	U8 read_byte()
 	{
 		U8 bt;
-		mInfile.read((char*)&bt,1);
+		mInfile.read(&bt,1);
 		return bt;
 	}
 
@@ -123,7 +125,7 @@ protected:
 	bool checkFileLength(S32 min_len);
 
 protected:
-	llifstream mInfile ;
+	LLAPRFile mInfile ;
 	std::string mSrcFilename;
 
 	std::string mLastError;

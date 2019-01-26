@@ -29,7 +29,6 @@
 //-----------------------------------------------------------------------------
 #include "llviewerprecompiledheaders.h"
 
-#include "imageids.h"
 #include "llfasttimer.h"
 #include "llrender.h"
 

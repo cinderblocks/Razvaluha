@@ -46,9 +46,10 @@ public:
 	{
 		ll_aligned_free_16(ptr);
 	}
-	LLVolumeTriangle()
+
+	LLVolumeTriangle(): mRadius(0)
 	{
-		mBinIndex = -1;	
+		mBinIndex = -1;
 	}
 
 	LLVolumeTriangle(const LLVolumeTriangle& rhs)
@@ -112,14 +113,16 @@ public:
 	}
 
 	 //LISTENER FUNCTIONS
-	virtual void handleChildAddition(const LLOctreeNode<LLVolumeTriangle>* parent, 
-		LLOctreeNode<LLVolumeTriangle>* child);
-	virtual void handleStateChange(const LLTreeNode<LLVolumeTriangle>* node) { }
-	virtual void handleChildRemoval(const LLOctreeNode<LLVolumeTriangle>* parent, 
-			const LLOctreeNode<LLVolumeTriangle>* child) {	}
-	virtual void handleInsertion(const LLTreeNode<LLVolumeTriangle>* node, LLVolumeTriangle* tri) { }
-	virtual void handleRemoval(const LLTreeNode<LLVolumeTriangle>* node, LLVolumeTriangle* tri) { }
-	virtual void handleDestruction(const LLTreeNode<LLVolumeTriangle>* node) { }
+	void handleChildAddition(const LLOctreeNode<LLVolumeTriangle>* parent, 
+		LLOctreeNode<LLVolumeTriangle>* child) override;
+	void handleStateChange(const LLTreeNode<LLVolumeTriangle>* node) override { }
+
+	void handleChildRemoval(const LLOctreeNode<LLVolumeTriangle>* parent, 
+			const LLOctreeNode<LLVolumeTriangle>* child) override {	}
+
+	void handleInsertion(const LLTreeNode<LLVolumeTriangle>* node, LLVolumeTriangle* tri) override { }
+	void handleRemoval(const LLTreeNode<LLVolumeTriangle>* node, LLVolumeTriangle* tri) override { }
+	void handleDestruction(const LLTreeNode<LLVolumeTriangle>* node) override { }
 	
 
 public:
@@ -127,14 +130,13 @@ public:
 	LL_ALIGN_16(LLVector4a mExtents[2]); // extents (min, max) of this node and all its children
 };
 
-LL_ALIGN_PREFIX(16)
 class LLOctreeTriangleRayIntersect : public LLOctreeTraveler<LLVolumeTriangle>
 {
 public:
 	const LLVolumeFace* mFace;
-	LL_ALIGN_16(LLVector4a mStart);
-	LL_ALIGN_16(LLVector4a mDir);
-	LL_ALIGN_16(LLVector4a mEnd);
+	LLVector4a mStart;
+	LLVector4a mDir;
+	LLVector4a mEnd;
 	LLVector4a* mIntersection;
 	LLVector2* mTexCoord;
 	LLVector4a* mNormal;
@@ -146,14 +148,18 @@ public:
 								   const LLVolumeFace* face, F32* closest_t,
 								   LLVector4a* intersection,LLVector2* tex_coord, LLVector4a* normal, LLVector4a* tangent);
 
-	void traverse(const LLOctreeNode<LLVolumeTriangle>* node);
+	void traverse(const LLOctreeNode<LLVolumeTriangle>* node) override;
 
-	virtual void visit(const LLOctreeNode<LLVolumeTriangle>* node);
-} LL_ALIGN_POSTFIX(16);
+	void visit(const LLOctreeNode<LLVolumeTriangle>* node) override;
+    virtual ~LLOctreeTriangleRayIntersect() {}
+};
 
 class LLVolumeOctreeValidate : public LLOctreeTraveler<LLVolumeTriangle>
 {
-	virtual void visit(const LLOctreeNode<LLVolumeTriangle>* branch);
+	void visit(const LLOctreeNode<LLVolumeTriangle>* branch) override;
+    
+public:
+    virtual ~LLVolumeOctreeValidate() {}
 };
 
 #endif

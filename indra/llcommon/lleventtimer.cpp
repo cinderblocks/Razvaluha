@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lleventtimer.cpp
  * @brief Cross-platform objects for doing timing 
@@ -28,8 +30,6 @@
 
 #include "lleventtimer.h"
 
-#include "u64.h"
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -58,7 +58,7 @@ LLEventTimer::~LLEventTimer()
 void LLEventTimer::updateClass() 
 {
 	std::list<LLEventTimer*> completed_timers;
-	for (instance_iter iter = beginInstances(), end_iter = endInstances(); iter != end_iter;)
+	for (instance_iter iter = beginInstances(), iter_end = endInstances(); iter != iter_end;)
 	{
 		LLEventTimer& timer = *iter++;
 		F32 et = timer.mEventTimer.getElapsedTimeF32();
@@ -75,7 +75,7 @@ void LLEventTimer::updateClass()
 	{
 		for (std::list<LLEventTimer*>::iterator completed_iter = completed_timers.begin(); 
 			 completed_iter != completed_timers.end(); 
-			 completed_iter++ ) 
+			 ++completed_iter ) 
 		{
 			delete *completed_iter;
 		}

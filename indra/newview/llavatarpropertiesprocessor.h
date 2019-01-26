@@ -199,9 +199,9 @@ public:
 class LLAvatarPropertiesProcessor
 	: public LLSingleton<LLAvatarPropertiesProcessor>
 {
+	LLSINGLETON(LLAvatarPropertiesProcessor);
 public:
 	
-	LLAvatarPropertiesProcessor();
 	virtual ~LLAvatarPropertiesProcessor();
 
 	void addObserver(const LLUUID& avatar_id, LLAvatarPropertiesObserver* observer);

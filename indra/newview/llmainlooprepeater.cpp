@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmachineid.cpp
  * @brief retrieves unique machine ids
@@ -36,7 +38,7 @@
 
 
 LLMainLoopRepeater::LLMainLoopRepeater(void):
-	mQueue(0)
+	mQueue(nullptr)
 {
 	; // No op.
 }
@@ -44,7 +46,7 @@ LLMainLoopRepeater::LLMainLoopRepeater(void):
 
 void LLMainLoopRepeater::start(void)
 {
-	if(mQueue != 0) return;
+	if(mQueue != nullptr) return;
 
 	mQueue = new LLThreadSafeQueue<LLSD>(gAPRPoolp, 1024);
 	mMainLoopConnection = LLEventPumps::instance().
@@ -60,7 +62,7 @@ void LLMainLoopRepeater::stop(void)
 	mRepeaterConnection.release();
 
 	delete mQueue;
-	mQueue = 0;
+	mQueue = nullptr;
 }
 
 
@@ -80,7 +82,7 @@ bool LLMainLoopRepeater::onMessage(LLSD const & event)
 {
 	try {
 		mQueue->pushFront(event);
-	} catch(LLThreadSafeQueueError & e) {
+	} catch (const LLThreadSafeQueueError & e) {
 		LL_WARNS() << "could not repeat message (" << e.what() << ")" << 
 			event.asString() << LL_ENDL;
 	}

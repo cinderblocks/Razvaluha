@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lliobuffer.cpp
  * @author Phoenix
@@ -33,10 +35,10 @@
 // LLIOBuffer
 //
 LLIOBuffer::LLIOBuffer() :
-	mBuffer(NULL),
+	mBuffer(nullptr),
 	mBufferSize(0L),
-	mReadHead(NULL),
-	mWriteHead(NULL)
+	mReadHead(nullptr),
+	mWriteHead(nullptr)
 {
 }
 

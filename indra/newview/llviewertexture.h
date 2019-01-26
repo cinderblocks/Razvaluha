@@ -214,11 +214,11 @@ public:
 	static LLFrameTimer sEvaluationTimer;
 	static F32 sDesiredDiscardBias;
 	static F32 sDesiredDiscardScale;
-	static S32Bytes sBoundTextureMemory;
-	static S32Bytes sTotalTextureMemory;
+	static S64Bytes sBoundTextureMemory;
+	static S64Bytes sTotalTextureMemory;
 	static S32Megabytes sMaxBoundTextureMemory;
 	static S32Megabytes sMaxTotalTextureMem;
-	static S32Bytes sMaxDesiredTextureMem ;
+	static S64Bytes sMaxDesiredTextureMem ;
 	static S8  sCameraMovingDiscardBias;
 	static F32 sCameraMovingBias;
 	static S32 sMaxSculptRez ;
@@ -412,6 +412,10 @@ public:
 
 	/*virtual*/bool  isActiveFetching(); //is actively in fetching by the fetching pipeline.
 
+	LLUUID		getUploader();
+	LLDate		getUploadTime();
+	std::string getComment();
+
 protected:
 	/*virtual*/ void switchToCachedImage();
 	S32 getCurrentDiscardLevelForFetching() ;
@@ -511,6 +515,8 @@ protected:
 
 	BOOL   mForSculpt ; //a flag if the texture is used as sculpt data.
 	BOOL   mIsFetched ; //is loaded from remote or from cache, not generated locally.
+	
+	std::map<S8, std::string> mComment;
 
 public:
 	static LLPointer<LLViewerFetchedTexture> sMissingAssetImagep;	// Texture to show for an image asset that is not in the database

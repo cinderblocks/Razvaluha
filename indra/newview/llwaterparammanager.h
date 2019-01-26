@@ -343,9 +343,8 @@ public:
 	F32 mDensitySliderValue;
 
 private:
-	friend class LLSingleton<LLWaterParamManager>;
+	LLSINGLETON(LLWaterParamManager);
 	/*virtual*/ void initSingleton();
-	LLWaterParamManager();
 	~LLWaterParamManager();
 
 	void loadAllPresets();

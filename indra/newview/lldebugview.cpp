@@ -40,7 +40,6 @@
 #include "llconsole.h"
 #include "lltextureview.h"
 #include "llresmgr.h"
-#include "imageids.h"
 #include "llvelocitybar.h"
 #include "llviewerwindow.h"
 #include "llfloaterstats.h"

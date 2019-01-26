@@ -65,7 +65,7 @@ const U32   FLAGS_CAMERA_SOURCE        = (1U << 22);
 const U32   FLAGS_OBJECT_OWNER_MODIFY  = (1U << 28);
 
 const U32   FLAGS_TEMPORARY_ON_REZ     = (1U << 29);
-const U32	FLAGS_TEMPORARY			   = (1U << 30);
+//const U32 FLAGS_UNUSED_006           = (1U << 30); // was FLAGS_TEMPORARY
 //const U32 FLAGS_UNUSED_007           = (1U << 31); // was FLAGS_ZLIB_COMPRESSED
 
 const U32   FLAGS_LOCAL                = FLAGS_ANIM_SOURCE | FLAGS_CAMERA_SOURCE;
@@ -82,4 +82,3 @@ typedef enum e_havok_joint_type
 } EHavokJointType;
 
 #endif
-

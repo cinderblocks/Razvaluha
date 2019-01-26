@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llframetimer.cpp
  *
@@ -47,7 +49,7 @@ void LLFrameTimer::updateFrameTime()
 	sTotalTime = total_time;
 	sTotalSeconds = U64_to_F64(sTotalTime) * USEC_TO_SEC_F64;
 	sFrameTime = U64_to_F64(sTotalTime - sStartTotalTime) * USEC_TO_SEC_F64;
-}
+} 
 
 void LLFrameTimer::start()
 {
@@ -128,13 +130,14 @@ BOOL LLFrameTimer::checkExpirationAndReset(F32 expiration)
 	return FALSE;
 }
 
-// static 
+// static
 F32 LLFrameTimer::getFrameDeltaTimeF32()
 {
 	return (F32)(U64_to_F64(sFrameDeltaTime) * USEC_TO_SEC_F64); 
 }
 
-// static 
+
+//	static 
 // Return seconds since the current frame started
 F32  LLFrameTimer::getCurrentFrameTime()
 {

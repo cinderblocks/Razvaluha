@@ -77,8 +77,8 @@ public:
 		{}
 	
 protected:
-	HttpReadyQueue(const HttpReadyQueue &);		// Not defined
-	void operator=(const HttpReadyQueue &);		// Not defined
+	HttpReadyQueue(const HttpReadyQueue &) = delete;				// Not defined
+	HttpReadyQueue& operator=(const HttpReadyQueue &) = delete;		// Not defined
 
 public:
 

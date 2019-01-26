@@ -301,7 +301,6 @@ typedef std::shared_ptr<LLNotificationVisibilityRule> LLNotificationVisibilityRu
  * shared pointer.
  */
 class LLNotification  : 
-	boost::noncopyable,
 	public std::enable_shared_from_this<LLNotification>
 {
 LOG_CLASS(LLNotification);
@@ -310,18 +309,18 @@ friend class LLNotifications;
 public:
 
 	// parameter object used to instantiate a new notification
-	class Params : public LLParamBlock<Params>
+	struct Params : public LLInitParam::Block<Params>
 	{
 		friend class LLNotification;
-	public:
-		Params(const std::string& _name) 
-			:	name(_name),
-				mTemporaryResponder(false),
-				functor_name(_name),
-				priority(NOTIFICATION_PRIORITY_UNSPECIFIED),
-				timestamp(LLDate::now())
-		{
-		}
+
+		Mandatory<std::string>					name;
+		Optional<LLSD>							substitutions,
+												payload;
+		Optional<ENotificationPriority>			priority;
+		Optional<LLSD>							form_elements;
+		Optional<LLDate>						time_stamp;
+		Optional<LLNotificationContext*>			context;
+		Optional<std::string>					functor_name;
 
 		// pseudo-param
 		Params& functor(LLNotificationFunctorRegistry::ResponseFunctor f) 
@@ -333,17 +332,18 @@ public:
 			return *this;
 		}
 
-		LLMandatoryParam<std::string>					name;
-
-		// optional
-		LLOptionalParam<LLSD>							substitutions;
-		LLOptionalParam<LLSD>							payload;
-		LLOptionalParam<ENotificationPriority>			priority;
-		LLOptionalParam<LLSD>							form_elements;
-		LLOptionalParam<LLDate>							timestamp;
-		LLOptionalParam<LLNotificationContext*>			context;
-		LLOptionalParam<std::string>					functor_name;
-
+		Params(const std::string& _name) 
+		:	name("name"),
+			substitutions("substitutions"),
+			mTemporaryResponder(false),
+			payload("payload"),
+			priority("priority", NOTIFICATION_PRIORITY_UNSPECIFIED),
+			time_stamp("time")
+		{
+			functor_name = _name;
+			name = _name;
+			time_stamp = LLDate::now();
+		}
 	private:
 		bool					mTemporaryResponder;
 	};
@@ -387,7 +387,7 @@ private:
 
 	// this is just for making it easy to look things up in a set organized by UUID -- DON'T USE IT
 	// for anything real!
- LLNotification(LLUUID uuid) : mId(uuid), mCancelled(false), mRespondedTo(false), mIgnored(false), mPriority(NOTIFICATION_PRIORITY_UNSPECIFIED), mTemporaryResponder(false) {}
+	LLNotification(LLUUID uuid) : mId(uuid), mCancelled(false), mRespondedTo(false), mIgnored(false), mPriority(NOTIFICATION_PRIORITY_UNSPECIFIED), mTemporaryResponder(false) {}
 
 	void cancel();
 
@@ -395,6 +395,9 @@ public:
 
 	// constructor from a saved notification
 	LLNotification(const LLSD& sd);
+
+	LLNotification(const LLNotification&) = delete;
+	LLNotification& operator=(const LLNotification&) = delete;
 
 	void setResponseFunctor(std::string const &responseFunctorName);
 
@@ -447,6 +450,13 @@ public:
 	bool isRespondedTo() const
 	{
 		return mRespondedTo;
+	}
+
+	bool isActive() const
+	{
+		return !isRespondedTo()
+			&& !isCancelled()
+			&& !isExpired();
 	}
 
 	bool isIgnored() const
@@ -647,13 +657,14 @@ typedef std::multimap<std::string, LLNotificationPtr> LLNotificationMap;
 // all of the built-in tests should attach to the "Visible" channel
 //
 class LLNotificationChannelBase :
-	public boost::signals2::trackable
+	public LLEventTrackable,
+	public LLRefCount
 {
 	LOG_CLASS(LLNotificationChannelBase);
 public:
 	LLNotificationChannelBase(LLNotificationFilter filter) 
-	:	mFilter(filter), 
-		mItems() 
+	:	mItems(), 
+		mFilter(filter)
 	{}
 	virtual ~LLNotificationChannelBase() {}
 	// you can also connect to a Channel, so you can be notified of
@@ -693,12 +704,12 @@ protected:
 // destroy it, but if it becomes necessary to do so, the shared_ptr model
 // will ensure that we don't leak resources.
 class LLNotificationChannel;
-typedef boost::shared_ptr<LLNotificationChannel> LLNotificationChannelPtr;
+typedef boost::intrusive_ptr<LLNotificationChannel> LLNotificationChannelPtr;
 
 // manages a list of notifications
 // Note that if this is ever copied around, we might find ourselves with multiple copies
 // of a queue with notifications being added to different nonequivalent copies. So we 
-// make it inherit from boost::noncopyable, and then create a map of shared_ptr to manage it.
+// make it noncopyable, and then create a map of LLPointer to manage it.
 // 
 // NOTE: LLNotificationChannel is self-registering. The *correct* way to create one is to 
 // do something like:
@@ -706,24 +717,46 @@ typedef boost::shared_ptr<LLNotificationChannel> LLNotificationChannelPtr;
 // This returns an LLNotificationChannelPtr, which you can store, or
 // you can then retrieve the channel by using the registry:
 //		LLNotifications::instance().getChannel("name")...
-//
+// 
 class LLNotificationChannel : 
-	boost::noncopyable, 
 	public LLNotificationChannelBase
 {
 	LOG_CLASS(LLNotificationChannel);
 
 public:  
+	// Notification Channels have a filter, which determines which notifications
+	// will be added to this channel. 
+	// Channel filters cannot change.
+	struct Params : public LLInitParam::Block<Params>
+	{
+		Mandatory<std::string>				name;
+		Optional<LLNotificationFilter>		filter;
+		Multiple<std::string>				sources;
+	};
+
+	LLNotificationChannel(const Params& p = Params());
+
 	virtual ~LLNotificationChannel() {}
 	typedef LLNotificationSet::iterator Iterator;
 	
+	LLNotificationChannel(const LLNotificationChannel&) = delete;
+	LLNotificationChannel& operator=(const LLNotificationChannel&) = delete;
+    
 	std::string getName() const { return mName; }
-	std::string getParentChannelName() { return mParent; }
+	typedef std::vector<std::string>::const_iterator parents_iter;
+	boost::iterator_range<parents_iter> getParents() const
+	{
+		return boost::iterator_range<parents_iter>(mParents);
+	}
+
+	std::string getParentChannelName() { return mParents.empty() ? LLStringUtil::null : mParents[0]; }
 	
 	bool isEmpty() const;
+    S32 size() const;
 	
 	Iterator begin();
 	Iterator end();
+	size_t size();
 	
 	std::string summarize();
 
@@ -742,7 +775,7 @@ protected:
 
 private:
 	std::string mName;
-	std::string mParent;
+	std::vector<std::string> mParents;
 };
 
 class LLNotificationTemplates :
@@ -750,7 +783,7 @@ class LLNotificationTemplates :
 {
 	LOG_CLASS(LLNotificationTemplates);
 
-	friend class LLSingleton<LLNotificationTemplates>;
+	LLSINGLETON_EMPTY_CTOR(LLNotificationTemplates);
 
 	// This class may not use LLNotifications.
 	typedef char LLNotifications;
@@ -783,8 +816,6 @@ public:
 	std::string getGlobalString(const std::string& key) const;
 
 private:
-	// we're a singleton, so we don't have a public constructor
-	LLNotificationTemplates() { }
 	/*virtual*/ void initSingleton();
 
 	TemplateMap mTemplates;
@@ -796,20 +827,45 @@ private:
 	GlobalStringMap mGlobalStrings;
 };
 
+// An interface class to provide a clean linker seam to the LLNotifications class.
+// Extend this interface as needed for your use of LLNotifications.
+class LLNotificationsInterface
+{
+public:
+    virtual ~LLNotificationsInterface() {}
+	virtual LLNotificationPtr add(const std::string& name, 
+						const LLSD& substitutions, 
+						const LLSD& payload, 
+						LLNotificationFunctorRegistry::ResponseFunctor functor) = 0;
+};
+
 class LLNotifications :
+	public LLNotificationsInterface,
 	public LLSingleton<LLNotifications>,
 	public LLNotificationChannelBase
 {
+	LLSINGLETON(LLNotifications);
 	LOG_CLASS(LLNotifications);
 
-	friend class LLSingleton<LLNotifications>;
 public:
-	// load notification descriptions from file;
-	// OK to call more than once because it will reload
-	bool loadNotifications();
 	void createDefaultChannels();
 
+    // Needed to clear up RefCounted things prior to actual destruction
+    // as the singleton nature of the class makes them do "bad things"
+    // on at least Mac, if not all 3 platforms
+    //
+    void clear();
+
+	// load all notification descriptions from file
+	// calling more than once will overwrite existing templates
+	// but never delete a template
+	bool loadTemplates();
+
+	LLXMLNodePtr checkForXMLTemplate(LLXMLNodePtr item);
 	// we provide a collection of simple add notification functions so that it's reasonable to create notifications in one line
+
+	// *NOTE: To add simple notifications, #include "llnotificationsutil.h"
+	// and use LLNotificationsUtil::add("MyNote") or add("MyNote", args)
 	LLNotificationPtr add(const std::string& name,
 						const LLSD& substitutions = LLSD(),
 						const LLSD& payload = LLSD());
@@ -817,14 +873,12 @@ public:
 						const LLSD& substitutions,
 						const LLSD& payload,
 						const std::string& functor_name);
-	LLNotificationPtr add(const std::string& name,
+	/* virtual */ LLNotificationPtr add(const std::string& name,
 						const LLSD& substitutions,
 						const LLSD& payload,
-						LLNotificationFunctorRegistry::ResponseFunctor functor);
+						LLNotificationFunctorRegistry::ResponseFunctor functor) override;
 	LLNotificationPtr add(AIAlert::Error const& error, int type, unsigned int suppress_mask);
 	LLNotificationPtr add(const LLNotification::Params& p);
-
-	void forceResponse(const LLNotification::Params& params, S32 option);
 
 	typedef std::map<std::string, LLNotificationChannelPtr> ChannelMap;
 	ChannelMap mChannels;
@@ -835,16 +889,23 @@ public:
 	void add(const LLNotificationPtr pNotif);
 	void cancel(LLNotificationPtr pNotif);
 	void cancelByName(const std::string& name);
+	void cancelByOwner(const LLUUID ownerId);
 	void update(const LLNotificationPtr pNotif);
+
 	LLNotificationPtr find(const LLUUID& uuid);
 	
 	typedef boost::function<void (LLNotificationPtr)> NotificationProcess;
+
 	void forEachNotification(NotificationProcess process);
 
+	// load notification descriptions from file;
+	// OK to call more than once because it will reload
+	bool loadNotifications();
+
+	void forceResponse(const LLNotification::Params& params, S32 option);
+
 private:
-	// we're a singleton, so we don't have a public constructor
-	LLNotifications();
-	/*virtual*/ void initSingleton();
+	/*virtual*/ void initSingleton() override;
 	
 	void loadPersistentNotifications();
 
@@ -853,7 +914,6 @@ private:
 	bool uniqueFilter(LLNotificationPtr pNotification);
 	bool uniqueHandler(const LLSD& payload);
 	bool failedUniquenessTest(const LLSD& payload);
-
 	LLNotificationChannelPtr pHistoryChannel;
 	LLNotificationChannelPtr pExpirationChannel;
 

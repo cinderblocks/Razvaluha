@@ -41,6 +41,7 @@
 
 #include "llfloater.h"
 #include "llvoinventorylistener.h"
+#include "llsafehandle.h"
 #include "llsaleinfo.h"
 #include "llinventory.h"
 

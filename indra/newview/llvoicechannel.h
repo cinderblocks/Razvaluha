@@ -1,25 +1,25 @@
-/**
+/** 
  * @file llvoicechannel.h
  * @brief Voice channel related classes
  *
  * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
  * version 2.1 of the License only.
- *
+ * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
+ * 
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
@@ -57,7 +57,7 @@ public:
 	typedef boost::signals2::signal<void(const EState& old_state, const EState& new_state, const EDirection& direction, bool ended_by_agent, const LLUUID& session_id)> state_changed_signal_t;
 
 	// on current channel changed signal
-	typedef boost::function<void(const LLUUID& session_id)> channel_changed_callback_t;
+	typedef std::function<void(const LLUUID& session_id)> channel_changed_callback_t;
 	typedef boost::signals2::signal<void(const LLUUID& session_id)> channel_changed_signal_t;
 	static channel_changed_signal_t sCurrentVoiceChannelChangedSignal;
 	static boost::signals2::connection setCurrentVoiceChannelChangedCallback(channel_changed_callback_t cb, bool at_front = false);
@@ -66,7 +66,7 @@ public:
 	LLVoiceChannel(const LLUUID& session_id, const std::string& session_name);
 	virtual ~LLVoiceChannel();
 
-	/*virtual*/ void onChange(EStatusType status, const std::string &channelURI, bool proximal);
+	/*virtual*/ void onChange(EStatusType status, const std::string &channelURI, bool proximal) override;
 
 	virtual void handleStatusChange(EStatusType status);
 	virtual void handleError(EStatusType status);
@@ -98,9 +98,9 @@ public:
 	static LLVoiceChannel* getChannelByID(const LLUUID& session_id);
 	static LLVoiceChannel* getChannelByURI(std::string uri);
 	static LLVoiceChannel* getCurrentVoiceChannel();
-
+	
 	static void initClass();
-
+	
 	static void suspend();
 	static void resume();
 
@@ -146,17 +146,17 @@ class LLVoiceChannelGroup : public LLVoiceChannel
 public:
 	LLVoiceChannelGroup(const LLUUID& session_id, const std::string& session_name);
 
-	/*virtual*/ void handleStatusChange(EStatusType status);
-	/*virtual*/ void handleError(EStatusType status);
-	/*virtual*/ void activate();
-	/*virtual*/ void deactivate();
+	/*virtual*/ void handleStatusChange(EStatusType status) override;
+	/*virtual*/ void handleError(EStatusType status) override;
+	/*virtual*/ void activate() override;
+	/*virtual*/ void deactivate() override;
 	/*vritual*/ void setChannelInfo(
 		const std::string& uri,
-		const std::string& credentials);
-	/*virtual*/ void getChannelInfo();
+		const std::string& credentials) override;
+	/*virtual*/ void getChannelInfo() override;
 
 protected:
-	virtual void setState(EState state);
+	void setState(EState state) override;
 
 private:
     void voiceCallCapCoro(std::string url);
@@ -167,15 +167,15 @@ private:
 
 class LLVoiceChannelProximal : public LLVoiceChannel, public LLSingleton<LLVoiceChannelProximal>
 {
+	LLSINGLETON(LLVoiceChannelProximal);
 public:
-	LLVoiceChannelProximal();
 
-	/*virtual*/ void onChange(EStatusType status, const std::string &channelURI, bool proximal);
-	/*virtual*/ void handleStatusChange(EStatusType status);
-	/*virtual*/ void handleError(EStatusType status);
-	/*virtual*/ BOOL isActive();
-	/*virtual*/ void activate();
-	/*virtual*/ void deactivate();
+	/*virtual*/ void onChange(EStatusType status, const std::string &channelURI, bool proximal) override;
+	/*virtual*/ void handleStatusChange(EStatusType status) override;
+	/*virtual*/ void handleError(EStatusType status) override;
+	/*virtual*/ BOOL isActive() override;
+	/*virtual*/ void activate() override;
+	/*virtual*/ void deactivate() override;
 
 };
 
@@ -184,15 +184,15 @@ class LLVoiceChannelP2P : public LLVoiceChannelGroup
 public:
 	LLVoiceChannelP2P(const LLUUID& session_id, const std::string& session_name, const LLUUID& other_user_id);
 
-	/*virtual*/ void handleStatusChange(EStatusType status);
-	/*virtual*/ void handleError(EStatusType status);
-    /*virtual*/ void activate();
-	/*virtual*/ void getChannelInfo();
+	/*virtual*/ void handleStatusChange(EStatusType status) override;
+	/*virtual*/ void handleError(EStatusType status) override;
+    /*virtual*/ void activate() override;
+	/*virtual*/ void getChannelInfo() override;
 
 	void setSessionHandle(const std::string& handle, const std::string &inURI);
 
 protected:
-	virtual void setState(EState state);
+	void setState(EState state) override;
 
 private:
 

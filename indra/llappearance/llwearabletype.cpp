@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llwearabletype.cpp
  * @brief LLWearableType class implementation
@@ -29,7 +31,7 @@
 #include "llinventorytype.h"
 #include "llinventorydefines.h"
 
-static LLTranslationBridge* sTrans = NULL;
+static LLTranslationBridge* sTrans = nullptr;
 
 // static
 void LLWearableType::initClass(LLTranslationBridge* trans)
@@ -52,9 +54,8 @@ struct WearableEntry : public LLDictionaryEntry
 				  BOOL allow_multiwear = TRUE) :
 		LLDictionaryEntry(name),
 		mAssetType(assetType),
+		mLabel(sTrans->getString(name)),
 		mDefaultNewName(default_new_name),
-		//*TODO:Translate
-		mLabel(/*sTrans->getString*/(name)),
 		mIconName(iconName),
 		mDisableCameraSwitch(disable_camera_switch),
 		mAllowMultiwear(allow_multiwear)
@@ -72,8 +73,7 @@ struct WearableEntry : public LLDictionaryEntry
 class LLWearableDictionary : public LLSingleton<LLWearableDictionary>,
 							 public LLDictionary<LLWearableType::EType, WearableEntry>
 {
-public:
-	LLWearableDictionary();
+	LLSINGLETON(LLWearableDictionary);
 
 // [RLVa:KB] - Checked: 2010-03-03 (RLVa-1.2.0a) | Added: RLVa-1.2.0a
 protected:
@@ -172,7 +172,7 @@ BOOL LLWearableType::getDisableCameraSwitch(LLWearableType::EType type)
 	return entry->mDisableCameraSwitch;
 }
 
-// static 
+// static
 BOOL LLWearableType::getAllowMultiwear(LLWearableType::EType type)
 {
 	const LLWearableDictionary *dict = LLWearableDictionary::getInstance();

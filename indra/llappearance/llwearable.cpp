@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llwearable.cpp
  * @brief LLWearable class implementation
@@ -33,7 +35,6 @@
 #include "llvisualparam.h"
 #include "llavatarappearancedefines.h"
 #include "llwearable.h"
-#include "lldate.h"
 
 using namespace LLAvatarAppearanceDefines;
 
@@ -65,7 +66,7 @@ LLWearable::~LLWearable()
 		LLVisualParam* vp = vpIter->second;
 		vp->clearNextParam();
 		delete vp;
-		vpIter->second = NULL;
+		vpIter->second = nullptr;
 	}
 
 	destroyTextures();
@@ -169,11 +170,11 @@ void LLWearable::createVisualParams(LLAvatarAppearance *avatarp)
 		// need this line to disambiguate between versions of LLCharacter::getVisualParam()
 		LLVisualParam*(LLAvatarAppearance::*param_function)(S32)const = &LLAvatarAppearance::getVisualParam; 
 		param->resetDrivenParams();
-		if(!param->linkDrivenParams(boost::bind(wearable_function,(LLWearable*)this, _1), false))
+		if (!param->linkDrivenParams(std::bind(wearable_function,(LLWearable*)this, std::placeholders::_1), false))
 		{
-			if( !param->linkDrivenParams(boost::bind(param_function,avatarp,_1 ), true))
+			if (!param->linkDrivenParams(std::bind(param_function,avatarp, std::placeholders::_1 ), true))
 			{
-				LL_WARNS() << "could not link driven params for wearable " << getName() << " id: " << param->getID() << LL_ENDL;
+				LL_DEBUGS("Avatar") << "could not link driven params for wearable " << getName() << " id: " << param->getID() << LL_ENDL;
 				continue;
 			}
 		}
@@ -182,7 +183,7 @@ void LLWearable::createVisualParams(LLAvatarAppearance *avatarp)
 
 void LLWearable::createLayers(S32 te, LLAvatarAppearance *avatarp)
 {
-	LLTexLayerSet *layer_set = NULL;
+	LLTexLayerSet *layer_set = nullptr;
 	const LLAvatarAppearanceDictionary::TextureEntry *texture_dict = LLAvatarAppearanceDictionary::getInstance()->getTexture((ETextureIndex)te);
 	if (texture_dict->mIsUsedByBakedTexture)
 	{
@@ -448,11 +449,11 @@ LLWearable::EImportResult LLWearable::importStream( std::istream& input_stream, 
 		LLGLTexture* image = gTextureManagerBridgep->getFetchedTexture( id );
 		if( mTEMap.find(te) != mTEMap.end() )
 		{
-			delete mTEMap[te];
+				delete mTEMap[te];
 		}
 		if( mSavedTEMap.find(te) != mSavedTEMap.end() )
 		{
-			delete mSavedTEMap[te];
+				delete mSavedTEMap[te];
 		}
 	
 		LLUUID textureid(uuid_buffer);
@@ -499,7 +500,7 @@ LLLocalTextureObject* LLWearable::getLocalTextureObject(S32 index)
 		LLLocalTextureObject* lto = iter->second;
 		return lto;
 	}
-	return NULL;
+	return nullptr;
 }
 
 const LLLocalTextureObject* LLWearable::getLocalTextureObject(S32 index) const
@@ -510,7 +511,7 @@ const LLLocalTextureObject* LLWearable::getLocalTextureObject(S32 index) const
 		const LLLocalTextureObject* lto = iter->second;
 		return lto;
 	}
-	return NULL;
+	return nullptr;
 }
 
 std::vector<LLLocalTextureObject*> LLWearable::getLocalTextureListSeq()
@@ -518,7 +519,7 @@ std::vector<LLLocalTextureObject*> LLWearable::getLocalTextureListSeq()
 	std::vector<LLLocalTextureObject*> result;
 
 	for(te_map_t::const_iterator iter = mTEMap.begin();
-		iter != mTEMap.end(); iter++)
+		iter != mTEMap.end(); ++iter)
 	{
 		LLLocalTextureObject* lto = iter->second;
 		result.push_back(lto);
@@ -542,7 +543,7 @@ void LLWearable::revertValues()
 
 	//update saved settings so wearable is no longer dirty
 	// non-driver params first
-	for (param_map_t::const_iterator iter = mSavedVisualParamMap.begin(); iter != mSavedVisualParamMap.end(); iter++)
+	for (param_map_t::const_iterator iter = mSavedVisualParamMap.begin(); iter != mSavedVisualParamMap.end(); ++iter)
 	{
 		S32 id = iter->first;
 		F32 value = iter->second;
@@ -554,7 +555,7 @@ void LLWearable::revertValues()
 	}
 
 	//then driver params
-	for (param_map_t::const_iterator iter = mSavedVisualParamMap.begin(); iter != mSavedVisualParamMap.end(); iter++)
+	for (param_map_t::const_iterator iter = mSavedVisualParamMap.begin(); iter != mSavedVisualParamMap.end(); ++iter)
 	{
 		S32 id = iter->first;
 		F32 value = iter->second;
@@ -566,7 +567,7 @@ void LLWearable::revertValues()
 	}
 
 	// make sure that saved values are sane
-	for (param_map_t::const_iterator iter = mSavedVisualParamMap.begin(); iter != mSavedVisualParamMap.end(); iter++)
+	for (param_map_t::const_iterator iter = mSavedVisualParamMap.begin(); iter != mSavedVisualParamMap.end(); ++iter)
 	{
 		S32 id = iter->first;
 		LLVisualParam *param = getVisualParam(id);
@@ -604,8 +605,8 @@ void LLWearable::syncImages(te_map_t &src, te_map_t &dst)
 		{
 			te_map_t::const_iterator iter = src.find(te);
 			LLUUID image_id;
-			LLGLTexture *image = NULL;
-			LLLocalTextureObject *lto = NULL;
+			LLGLTexture *image = nullptr;
+			LLLocalTextureObject *lto = nullptr;
 			if(iter != src.end())
 			{
 				// there's a Local Texture Object in the source image map. Use this to populate the values to store in the destination image map.
@@ -664,7 +665,7 @@ void LLWearable::addVisualParam(LLVisualParam *param)
 }
 
 
-void LLWearable::setVisualParamWeight(S32 param_index, F32 value, bool upload_bake)
+void LLWearable::setVisualParamWeight(S32 param_index, F32 value, BOOL upload_bake)
 {
 	if( is_in_map(mVisualParamIndexMap, param_index ) )
 	{
@@ -700,7 +701,9 @@ LLVisualParam* LLWearable::getVisualParam(S32 index) const
 
 void LLWearable::getVisualParams(visual_param_vec_t &list)
 {
+#if !USE_LL_APPEARANCE_CODE
 	list.reserve(mVisualParamIndexMap.size());
+#endif
 	visual_param_index_map_t::iterator iter = mVisualParamIndexMap.begin();
 	visual_param_index_map_t::iterator end = mVisualParamIndexMap.end();
 
@@ -711,7 +714,7 @@ void LLWearable::getVisualParams(visual_param_vec_t &list)
 	}
 }
 
-void LLWearable::animateParams(F32 delta, bool upload_bake)
+void LLWearable::animateParams(F32 delta, BOOL upload_bake)
 {
 	for(visual_param_index_map_t::iterator iter = mVisualParamIndexMap.begin();
 		 iter != mVisualParamIndexMap.end();
@@ -736,7 +739,7 @@ LLColor4 LLWearable::getClothesColor(S32 te) const
 	return color;
 }
 
-void LLWearable::setClothesColor( S32 te, const LLColor4& new_color, bool upload_bake )
+void LLWearable::setClothesColor( S32 te, const LLColor4& new_color, BOOL upload_bake)
 {
 	U32 param_name[3];
 	if( LLAvatarAppearance::teToColorParams( (LLAvatarAppearanceDefines::ETextureIndex)te, param_name ) )
@@ -751,9 +754,9 @@ void LLWearable::setClothesColor( S32 te, const LLColor4& new_color, bool upload
 void LLWearable::writeToAvatar(LLAvatarAppearance* avatarp)
 {
 	if (!avatarp) return;
-
+#if USE_LL_APPEARANCE_CODE
 	// Pull params
-	/*for( LLVisualParam* param = avatarp->getFirstVisualParam(); param; param = avatarp->getNextVisualParam() )
+	for( LLVisualParam* param = avatarp->getFirstVisualParam(); param; param = avatarp->getNextVisualParam() )
 	{
 		// cross-wearable parameters are not authoritative, as they are driven by a different wearable. So don't copy the values to the
 		// avatar object if cross wearable. Cross wearable params get their values from the avatar, they shouldn't write the other way.
@@ -762,15 +765,17 @@ void LLWearable::writeToAvatar(LLAvatarAppearance* avatarp)
 			S32 param_id = param->getID();
 			F32 weight = getVisualParamWeight(param_id);
 
-			avatarp->setVisualParamWeight( param_id, weight, FALSE );
+			avatarp->setVisualParamWeight( param_id, weight, FALSE);
 		}
-	}*/
+	}
+#else
 	for( visual_param_index_map_t::iterator it = mVisualParamIndexMap.begin(); it != mVisualParamIndexMap.end(); ++it )
 	{
 		LLVisualParam* param = it->second;
 		if(!((LLViewerVisualParam*)param)->getCrossWearable())
 			avatarp->setVisualParamWeight( param->getID(), param->getWeight(), FALSE );
 	}
+#endif
 }
 
 

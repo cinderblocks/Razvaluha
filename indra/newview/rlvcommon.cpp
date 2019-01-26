@@ -68,11 +68,11 @@ void RlvNotifications::onGiveToRLVConfirmation(const LLSD& notification, const L
 //
 
 #ifdef RLV_EXPERIMENTAL_COMPOSITEFOLDERS
-bool RlvSettings::fCompositeFolders = false;
+bool RlvSettings::s_fCompositeFolders = false;
 #endif // RLV_EXPERIMENTAL_COMPOSITEFOLDERS
-bool RlvSettings::fCanOOC = true;
-bool RlvSettings::fLegacyNaming = true;
-bool RlvSettings::fNoSetEnv = false;
+bool RlvSettings::s_fCanOOC = true;
+bool RlvSettings::s_fLegacyNaming = true;
+bool RlvSettings::s_fNoSetEnv = false;
 bool RlvSettings::fShowNameTags = false;
 
 // Checked: 2010-02-27 (RLVa-1.2.0a) | Modified: RLVa-1.1.0i
@@ -82,27 +82,25 @@ void RlvSettings::initClass()
 	if (!fInitialized)
 	{
 		#ifdef RLV_EXPERIMENTAL_COMPOSITEFOLDERS
-		fCompositeFolders = rlvGetSetting<bool>(RLV_SETTING_ENABLECOMPOSITES, false);
+		s_fCompositeFolders = rlvGetSetting<bool>(RLV_SETTING_ENABLECOMPOSITES, false);
 		if (gSavedSettings.controlExists(RLV_SETTING_ENABLECOMPOSITES))
-			gSavedSettings.getControl(RLV_SETTING_ENABLECOMPOSITES)->getSignal()->connect(boost::bind(&onChangedSettingBOOL, _2, &fCompositeFolders));
+			gSavedSettings.getControl(RLV_SETTING_ENABLECOMPOSITES)->getSignal()->connect(boost::bind(&onChangedSettingBOOL, _2, &s_fCompositeFolders));
 		#endif // RLV_EXPERIMENTAL_COMPOSITEFOLDERS
 
-		fLegacyNaming = rlvGetSetting<bool>(RLV_SETTING_ENABLELEGACYNAMING, true);
+		s_fLegacyNaming = rlvGetSetting<bool>(RLV_SETTING_ENABLELEGACYNAMING, true);
 		if (gSavedSettings.controlExists(RLV_SETTING_ENABLELEGACYNAMING))
-			gSavedSettings.getControl(RLV_SETTING_ENABLELEGACYNAMING)->getSignal()->connect(boost::bind(&onChangedSettingBOOL, _2, &fLegacyNaming));
+			gSavedSettings.getControl(RLV_SETTING_ENABLELEGACYNAMING)->getSignal()->connect(boost::bind(&onChangedSettingBOOL, _2, &s_fLegacyNaming));
 
-		fCanOOC = rlvGetSetting<bool>(RLV_SETTING_CANOOC, true);
-		fNoSetEnv = rlvGetSetting<bool>(RLV_SETTING_NOSETENV, false);
+		s_fCanOOC = rlvGetSetting<bool>(RLV_SETTING_CANOOC, true);
+		s_fNoSetEnv = rlvGetSetting<bool>(RLV_SETTING_NOSETENV, false);
 
 		fShowNameTags = rlvGetSetting<bool>(RLV_SETTING_SHOWNAMETAGS, false);
 		if (gSavedSettings.controlExists(RLV_SETTING_SHOWNAMETAGS))
 			gSavedSettings.getControl(RLV_SETTING_SHOWNAMETAGS)->getSignal()->connect(boost::bind(&onChangedSettingBOOL, _2, &fShowNameTags));
 
-#ifdef RLV_EXTENSION_STARTLOCATION
 		// Don't allow toggling RLVaLoginLastLocation from the debug settings floater
 		if (gSavedPerAccountSettings.controlExists(RLV_SETTING_LOGINLASTLOCATION))
 			gSavedPerAccountSettings.getControl(RLV_SETTING_LOGINLASTLOCATION)->setHiddenFromSettingsEditor(true);
-#endif // RLV_EXTENSION_STARTLOCATION
 
 		if (gSavedSettings.controlExists(RLV_SETTING_TOPLEVELMENU))
 			gSavedSettings.getControl(RLV_SETTING_TOPLEVELMENU)->getSignal()->connect(boost::bind(&onChangedMenuLevel));
@@ -111,21 +109,19 @@ void RlvSettings::initClass()
 	}
 }
 
-#ifdef RLV_EXTENSION_STARTLOCATION
-	// Checked: 2010-04-01 (RLVa-1.2.0c) | Modified: RLVa-0.2.1d
-	void RlvSettings::updateLoginLastLocation()
+// Checked: 2010-04-01 (RLVa-1.2.0c) | Modified: RLVa-0.2.1d
+void RlvSettings::updateLoginLastLocation()
+{
+	if ( (!LLApp::isQuitting()) && (gSavedPerAccountSettings.controlExists(RLV_SETTING_LOGINLASTLOCATION)) )
 	{
-		if ( (!LLApp::isQuitting()) && (gSavedPerAccountSettings.controlExists(RLV_SETTING_LOGINLASTLOCATION)) )
+		BOOL fValue = (gRlvHandler.hasBehaviour(RLV_BHVR_TPLOC)) || (!RlvActions::canStand());
+		if (gSavedPerAccountSettings.getBOOL(RLV_SETTING_LOGINLASTLOCATION) != fValue)
 		{
-			BOOL fValue = (gRlvHandler.hasBehaviour(RLV_BHVR_TPLOC)) || (!RlvActions::canStand());
-			if (gSavedPerAccountSettings.getBOOL(RLV_SETTING_LOGINLASTLOCATION) != fValue)
-			{
-				gSavedPerAccountSettings.setBOOL(RLV_SETTING_LOGINLASTLOCATION, fValue);
-				gSavedPerAccountSettings.saveToFile(gSavedSettings.getString("PerAccountSettingsFile"), TRUE);
-			}
+			gSavedPerAccountSettings.setBOOL(RLV_SETTING_LOGINLASTLOCATION, fValue);
+			gSavedPerAccountSettings.saveToFile(gSavedSettings.getString("PerAccountSettingsFile"), TRUE);
 		}
 	}
-#endif // RLV_EXTENSION_STARTLOCATION
+}
 
 // Checked: 2013-04-17 (RLVa-1.4.8)
 bool RlvSettings::onChangedAvatarOffset(const LLSD& sdValue)
@@ -170,7 +166,7 @@ void RlvStrings::initClass()
 		/* Singu TODO: findSkinnedFilenames/LLDir update
 		std::vector<std::string> files = gDirUtilp->findSkinnedFilenames(LLDir::XUI, RLV_STRINGS_FILE, LLDir::ALL_SKINS);
 		m_StringMapPath = (!files.empty()) ? files.front() : LLStringUtil::null;
-		for (auto itFile = files.cbegin(); itFile != files.cend(); ++itFile)
+		for (std::vector<std::string>::const_iterator itFile = files.begin(); itFile != files.end(); ++itFile)
 		*/
 		std::string itFile = gDirUtilp->findSkinnedFilename(LLUICtrlFactory::getXUIPaths().front(), RLV_STRINGS_FILE);
 		if (!itFile.empty())
@@ -196,7 +192,7 @@ void RlvStrings::initClass()
 // Checked: 2011-11-08 (RLVa-1.5.0)
 void RlvStrings::loadFromFile(const std::string& strFilePath, bool fUserOverride)
 {
-	llifstream fileStream(strFilePath, std::ios::binary); LLSD sdFileData;
+	llifstream fileStream(strFilePath.c_str(), std::ios::binary); LLSD sdFileData;
 	if ( (!fileStream.is_open()) || (!LLSDSerialize::fromXMLDocument(sdFileData, fileStream)) )
 		return;
 	fileStream.close();
@@ -247,7 +243,7 @@ void RlvStrings::saveToFile(const std::string& strFilePath)
 			sdStrings[itString->first]["value"] = listValues.back();
 	}
 
-	llofstream fileStream(strFilePath);
+	llofstream fileStream(strFilePath.c_str());
 	if (!fileStream.good())
 		return;
 
@@ -302,7 +298,7 @@ const char* RlvStrings::getStringFromReturnCode(ERlvCmdRet eRet)
 		case RLV_RET_FAILED_NOSHAREDROOT:
 			return "missing #RLV";
 		case RLV_RET_DEPRECATED:
-			return "deprecated";
+			return "deprecated and disabled";
 		// The following are identified by the chat verb
 		case RLV_RET_RETAINED:
 		case RLV_RET_SUCCESS:
@@ -326,7 +322,6 @@ std::string RlvStrings::getVersion(bool fLegacy)
 		RLVa_VERSION_MAJOR, RLVa_VERSION_MINOR, RLVa_VERSION_PATCH);
 }
 
-// Checked: 2010-04-18 (RLVa-1.4.0a) | Added: RLVa-1.2.0e
 std::string RlvStrings::getVersionAbout()
 {
 	return llformat("RLV v%d.%d.%d / RLVa v%d.%d.%d%c" , 
@@ -334,7 +329,6 @@ std::string RlvStrings::getVersionAbout()
 		RLVa_VERSION_MAJOR, RLVa_VERSION_MINOR, RLVa_VERSION_PATCH, 'a' + RLVa_VERSION_BUILD);
 }
 
-// Checked: 2010-03-27 (RLVa-1.4.0a) | Modified: RLVa-1.1.0a
 std::string RlvStrings::getVersionNum()
 {
 	return llformat("%d%02d%02d%02d", RLV_VERSION_MAJOR, RLV_VERSION_MINOR, RLV_VERSION_PATCH, RLV_VERSION_BUILD);
@@ -518,7 +512,7 @@ void RlvUtil::sendBusyMessage(const LLUUID& idTo, const std::string& strMsg, con
 	LLAgentUI::buildFullname(strFullName);
 
 	pack_instant_message(gMessageSystem, gAgent.getID(), FALSE, gAgent.getSessionID(), idTo, strFullName,
-		strMsg, IM_ONLINE, IM_BUSY_AUTO_RESPONSE, idSession);
+		strMsg, IM_ONLINE, IM_DO_NOT_DISTURB_AUTO_RESPONSE, idSession);
 	gAgent.sendReliableMessage();
 }
 
@@ -724,6 +718,10 @@ bool rlvPredCanRemoveItem(const LLViewerInventoryItem* pItem)
 			case LLAssetType::AT_OBJECT:
 				return gRlvAttachmentLocks.canDetach(pItem);
 			case LLAssetType::AT_GESTURE:
+				return true;
+			case LLAssetType::AT_LINK:
+			case LLAssetType::AT_LINK_FOLDER:
+				// Broken links can always be removed since they don't represent a worn item
 				return true;
 			default:
 				RLV_ASSERT(!RlvForceWear::isWearableItem(pItem));

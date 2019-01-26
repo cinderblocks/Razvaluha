@@ -302,10 +302,10 @@ class LLSimpleResponse : public LLHTTPNode::Response
 public:
 	static LLPointer<LLSimpleResponse> create();
 	
-	void result(const LLSD& result);
-	void extendedResult(S32 code, const std::string& body, const LLSD& headers);
-	void extendedResult(S32 code, const LLSD& result, const LLSD& headers);
-	void status(S32 code, const std::string& message);
+	void result(const LLSD& result) override;
+	void extendedResult(S32 code, const std::string& body, const LLSD& headers) override;
+	void extendedResult(S32 code, const LLSD& result, const LLSD& headers) override;
+	void status(S32 code, const std::string& message) override;
 
 	void print(std::ostream& out) const;
 
@@ -372,7 +372,7 @@ private:
 	class ThisNodeFactory : public LLHTTPRegistrar::NodeFactory
 	{
 	public:
-		virtual LLHTTPNode* build() const { return new NodeType; }
+		LLHTTPNode* build() const override { return new NodeType; }
 	};
 	
 	ThisNodeFactory	mFactory;	
@@ -393,7 +393,7 @@ private:
 	{
 	public:
 		ThisNodeFactory(LLSD params) : mParams(params) {}
-		virtual LLHTTPNode* build() const { return new NodeType(mParams); }
+		LLHTTPNode* build() const override { return new NodeType(mParams); }
 	private:
 		LLSD mParams;
 	};

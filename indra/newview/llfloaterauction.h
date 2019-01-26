@@ -36,7 +36,7 @@
 
 #include "llfloater.h"
 #include "lluuid.h"
-#include "llmemory.h"
+#include "llsafehandle.h"
 #include "llviewertexture.h"
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

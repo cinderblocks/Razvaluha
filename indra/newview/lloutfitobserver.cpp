@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file lloutfitobserver.cpp
  * @brief Outfit observer facade.
@@ -32,7 +34,9 @@
 #include "llviewerinventory.h"
 
 LLOutfitObserver::LLOutfitObserver() :
-	mCOFLastVersion(LLViewerInventoryCategory::VERSION_UNKNOWN)
+	mCOFLastVersion(LLViewerInventoryCategory::VERSION_UNKNOWN),
+	mBaseOutfitLastVersion(LLViewerInventoryCategory::VERSION_UNKNOWN),
+	mLastOutfitDirtiness(false)
 {
 	mItemNameHash.finalize();
 	gInventory.addObserver(this);

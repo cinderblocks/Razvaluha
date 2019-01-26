@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
+ * 
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
@@ -101,8 +101,8 @@ class LLVector4
 
 		const LLVector4&	scaleVec(const LLVector4& vec);	// Scales component-wise by vec
 
-		F32 operator[](int idx) const { return mV[idx]; }
-		F32 &operator[](int idx) { return mV[idx]; }
+		F32 operator[](size_t idx) const { return mV[idx]; }
+		F32 &operator[](size_t idx) { return mV[idx]; }
 	
 		friend std::ostream&	 operator<<(std::ostream& s, const LLVector4 &a);		// Print a
 		friend LLVector4 operator+(const LLVector4 &a, const LLVector4 &b);	// Return vector a + b
@@ -194,7 +194,7 @@ inline LLVector4::LLVector4(const LLVector3 &vec, F32 w)
 
 inline BOOL LLVector4::isFinite() const
 {
-	return (std::isfinite(mV[VX]) && std::isfinite(mV[VY]) && std::isfinite(mV[VZ]) && std::isfinite(mV[VW]));
+	return (llfinite(mV[VX]) && llfinite(mV[VY]) && llfinite(mV[VZ]) && llfinite(mV[VW]));
 }
 
 // Clear and Assignment Functions

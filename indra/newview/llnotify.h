@@ -34,6 +34,7 @@
 #define LL_LLNOTIFY_H
 
 #include "llfontgl.h"
+#include "llinitdestroyclass.h"
 #include "llpanel.h"
 #include "lleventtimer.h"
 #include "llnotifications.h"

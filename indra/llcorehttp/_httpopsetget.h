@@ -60,8 +60,8 @@ public:
 	virtual ~HttpOpSetGet();							// Use release()
 
 private:
-	HttpOpSetGet(const HttpOpSetGet &);					// Not defined
-	void operator=(const HttpOpSetGet &);				// Not defined
+	HttpOpSetGet(const HttpOpSetGet &) = delete;					// Not defined
+	HttpOpSetGet& operator=(const HttpOpSetGet &) = delete;			// Not defined
 
 public:
 	/// Threading:  called by application thread
@@ -69,7 +69,7 @@ public:
 	HttpStatus setupSet(HttpRequest::EPolicyOption opt, HttpRequest::policy_t pclass, long value);
 	HttpStatus setupSet(HttpRequest::EPolicyOption opt, HttpRequest::policy_t pclass, const std::string & value);
 
-	virtual void stageFromRequest(HttpService *);
+	void stageFromRequest(HttpService *) override;
 
 public:
 	// Request data

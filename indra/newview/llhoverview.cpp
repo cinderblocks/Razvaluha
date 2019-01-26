@@ -460,7 +460,7 @@ void LLHoverView::updateText()
 						 object->flagHandleTouch() || (parent && parent->flagHandleTouch()) ||
 						 object->flagTakesMoney() || (parent && parent->flagTakesMoney()) ||
 						 object->flagAllowInventoryAdd() ||
-						 object->flagTemporary() ||
+						 object->flagTemporaryOnRez() ||
 						 object->flagPhantom()) )
 					{
 						line.clear();
@@ -498,7 +498,7 @@ void LLHoverView::updateText()
 							line.append(LLTrans::getString("TooltipFlagPhantom") + " ");
 						}
 
-						if (object->flagTemporary())
+						if (object->flagTemporaryOnRez())
 						{
 							line.append(LLTrans::getString("TooltipFlagTemporary") + " ");
 						}
@@ -807,7 +807,7 @@ void LLHoverView::draw()
 	LLUIImagePtr box_imagep = LLUI::getUIImage("Rounded_Square");
 	LLUIImagePtr shadow_imagep = LLUI::getUIImage("Rounded_Square_Soft");
 
-	const LLFontGL* fontp = LLResMgr::getInstance()->getRes(LLFONT_SANSSERIF_SMALL);
+	const LLFontGL* fontp = LLFontGL::getFontSansSerifSmall();
 
 	// Render text.
 	LLColor4 text_color = gColors.getColor("ToolTipTextColor");

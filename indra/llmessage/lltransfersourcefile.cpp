@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltransfersourcefile.cpp
  * @brief Transfer system for sending a file.
@@ -35,7 +37,7 @@
 
 LLTransferSourceFile::LLTransferSourceFile(const LLUUID &request_id, const F32 priority) :
 	LLTransferSource(LLTST_FILE, request_id, priority),
-	mFP(NULL)
+	mFP(nullptr)
 {
 }
 
@@ -109,7 +111,7 @@ LLTSCode LLTransferSourceFile::dataCallback(const S32 packet_id,
 	if (!returned_bytes)
 	{
 		delete[] tmpp;
-		*data_handle = NULL;
+		*data_handle = nullptr;
 		returned_bytes = 0;
 		delete_returned = FALSE;
 		return LLTS_DONE;
@@ -125,7 +127,7 @@ void LLTransferSourceFile::completionCallback(const LLTSCode status)
 	if (mFP)
 	{
 		fclose(mFP);
-		mFP = NULL;
+		mFP = nullptr;
 
 	}
 	// Delete the file iff the filename begins with "TEMP"

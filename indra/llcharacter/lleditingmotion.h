@@ -2,31 +2,25 @@
  * @file lleditingmotion.h
  * @brief Implementation of LLEditingMotion class.
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -49,24 +43,14 @@
 // class LLEditingMotion
 //-----------------------------------------------------------------------------
 class LLEditingMotion :
-	public AIMaskedMotion
+	public LLMotion
 {
 public:
 	// Constructor
-	LLEditingMotion(LLUUID const& id, LLMotionController* controller);
+	LLEditingMotion(const LLUUID &id);
 
 	// Destructor
 	virtual ~LLEditingMotion();
-
-	void* operator new(size_t size)
-	{
-		return ll_aligned_malloc_16(size);
-	}
-
-	void operator delete(void* ptr)
-	{
-		ll_aligned_free_16(ptr);
-	}
 
 public:
 	//-------------------------------------------------------------------------
@@ -75,7 +59,7 @@ public:
 
 	// static constructor
 	// all subclasses must implement such a function and register it
-	static LLMotion* create(LLUUID const& id, LLMotionController* controller) { return new LLEditingMotion(id, controller); }
+	static LLMotion *create(const LLUUID &id) { return new LLEditingMotion(id); }
 
 public:
 	//-------------------------------------------------------------------------
@@ -83,39 +67,42 @@ public:
 	//-------------------------------------------------------------------------
 
 	// motions must specify whether or not they loop
-	virtual BOOL getLoop() { return TRUE; }
+	BOOL getLoop() override { return TRUE; }
 
 	// motions must report their total duration
-	virtual F32 getDuration() { return 0.0; }
+	F32 getDuration() override { return 0.0; }
 
 	// motions must report their "ease in" duration
-	virtual F32 getEaseInDuration() { return EDITING_EASEIN_DURATION; }
+	F32 getEaseInDuration() override { return EDITING_EASEIN_DURATION; }
 
 	// motions must report their "ease out" duration.
-	virtual F32 getEaseOutDuration() { return EDITING_EASEOUT_DURATION; }
+	F32 getEaseOutDuration() override { return EDITING_EASEOUT_DURATION; }
 
 	// motions must report their priority
-	virtual LLJoint::JointPriority getPriority() { return EDITING_PRIORITY; }
+	LLJoint::JointPriority getPriority() override { return EDITING_PRIORITY; }
 
-	virtual LLMotionBlendType getBlendType() { return NORMAL_BLEND; }
+	LLMotionBlendType getBlendType() override { return NORMAL_BLEND; }
 
 	// called to determine when a motion should be activated/deactivated based on avatar pixel coverage
-	virtual F32 getMinPixelArea() { return MIN_REQUIRED_PIXEL_AREA_EDITING; }
+	F32 getMinPixelArea() override { return MIN_REQUIRED_PIXEL_AREA_EDITING; }
 
 	// run-time (post constructor) initialization,
 	// called after parameters have been set
 	// must return true to indicate success and be available for activation
-	virtual LLMotionInitStatus onInitialize(LLCharacter *character);
+	LLMotionInitStatus onInitialize(LLCharacter *character) override;
 
 	// called when a motion is activated
 	// must return TRUE to indicate success, or else
 	// it will be deactivated
-	virtual BOOL onActivate();
+	BOOL onActivate() override;
 
 	// called per time step
 	// must return TRUE while it is active, and
 	// must return FALSE when the motion is completed.
-	virtual BOOL onUpdate(F32 time, U8* joint_mask);
+	BOOL onUpdate(F32 time, U8* joint_mask) override;
+
+	// called when a motion is deactivated
+	void onDeactivate() override;
 
 public:
 	//-------------------------------------------------------------------------

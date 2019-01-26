@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llnamelistctrl.cpp
  * @brief A list of names, automatically refreshed from name cache.
@@ -35,6 +37,7 @@
 #include "llagent.h"
 #include "llinventory.h"
 #include "llscrolllistitem.h"
+#include "llscrolllistcell.h"
 #include "llscrolllistcolumn.h"
 #include "llsdparam.h"
 #include "lltrans.h"
@@ -48,6 +51,24 @@ void LLNameListCtrl::NameTypeNames::declareValues()
 	declare("GROUP", LLNameListCtrl::GROUP);
 	declare("SPECIAL", LLNameListCtrl::SPECIAL);
 }
+
+/* Singu TODO: LLScrollListCtrl::Params
+LLNameListCtrl::Params::Params()
+:	name_column(""),
+	allow_calling_card_drop("allow_calling_card_drop", false),
+	name_system("name_system", "PhoenixNameSystem")
+{
+}
+
+LLNameListCtrl::LLNameListCtrl(const LLNameListCtrl::Params& p)
+:	LLScrollListCtrl(p),
+	mNameColumnIndex(p.name_column.column_index),
+	mNameColumn(p.name_column.column_name),
+	mAllowCallingCardDrop(p.allow_calling_card_drop),
+	mNameSystem(p.name_system),
+	mPendingLookupsRemaining(0)
+{}
+*/
 
 LLNameListCtrl::LLNameListCtrl(const std::string& name, const LLRect& rect, BOOL allow_multiple_selection, BOOL draw_border, bool draw_heading, S32 name_column_index, const std::string& name_system, const std::string& tooltip)
 :	LLScrollListCtrl(name, rect, NULL, allow_multiple_selection, draw_border,draw_heading),
@@ -163,9 +184,9 @@ LLScrollListItem* LLNameListCtrl::addNameItemRow(
 	const std::string& suffix)
 {
 	LLUUID id = name_item.value().asUUID();
-	LLNameListItem* item = new LLNameListItem(name_item,name_item.target() == GROUP);
+	LLNameListItem* item = new LLNameListItem(name_item,name_item.target() == GROUP, name_item.target() == EXPERIENCE);
 
-	if (!item) return NULL;
+	if (!item) return nullptr;
 
 	LLScrollListCtrl::addRow(item, name_item, pos);
 
@@ -208,7 +229,7 @@ LLScrollListItem* LLNameListCtrl::addNameItemRow(
 			if (mPendingLookupsRemaining <= 0)
 			{
 				// BAKER TODO:
-				// We might get into a state where mPendingLookupsRemainig might
+					// We might get into a state where mPendingLookupsRemaining might
 				//	go negative.  So just reset it right now and figure out if it's
 				//	possible later :)
 				mPendingLookupsRemaining = 0;
@@ -218,6 +239,8 @@ LLScrollListItem* LLNameListCtrl::addNameItemRow(
 		}
 		break;
 	}
+	case EXPERIENCE:
+		// just use supplied name
 	default:
 		break;
 	}

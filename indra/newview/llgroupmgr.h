@@ -28,10 +28,6 @@
 #define LL_LLGROUPMGR_H
 
 #include "lluuid.h"
-#include "roles_constants.h"
-#include <vector>
-#include <string>
-#include <map>
 #include "lleventcoro.h"
 #include "llcoros.h"
 
@@ -39,6 +35,8 @@
 class LLMessageSystem;
 class LLGroupRoleData;
 class LLGroupMgr;
+enum class LLRoleChangeType;
+enum class LLRoleMemberChangeType;
 
 enum LLGroupChange
 {
@@ -51,7 +49,7 @@ enum LLGroupChange
 	GC_ALL
 };
 
-const U32 GB_MAX_BANNED_AGENTS = 500;
+constexpr U32 GB_MAX_BANNED_AGENTS = 500;
 
 class LLGroupMgrObserver
 {
@@ -60,7 +58,8 @@ public:
 	LLGroupMgrObserver() : mID(LLUUID::null){};
 	virtual ~LLGroupMgrObserver(){};
 	virtual void changed(LLGroupChange gc) = 0;
-	const LLUUID& getID() { return mID; }
+	const LLUUID& getID() const { return mID; }
+
 protected:
 	LLUUID	mID;
 };
@@ -114,7 +113,7 @@ private:
 
 struct LLRoleData
 {
-	LLRoleData() : mRolePowers(0), mChangeType(RC_UPDATE_NONE) { }
+    LLRoleData();
 	LLRoleData(const LLRoleData& rd)
 	: 	mRoleName(rd.mRoleName),
 		mRoleTitle(rd.mRoleTitle),
@@ -151,7 +150,7 @@ public:
 
 	const uuid_vec_t& getRoleMembers() const { return mMemberIDs; }
 	S32 getMembersInRole(uuid_vec_t members, BOOL needs_sort = TRUE);
-	S32 getTotalMembersInRole() { return mMemberCount ? mMemberCount : mMemberIDs.size(); } //FIXME: Returns 0 for Everyone role when Member list isn't yet loaded, see MAINT-5225
+	S32 getTotalMembersInRole() const { return mMemberCount ? mMemberCount : mMemberIDs.size(); } //FIXME: Returns 0 for Everyone role when Member list isn't yet loaded, see MAINT-5225
 
 	LLRoleData getRoleData() const { return mRoleData; }
 	void setRoleData(LLRoleData data) { mRoleData = data; }
@@ -183,7 +182,7 @@ private:
 
 struct LLRoleMemberChange
 {
-	LLRoleMemberChange() : mChange(RMC_NONE) { }
+    LLRoleMemberChange();
 	LLRoleMemberChange(const LLUUID& role, const LLUUID& member, LLRoleMemberChangeType change)
 		: mRole(role), mMember(member), mChange(change) { }
 	LLRoleMemberChange(const LLRoleMemberChange& rc)
@@ -199,10 +198,7 @@ struct lluuid_pair_less
 {
 	bool operator()(const lluuid_pair& lhs, const lluuid_pair& rhs) const
 	{
-		if (lhs.first == rhs.first)
-			return lhs.second < rhs.second;
-		else
-			return lhs.first < rhs.first;
+		return lhs.first == rhs.first ? lhs.second < rhs.second : lhs.first < rhs.first;
 	}
 };
 
@@ -232,7 +228,7 @@ public:
 	LLGroupMgrGroupData(const LLUUID& id);
 	~LLGroupMgrGroupData();
 
-	const LLUUID& getID() { return mID; }
+	const LLUUID& getID() const { return mID; }
 
 	BOOL getRoleData(const LLUUID& role_id, LLRoleData& role_data);
 	void setRoleData(const LLUUID& role_id, LLRoleData role_data);
@@ -253,10 +249,10 @@ public:
 	void recalcAllAgentPowers();
 	void recalcAgentPowers(const LLUUID& agent_id);
 
-	bool isMemberDataComplete() { return mMemberDataComplete; }
-	bool isRoleDataComplete() { return mRoleDataComplete; }
-	bool isRoleMemberDataComplete() { return mRoleMemberDataComplete; }
-	bool isGroupPropertiesDataComplete() { return mGroupPropertiesDataComplete; }
+	bool isMemberDataComplete() const { return mMemberDataComplete; }
+	bool isRoleDataComplete() const { return mRoleDataComplete; }
+	bool isRoleMemberDataComplete() const { return mRoleMemberDataComplete; }
+	bool isGroupPropertiesDataComplete() const { return mGroupPropertiesDataComplete; }
 
 	bool isSingleMemberNotOwner();
 
@@ -273,7 +269,6 @@ public:
 	void removeBanEntry(const LLUUID& ban_id);
 	void banMemberById(const LLUUID& participant_uuid);
 
-public:
 	typedef	std::map<LLUUID,LLGroupMemberData*> member_list_t;
 	typedef	std::map<LLUUID,LLGroupRoleData*> role_list_t;
 	typedef std::map<lluuid_pair,LLRoleMemberChange,lluuid_pair_less> change_map_t;
@@ -348,6 +343,8 @@ struct LLRoleActionSet
 
 class LLGroupMgr : public LLSingleton<LLGroupMgr>
 {
+	LLSINGLETON(LLGroupMgr);
+	~LLGroupMgr();
 	LOG_CLASS(LLGroupMgr);
 	
 public:
@@ -366,10 +363,6 @@ public:
 		BAN_DELETE		= 2,
 		BAN_UPDATE		= 4
 	};
-
-public:
-	LLGroupMgr();
-	~LLGroupMgr();
 
 	void addObserver(LLGroupMgrObserver* observer);
 	void addObserver(const LLUUID& group_id, LLParticularGroupObserver* observer);
@@ -439,7 +432,6 @@ private:
     static void processGroupBanRequest(const LLSD& content);
 
 	void notifyObservers(LLGroupChange gc);
-	void notifyObserver(const LLUUID& group_id, LLGroupChange gc);
 	void addGroup(LLGroupMgrGroupData* group_datap);
 	LLGroupMgrGroupData* createGroupData(const LLUUID &id);
 

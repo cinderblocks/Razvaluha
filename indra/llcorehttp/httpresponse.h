@@ -65,8 +65,8 @@ public:
 protected:
 	virtual ~HttpResponse();							// Use release()
 	
-	HttpResponse(const HttpResponse &);					// Not defined
-	void operator=(const HttpResponse &);				// Not defined
+	HttpResponse(const HttpResponse &) = delete;					// Not defined
+	HttpResponse& operator=(const HttpResponse &) = delete;				// Not defined
 	
 public:
 	/// Statistics for the HTTP 
@@ -189,8 +189,8 @@ public:
 			mStats = stats;
 		}
 
-	TransferStats::ptr_t getTransferStats()
-		{
+	TransferStats::ptr_t getTransferStats() const
+	{
 			return mStats;
 		}
 
@@ -204,6 +204,17 @@ public:
             return mRequestUrl;
         }
 
+    void setRequestMethod(const std::string &method)
+        {
+            mRequestMethod = method;
+        }
+
+    const std::string &getRequestMethod() const
+        {
+            return mRequestMethod;
+        }
+    void setRequestId(U64 id) { mRequestId = id; }
+    U64 getRequestId() const { return mRequestId; }
 
 protected:
 	// Response data here
@@ -217,8 +228,10 @@ protected:
 	unsigned int		mRetries;
 	unsigned int		m503Retries;
     std::string         mRequestUrl;
+    std::string         mRequestMethod;
 
 	TransferStats::ptr_t	mStats;
+    U64                 mRequestId;
 };
 
 

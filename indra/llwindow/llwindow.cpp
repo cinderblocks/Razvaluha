@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llwindow.cpp
  * @brief Basic graphical window class
@@ -25,17 +27,22 @@
  */
 
 #include "linden_common.h"
-#include "llwindowheadless.h"
+
+#include "llwindow.h"
 
 #if LL_MESA_HEADLESS
 #include "llwindowmesaheadless.h"
 #elif LL_SDL
 #include "llwindowsdl.h"
+#elif LL_SDL2
+#include "llwindowsdl2.h"
 #elif LL_WINDOWS
 #include "llwindowwin32.h"
 #elif LL_DARWIN
 #include "llwindowmacosx.h"
 #endif
+
+#include "llwindowheadless.h"
 
 #include "llerror.h"
 #include "llkeyboard.h"
@@ -45,9 +52,12 @@
 //
 // Globals
 //
-LLSplashScreen *gSplashScreenp = NULL;
+LLSplashScreen *gSplashScreenp = nullptr;
 BOOL gDebugClicks = FALSE;
 BOOL gDebugWindowProc = FALSE;
+#ifdef LL_DARWIN
+BOOL gUseMultGL = TRUE;
+#endif
 
 const S32 gURLProtocolWhitelistCount = 5;
 const std::string gURLProtocolWhitelist[] = { "secondlife:", "http:", "https:", "data:", "mailto:" };
@@ -74,12 +84,14 @@ S32 OSMessageBox(const std::string& text, const std::string& caption, U32 type)
 #if LL_MESA_HEADLESS // !!! *FIX: (?)
 	LL_WARNS() << "OSMessageBox: " << text << LL_ENDL;
 	return OSBTN_OK;
+#elif LL_SDL2
+	result = OSMessageBoxSDL2(text, caption, type);
+#elif LL_SDL
+	result = OSMessageBoxSDL(text, caption, type);
 #elif LL_WINDOWS
 	result = OSMessageBoxWin32(text, caption, type);
 #elif LL_DARWIN
 	result = OSMessageBoxMacOSX(text, caption, type);
-#elif LL_SDL
-	result = OSMessageBoxSDL(text, caption, type);
 #else
 #error("OSMessageBox not implemented for this platform!")
 #endif
@@ -105,19 +117,19 @@ LLWindow::LLWindow(LLWindowCallbacks* callbacks, BOOL fullscreen, U32 flags)
 	  mFullscreenHeight(0),
 	  mFullscreenBits(0),
 	  mFullscreenRefresh(0),
-	  mSupportedResolutions(NULL),
+	  mSupportedResolutions(nullptr),
 	  mNumSupportedResolutions(0),
 	  mCurrentCursor(UI_CURSOR_ARROW),
 	  mNextCursor(UI_CURSOR_ARROW),
 	  mCursorHidden(FALSE),
 	  mBusyCount(0),
 	  mIsMouseClipping(FALSE),
-	  mMinWindowWidth(0),
-	  mMinWindowHeight(0),
 	  mSwapMethod(SWAP_METHOD_UNDEFINED),
 	  mHideCursorPermanent(FALSE),
 	  mFlags(flags),
-	  mHighSurrogate(0)
+	  mHighSurrogate(0),
+      mMinWindowWidth(0),
+      mMinWindowHeight(0)
 {
 }
 
@@ -252,12 +264,14 @@ BOOL LLWindow::copyTextToPrimary(const LLWString &src)
 // static
 std::vector<std::string> LLWindow::getDynamicFallbackFontList()
 {
-#if LL_WINDOWS
+#if LL_SDL2
+	return LLWindowSDL2::getDynamicFallbackFontList();
+#elif LL_SDL
+	return LLWindowSDL::getDynamicFallbackFontList();
+#elif LL_WINDOWS
 	return LLWindowWin32::getDynamicFallbackFontList();
 #elif LL_DARWIN
 	return LLWindowMacOSX::getDynamicFallbackFontList();
-#elif LL_SDL
-	return LLWindowSDL::getDynamicFallbackFontList();
 #else
 	return std::vector<std::string>();
 #endif
@@ -323,8 +337,10 @@ bool LLSplashScreen::isVisible()
 // static
 LLSplashScreen *LLSplashScreen::create()
 {
-#if LL_MESA_HEADLESS || LL_SDL  // !!! *FIX: (???)
+#if LL_MESA_HEADLESS || LL_SDL // !!! *FIX: (?)
 	return 0;
+#elif LL_SDL2
+	return new LLSplashScreenSDL2;
 #elif LL_WINDOWS
 	return new LLSplashScreenWin32;
 #elif LL_DARWIN
@@ -370,7 +386,7 @@ void LLSplashScreen::hide()
 		gSplashScreenp->hideImpl();
 	}
 	delete gSplashScreenp;
-	gSplashScreenp = NULL;
+	gSplashScreenp = nullptr;
 }
 
 //
@@ -402,6 +418,10 @@ LLWindow* LLWindowManager::createWindow(
 		new_window = new LLWindowSDL(callbacks,
 			title, x, y, width, height, flags, 
 			fullscreen, clearBg, vsync_mode, ignore_pixel_depth, fsaa_samples);
+#elif LL_SDL2
+		new_window = new LLWindowSDL2(callbacks,
+			title, name, x, y, width, height, flags,
+			fullscreen, clearBg, vsync_mode, use_gl, ignore_pixel_depth, fsaa_samples);
 #elif LL_WINDOWS
 		new_window = new LLWindowWin32(callbacks,
 			title, name, x, y, width, height, flags, 
@@ -423,7 +443,7 @@ LLWindow* LLWindowManager::createWindow(
 	{
 		delete new_window;
 		LL_WARNS() << "LLWindowManager::create() : Error creating window." << LL_ENDL;
-		return NULL;
+		return nullptr;
 	}
 	sWindowList.insert(new_window);
 	return new_window;

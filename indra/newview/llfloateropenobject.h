@@ -39,6 +39,7 @@
 #define LL_LLFLOATEROPENOBJECT_H
 
 #include "llfloater.h"
+#include "llsafehandle.h"
 
 class LLObjectSelection;
 class LLPanelObjectInventory;

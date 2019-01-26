@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file   llleap.cpp
  * @author Nat Goodspeed
@@ -18,7 +20,6 @@
 #include <algorithm>
 // std headers
 // external library headers
-#include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/tokenizer.hpp>
 // other Linden headers
@@ -33,6 +34,7 @@
 #include "lltimer.h"
 #include "lluuid.h"
 #include "llleaplistener.h"
+#include "llexception.h"
 
 #if LL_MSVC
 #pragma warning (disable : 4355) // 'this' used in initializer list: yes, intentionally
@@ -69,7 +71,7 @@ public:
         // Rule out empty vector
         if (plugin.empty())
         {
-            throw Error("no plugin command");
+            LLTHROW(Error("no plugin command"));
         }
 
         // Don't leave desc empty either, but in this case, if we weren't
@@ -112,7 +114,7 @@ public:
         // If that didn't work, no point in keeping this LLLeap object.
         if (! mChild)
         {
-            throw Error(STRINGIZE("failed to run " << mDesc));
+            LLTHROW(Error(STRINGIZE("failed to run " << mDesc)));
         }
 
         // Okay, launch apparently worked. Change our mDonePump listener.
@@ -236,7 +238,7 @@ public:
 
         LL_DEBUGS("EventHost") << "Sending: " << buffer.tellp() << ':';
         std::string::size_type truncate(80);
-        if (buffer.tellp() <= (S32)truncate)
+        if (buffer.tellp() <= truncate)
         {
             LL_CONT << buffer.str();
         }
@@ -442,7 +444,7 @@ LLLeap* LLLeap::create(const std::string& desc, const std::vector<std::string>& 
     }
     catch (const LLLeap::Error&)
     {
-        return NULL;
+        return nullptr;
     }
 }
 

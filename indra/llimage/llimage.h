@@ -28,7 +28,6 @@
 #define LL_LLIMAGE_H
 
 #include "lluuid.h"
-#include "llstring.h"
 #include "llpointer.h"
 #include "lltrace.h"
 
@@ -140,7 +139,7 @@ public:
 
 	const U8 *getData() const	;
 	U8 *getData()				;
-	bool isBufferInvalid() ;
+	bool isBufferInvalid() const;
 
 	void setSize(S32 width, S32 height, S32 ncomponents);
 	U8* allocateDataSize(S32 width, S32 height, S32 ncomponents, S32 size = -1); // setSize() + allocateData()
@@ -189,15 +188,15 @@ public:
 	// Construct using createFromFile (used by tools)
 	//LLImageRaw(const std::string& filename, bool j2c_lowest_mip_only = false);
 
-	/*virtual*/ void deleteData();
-	/*virtual*/ U8* allocateData(S32 size = -1);
-	/*virtual*/ U8* reallocateData(S32 size = -1);
+	/*virtual*/ void deleteData() override;
+	/*virtual*/ U8* allocateData(S32 size = -1) override;
+	/*virtual*/ U8* reallocateData(S32 size) override;
 	
-	BOOL resize(U16 width, U16 height, S8 components);
+	bool resize(U16 width, U16 height, S8 components);
 
 	//U8 * getSubImage(U32 x_pos, U32 y_pos, U32 width, U32 height) const;
-	BOOL setSubImage(U32 x_pos, U32 y_pos, U32 width, U32 height,
-					 const U8 *data, U32 stride = 0, BOOL reverse_y = FALSE);
+	bool setSubImage(U32 x_pos, U32 y_pos, U32 width, U32 height,
+					 const U8 *data, U32 stride = 0, bool reverse_y = false);
 
 	void clear(U8 r=0, U8 g=0, U8 b=0, U8 a=255);
 
@@ -206,12 +205,13 @@ public:
     static S32 biasedDimToPowerOfTwo(S32 curr_dim, S32 max_dim = MAX_IMAGE_SIZE);
     static S32 expandDimToPowerOfTwo(S32 curr_dim, S32 max_dim = MAX_IMAGE_SIZE);
     static S32 contractDimToPowerOfTwo(S32 curr_dim, S32 min_dim = MIN_IMAGE_SIZE);
-	void expandToPowerOfTwo(S32 max_dim = MAX_IMAGE_SIZE, BOOL scale_image = TRUE);
-	void contractToPowerOfTwo(S32 max_dim = MAX_IMAGE_SIZE, BOOL scale_image = TRUE);
+	void expandToPowerOfTwo(S32 max_dim = MAX_IMAGE_SIZE, bool scale_image = true);
+	void contractToPowerOfTwo(S32 max_dim = MAX_IMAGE_SIZE, bool scale_image = true);
 	void biasedScaleToPowerOfTwo(S32 target_width, S32 target_height, S32 max_dim = MAX_IMAGE_SIZE);
 	void biasedScaleToPowerOfTwo(S32 max_dim = MAX_IMAGE_SIZE);
-	BOOL scale( S32 new_width, S32 new_height, BOOL scale_image = TRUE );
-
+	bool scale(S32 new_width, S32 new_height, bool scale_image = true);
+    LLPointer<LLImageRaw> scaled(S32 new_width, S32 new_height);
+	
 	// Fill the buffer with a constant color
 	void fill( const LLColor4U& color );
 
@@ -257,6 +257,9 @@ public:
 
 	// Src and dst are same size.  Src has 4 components.  Dst has 3 components.
 	void compositeUnscaled4onto3( LLImageRaw* src );
+	
+	std::string getComment() const { return mComment; }
+	std::string mComment;
 
 protected:
 	// Create an image from a local file (generally used in tools)
@@ -270,8 +273,11 @@ protected:
 	void setDataAndSize(U8 *data, S32 width, S32 height, S8 components) ;
 
 public:
-	static S32 sGlobalRawMemory;
+	static S64 sGlobalRawMemory;
 	static S32 sRawImageCount;
+
+private:
+	bool validateSrcAndDst(const std::string& func, LLImageRaw* src, LLImageRaw* dst);
 };
 
 // Compressed representation of image.
@@ -289,12 +295,12 @@ public:
 	LLImageFormatted(S8 codec);
 
 	// LLImageBase
-	/*virtual*/ void deleteData();
-	/*virtual*/ U8* allocateData(S32 size = -1);
-	/*virtual*/ U8* reallocateData(S32 size = -1);
+	/*virtual*/ void deleteData() override;
+	/*virtual*/ U8* allocateData(S32 size = -1) override;
+	/*virtual*/ U8* reallocateData(S32 size) override;
 	
-	/*virtual*/ void dump();
-	/*virtual*/ void sanityCheck();
+	/*virtual*/ void dump() override;
+	/*virtual*/ void sanityCheck() override;
 
 	// New methods
 	// subclasses must return a prefered file extension (lowercase without a leading dot)
@@ -309,23 +315,23 @@ public:
 	// getRawDiscardLevel() by default returns mDiscardLevel, but may be overridden (LLImageJ2C)
 	virtual S8  getRawDiscardLevel() { return mDiscardLevel; }
 	
-	BOOL load(const std::string& filename, int load_size = 0);
-	BOOL save(const std::string& filename);
+	bool load(const std::string& filename, int load_size = 0);
+	bool save(const std::string& filename);
 
-	virtual BOOL updateData() = 0; // pure virtual
+	virtual bool updateData() = 0; // pure virtual
  	void setData(U8 *data, S32 size);
  	void appendData(U8 *data, S32 size);
 
 	// Loads first 4 channels.
-	virtual BOOL decode(LLImageRaw* raw_image, F32 decode_time) = 0;  
+	virtual bool decode(LLImageRaw* raw_image, F32 decode_time) = 0;  
 	// Subclasses that can handle more than 4 channels should override this function.
-	virtual BOOL decodeChannels(LLImageRaw* raw_image, F32 decode_time, S32 first_channel, S32 max_channel);
+	virtual bool decodeChannels(LLImageRaw* raw_image, F32 decode_time, S32 first_channel, S32 max_channel);
 
-	virtual BOOL encode(const LLImageRaw* raw_image, F32 encode_time) = 0;
+	virtual bool encode(const LLImageRaw* raw_image, F32 encode_time) = 0;
 
 	S8 getCodec() const;
-	BOOL isDecoding() const { return mDecoding ? TRUE : FALSE; }
-	BOOL isDecoded()  const { return mDecoded ? TRUE : FALSE; }
+	bool isDecoding() const { return mDecoding; }
+	bool isDecoded()  const { return mDecoded; }
 	void setDiscardLevel(S8 discard_level) { mDiscardLevel = discard_level; }
 	S8 getDiscardLevel() const { return mDiscardLevel; }
 	S8 getLevels() const { return mLevels; }
@@ -336,7 +342,7 @@ public:
 	virtual void setLastError(const std::string& message, const std::string& filename = std::string());
 	
 protected:
-	BOOL copyData(U8 *data, S32 size); // calls updateData()
+	bool copyData(U8 *data, S32 size); // calls updateData()
 	
 protected:
 	S8 mCodec;
@@ -346,7 +352,7 @@ protected:
 	S8 mLevels;			// Number of resolution levels in that image. Min is 1. 0 means unknown.
 	
 public:
-	static S32 sGlobalFormattedMemory;
+	static S64 sGlobalFormattedMemory;
 };
 
 #endif

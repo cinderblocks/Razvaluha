@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file bufferarray.cpp
  * @brief Implements the BufferArray scatter/gather buffer
@@ -25,6 +27,8 @@
  */
 
 #include "bufferarray.h"
+#include "llexception.h"
+#include "llmemory.h"
 
 
 // BufferArray is a list of chunks, each a BufferArray::Block, of contiguous
@@ -58,8 +62,8 @@ public:
 protected:
 	Block(size_t len);
 
-	Block(const Block &);						// Not defined
-	void operator=(const Block &);				// Not defined
+	Block(const Block &) = delete;						// Not defined
+	Block& operator=(const Block &) = delete;				// Not defined
 
 	// Allocate the block with the additional space for the
 	// buffered data at the end of the object.
@@ -102,7 +106,7 @@ BufferArray::~BufferArray()
 		 ++it)
 	{
 		delete *it;
-		*it = NULL;
+		*it = nullptr;
 	}
 	mBlocks.clear();
 }
@@ -140,8 +144,22 @@ size_t BufferArray::append(const void * src, size_t len)
 		{
 			mBlocks.reserve(mBlocks.size() + 5);
 		}
-		Block * block = Block::alloc(BLOCK_ALLOC_SIZE);
-		memcpy(block->mData, c_src, copy_len);
+        Block * block;
+        try
+        {
+            block = Block::alloc(BLOCK_ALLOC_SIZE);
+        }
+        catch (std::bad_alloc)
+        {
+            LLMemory::logMemoryInfo(TRUE);
+
+            //output possible call stacks to log file.
+            LLError::LLCallStacks::print();
+
+            LL_WARNS() << "Bad memory allocation in thrown by Block::alloc in read!" << LL_ENDL;
+            break;
+        }
+        memcpy(block->mData, c_src, copy_len);
 		block->mUsed = copy_len;
 		llassert_always(block->mUsed <= block->mAlloced);
 		mBlocks.push_back(block);
@@ -149,7 +167,7 @@ size_t BufferArray::append(const void * src, size_t len)
 		c_src += copy_len;
 		len -= copy_len;
 	}
-	return ret;
+	return ret - len;
 }
 
 
@@ -188,8 +206,8 @@ size_t BufferArray::read(size_t pos, void * dst, size_t len)
 	do
 	{
 		Block & block(*mBlocks[block_start]);
-		size_t block_limit(block.mUsed - offset);
-		size_t block_len((std::min)(block_limit, len));
+		size_t block_limit_offset(block.mUsed - offset);
+		size_t block_len((std::min)(block_limit_offset, len));
 		
 		memcpy(c_dst, &block.mData[offset], block_len);
 		result += block_len;
@@ -222,8 +240,8 @@ size_t BufferArray::write(size_t pos, const void * src, size_t len)
 		do
 		{
 			Block & block(*mBlocks[block_start]);
-			size_t block_limit(block.mUsed - offset);
-			size_t block_len((std::min)(block_limit, len));
+			size_t block_limit_offset(block.mUsed - offset);
+			size_t block_len((std::min)(block_limit_offset, len));
 		
 			memcpy(&block.mData[offset], c_src, block_len);
 			result += block_len;

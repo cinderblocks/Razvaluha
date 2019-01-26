@@ -313,6 +313,7 @@ LLGLSLShader::LLGLSLShader(S32 shader_class)
       mShaderGroup(SG_DEFAULT), 
       mUniformsDirty(FALSE),
       mTimerQuery(0),
+      mLightHash(0),
       mSamplesQuery(0)
 
 {
@@ -413,7 +414,7 @@ BOOL LLGLSLShader::createShader(std::vector<LLStaticHashedString> * attributes,
 	}
 
 	// Attach existing objects
-	if (!LLShaderMgr::instance()->attachShaderFeatures(this))
+	if (!LLShaderMgr::instance()->attachClassSharedShaders(*this, mShaderClass) || !LLShaderMgr::instance()->attachShaderFeatures(this))
 	{
 		if(mProgramObject)
 			glDeleteObjectARB(mProgramObject);

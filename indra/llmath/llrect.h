@@ -59,7 +59,7 @@ public:
 	mLeft(left), mTop(top), mRight(right), mBottom(bottom)
 	{}
 
-	/*explicit */LLRectBase(const LLSD& sd)
+	/*explicit*/ LLRectBase(const LLSD& sd)
 	{
 		setValue(sd);
 	}

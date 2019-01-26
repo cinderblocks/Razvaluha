@@ -80,12 +80,14 @@ public:
 	
 	void			initMenu();
 
-	virtual void	draw();
-	/*virtual*/	BOOL	postBuild();
+	void			draw() override;
+	BOOL			postBuild() override;
 	BOOL			canClose();
 	void			setEnableEditing(bool enable);
 
 	void            setScriptText(const std::string& text, BOOL is_valid);
+	std::string		getScriptText();
+	void			makeEditorPristine();
 	bool			loadScriptText(const std::string& filename);
 	bool			writeToFile(const std::string& filename);
 	void			sync();
@@ -126,9 +128,11 @@ public:
 	static BOOL		enableSelectAllMenu(void* userdata);
 	static BOOL		enableDeselectMenu(void* userdata);
 
-	virtual bool	hasAccelerators() const { return true; }
+	bool			hasAccelerators() const override { return true; }
 	LLUUID 			getAssociatedExperience()const;
 	void            setAssociatedExperience( const LLUUID& experience_id );
+
+	void 			setScriptName(const std::string& name){mScriptName = name;};
 
 private:
 	static bool		onHelpWebDialog(const LLSD& notification, const LLSD& response);
@@ -140,7 +144,7 @@ private:
 
 	void selectFirstError();
 
-	virtual BOOL handleKeyHere(KEY key, MASK mask);
+	BOOL handleKeyHere(KEY key, MASK mask) override;
 	
 	void enableSave(BOOL b) {mEnableSave = b;}
 
@@ -148,11 +152,13 @@ protected:
 	void deleteBridges();
 	void setHelpPage(const std::string& help_string);
 	void updateDynamicHelp(BOOL immediate = FALSE);
+	bool isKeyword(LLKeywordToken* token);
 	void addHelpItemToHistory(const std::string& help_string);
 	static void onErrorList(LLUICtrl*, void* user_data);
 
 private:
 	std::string		mSampleText;
+	std::string		mScriptName;
 	LLTextEditor*	mEditor;
 	void			(*mLoadCallback)(void* userdata);
 	void			(*mSaveCallback)(void* userdata, BOOL close_after_save);
@@ -171,6 +177,7 @@ private:
 	BOOL			mHasScriptData;
 	LLLiveLSLFile*	mLiveFile;
 	LLUUID			mAssociatedExperience;
+	BOOL			mSaveDialogShown;
 
 	LLScriptEdContainer* mContainer; // parent view
 
@@ -196,11 +203,11 @@ protected:
 	bool			onExternalChange(const std::string& filename);
 	virtual void	saveIfNeeded(bool sync = true) = 0;
 
-	LLTextEditor* getEditor() { return mScriptEd->mEditor; }
-	/*virtual*/ const char *getTitleName() const { return "Script"; }
+	LLTextEditor* getEditor() const { return mScriptEd->mEditor; }
+	/*virtual*/ const char *getTitleName() const override { return "Script"; }
 	// <edit>
-	/*virtual*/ BOOL canSaveAs() const;
-	/*virtual*/ void saveAs();
+	/*virtual*/ BOOL canSaveAs() const override;
+	/*virtual*/ void saveAs() override;
 	// </edit>
 
 	LLScriptEdCore*		mScriptEd;
@@ -214,14 +221,16 @@ public:
 	virtual void callbackLSLCompileSucceeded();
 	virtual void callbackLSLCompileFailed(const LLSD& compile_errors);
 
-	/*virtual*/ BOOL postBuild();
+	/*virtual*/ BOOL postBuild() override;
+
 
 protected:
-	virtual BOOL canClose();
+	BOOL canClose() override;
 	void closeIfNeeded();
 
-	virtual void loadAsset();
-	/*virtual*/ void saveIfNeeded(bool sync = true);
+	void loadAsset() override;
+	/*virtual*/ void saveIfNeeded(bool sync = true) override;
+
 	static void onSearchReplace(void* userdata);
 	static void onLoad(void* userdata);
 	static void onSave(void* userdata, BOOL close_after_save);
@@ -242,7 +251,7 @@ protected:
 };
 
 
-// Used to view and edit an LSL that is attached to an object.
+// Used to view and edit an LSL script that is attached to an object.
 class LLLiveLSLEditor : public LLScriptEdContainer
 {
 	friend class LLLiveLSLFile;
@@ -257,7 +266,7 @@ public:
 											bool is_script_running);
 	virtual void callbackLSLCompileFailed(const LLSD& compile_errors);
 
-	/*virtual*/ BOOL postBuild();
+	/*virtual*/ BOOL postBuild() override;
 
 	void setIsNew() { mIsNew = TRUE; }
 
@@ -273,13 +282,13 @@ public:
 	void addAssociatedExperience(const LLSD& experience);
 	
 private:
-	virtual BOOL canClose();
+	BOOL canClose() override;
 	void closeIfNeeded();
-	virtual void draw();
+	void draw() override;
 
-	virtual void loadAsset();
+	void loadAsset() override;
 	void loadAsset(BOOL is_new);
-	/*virtual*/ void saveIfNeeded(bool sync = true);
+	/*virtual*/ void saveIfNeeded(bool sync = true) override;
 	BOOL monoChecked() const;
 
 

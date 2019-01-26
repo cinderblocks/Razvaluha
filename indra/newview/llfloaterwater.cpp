@@ -35,6 +35,7 @@
 #include "llfloaterwater.h"
 
 // libs
+#include <boost\tokenizer.hpp>
 #include "llcheckboxctrl.h"
 #include "llcolorswatch.h"
 #include "llcombobox.h"
@@ -72,8 +73,8 @@ LLFloaterWater::LLFloaterWater() : LLFloater(std::string("water floater"))
 
 	// no editing or deleting of the blank string
 	sDefaultPresets.insert("");
-	boost_tokenizer tokens(getString("WLDefaultWaterNames"), boost::char_separator<char>(":"));
-	for (boost_tokenizer::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter)
+	boost::tokenizer<boost::char_separator<char> > tokens(getString("WLDefaultWaterNames"), boost::char_separator<char>(":"));
+	for (auto token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter)
 	{
 		std::string tok(*token_iter);
 		sDefaultPresets.insert(tok);

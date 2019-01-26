@@ -51,12 +51,12 @@
 #include "lluixmltags.h"
 #include "llviewquery.h"
 #include "llxmlnode.h"
-#include "stdenums.h"
 #include "lluistring.h"
 #include "llcursortypes.h"
 #include "llinitparam.h"
 #include "lltreeiterators.h"
 #include "llfocusmgr.h"
+
 #include <boost/container/flat_map.hpp> // <alchemy/>
 #include "ailist.h"
 
@@ -77,7 +77,7 @@ class LLUICtrlFactory;
 // maps xml strings to widget classes
 class LLWidgetClassRegistry : public LLSingleton<LLWidgetClassRegistry>
 {
-	friend class LLSingleton<LLWidgetClassRegistry>;
+	LLSINGLETON(LLWidgetClassRegistry);
 public:
 	typedef LLView* (*factory_func_t)(LLXMLNodePtr node, LLView *parent, LLUICtrlFactory *factory);
 	typedef std::map<std::string, factory_func_t> factory_map_t;
@@ -102,7 +102,6 @@ public:
 	}
 
 private:
-	LLWidgetClassRegistry();
 	virtual ~LLWidgetClassRegistry() {};
 
 	typedef std::set<std::string> ctrl_name_set_t;
@@ -164,7 +163,7 @@ class LLView
 :	public LLMouseHandler,			// handles mouse events
 	public LLFocusableElement,		// handles keyboard events
 	public LLMortician,				// lazy deletion
-	public LLHandleProvider<LLView>	// passes out weak references to self
+	public LLHandleProvider<LLView>     // passes out weak references to self
 {
 public:
 	struct Follows : public LLInitParam::ChoiceBlock<Follows>

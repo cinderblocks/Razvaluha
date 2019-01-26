@@ -17,7 +17,7 @@
     </string>
     <string
      name="top_scripts_text">
-        [COUNT] scripts taking a total of [TIME] ms
+        [COUNT] scripts taking a total of [TIME] ms and [MEMORY] KB
     </string>
     <string
      name="scripts_score_label">

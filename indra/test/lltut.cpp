@@ -1,34 +1,30 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltut.cpp
  * @author Mark Lentczner
  * @date 5/16/06
  * @brief MacTester
  *
- * $LicenseInfo:firstyear=2006&license=viewergpl$
- * 
- * Copyright (c) 2006-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2006&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -44,42 +40,43 @@
 
 namespace tut
 {
-	void ensure_equals(const char* msg, const LLDate& actual,
+	void ensure_equals(const std::string& msg, const LLDate& actual,
 		const LLDate& expected)
 	{
 		ensure_equals(msg,
 			actual.secondsSinceEpoch(), expected.secondsSinceEpoch());
 	}
 
-	void ensure_equals(const char* msg, const LLURI& actual,
+	void ensure_equals(const std::string& msg, const LLURI& actual,
 		const LLURI& expected)
 	{
 		ensure_equals(msg,
 			actual.asString(), expected.asString());
 	}
 
-	void ensure_equals(const char* msg,
-		const std::vector<U8>& actual, const std::vector<U8>& expected)
+	// The lexical param types here intentionally diverge from the declaration
+	// in our header file. In lltut.h, LLSD is only a forward-declared type;
+	// we have no access to its LLSD::Binary nested type, and so must restate
+	// it explicitly to declare this overload. However, an overload that does
+	// NOT match LLSD::Binary does us no good whatsoever: it would never be
+	// engaged. Stating LLSD::Binary for this definition at least means that
+	// if the LLSD::Binary type ever diverges from what we expect in lltut.h,
+	// that divergence will produce an error: no definition will match that
+	// declaration.
+	void ensure_equals(const std::string& msg,
+		const LLSD::Binary& actual, const LLSD::Binary& expected)
 	{
-		std::string s(msg);
+		ensure_equals(msg + " size", actual.size(), expected.size());
 		
-		ensure_equals(s + " size", actual.size(), expected.size());
-		
-		std::vector<U8>::const_iterator i, j;
+		LLSD::Binary::const_iterator i, j;
 		int k;
 		for (i = actual.begin(), j = expected.begin(), k = 0;
 			i != actual.end();
 			++i, ++j, ++k)
 		{
-			ensure_equals(s + " field", *i, *j);
+			ensure_equals(msg + " field", *i, *j);
 		}
 	}
-
-	void ensure_equals(const char* m, const LLSD& actual,
-		const LLSD& expected)
-    {
-        ensure_equals(std::string(m), actual, expected);
-    }
 
 	void ensure_equals(const std::string& msg, const LLSD& actual,
 		const LLSD& expected)
@@ -164,8 +161,8 @@ namespace tut
 		if( actual.find(expectedStart, 0) != 0 )
 		{
 			std::stringstream ss;
-			ss << msg << ": " << "expected to find " << expectedStart
-				<< " at start of actual " << actual;
+			ss << msg << ": " << "expected to find '" << expectedStart
+			   << "' at start of actual '" << actual << "'";
 			throw failure(ss.str().c_str());
 		}
 	}
@@ -178,8 +175,8 @@ namespace tut
 				!= (actual.size() - expectedEnd.size()) )
 		{
 			std::stringstream ss;
-			ss << msg << ": " << "expected to find " << expectedEnd
-				<< " at end of actual " << actual;
+			ss << msg << ": " << "expected to find '" << expectedEnd
+			   << "' at end of actual '" << actual << "'";
 			throw failure(ss.str().c_str());
 		}
 	}
@@ -190,8 +187,8 @@ namespace tut
 		if( actual.find(expectedSubString, 0) == std::string::npos )
 		{
 			std::stringstream ss;
-			ss << msg << ": " << "expected to find " << expectedSubString
-				<< " in actual " << actual;
+			ss << msg << ": " << "expected to find '" << expectedSubString
+			   << "' in actual '" << actual << "'";
 			throw failure(ss.str().c_str());
 		}
 	}

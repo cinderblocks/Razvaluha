@@ -27,8 +27,6 @@
 #ifndef LLXMLRPCTRANSACTION_H
 #define LLXMLRPCTRANSACTION_H
 
-#include <string>
-
 typedef struct _xmlrpc_request* XMLRPC_REQUEST;
 typedef struct _xmlrpc_value* XMLRPC_VALUE;
 	// foward decl of types from xmlrpc.h (this usage is type safe)
@@ -38,7 +36,7 @@ class LLXMLRPCValue
 	// a c++ wrapper around XMLRPC_VALUE
 {
 public:
-	LLXMLRPCValue()						: mV(NULL) { }
+	LLXMLRPCValue()						: mV(nullptr) { }
 	LLXMLRPCValue(XMLRPC_VALUE value)	: mV(value) { }
 	
 	bool isValid() const;
@@ -85,7 +83,7 @@ class LLXMLRPCTransaction
 {
 public:
 	LLXMLRPCTransaction(const std::string& uri,
-		XMLRPC_REQUEST request, bool useGzip = true);
+		XMLRPC_REQUEST request, bool useGzip = true, const LLSD& httpParams = LLSD());
 		// does not take ownership of the request object
 		// request can be freed as soon as the transaction is constructed
 
@@ -111,7 +109,7 @@ public:
 	EStatus status(int* curlCode);
 		// return status, and extended CURL code, if code isn't null
 	
-	LLPointer<LLCertificate> getErrorCert();
+	LLSD getErrorCertData();
 	std::string statusMessage();
 		// return a message string, suitable for showing the user
 	std::string statusURI();

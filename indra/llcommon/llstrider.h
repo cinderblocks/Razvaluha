@@ -36,7 +36,6 @@ template <class Object> class LLStrider
 		U8*		mBytep;
 	};
 	U32     mSkip;
-
 public:
 
 	LLStrider()  { mObjectp = NULL; mSkip = sizeof(Object); } 
@@ -44,7 +43,7 @@ public:
 
 	const LLStrider<Object>& operator =  (Object *first)    { mObjectp = first; return *this;}
 	void setStride (S32 skipBytes)	{ mSkip = (skipBytes ? skipBytes : sizeof(Object));}
-	
+
 	LLStrider<Object> operator+(const S32& index) 
 	{
 		LLStrider<Object> ret;
@@ -53,7 +52,7 @@ public:
 
 		return ret;
 	}
-	
+
 	void skip(const U32 index)     { mBytep += mSkip*index;}
 	U32 getSkip() const			   { return mSkip; }
 	Object* get()                  { return mObjectp; }
@@ -62,7 +61,7 @@ public:
 	Object* operator ++(int)       { Object* old = mObjectp; mBytep += mSkip; return old; }
 	Object* operator +=(int i)     { mBytep += mSkip*i; return mObjectp; }
 
-	Object& operator[](U32 index)  { return *(Object*)(mBytep + (mSkip * index)); }
+	Object& operator[](size_t index)  { return *(Object*)(mBytep + (mSkip * index)); }
 };
 
 #endif // LL_LLSTRIDER_H

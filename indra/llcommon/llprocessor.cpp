@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llprocessor.cpp
  * @brief Code to figure out the processor. Originally by Benjamin Jurke.
@@ -26,10 +28,9 @@
 
 #include "linden_common.h"
 #include "llprocessor.h"
-
+#include "llstring.h"
+#include "stringize.h"
 #include "llerror.h"
-
-//#include <memory>
 
 #if LL_WINDOWS
 #	include "llwin32headerslean.h"
@@ -130,7 +131,6 @@ namespace
 		eMONTIOR_MWAIT=33,
 		eCPLDebugStore=34,
 		eThermalMonitor2=35,
-		eAltivec=36
 	};
 
 	const char* cpu_feature_names[] =
@@ -171,9 +171,7 @@ namespace
 		"SSE3 New Instructions", // 32
 		"MONITOR/MWAIT", 
 		"CPL Qualified Debug Store",
-		"Thermal Monitor 2",
-
-		"Altivec"
+		"Thermal Monitor 2"
 	};
 
 	std::string intel_CPUFamilyName(int composed_family) 
@@ -186,9 +184,9 @@ namespace
 		case 6: return "Intel Pentium Pro/2/3, Core";
 		case 7: return "Intel Itanium (IA-64)";
 		case 0xF: return "Intel Pentium 4";
-		case 0x10: return "Intel Itanium 2 (IA-64)";
+		case 0x1F: return "Intel Itanium 2 (IA-64)";
 		}
-		return "Unknown";
+		return STRINGIZE("Intel <unknown 0x" << std::hex << composed_family << ">");
 	}
 	
 	std::string amd_CPUFamilyName(int composed_family) 
@@ -198,49 +196,36 @@ namespace
 		case 4: return "AMD 80486/5x86";
 		case 5: return "AMD K5/K6";
 		case 6: return "AMD K7";
-		case 0xF: return "AMD K8";
-		case 0x10: return "AMD K8L";
+		case 0x0F: return "AMD K8";
+		case 0x10: return "AMD K10";
+		case 0x11: return "AMD Turion X2 Ultra/Puma";
+		case 0x12: return "AMD Llano";
+		case 0x14: return "AMD Bobcat";
 		case 0x15: return "AMD Bulldozer";
+		case 0x16: return "AMD Jaguar";
+		case 0x17: return "AMD Zen";
 		}
-   		return "Unknown";
+		return STRINGIZE("AMD <unknown 0x" << std::hex << composed_family << ">");
 	}
 
-#if LL_LINUX
-	std::string compute_CPUFamilyName(const char* cpu_vendor, int composed_family) 
+	std::string compute_CPUFamilyName(const char* cpu_vendor, int family, int ext_family)
 	{
 		const char* intel_string = "GenuineIntel";
 		const char* amd_string = "AuthenticAMD";
-		if(!strncmp(cpu_vendor, intel_string, strlen(intel_string)))
-		{
-			return intel_CPUFamilyName(composed_family);
-		}
-		else if(!strncmp(cpu_vendor, amd_string, strlen(amd_string)))
-		{
-			return amd_CPUFamilyName(composed_family);
-		}
-		return "Unknown";
-	}
-
-#else
-	std::string compute_CPUFamilyName(const char* cpu_vendor, int family, int ext_family) 
-	{
-		const char* intel_string = "GenuineIntel";
-		const char* amd_string = "AuthenticAMD";
-		if(!strncmp(cpu_vendor, intel_string, strlen(intel_string)))
+		if (LLStringUtil::startsWith(cpu_vendor, intel_string))
 		{
 			U32 composed_family = family + ext_family;
 			return intel_CPUFamilyName(composed_family);
 		}
-		else if(!strncmp(cpu_vendor, amd_string, strlen(amd_string)))
+		else if (LLStringUtil::startsWith(cpu_vendor, amd_string))
 		{
 			U32 composed_family = (family == 0xF) 
 				? family + ext_family
 				: family;
 			return amd_CPUFamilyName(composed_family);
 		}
-		return "Unknown";
+		return STRINGIZE("Unrecognized CPU vendor <" << cpu_vendor << ">");
 	}
-#endif
 
 } // end unnamed namespace
 
@@ -272,13 +257,8 @@ public:
 		return hasExtension(cpu_feature_names[eSSE2_Ext]);
 	}
 
-	bool hasAltivec() const 
-	{
-		return hasExtension("Altivec"); 
-	}
-
-	std::string getCPUFamilyName() const { return getInfo(eFamilyName, "Unknown").asString(); }
-	std::string getCPUBrandName() const { return getInfo(eBrandName, "Unknown").asString(); }
+	std::string getCPUFamilyName() const { return getInfo(eFamilyName, "Unset family").asString(); }
+	std::string getCPUBrandName() const { return getInfo(eBrandName, "Unset brand").asString(); }
 
 	// This is virtual to support a different linux format.
 	// *NOTE:Mani - I didn't want to screw up server use of this data...
@@ -290,7 +270,7 @@ public:
 		out << "//////////////////////////" << std::endl;
 		out << "Processor Name:   " << getCPUBrandName() << std::endl;
 		out << "Frequency:        " << getCPUFrequency() << " MHz" << std::endl;
-		out << "Vendor:			  " << getInfo(eVendor, "Unknown").asString() << std::endl;
+		out << "Vendor:			  " << getInfo(eVendor, "Unset vendor").asString() << std::endl;
 		out << "Family:           " << getCPUFamilyName() << " (" << getInfo(eFamily, 0) << ")" << std::endl;
 		out << "Extended family:  " << getInfo(eExtendedFamily, 0) << std::endl;
 		out << "Model:            " << getInfo(eModel, 0) << std::endl;
@@ -489,8 +469,7 @@ private:
 		unsigned int ids = (unsigned int)cpu_info[0];
 		setConfig(eMaxID, (S32)ids);
 
-		char cpu_vendor[0x20];
-		memset(cpu_vendor, 0, sizeof(cpu_vendor));
+		char cpu_vendor[0x20] = {0};
 		*((int*)cpu_vendor) = cpu_info[1];
 		*((int*)(cpu_vendor+4)) = cpu_info[3];
 		*((int*)(cpu_vendor+8)) = cpu_info[2];
@@ -556,8 +535,7 @@ private:
 		unsigned int ext_ids = cpu_info[0];
 		setConfig(eMaxExtID, 0);
 
-		char cpu_brand_string[0x40];
-		memset(cpu_brand_string, 0, sizeof(cpu_brand_string));
+		char cpu_brand_string[0x40] = {0};
 
 		// Get the information associated with each extended ID.
 		for(unsigned int i=0x80000000; i<=ext_ids; ++i)
@@ -638,16 +616,14 @@ private:
 	{
 		size_t len = 0;
 
-		char cpu_brand_string[0x40];
+		char cpu_brand_string[0x40] = {0};
 		len = sizeof(cpu_brand_string);
-		memset(cpu_brand_string, 0, len);
 		sysctlbyname("machdep.cpu.brand_string", (void*)cpu_brand_string, &len, NULL, 0);
 		cpu_brand_string[0x3f] = 0;
 		setInfo(eBrandName, cpu_brand_string);
 		
-		char cpu_vendor[0x20];
+		char cpu_vendor[0x20] = {0};
 		len = sizeof(cpu_vendor);
-		memset(cpu_vendor, 0, len);
 		sysctlbyname("machdep.cpu.vendor", (void*)cpu_vendor, &len, NULL, 0);
 		cpu_vendor[0x1f] = 0;
 		setInfo(eVendor, cpu_vendor);
@@ -735,8 +711,7 @@ private:
 		LLFILE* cpuinfo_fp = LLFile::fopen(CPUINFO_FILE, "rb");
 		if(cpuinfo_fp)
 		{
-			char line[MAX_STRING];
-			memset(line, 0, MAX_STRING);
+			char line[MAX_STRING] = {0};
 			while(fgets(line, MAX_STRING, cpuinfo_fp))
 			{
 				// /proc/cpuinfo on Linux looks like:
@@ -797,7 +772,7 @@ private:
 			setInfo(eFamily, family);
 		}
  
-		setInfo(eFamilyName, compute_CPUFamilyName(cpuinfo["vendor_id"].c_str(), family));
+		setInfo(eFamilyName, compute_CPUFamilyName(cpuinfo["vendor_id"].c_str(), family, 0));
 
 		// setInfo(eExtendedModel, getSysctlInt("machdep.cpu.extmodel"));
 		// setInfo(eBrandID, getSysctlInt("machdep.cpu.brand"));
@@ -834,8 +809,7 @@ private:
 		LLFILE* cpuinfo = LLFile::fopen(CPUINFO_FILE, "rb");
 		if(cpuinfo)
 		{
-			char line[MAX_STRING];
-			memset(line, 0, MAX_STRING);
+			char line[MAX_STRING] = {0};
 			while(fgets(line, MAX_STRING, cpuinfo))
 			{
 				line[strlen(line)-1] = ' ';
@@ -859,7 +833,7 @@ private:
 
 //////////////////////////////////////////////////////
 // Interface definition
-LLProcessorInfo::LLProcessorInfo() : mImpl(NULL)
+LLProcessorInfo::LLProcessorInfo() : mImpl(nullptr)
 {
 	// *NOTE:Mani - not thread safe.
 	if(!mImpl)
@@ -882,7 +856,6 @@ LLProcessorInfo::~LLProcessorInfo() {}
 F64MegahertzImplicit LLProcessorInfo::getCPUFrequency() const { return mImpl->getCPUFrequency(); }
 bool LLProcessorInfo::hasSSE() const { return mImpl->hasSSE(); }
 bool LLProcessorInfo::hasSSE2() const { return mImpl->hasSSE2(); }
-bool LLProcessorInfo::hasAltivec() const { return mImpl->hasAltivec(); }
 std::string LLProcessorInfo::getCPUFamilyName() const { return mImpl->getCPUFamilyName(); }
 std::string LLProcessorInfo::getCPUBrandName() const { return mImpl->getCPUBrandName(); }
 std::string LLProcessorInfo::getCPUFeatureDescription() const { return mImpl->getCPUFeatureDescription(); }

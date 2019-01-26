@@ -781,17 +781,6 @@
       <key>Value</key>
       <integer>1</integer>
     </map>
-    <key>LiruResizeRootWithScreen</key>
-    <map>
-      <key>Comment</key>
-      <string>When false, the ui view won't resize when the screen does (floaters won't move around without user interaction, but they also might be restricted from moving everywhere).</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>Boolean</string>
-      <key>Value</key>
-      <integer>1</integer>
-    </map>
     <key>LiruLegacyScrollToEnd</key>
     <map>
       <key>Comment</key>
@@ -963,6 +952,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>LiruOnlineNotificationBehavior</key>
+    <map>
+      <key>Comment</key>
+      <string>Determines if Friend is Online notifications will do anything when clicked. (0 does nothing, 1 starts an IM (default), 2 opens profile.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
     <key>LiruRegionRestartMinimized</key>
     <map>
       <key>Comment</key>
@@ -974,6 +974,17 @@
       <key>Value</key>
       <integer>0</integer>
       <key>IsCOA</key>
+      <integer>1</integer>
+    </map>
+    <key>LiruResizeRootWithScreen</key>
+    <map>
+      <key>Comment</key>
+      <string>When false, the ui view won't resize when the screen does (floaters won't move around without user interaction, but they also might be restricted from moving everywhere).</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
       <integer>1</integer>
     </map>
     <key>LiruScriptErrorsStealFocus</key>
@@ -997,7 +1008,7 @@ Found in Advanced->Rendering->Info Displays</string>
       <key>Type</key>
       <string>Boolean</string>
       <key>Value</key>
-      <integer>1</integer>
+      <integer>0</integer>
     </map>
     <key>LiruShowLastNameResident</key>
     <map>
@@ -7923,7 +7934,7 @@ This should be as low as possible, but too low may break functionality</string>
       <array>
         <integer>0</integer>
         <integer>480</integer>
-        <integer>940</integer>
+        <integer>980</integer>
         <integer>52</integer>
       </array>
     </map>
@@ -12282,6 +12293,17 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Value</key>
       <integer>256</integer>
     </map>
+    <key>RegionCheckTextureHeights</key>
+    <map>
+      <key>Comment</key>
+      <string>Don't allow user to set low heights greater than high</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
     <key>RememberName</key>
     <map>
       <key>Comment</key>
@@ -12328,7 +12350,7 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Value</key>
       <integer>4</integer>
     </map>    
-    
+
   <key>OctreeStaticObjectSizeFactor</key>
   <map>
     <key>Comment</key>
@@ -12797,7 +12819,7 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Type</key>
       <string>Boolean</string>
       <key>Value</key>
-      <integer>0</integer>
+      <integer>1</integer>
     </map>
     <key>RenderDebugGL</key>
     <map>
@@ -14058,6 +14080,17 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Value</key>
       <real>1.0</real>
     </map>
+    <key>RenderTrackerBeacon</key>
+    <map>
+      <key>Comment</key>
+      <string>Display tracking arrow and beacon to target avatar, teleport destination</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
 	<key>RenderTransparentWater</key>
 	<map>
 	  <key>Comment</key>
@@ -14168,6 +14201,17 @@ This should be as low as possible, but too low may break functionality</string>
     <string>Boolean</string>
     <key>Value</key>
     <integer>0</integer>
+  </map>
+  <key>MaxAttachmentComplexity</key>
+  <map>
+    <key>Comment</key>
+    <string>Attachment's render weight limit</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>F32</string>
+    <key>Value</key>
+    <real>1.0E6</real>
   </map>
   <key>RenderAutoHideSurfaceAreaLimit</key>
   <map>
@@ -18797,17 +18841,6 @@ This should be as low as possible, but too low may break functionality</string>
     <map>
       <key>Comment</key>
       <string>Controls behavior when viewer crashes (0 = ask before sending crash report, 1 = always send crash report, 2 = never send crash report)</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>S32</string>
-      <key>Value</key>
-      <integer>0</integer>
-    </map>
-    <key>CrashReportID</key>
-    <map>
-      <key>Comment</key>
-      <string>ID of the last crash report sent. Zero indicates that no crash report has been sent. Non-zero value can be useful infermation for developers to track a specific issue</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>

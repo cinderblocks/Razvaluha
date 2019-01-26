@@ -114,7 +114,7 @@ void LLDragHandleTop::setTitle(const std::string& title)
 	std::string trimmed_title = title;
 	LLStringUtil::trim(trimmed_title);
 
-	const LLFontGL* font = LLResMgr::getInstance()->getRes( LLFONT_SANSSERIF );
+	const LLFontGL* font = LLFontGL::getFontSansSerif();
 	LLTextBox* titlebox = new LLTextBox( std::string("Drag Handle Title"), getRect(), trimmed_title, font );
 	titlebox->setFollows(FOLLOWS_TOP | FOLLOWS_LEFT | FOLLOWS_RIGHT);
 	titlebox->setFontShadow(LLFontGL::DROP_SHADOW_SOFT);
@@ -126,13 +126,13 @@ void LLDragHandleTop::setTitle(const std::string& title)
 
 const std::string& LLDragHandleTop::getTitle() const
 {
-	return getTitleBox() == NULL ? LLStringUtil::null : getTitleBox()->getText();
+	return getTitleBox() == nullptr ? LLStringUtil::null : getTitleBox()->getText();
 }
 
 
 void LLDragHandleLeft::setTitle(const std::string& )
 {
-	setTitleBox(NULL);
+	setTitleBox(nullptr);
 	/* no title on left edge */
 }
 
@@ -243,7 +243,7 @@ void LLDragHandleTop::reshapeTitleBox()
 	{
 		return;
 	}
-	const LLFontGL* font = LLResMgr::getInstance()->getRes( LLFONT_SANSSERIF );
+	const LLFontGL* font = LLFontGL::getFontSansSerif();
 	S32 title_width = font->getWidth( getTitleBox()->getText() ) + TITLE_PAD;
 	if (getMaxTitleWidth() > 0)
 		title_width = llmin(title_width, getMaxTitleWidth());
@@ -301,6 +301,13 @@ BOOL LLDragHandle::handleMouseUp(S32 x, S32 y, MASK mask)
 	return TRUE;
 }
 
+void LLDragHandle::setTextColor(const LLColor4& color)
+{
+	if (mTitleBox)
+	{
+		mTitleBox->setColor(color);
+	}
+}
 
 BOOL LLDragHandle::handleHover(S32 x, S32 y, MASK mask)
 {

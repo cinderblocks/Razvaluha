@@ -33,10 +33,10 @@
 #ifndef LL_TOOLDRAGANDDROP_H
 #define LL_TOOLDRAGANDDROP_H
 
+#include "lldictionary.h"
 #include "lltool.h"
 #include "llview.h"
 #include "lluuid.h"
-#include "stdenums.h"
 #include "llassetstorage.h"
 #include "llpermissions.h"
 #include "llwindow.h"
@@ -49,16 +49,16 @@ class LLPickInfo;
 
 class LLToolDragAndDrop : public LLTool, public LLSingleton<LLToolDragAndDrop>
 {
+	LLSINGLETON(LLToolDragAndDrop);
 public:
-	LLToolDragAndDrop();
 
 	// overridden from LLTool
-	virtual BOOL	handleMouseUp(S32 x, S32 y, MASK mask);
-	virtual BOOL	handleHover(S32 x, S32 y, MASK mask);
-	virtual BOOL	handleKey(KEY key, MASK mask);
-	virtual BOOL	handleToolTip(S32 x, S32 y, std::string& msg, LLRect *sticky_rect_screen);
-	virtual void	onMouseCaptureLost();
-	virtual void	handleDeselect();
+	BOOL	handleMouseUp(S32 x, S32 y, MASK mask) override;
+	BOOL	handleHover(S32 x, S32 y, MASK mask) override;
+	BOOL	handleKey(KEY key, MASK mask) override;
+	BOOL	handleToolTip(S32 x, S32 y, std::string& msg, LLRect *sticky_rect_screen) override;
+	void	onMouseCaptureLost() override;
+	void	handleDeselect() override;
 
 	void			setDragStart( S32 x, S32 y );			// In screen space
 	BOOL			isOverThreshold( S32 x, S32 y );		// In screen space
@@ -68,7 +68,9 @@ public:
 		SOURCE_AGENT,
 		SOURCE_WORLD,
 		SOURCE_NOTECARD,
-		SOURCE_LIBRARY
+		SOURCE_LIBRARY,
+		SOURCE_VIEWER,
+		SOURCE_PEOPLE
 	};
 
 	void beginDrag(EDragAndDropType type,
@@ -89,6 +91,13 @@ public:
 	uuid_vec_t::size_type getCargoIDsCount() const { return mCargoIDs.size(); }
 	static S32 getOperationId() { return sOperationId; }
 
+	// deal with permissions of object, etc. returns TRUE if drop can
+	// proceed, otherwise FALSE.
+	static BOOL handleDropTextureProtections(LLViewerObject* hit_obj,
+						 LLInventoryItem* item,
+						 LLToolDragAndDrop::ESource source,
+						 const LLUUID& src_id);
+
 protected:
 	enum EDropTarget
 	{
@@ -100,6 +109,7 @@ protected:
 		DT_COUNT = 5
 	};
 
+protected:
 	// dragOrDrop3dImpl points to a member of LLToolDragAndDrop that
 	// takes parameters (LLViewerObject* obj, S32 face, MASK, BOOL
 	// drop) and returns a BOOL if drop is ok
@@ -110,6 +120,7 @@ protected:
 					EAcceptance* acceptance);
 	void dragOrDrop3D(S32 x, S32 y, MASK mask, BOOL drop,
 					  EAcceptance* acceptance);
+
 	static void pickCallback(const LLPickInfo& pick_info);
 	void pick(const LLPickInfo& pick_info);
 
@@ -209,13 +220,6 @@ protected:
 	// inventory items to determine if a drop would be ok.
 	static EAcceptance willObjectAcceptInventory(LLViewerObject* obj, LLInventoryItem* item);
 
-	// deal with permissions of object, etc. returns TRUE if drop can
-	// proceed, otherwise FALSE.
-	static BOOL handleDropTextureProtections(LLViewerObject* hit_obj,
-						 LLInventoryItem* item,
-						 LLToolDragAndDrop::ESource source,
-						 const LLUUID& src_id);
-
 public:
 	// helper functions
 	static BOOL isInventoryDropAcceptable(LLViewerObject* obj, LLInventoryItem* item) { return (ACCEPT_YES_COPY_SINGLE <= willObjectAcceptInventory(obj, item)); }
@@ -269,8 +273,8 @@ private:
 	class LLDragAndDropDictionary : public LLSingleton<LLDragAndDropDictionary>,
 									public LLDictionary<EDragAndDropType, DragAndDropEntry>
 	{
+		LLSINGLETON(LLDragAndDropDictionary);
 	public:
-		LLDragAndDropDictionary();
 		dragOrDrop3dImpl get(EDragAndDropType dad_type, EDropTarget drop_target);
 	};
 };

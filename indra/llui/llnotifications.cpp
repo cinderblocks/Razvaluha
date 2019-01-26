@@ -94,23 +94,20 @@ private:
 			return;
 		}
 
-		LLSD output;
+		/*LLSD output;
 		output["version"] = NOTIFICATION_PERSIST_VERSION;
 		LLSD& data = output["data"];
 
 		for (LLNotificationSet::iterator it = mItems.begin(); it != mItems.end(); ++it)
 		{
-			if (!LLNotificationTemplates::instance().templateExists((*it)->getName())) continue;
-
+			auto notification = (*it);
 			// only store notifications flagged as persisting
-			LLNotificationTemplatePtr templatep = LLNotificationTemplates::instance().getTemplate((*it)->getName());
-			if (!templatep->mPersist) continue;
-
-			data.append((*it)->asLLSD());
+			if (notification->isPersistent())
+				data.append(notification->asLLSD());
 		}
 
 		LLPointer<LLSDFormatter> formatter = new LLSDXMLFormatter();
-		formatter->format(output, notify_file, LLSDFormatter::OPTIONS_PRETTY);
+		formatter->format(output, notify_file, LLSDFormatter::OPTIONS_PRETTY);*/
 	}
 
 	void loadPersistentNotifications()
@@ -405,7 +402,7 @@ LLNotificationTemplate::LLNotificationTemplate() :
 }
 
 LLNotification::LLNotification(const LLNotification::Params& p) : 
-	mTimestamp(p.timestamp), 
+	mTimestamp(p.time_stamp), 
 	mSubstitutions(p.substitutions),
 	mPayload(p.payload),
 	mExpiresAt(F64SecondsImplicit()),
@@ -585,22 +582,24 @@ void LLNotification::respond(const LLSD& response)
 
 const std::string& LLNotification::getName() const
 {
-	return mTemplatep->mName;
+	return (mTemplatep ? mTemplatep->mName : LLStringUtil::null);
 }
 
 const std::string& LLNotification::getIcon() const
 {
-	return mTemplatep->mIcon;
+	return (mTemplatep ? mTemplatep->mIcon : LLStringUtil::null);
 }
 
 
 bool LLNotification::isPersistent() const
 {
-	return mTemplatep->mPersist;
+	LL_INFOS() << "WOOF WOOF WOOF mTemplatep is " << mTemplatep << LL_ENDL;
+	LL_INFOS() << "\nand mPersist is " << (mTemplatep && mTemplatep->mPersist) << LL_ENDL;
+	return mTemplatep && mTemplatep->mPersist;
 }
 std::string LLNotification::getType() const
 {
-	return (mTemplatep ? mTemplatep->mType : "");
+	return (mTemplatep ? mTemplatep->mType : LLStringUtil::null);
 }
 
 S32 LLNotification::getURLOption() const
@@ -665,6 +664,7 @@ void LLNotification::init(const std::string& template_name, const LLSD& form_ele
 	mTemplatep = LLNotificationTemplates::instance().getTemplate(template_name);
 	if (!mTemplatep) return;
 
+	// add default substitutions
 	const LLStringUtil::format_map_t& default_args = LLTrans::getDefaultArgs();
 	for (LLStringUtil::format_map_t::const_iterator iter = default_args.begin();
 		 iter != default_args.end(); ++iter)
@@ -673,7 +673,6 @@ void LLNotification::init(const std::string& template_name, const LLSD& form_ele
 	}
 	mSubstitutions["_URL"] = getURL();
 	mSubstitutions["_NAME"] = template_name;
-
 	// TODO: something like this so that a missing alert is sensible:
 	//mSubstitutions["_ARGS"] = get_all_arguments_as_text(mSubstitutions);
 
@@ -706,7 +705,6 @@ std::string LLNotification::summarize() const
 	// should also include timestamp and expiration time (but probably not payload)
 	return s;
 }
-
 
 std::string LLNotification::getMessage() const
 {
@@ -844,18 +842,18 @@ bool LLNotificationChannelBase::updateItem(const LLSD& payload, LLNotificationPt
 			{
 				// it already existed, so this is a change
 				// since it changed in place, all we have to do is resend the signal
-				abortProcessing = mChanged(payload);
 				onChange(pNotification);
+				abortProcessing = mChanged(payload);
 			}
 			else
 			{
 				// not in our list, add it and say so
 				mItems.insert(pNotification);
+				onChange(pNotification);
 				// our payload is const, so make a copy before changing it
 				LLSD newpayload = payload;
 				newpayload["sigtype"] = "add";
 				abortProcessing = mChanged(newpayload);
-				onChange(pNotification);
 			}
 		}
 		else
@@ -864,11 +862,11 @@ bool LLNotificationChannelBase::updateItem(const LLSD& payload, LLNotificationPt
 			{
 				// it already existed, so this is a delete
 				mItems.erase(pNotification);
+				onChange(pNotification);
 				// our payload is const, so make a copy before changing it
 				LLSD newpayload = payload;
 				newpayload["sigtype"] = "delete";
 				abortProcessing = mChanged(newpayload);
-				onChange(pNotification);
 			}
 			// didn't pass, not on our list, do nothing
 		}
@@ -880,7 +878,7 @@ bool LLNotificationChannelBase::updateItem(const LLSD& payload, LLNotificationPt
 		assert(!wasFound);
 		if (passesFilter)
 		{
-			LL_INFOS() << "Inserting " << pNotification->getName() << LL_ENDL;
+			//LL_INFOS() << "Inserting " << pNotification->getName() << LL_ENDL;
 			// not in our list, add it and say so
 			mItems.insert(pNotification);
 			abortProcessing = mChanged(payload);
@@ -892,8 +890,8 @@ bool LLNotificationChannelBase::updateItem(const LLSD& payload, LLNotificationPt
 		// if we have it in our list, pass on the delete, then delete it, else do nothing
 		if (wasFound)
 		{
-			abortProcessing = mChanged(payload);
 			mItems.erase(pNotification);
+			abortProcessing = mChanged(payload);
 			onDelete(pNotification);
 		}
 	}
@@ -917,8 +915,7 @@ LLNotificationChannel::LLNotificationChannel(const std::string& name,
 											 const std::string& parent,
 											 LLNotificationFilter filter) : 
 LLNotificationChannelBase(filter),
-mName(name),
-mParent(parent)
+mName(name)
 {
 	// store myself in the channel map
 	LLNotifications::instance().addChannel(LLNotificationChannelPtr(this));
@@ -930,6 +927,7 @@ mParent(parent)
 	}
 	else
 	{
+		mParents.push_back(parent);
 		LLNotificationChannelPtr p = LLNotifications::instance().getChannel(parent);
 		p->connectChanged(boost::bind(&LLNotificationChannelBase::updateItem, this, _1));
 	}
@@ -941,6 +939,11 @@ bool LLNotificationChannel::isEmpty() const
 	return mItems.empty();
 }
 
+S32 LLNotificationChannel::size() const
+{
+	return mItems.size();
+}
+
 LLNotificationChannel::Iterator LLNotificationChannel::begin()
 {
 	return mItems.begin();
@@ -949,6 +952,11 @@ LLNotificationChannel::Iterator LLNotificationChannel::begin()
 LLNotificationChannel::Iterator LLNotificationChannel::end()
 {
 	return mItems.end();
+}
+
+size_t LLNotificationChannel::size()
+{
+	return mItems.size();
 }
 
 std::string LLNotificationChannel::summarize()
@@ -973,7 +981,8 @@ std::string LLNotificationChannel::summarize()
 // =========================================================
 // LLNotifications implementation
 // ---
-LLNotifications::LLNotifications() : LLNotificationChannelBase(LLNotificationFilters::includeEverything)
+LLNotifications::LLNotifications()
+:	LLNotificationChannelBase(LLNotificationFilters::includeEverything)
 {
 }
 
@@ -1092,6 +1101,7 @@ void LLNotificationTemplates::initSingleton()
 	loadTemplates();
 }
 
+
 // this function is called once at construction time, after the object is constructed.
 void LLNotifications::initSingleton()
 {
@@ -1124,14 +1134,10 @@ void LLNotifications::createDefaultChannels()
 	new LLNotificationHistoryChannel(notifications_log_file);
 
 	// connect action methods to these channels
-	LLNotifications::instance().getChannel("Expiration")->
-		connectChanged(boost::bind(&LLNotifications::expirationHandler, this, _1));
-	LLNotifications::instance().getChannel("Unique")->
-		connectChanged(boost::bind(&LLNotifications::uniqueHandler, this, _1));
-	LLNotifications::instance().getChannel("Unique")->
-		connectFailedFilter(boost::bind(&LLNotifications::failedUniquenessTest, this, _1));
-	LLNotifications::instance().getChannel("Ignore")->
-		connectFailedFilter(&handleIgnoredNotification);
+	getChannel("Expiration")->connectChanged(boost::bind(&LLNotifications::expirationHandler, this, _1));
+	getChannel("Unique")->connectChanged(boost::bind(&LLNotifications::uniqueHandler, this, _1));
+	getChannel("Unique")->connectFailedFilter(boost::bind(&LLNotifications::failedUniquenessTest, this, _1));
+	getChannel("Ignore")->connectFailedFilter(&handleIgnoredNotification);
 }
 
 static std::string sStringSkipNextTime("Skip this dialog next time");
@@ -1148,6 +1154,7 @@ bool LLNotificationTemplates::addTemplate(const std::string &name,
 	mTemplates[name] = theTemplate;
 	return true;
 }
+
 
 LLNotificationTemplatePtr LLNotificationTemplates::getTemplate(const std::string& name)
 {
@@ -1250,18 +1257,23 @@ LLXMLNodePtr LLNotificationTemplates::checkForXMLTemplate(LLXMLNodePtr item)
 			}
 			if (mXmlTemplates.count(replacementName))
 			{
-				item=LLXMLNode::replaceNode(item, mXmlTemplates[replacementName]);
+				item = LLXMLNode::replaceNode(item, mXmlTemplates[replacementName]);
 				
 				// walk the nodes looking for $(substitution) here and replace
 				replaceSubstitutionStrings(item, replacements);
 			}
-			else
-			{
-				LL_WARNS() << "XML template lookup failure on '" << replacementName << "' " << LL_ENDL;
-			}
+			else LL_WARNS() << "XML template lookup failure on '" << replacementName << "' " << LL_ENDL;
 		}
 	}
 	return item;
+}
+
+void addPathIfExists(const std::string& new_path, std::vector<std::string>& paths)
+{
+	if (gDirUtilp->fileExists(new_path))
+	{
+		paths.push_back(new_path);
+	}
 }
 
 bool LLNotificationTemplates::loadTemplates()
@@ -1317,6 +1329,7 @@ bool LLNotificationTemplates::loadTemplates()
 		}
 	}
 
+	LL_INFOS() << "...done" << LL_ENDL;
 	return true;
 }
 		
@@ -1360,7 +1373,7 @@ bool LLNotifications::loadNotifications()
 		}
 		
 		//LL_INFOS() << "Parsing " << pTemplate->mName << LL_ENDL;
-		
+
 		pTemplate->mMessage = item->getTextContents();
 		pTemplate->mDefaultFunctor = pTemplate->mName;
 		item->getAttributeString("type", pTemplate->mType);
@@ -1476,14 +1489,12 @@ LLNotificationPtr LLNotifications::add(const LLNotification::Params& p)
 namespace AIAlert { std::string text(Error const& error, int suppress_mask = 0); }
 LLNotificationPtr LLNotifications::add(AIAlert::Error const& error, int type, unsigned int suppress_mask)
 {
-	LLSD substitutions = LLSD::emptyMap();
-	substitutions["[PAYLOAD]"] = AIAlert::text(error, suppress_mask);
-	return add(LLNotification::Params((type == AIAlert::modal || error.is_modal()) ? "AIAlertModal" : "AIAlert").substitutions(substitutions));
+	return add(LLNotification::Params((type == AIAlert::modal || error.is_modal()) ? "AIAlertModal" : "AIAlert").substitutions(LLSD().with("[PAYLOAD]", AIAlert::text(error, suppress_mask))));
 }
 
 void LLNotifications::add(const LLNotificationPtr pNotif)
 {
-	if (pNotif == NULL) return;
+	if (pNotif == nullptr) return;
 
 	// first see if we already have it -- if so, that's a problem
 	LLNotificationSet::iterator it=mItems.find(pNotif);
@@ -1497,7 +1508,7 @@ void LLNotifications::add(const LLNotificationPtr pNotif)
 
 void LLNotifications::cancel(LLNotificationPtr pNotif)
 {
-	if (pNotif == NULL || pNotif->isCancelled()) return;
+	if (pNotif == nullptr || pNotif->isCancelled()) return;
 
 	LLNotificationSet::iterator it=mItems.find(pNotif);
 	if (it != mItems.end())
@@ -1531,6 +1542,30 @@ void LLNotifications::cancelByName(const std::string& name)
 	}
 }
 
+void LLNotifications::cancelByOwner(const LLUUID ownerId)
+{
+	std::vector<LLNotificationPtr> notifs_to_cancel;
+	for (LLNotificationSet::iterator it = mItems.begin(), end_it = mItems.end();
+		 it != end_it;
+		 ++it)
+	{
+		LLNotificationPtr pNotif = *it;
+		if (pNotif && pNotif->getPayload().get("owner_id").asUUID() == ownerId)
+		{
+			notifs_to_cancel.push_back(pNotif);
+		}
+	}
+
+	for (std::vector<LLNotificationPtr>::iterator it = notifs_to_cancel.begin(), end_it = notifs_to_cancel.end();
+		 it != end_it;
+		 ++it)
+	{
+		LLNotificationPtr pNotif = *it;
+		pNotif->cancel();
+		updateItem(LLSD().with("sigtype", "delete").with("id", pNotif->id()), pNotif);
+	}
+}
+
 void LLNotifications::update(const LLNotificationPtr pNotif)
 {
 	LLNotificationSet::iterator it=mItems.find(pNotif);
@@ -1543,13 +1578,12 @@ void LLNotifications::update(const LLNotificationPtr pNotif)
 
 LLNotificationPtr LLNotifications::find(const LLUUID& uuid)
 {
-
 	LLNotificationPtr target = LLNotificationPtr(new LLNotification(uuid));
 	LLNotificationSet::iterator it=mItems.find(target);
 	if (it == mItems.end())
 	{
 		LL_DEBUGS("Notifications") << "Tried to dereference uuid '" << uuid << "' as a notification key but didn't find it." << LL_ENDL;
-		return LLNotificationPtr();
+		return LLNotificationPtr((LLNotification*)nullptr);
 	}
 	else
 	{

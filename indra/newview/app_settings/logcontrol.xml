@@ -5,7 +5,22 @@
 		<key>print-location</key>   <boolean>false</boolean>
 		<key>settings</key>
 			<array>
-				<!-- sample entry for changing settings on specific items -->
+				<!-- Suppress anything but ERROR for some very verbose components -->
+				<map>
+					<key>level</key><string>ERROR</string>
+					<key>functions</key>
+						<array>
+						</array>
+					<key>classes</key>
+						<array>
+						</array>
+					<key>files</key>
+						<array>
+						</array>
+					<key>tags</key>
+						<array>
+						</array>
+				</map>
 				<map>
 					<key>level</key><string>INFO</string>
 					<key>functions</key>
@@ -43,7 +58,7 @@
 							<!--string>ShaderLoading</string-->
 							<string>Openjpeg</string>
 					<!-- Debug output about messages received from plugins: -->
-						<string>Plugin</string>                           <!-- Everything except what is listed below -->
+						<!--<string>Plugin</string>-->                           <!-- Everything except what is listed below -->
 						<string>Plugin child</string>                     <!-- Plugin log messages from the plugin child process -->
 						<!--<string>PluginRaw</string>-->                 <!-- The raw LLSD data -->
 						<string>PluginRaw child</string>                  <!-- The raw LLSD data from the plugin child process -->

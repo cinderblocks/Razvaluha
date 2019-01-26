@@ -7,31 +7,25 @@
  * neighboring regions. As the user crosses region boundaries, new
  * regions are added to the world and distant ones are rolled up.
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -42,7 +36,7 @@
 
 #include "llmath.h"
 #include "v3math.h"
-#include "llmemory.h"
+#include "llsingleton.h"
 #include "llstring.h"
 #include "llviewerpartsim.h"
 #include "llviewertexture.h"
@@ -61,14 +55,27 @@ class LLCloudPuff;
 class LLCloudGroup;
 class LLVOAvatar;
 
+class CapUrlMatches
+{
+public:
+	CapUrlMatches(std::set<LLViewerRegion*>& regions, std::set<std::string>& cap_names)
+	{
+		mRegions = regions;
+		mCapNames = cap_names;
+	}
+
+	std::set<LLViewerRegion*> mRegions;
+	std::set<std::string> mCapNames;
+};
+
 // LLWorld maintains a stack of unused viewer_regions and an array of pointers to viewer regions
 // as simulators are connected to, viewer_regions are popped off the stack and connected as required
 // as simulators are removed, they are pushed back onto the stack
 
 class LLWorld : public LLSingleton<LLWorld>
 {
+	LLSINGLETON(LLWorld);
 public:
-	LLWorld();
 	void destroyClass();
 
 	LLViewerRegion*	addRegion(const U64 &region_handle, const LLHost &host);
@@ -78,13 +85,13 @@ public:
 
 	void	disconnectRegions(); // Send quit messages to all child regions
 
-	LLViewerRegion*			getRegion(const LLHost &host);
-	LLViewerRegion*			getRegionFromPosGlobal(const LLVector3d &pos);
-	LLViewerRegion*			getRegionFromPosAgent(const LLVector3 &pos);
-	LLViewerRegion*			getRegionFromHandle(const U64 &handle);
-	LLViewerRegion*			getRegionFromID(const LLUUID& region_id);
-	BOOL					positionRegionValidGlobal(const LLVector3d& pos);			// true if position is in valid region
-	LLVector3d				clipToVisibleRegions(const LLVector3d &start_pos, const LLVector3d &end_pos);
+	LLViewerRegion*			getRegion(const LLHost &host) const;
+	LLViewerRegion*			getRegionFromPosGlobal(const LLVector3d &pos) const;
+	LLViewerRegion*			getRegionFromPosAgent(const LLVector3 &pos) const;
+	LLViewerRegion*			getRegionFromHandle(const U64 &handle) const;
+	LLViewerRegion*			getRegionFromID(const LLUUID& region_id) const;
+	BOOL					positionRegionValidGlobal(const LLVector3d& pos) const;			// true if position is in valid region
+	LLVector3d				clipToVisibleRegions(const LLVector3d &start_pos, const LLVector3d &end_pos) const;
 
 	void					updateAgentOffset(const LLVector3d &offset);
 
@@ -109,14 +116,12 @@ public:
 	// but it may eventually become more general.
 	F32 resolveStepHeightGlobal(const LLVOAvatar* avatarp, const LLVector3d &point_a, const LLVector3d &point_b,
 							LLVector3d &intersection, LLVector3 &intersection_normal,
-							LLViewerObject** viewerObjectPtr=NULL);
+							LLViewerObject** viewerObjectPtr= nullptr);
 
 	LLSurfacePatch *		resolveLandPatchGlobal(const LLVector3d &position);
 	LLVector3				resolveLandNormalGlobal(const LLVector3d &position);		// absolute frame
 
-	// update region size
 	void					setRegionSize(const U32& width = 0, const U32& length = 0);
-
 	U32						getRegionWidthInPoints() const	{ return mWidth; }
 	F32						getRegionScale() const			{ return mScale; }
 
@@ -157,24 +162,35 @@ public:
 
 	void getInfo(LLSD& info);
 
+	virtual CapUrlMatches getCapURLMatches(const std::string& cap_url);
+	virtual bool isCapURLMapped(const std::string& cap_url);
+
 public:
 	typedef std::list<LLViewerRegion*> region_list_t;
 	const region_list_t& getRegionList() const { return mActiveRegionList; }
 
 	typedef boost::signals2::signal<void(LLViewerRegion*)> region_remove_signal_t;
 	boost::signals2::connection setRegionRemovedCallback(const region_remove_signal_t::slot_type& cb);
+
 	// Returns lists of avatar IDs and their world-space positions within a given distance of a point.
 	// All arguments are optional. Given containers will be emptied and then filled.
 	// Not supplying origin or radius input returns data on all avatars in the known regions.
 	void getAvatars(
-		uuid_vec_t* avatar_ids = NULL,
-		std::vector<LLVector3d>* positions = NULL, 
+		uuid_vec_t* avatar_ids = nullptr,
+		std::vector<LLVector3d>* positions = nullptr, 
 		const LLVector3d& relative_to = LLVector3d(), F32 radius = FLT_MAX) const;
 
 	typedef boost::unordered_map<LLUUID, LLVector3d> pos_map_t;
-	void getAvatars(pos_map_t* map,
+	void getAvatars(pos_map_t* map = nullptr,
 					const LLVector3d& relative_to = LLVector3d(),
 					F32 radius = FLT_MAX) const;
+
+	// Returns list of avatar ids with region pointer and global position
+	typedef std::pair<LLViewerRegion*, LLVector3d > regionp_gpos_pair_t;
+	typedef boost::unordered_map<LLUUID, regionp_gpos_pair_t > region_gpos_map_t;
+	void getAvatars(region_gpos_map_t* map = nullptr,
+		const LLVector3d& relative_to = LLVector3d(),
+		F32 radius = FLT_MAX) const;
 
 	// Returns 'true' if the region is in mRegionList,
 	// 'false' if the region has been removed due to region change
@@ -190,19 +206,13 @@ private:
 	region_remove_signal_t mRegionRemovedSignal;
 
 	// Number of points on edge
-// <FS:CR> Aurora Sim
-	//static const U32 mWidth;
 	static U32 mWidth;
 	static U32 mLength;
-// </FS:CR> Aurora Sim
 
 	// meters/point, therefore mWidth * mScale = meters per edge
 	static const F32 mScale;
 
-// <FS:CR> Aurora Sim
-	//static const F32 mWidthInMeters;
 	static F32 mWidthInMeters;
-// </FS:CR> Aurora Sim
 
 	F32 mLandFarClip;					// Far clip distance for land.
 	LLPatchVertexArray		mLandPatch;

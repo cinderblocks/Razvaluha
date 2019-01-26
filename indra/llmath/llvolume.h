@@ -27,9 +27,6 @@
 #ifndef LL_LLVOLUME_H
 #define LL_LLVOLUME_H
 
-#ifdef IN_PCH
-#error "llvolume.h should not be in pch include chain."
-#endif
 #include <iostream>
 
 class LLProfileParams;
@@ -683,6 +680,8 @@ protected:
 
 class LLProfile
 {
+	friend class LLVolume;
+
 public:
 	LLProfile()
 		: mOpen(FALSE),
@@ -692,8 +691,6 @@ public:
 		  mTotal(2)
 	{
 	}
-
-	~LLProfile();
 
 	S32	 getTotal() const								{ return mTotal; }
 	S32	 getTotalOut() const							{ return mTotalOut; }	// Total number of outside points
@@ -727,6 +724,8 @@ public:
 	friend std::ostream& operator<<(std::ostream &s, const LLProfile &profile);
 
 protected:
+	~LLProfile();
+
 	static S32 getNumNGonPoints(const LLProfileParams& params, S32 sides, F32 offset=0.0f, F32 bevel = 0.0f, F32 ang_scale = 1.f, S32 split = 0);
 	void genNGon(const LLProfileParams& params, S32 sides, F32 offset=0.0f, F32 bevel = 0.0f, F32 ang_scale = 1.f, S32 split = 0);
 
@@ -753,10 +752,10 @@ public:
 	class PathPt
 	{
 	public:
-		LL_ALIGN_16(LLMatrix4a   mRot);
-		LL_ALIGN_16(LLVector4a	 mPos);
+		LLMatrix4a   mRot;
+		LLVector4a	 mPos;
 		
-		LL_ALIGN_16(LLVector4a   mScale);
+		LLVector4a   mScale;
 		F32			 mTexT;
 		F32 pad[3]; //for alignment
 		PathPt() 
@@ -818,7 +817,7 @@ class LLDynamicPath : public LLPath
 public:
 	LLDynamicPath() : LLPath() { }
 	/*virtual*/ BOOL generate(const LLPathParams& params, F32 detail=1.0f, S32 split = 0,
-							  BOOL is_sculpted = FALSE, S32 sculpt_size = 0);
+							  BOOL is_sculpted = FALSE, S32 sculpt_size = 0) override;
 };
 
 // Yet another "face" class - caches volume-specific, but not instance-specific data for faces)
@@ -927,7 +926,7 @@ public:
 public:
 	S32 mID;
 	U32 mTypeMask;
-
+	
 	// Only used for INNER/OUTER faces
 	S32 mBeginS;
 	S32 mBeginT;
@@ -958,6 +957,9 @@ public:
 	// format is mWeights[vertex_index].mV[influence] = <joint_index>.<weight>
 	// mWeights.size() should be empty or match mVertices.size()  
 	LLVector4a* mWeights;
+
+    mutable BOOL mWeightsScrubbed;
+    
 
 	LLOctreeNode<LLVolumeTriangle>* mOctree;
 
@@ -1004,6 +1006,7 @@ public:
 	void resizePath(S32 length);
 	const LLAlignedArray<LLVector4a,64>&	getMesh() const				{ return mMesh; }
 	const LLVector4a& getMeshPt(const U32 i) const			{ return mMesh[i]; }
+	
 
 	void setDirty() { mPathp->setDirty(); mProfilep->setDirty(); }
 
@@ -1021,13 +1024,13 @@ public:
 	
 	static void getLoDTriangleCounts(const LLVolumeParams& params, S32* counts);
 
-	S32 getNumTriangles(S32* vcount = NULL) const;
+	S32 getNumTriangles(S32* vcount = nullptr) const;
 
 	void generateSilhouetteVertices(std::vector<LLVector3> &vertices, 
 									std::vector<LLVector3> &normals, 
 									const LLVector3& view_vec,
-									const LLMatrix4a& mat,
-									const LLMatrix4a& norm_mat,
+									const LLMatrix4& mat,
+									const LLMatrix3& norm_mat,
 									S32 face_index);
 
 	//get the face index of the face that intersects with the given line segment at the point 
@@ -1035,10 +1038,10 @@ public:
 	//Line segment must be in volume space.
 	S32 lineSegmentIntersect(const LLVector4a& start, const LLVector4a& end,
 							 S32 face = -1,                          // which face to check, -1 = ALL_SIDES
-							 LLVector4a* intersection = NULL,         // return the intersection point
-							 LLVector2* tex_coord = NULL,            // return the texture coordinates of the intersection point
-							 LLVector4a* normal = NULL,               // return the surface normal at the intersection point
-							 LLVector4a* tangent = NULL             // return the surface tangent at the intersection point
+							 LLVector4a* intersection = nullptr,         // return the intersection point
+							 LLVector2* tex_coord = nullptr,            // return the texture coordinates of the intersection point
+							 LLVector4a* normal = nullptr,               // return the surface normal at the intersection point
+							 LLVector4a* tangent = nullptr             // return the surface tangent at the intersection point
 		);
 
 	LLFaceID generateFaceMask();
@@ -1054,6 +1057,7 @@ public:
 	LLVolumeFace &getVolumeFace(const S32 f) {return mVolumeFaces[f];} // DO NOT DELETE VOLUME WHILE USING THIS REFERENCE, OR HOLD A POINTER TO THIS VOLUMEFACE
 
 	face_list_t& getVolumeFaces() { return mVolumeFaces; }
+
 	U32					mFaceMask;			// bit array of which faces exist in this volume
 	LLVector3			mLODScaleBias;		// vector for biasing LOD based on scale
 	

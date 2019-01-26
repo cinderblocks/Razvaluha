@@ -519,7 +519,7 @@ void LLIMMgr::addMessage(
 
 	// now add message to floater
 	LLColor4 color = agent_chat_color(other_participant_id, from, false);
-	if (dialog == IM_BUSY_AUTO_RESPONSE)
+	if (dialog == IM_DO_NOT_DISTURB_AUTO_RESPONSE)
 	{
 		color *= .75f;
 		color += LLColor4::transparent*.25f;

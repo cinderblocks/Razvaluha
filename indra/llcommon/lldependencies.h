@@ -34,13 +34,13 @@
 #include <vector>
 #include <set>
 #include <map>
-#include <stdexcept>
 #include <iosfwd>
+#include <functional>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/indirect_iterator.hpp>
 #include <boost/range/iterator_range.hpp>
-#include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include "llexception.h"
 
 /*****************************************************************************
 *   Utilities
@@ -106,9 +106,9 @@ public:
     /**
      * Exception thrown by sort() if there's a cycle
      */
-    struct Cycle: public std::runtime_error
+    struct Cycle: public LLException
     {
-        Cycle(const std::string& what): std::runtime_error(what) {}
+        Cycle(const std::string& what): LLException(what) {}
     };
 
     /**
@@ -124,9 +124,9 @@ public:
     virtual std::string describe(bool full=true) const;
 
 protected:
-    typedef std::vector< std::pair<int, int> > EdgeList;
-    typedef std::vector<int> VertexList;
-    VertexList topo_sort(int vertices, const EdgeList& edges) const;
+    typedef std::vector< std::pair<std::size_t, std::size_t> > EdgeList;
+    typedef std::vector<std::size_t> VertexList;
+    VertexList topo_sort(std::size_t vertices, const EdgeList& edges) const;
 
     /**
      * refpair is specifically intended to capture a pair of references. This
@@ -217,7 +217,7 @@ class LLDependencies: public LLDependenciesBase
     /// We have various ways to get the dependencies for a given DepNode.
     /// Rather than having to restate each one for 'after' and 'before'
     /// separately, pass a dep_selector so we can apply each to either.
-    typedef boost::function<const typename DepNode::dep_set&(const DepNode&)> dep_selector;
+    typedef std::function<const typename DepNode::dep_set&(const DepNode&)> dep_selector;
 
 public:
     LLDependencies() {}
@@ -340,7 +340,7 @@ private:
 
 public:
     /// iterator over value_type entries
-    typedef boost::transform_iterator<boost::function<value_type(DepNodeMapEntry&)>,
+    typedef boost::transform_iterator<std::function<value_type(DepNodeMapEntry&)>,
                                       typename DepNodeMap::iterator> iterator;
     /// range over value_type entries
     typedef boost::iterator_range<iterator> range;
@@ -352,7 +352,7 @@ public:
     }
 
     /// iterator over const_value_type entries
-    typedef boost::transform_iterator<boost::function<const_value_type(const DepNodeMapEntry&)>,
+    typedef boost::transform_iterator<std::function<const_value_type(const DepNodeMapEntry&)>,
                                       typename DepNodeMap::const_iterator> const_iterator;
     /// range over const_value_type entries
     typedef boost::iterator_range<const_iterator> const_range;
@@ -364,7 +364,7 @@ public:
     }
 
     /// iterator over stored NODEs
-    typedef boost::transform_iterator<boost::function<NODE&(DepNodeMapEntry&)>,
+    typedef boost::transform_iterator<std::function<NODE&(DepNodeMapEntry&)>,
                                       typename DepNodeMap::iterator> node_iterator;
     /// range over stored NODEs
     typedef boost::iterator_range<node_iterator> node_range;
@@ -380,7 +380,7 @@ public:
     }
 
     /// const iterator over stored NODEs
-    typedef boost::transform_iterator<boost::function<const NODE&(const DepNodeMapEntry&)>,
+    typedef boost::transform_iterator<std::function<const NODE&(const DepNodeMapEntry&)>,
                                       typename DepNodeMap::const_iterator> const_node_iterator;
     /// const range over stored NODEs
     typedef boost::iterator_range<const_node_iterator> const_node_range;
@@ -396,7 +396,7 @@ public:
     }
 
     /// const iterator over stored KEYs
-    typedef boost::transform_iterator<boost::function<const KEY&(const DepNodeMapEntry&)>,
+    typedef boost::transform_iterator<std::function<const KEY&(const DepNodeMapEntry&)>,
                                       typename DepNodeMap::const_iterator> const_key_iterator;
     /// const range over stored KEYs
     typedef boost::iterator_range<const_key_iterator> const_key_range;
@@ -433,7 +433,7 @@ public:
         {
             return &found->second.node;
         }
-        return NULL;
+        return nullptr;
     }
 
     /**
@@ -508,7 +508,7 @@ public:
             // been explicitly added. Rely on std::map rejecting a second attempt
             // to insert the same key. Use the map's size() as the vertex number
             // to get a distinct value for each successful insertion.
-            typedef std::map<KEY, int> VertexMap;
+            typedef std::map<KEY, std::size_t> VertexMap;
             VertexMap vmap;
             // Nest each of these loops because !@#$%? MSVC warns us that its
             // former broken behavior has finally been fixed -- and our builds
@@ -539,7 +539,7 @@ public:
                 for (typename DepNodeMap::const_iterator nmi = mNodes.begin(), nmend = mNodes.end();
                      nmi != nmend; ++nmi)
                 {
-                    int thisnode = vmap[nmi->first];
+                    std::size_t thisnode = vmap[nmi->first];
                     // after dependencies: build edges from the named node to this one
                     for (typename DepNode::dep_set::const_iterator ai = nmi->second.after.begin(),
                                                                    aend = nmi->second.after.end();
@@ -601,7 +601,7 @@ public:
 	using LLDependenciesBase::describe; // unhide virtual std::string describe(bool full=true) const;
 
     /// Override base-class describe() with actual implementation
-    virtual std::ostream& describe(std::ostream& out, bool full=true) const
+	std::ostream& describe(std::ostream& out, bool full=true) const override
     {
         typename DepNodeMap::const_iterator dmi(mNodes.begin()), dmend(mNodes.end());
         if (dmi != dmend)

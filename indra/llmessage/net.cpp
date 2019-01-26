@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file net.cpp
  * @brief Cross-platform routines for sending and receiving packets.
@@ -76,14 +78,8 @@ static U32 gsnReceivingIFAddr = INVALID_HOST_IP_ADDRESS; // Address to which dat
 const char* LOOPBACK_ADDRESS_STRING = "127.0.0.1";
 const char* BROADCAST_ADDRESS_STRING = "255.255.255.255";
 
-#if LL_DARWIN
-	// Mac OS X returns an error when trying to set these to 400000.  Smaller values succeed.
-	const int	SEND_BUFFER_SIZE	= 200000;
-	const int	RECEIVE_BUFFER_SIZE	= 200000;
-#else // LL_DARWIN
-	const int	SEND_BUFFER_SIZE	= 400000;
-	const int	RECEIVE_BUFFER_SIZE	= 400000;
-#endif // LL_DARWIN
+const int	SEND_BUFFER_SIZE	= 400000;
+const int	RECEIVE_BUFFER_SIZE	= 400000;
 
 // universal functions (cross-platform)
 
@@ -122,7 +118,7 @@ const char* u32_to_ip_string(U32 ip)
 	char* result = inet_ntoa(in);
 
 	// NULL indicates error in conversion
-	if (result != NULL)
+	if (result != nullptr)
 	{
 		strncpy( buffer, result, MAXADDRSTR );	 /* Flawfinder: ignore */ 
 		buffer[MAXADDRSTR-1] = '\0';
@@ -146,7 +142,7 @@ char *u32_to_ip_string(U32 ip, char *ip_string)
 	result = inet_ntoa(in);
 
 	// NULL indicates error in conversion
-	if (result != NULL)
+	if (result != nullptr)
 	{
 		//the function signature needs to change to pass in the lengfth of first and last.
 		strcpy(ip_string, result);	/*Flawfinder: ignore*/
@@ -154,7 +150,7 @@ char *u32_to_ip_string(U32 ip, char *ip_string)
 	}
 	else
 	{
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -249,6 +245,8 @@ S32 start_net(S32& socket_out, int& nPort)
 			if (nRet == SOCKET_ERROR)
 			{
 				LL_WARNS("AppInit") << "startNet() : Couldn't find available network port." << LL_ENDL;
+				closesocket(hSocket);
+				WSACleanup();
 				// Fail gracefully here in release
 				return 3;
 			}
@@ -257,6 +255,8 @@ S32 start_net(S32& socket_out, int& nPort)
 		// Some other socket error
 		{
 			LL_WARNS("AppInit") << llformat("bind() port: %d failed, Err: %d\n", nPort, WSAGetLastError()) << LL_ENDL;
+			closesocket(hSocket);
+			WSACleanup();
 			// Fail gracefully in release.
 			return 4;
 		}
@@ -455,6 +455,7 @@ S32 start_net(S32& socket_out, int& nPort)
 				if (nRet < 0)
 				{
 					LL_WARNS() << "startNet() : Couldn't find available network port." << LL_ENDL;
+					close(hSocket);
 					// Fail gracefully in release.
 					return 3;
 				}
@@ -463,6 +464,7 @@ S32 start_net(S32& socket_out, int& nPort)
 			else
 			{
 				LL_WARNS() << llformat ("bind() port: %d failed, Err: %s\n", nPort, strerror(errno)) << LL_ENDL;
+				close(hSocket);
 				// Fail gracefully in release.
 				return 4;
 			}
@@ -534,7 +536,6 @@ static int recvfrom_destip( int socket, void *buf, int len, struct sockaddr *fro
 	iov[0].iov_base = buf;
 	iov[0].iov_len = len;
 
-	memset(&msg, 0, sizeof msg);
 	msg.msg_name = from;
 	msg.msg_namelen = *fromlen;
 	msg.msg_iov = iov;

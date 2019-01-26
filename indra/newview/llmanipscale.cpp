@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmanipscale.cpp
  * @brief LLManipScale class implementation
@@ -85,7 +87,6 @@ const LLManip::EManipPart MANIPULATOR_IDS[LLManipScale::NUM_MANIPULATORS] =
 	LLManip::LL_FACE_NEGY,
 	LLManip::LL_FACE_NEGZ
 };
-
 
 F32 get_default_max_prim_scale(bool is_flora)
 {
@@ -295,10 +296,6 @@ void LLManipScale::render()
 			{
 				LLGLEnable poly_offset(GL_POLYGON_OFFSET_FILL);
 				glPolygonOffset( -2.f, -2.f);
-
-				// JC - Band-aid until edge stretch working similar to side stretch
-				// in non-uniform.
-				// renderEdges( bbox );
 
 				renderCorners( bbox );
 				renderFaces( bbox );
@@ -543,11 +540,11 @@ void LLManipScale::highlightManipulators(S32 x, S32 y)
 	{
 		if (mHighlightedPart == MANIPULATOR_IDS[i])
 		{
-			mManipulatorScales[i] = lerp(mManipulatorScales[i], SELECTED_MANIPULATOR_SCALE, LLCriticalDamp::getInterpolant(MANIPULATOR_SCALE_HALF_LIFE));
+			mManipulatorScales[i] = lerp(mManipulatorScales[i], SELECTED_MANIPULATOR_SCALE, LLSmoothInterpolation::getInterpolant(MANIPULATOR_SCALE_HALF_LIFE));
 		}
 		else
 		{
-			mManipulatorScales[i] = lerp(mManipulatorScales[i], 1.f, LLCriticalDamp::getInterpolant(MANIPULATOR_SCALE_HALF_LIFE));
+			mManipulatorScales[i] = lerp(mManipulatorScales[i], 1.f, LLSmoothInterpolation::getInterpolant(MANIPULATOR_SCALE_HALF_LIFE));
 		}
 	}
 
@@ -610,43 +607,55 @@ void LLManipScale::renderFaces( const LLBBox& bbox )
 	{
 		gGL.color4fv( default_normal_color.mV );
 		LLGLDepthTest gls_depth(GL_FALSE);
-		gGL.begin(LLRender::QUADS); 
+		gGL.begin(LLRender::TRIANGLES); 
 		{
 			// Face 0
 			gGL.vertex3f(min.mV[VX], max.mV[VY], max.mV[VZ]);
 			gGL.vertex3f(min.mV[VX], min.mV[VY], max.mV[VZ]);
-			gGL.vertex3f(max.mV[VX], min.mV[VY], max.mV[VZ]);
 			gGL.vertex3f(max.mV[VX], max.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], max.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(min.mV[VX], min.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], min.mV[VY], max.mV[VZ]);
 
 			// Face 1
 			gGL.vertex3f(max.mV[VX], min.mV[VY], max.mV[VZ]);
 			gGL.vertex3f(max.mV[VX], min.mV[VY], min.mV[VZ]);
-			gGL.vertex3f(max.mV[VX], max.mV[VY], min.mV[VZ]);
 			gGL.vertex3f(max.mV[VX], max.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], max.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], min.mV[VY], min.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], max.mV[VY], min.mV[VZ]);
 
 			// Face 2
 			gGL.vertex3f(min.mV[VX], max.mV[VY], min.mV[VZ]);
 			gGL.vertex3f(min.mV[VX], max.mV[VY], max.mV[VZ]);
-			gGL.vertex3f(max.mV[VX], max.mV[VY], max.mV[VZ]);
 			gGL.vertex3f(max.mV[VX], max.mV[VY], min.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], max.mV[VY], min.mV[VZ]);
+			gGL.vertex3f(min.mV[VX], max.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], max.mV[VY], max.mV[VZ]);
 
 			// Face 3
 			gGL.vertex3f(min.mV[VX], max.mV[VY], max.mV[VZ]);
 			gGL.vertex3f(min.mV[VX], max.mV[VY], min.mV[VZ]);
-			gGL.vertex3f(min.mV[VX], min.mV[VY], min.mV[VZ]);
 			gGL.vertex3f(min.mV[VX], min.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(min.mV[VX], min.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(min.mV[VX], max.mV[VY], min.mV[VZ]);
+			gGL.vertex3f(min.mV[VX], min.mV[VY], min.mV[VZ]);
 
 			// Face 4
 			gGL.vertex3f(min.mV[VX], min.mV[VY], max.mV[VZ]);
 			gGL.vertex3f(min.mV[VX], min.mV[VY], min.mV[VZ]);
-			gGL.vertex3f(max.mV[VX], min.mV[VY], min.mV[VZ]);
 			gGL.vertex3f(max.mV[VX], min.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], min.mV[VY], max.mV[VZ]);
+			gGL.vertex3f(min.mV[VX], min.mV[VY], min.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], min.mV[VY], min.mV[VZ]);
 
 			// Face 5
 			gGL.vertex3f(min.mV[VX], min.mV[VY], min.mV[VZ]);
 			gGL.vertex3f(min.mV[VX], max.mV[VY], min.mV[VZ]);
-			gGL.vertex3f(max.mV[VX], max.mV[VY], min.mV[VZ]);
 			gGL.vertex3f(max.mV[VX], min.mV[VY], min.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], min.mV[VY], min.mV[VZ]);
+			gGL.vertex3f(min.mV[VX], max.mV[VY], min.mV[VZ]);
+			gGL.vertex3f(max.mV[VX], max.mV[VY], min.mV[VZ]);
 		}
 		gGL.end();
 	}

@@ -88,6 +88,29 @@ public:
 		setMul(matb,mata);
 	}
 
+	LLMatrix4a(const LLMatrix4a& rhs)
+	{
+		mMatrix[0] = rhs.getRow<0>();
+		mMatrix[1] = rhs.getRow<1>();
+		mMatrix[2] = rhs.getRow<2>();
+		mMatrix[3] = rhs.getRow<3>();
+	}
+
+	LLMatrix4a(const LLMatrix4& rhs)
+	{
+		loadu(rhs);
+	}
+
+	// Do NOT add aditional operators without consulting someone with SSE experience
+	inline const LLMatrix4a& operator= (const LLMatrix4a& rhs)
+	{
+		mMatrix[0] = rhs.getRow<0>();
+		mMatrix[1] = rhs.getRow<1>();
+		mMatrix[2] = rhs.getRow<2>();
+		mMatrix[3] = rhs.getRow<3>();
+		return *this;
+	}
+
 	inline F32* getF32ptr()
 	{
 		return mMatrix[0].getF32ptr();
@@ -297,7 +320,7 @@ public:
 		mMatrix[2].setAdd(a.mMatrix[2],d2);
 		mMatrix[3].setAdd(a.mMatrix[3],d3);
 	}
-	
+
 	//Singu Note: Don't mess with this. It's intentionally different from LL's. 
 	// Note how res isn't manipulated until the very end.
 	//Fast(er). Treats v[VW] as 0.f
@@ -316,7 +339,7 @@ public:
 		x.add(y);
 		res.setAdd(x,z);
 	}
-	
+
 	//Proper. v[VW] as v[VW]
 	inline void rotate4(const LLVector4a& v, LLVector4a& res) const
 	{

@@ -2541,7 +2541,7 @@ LLTextureFetch::LLTextureFetch(LLTextureCache* cache, LLImageDecodeThread* image
 	  mFetchSource(LLTextureFetch::FROM_ALL),
 	  mOriginFetchSource(LLTextureFetch::FROM_ALL),
 	  mFetcherLocked(FALSE),
-	  mTextureInfoMainThread(false)
+	  mTextureInfoMainThread()
 {
 	mMaxBandwidth = gSavedSettings.getF32("ThrottleBandwidthKBPS");
 	mTextureInfo.setUpLogging(gSavedSettings.getBOOL("LogTextureDownloadsToViewerLog"), gSavedSettings.getBOOL("LogTextureDownloadsToSimulator"), U32Bytes(gSavedSettings.getU32("TextureLoggingThreshold")));
@@ -3123,7 +3123,6 @@ void LLTextureFetch::shutDownImageDecodeThread()
 // Threads:  Ttf
 void LLTextureFetch::startThread()
 {
-	mTextureInfo.startRecording();
 }
 
 // Threads:  Ttf
@@ -3134,8 +3133,6 @@ void LLTextureFetch::endThread()
 					  << ", ResWaits:  " << mTotalResourceWaitCount
 					  << ", TotalHTTPReq:  " << getTotalNumHTTPRequests()
 					  << LL_ENDL;
-
-	mTextureInfo.stopRecording();
 }
 
 // Threads:  Ttf

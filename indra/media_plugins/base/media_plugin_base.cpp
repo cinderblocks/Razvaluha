@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file media_plugin_base.cpp
  * @brief Media plugin base class for LLMedia API plugin system
@@ -46,7 +48,7 @@ MediaPluginBase::MediaPluginBase(
 	mHostSendFunction = host_send_func;
 	mHostUserData = host_user_data;
 	mDeleteMe = false;
-	mPixels = 0;
+	mPixels = nullptr;
 	mWidth = 0;
 	mHeight = 0;
 	mTextureWidth = 0;
@@ -108,7 +110,7 @@ void MediaPluginBase::staticReceiveMessage(const char *message_string, void **us
 {
 	MediaPluginBase *self = (MediaPluginBase*)*user_data;
 
-	if(self != NULL)
+	if(self != nullptr)
 	{
 		self->receiveMessage(message_string);
 
@@ -116,7 +118,7 @@ void MediaPluginBase::staticReceiveMessage(const char *message_string, void **us
 		if(self->mDeleteMe)
 		{
 			delete self;
-			*user_data = NULL;
+			*user_data = nullptr;
 		}
 	}
 }

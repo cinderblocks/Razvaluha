@@ -34,8 +34,8 @@
 #include "llpanelobjectinventory.h"
 #include "llinventorybridge.h"
 
-#include "llboost.h"
 #include <boost/regex.hpp>
+#include <boost/tokenizer.hpp>
 
 // Uncomment and use instead if we ever add the chatbar as a command line - MC
 void cmdline_printchat(const std::string& message);

@@ -15,6 +15,7 @@
 		<panel filename="panel_group_notices.xml" name="notices_tab" />
 		<panel filename="panel_group_voting.xml" name="voting_tab" />
 		<panel filename="panel_group_land_money.xml" name="land_money_tab" />
+		<panel filename="panel_group_experiences.xml" name="experiences_tab" />
 	</tab_container>
 	<button bottom="5" font="SansSerif" halign="center" height="20" label="Apply"
 	     label_selected="Apply" mouse_opaque="true" name="btn_apply" right="410"

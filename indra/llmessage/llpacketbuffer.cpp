@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpacketbuffer.cpp
  * @brief implementation of LLPacketBuffer class for a packet.
@@ -45,7 +47,7 @@ LLPacketBuffer::LLPacketBuffer(const LLHost &host, const char *datap, const S32 
 	}
 	else
 	{
-		if (datap != NULL)
+		if (datap != nullptr)
 		{
 			memcpy(mData, datap, size);
 			mSize = size;

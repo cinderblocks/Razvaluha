@@ -91,8 +91,8 @@ const U32 PF_DEFAULT =  PF_ALLOW_FLY
                         | PF_USE_ESTATE_VOICE_CHAN;
 
 // Access list flags
-const U32 AL_ACCESS  = (1 << 0);
-const U32 AL_BAN     = (1 << 1);
+const U32 AL_ACCESS				= (1 << 0);
+const U32 AL_BAN					= (1 << 1);
 const U32 AL_ALLOW_EXPERIENCE	= (1 << 3);
 const U32 AL_BLOCK_EXPERIENCE	= (1 << 4);
 //const U32 AL_RENTER  = (1 << 2);

@@ -32,6 +32,7 @@
 #ifndef LL_LLVIEWERINVENTORY_H
 #define LL_LLVIEWERINVENTORY_H
 
+#include "llinitdestroyclass.h"
 #include "llinventory.h"
 #include "llframetimer.h"
 #include "llwearable.h"

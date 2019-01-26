@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file v3math.cpp
  * @brief LLVector3 class implementation.
@@ -5,7 +7,7 @@
  * $LicenseInfo:firstyear=2000&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
@@ -76,7 +78,7 @@ BOOL LLVector3::clampLength( F32 length_limit )
 	BOOL changed = FALSE;
 
 	F32 len = length();
-	if (std::isfinite(len))
+	if (llfinite(len))
 	{
 		if ( len > length_limit)
 		{
@@ -97,7 +99,7 @@ BOOL LLVector3::clampLength( F32 length_limit )
 		for (S32 i = 0; i < 3; ++i)
 		{
 			F32 abs_component = fabs(mV[i]);
-			if (std::isfinite(abs_component))
+			if (llfinite(abs_component))
 			{
 				if (abs_component > max_abs_component)
 				{
@@ -354,7 +356,7 @@ const LLVector3& operator*=(LLVector3 &a, const LLQuaternion &rot)
 // static 
 BOOL LLVector3::parseVector3(const std::string& buf, LLVector3* value)
 {
-	if( buf.empty() || value == NULL)
+	if( buf.empty() || value == nullptr)
 	{
 		return FALSE;
 	}

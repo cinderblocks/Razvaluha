@@ -27,7 +27,7 @@ else (STANDALONE)
     set(BOOST_CHRONO_LIBRARY
         optimized libboost_chrono-mt
         debug libboost_chrono-mt-gd)
-    set(BOOST_CONTEXT_LIBRARY 
+    set(BOOST_CONTEXT_LIBRARY
         optimized libboost_context-mt
         debug libboost_context-mt-gd)
     set(BOOST_COROUTINE_LIBRARY
@@ -51,10 +51,10 @@ else (STANDALONE)
     set(BOOST_SIGNALS_LIBRARY
         optimized libboost_signals-mt
         debug libboost_signals-mt-gd)
-    set(BOOST_SYSTEM_LIBRARY 
+    set(BOOST_SYSTEM_LIBRARY
         optimized libboost_system-mt
         debug libboost_system-mt-gd)
-    set(BOOST_THREAD_LIBRARY 
+    set(BOOST_THREAD_LIBRARY
         optimized libboost_thread-mt
         debug libboost_thread-mt-gd)
   elseif (LINUX)
@@ -125,6 +125,11 @@ else (STANDALONE)
     set(BOOST_THREAD_LIBRARY
         optimized boost_thread-mt
         debug boost_thread-mt-d)
-  endif (WINDOWS)
+  endif ()
 endif (STANDALONE)
+
+if (LINUX)
+    set(BOOST_SYSTEM_LIBRARY ${BOOST_SYSTEM_LIBRARY} rt)
+    set(BOOST_THREAD_LIBRARY ${BOOST_THREAD_LIBRARY} rt)
+endif (LINUX)
 

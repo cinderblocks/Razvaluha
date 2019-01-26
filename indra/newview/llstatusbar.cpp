@@ -79,7 +79,6 @@
 #include "llappviewer.h"
 
 // library includes
-#include "imageids.h"
 #include "llfontgl.h"
 #include "llrect.h"
 #include "llerror.h"
@@ -235,7 +234,7 @@ mIsNavMeshDirty(false)
 	mSearchBevel->setVisible(show_search);
 
 	mTextParcelName->setClickedCallback(boost::bind(onClickParcelInfo));
-	mTextBalance->setClickedCallback(boost::bind(LLFloaterBuyCurrency::buyCurrency));
+	mTextBalance->setClickedCallback(boost::bind(LLStatusBar::sendMoneyBalanceRequest));
 
 	// TODO: Disable buying currency when connected to non-SL grids
 	// that don't support currency yet -- MC

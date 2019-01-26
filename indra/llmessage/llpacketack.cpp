@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpacketack.cpp
  * @author Phoenix
@@ -32,7 +34,7 @@
 #if !LL_WINDOWS
 #include <netinet/in.h>
 #else
-#include "winsock2.h"
+#include "llwin32headerslean.h"
 #endif
 
 #include "message.h"
@@ -42,7 +44,7 @@ LLReliablePacket::LLReliablePacket(
 	U8* buf_ptr,
 	S32 buf_len,
 	LLReliablePacketParams* params) :
-	mBuffer(NULL),
+	mBuffer(nullptr),
 	mBufferLength(0)
 {
 	if (params)
@@ -60,19 +62,21 @@ LLReliablePacket::LLReliablePacket(
 		mRetries = 0;
 		mPingBasedRetry = TRUE;
 		mTimeout = F32Seconds(0.f);
-		mCallback = NULL;
-		mCallbackData = NULL;
-		mMessageName = NULL;
+		mCallback = nullptr;
+		mCallbackData = nullptr;
+		mMessageName = nullptr;
 	}
 
 	mExpirationTime = (F64Seconds)totalTime() + mTimeout;
-	mPacketID = ntohl(*((U32*)(&buf_ptr[PHL_PACKET_ID])));
+	U32 buf_packet_id = 0U;
+	memcpy(&buf_packet_id, buf_ptr + PHL_PACKET_ID, sizeof(buf_packet_id));
+	mPacketID = ntohl(buf_packet_id);
 
 	mSocket = socket;
 	if (mRetries)
 	{
 		mBuffer = new U8[buf_len];
-		if (mBuffer != NULL)
+		if (mBuffer != nullptr)
 		{
 			memcpy(mBuffer,buf_ptr,buf_len);	/*Flawfinder: ignore*/
 			mBufferLength = buf_len;

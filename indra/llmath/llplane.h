@@ -4,7 +4,7 @@
  * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
@@ -78,7 +78,7 @@ public:
 	
 	// Read-only access a single float in this vector. Do not use in proximity to any function call that manipulates
 	// the data at the whole vector level or you will incur a substantial penalty. Consider using the splat functions instead	
-	inline F32 operator[](const S32 idx) const { return mV[idx]; }
+	inline F32 operator[](const size_t idx) const { return mV[idx]; }
 	
 	// preferable when index is known at compile time
 	template <int N> LL_FORCE_INLINE void getAt(LLSimdScalar& v) const { v = mV.getScalarAt<N>(); } 
@@ -93,7 +93,7 @@ public:
 	{ 
 		return mV.greaterEqual(LLVector4a::getZero()).getGatheredBits() & LLVector4Logical::MASK_XYZ;
 	}
-		
+	
 	//check if two planes are nearly same
 	bool equal(const LLPlane& p) const
 	{
@@ -101,7 +101,7 @@ public:
 	}
 
 private:
-	LL_ALIGN_16(LLVector4a mV);
+	LLVector4a mV;
 } LL_ALIGN_POSTFIX(16);
 
 

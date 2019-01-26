@@ -33,18 +33,11 @@
 #ifndef LL_LLFILEPICKER_H
 #define LL_LLFILEPICKER_H
 
-#include "stdtypes.h"
-
 #if LL_DARWIN
-#include <Carbon/Carbon.h>
-
 // AssertMacros.h does bad things.
 #undef verify
 #undef check
 #undef require
-
-#include <vector>
-#include "llstring.h"
 
 #endif
 
@@ -204,7 +197,7 @@ private:
 	
 	bool doNavChooseDialog(ELoadFilter filter);
 	bool doNavSaveDialog(ESaveFilter filter, const std::string& filename);
-    std::vector<std::string>* navOpenFilterProc(ELoadFilter filter);
+    std::vector<std::string> navOpenFilterProc(ELoadFilter filter);
 #endif
 
 #if LL_GTK

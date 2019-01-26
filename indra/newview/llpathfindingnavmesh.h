@@ -27,22 +27,13 @@
 #ifndef LL_LLPATHFINDINGNAVMESH_H
 #define LL_LLPATHFINDINGNAVMESH_H
 
-#include <string>
-
-#include <boost/shared_ptr.hpp>
-#ifndef BOOST_FUNCTION_HPP_INCLUDED
-#include <boost/function.hpp>
-#define BOOST_FUNCTION_HPP_INCLUDED
-#endif
-#include <boost/signals2.hpp>
-
 #include "llpathfindingnavmeshstatus.h"
 #include "llsd.h"
 
 class LLPathfindingNavMesh;
 class LLUUID;
 
-typedef boost::shared_ptr<LLPathfindingNavMesh> LLPathfindingNavMeshPtr;
+typedef std::shared_ptr<LLPathfindingNavMesh> LLPathfindingNavMeshPtr;
 
 class LLPathfindingNavMesh
 {
@@ -58,7 +49,7 @@ public:
 		kNavMeshRequestError
 	} ENavMeshRequestStatus;
 
-	typedef boost::function<void (ENavMeshRequestStatus, const LLPathfindingNavMeshStatus &, const LLSD::Binary &)>         navmesh_callback_t;
+	typedef std::function<void (ENavMeshRequestStatus, const LLPathfindingNavMeshStatus &, const LLSD::Binary &)>         navmesh_callback_t;
 	typedef boost::signals2::signal<void (ENavMeshRequestStatus, const LLPathfindingNavMeshStatus &, const LLSD::Binary &)> navmesh_signal_t;
 	typedef boost::signals2::connection                                                                                     navmesh_slot_t;
 

@@ -33,8 +33,7 @@
 
 class RlvInventory : public LLSingleton<RlvInventory>, public LLInventoryObserver
 {
-protected:
-	RlvInventory();
+	LLSINGLETON(RlvInventory);
 public:
 	~RlvInventory();
 

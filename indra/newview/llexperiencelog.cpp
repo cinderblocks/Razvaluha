@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llexperiencelog.cpp
  * @brief llexperiencelog implementation
@@ -39,11 +41,11 @@
 class LLExperienceLogDispatchHandler : public LLDispatchHandler
 {
 public:
-	virtual bool operator()(
+	bool operator()(
 		const LLDispatcher* dispatcher,
 		const std::string& key,
 		const LLUUID& invoice,
-		const sparam_t& strings)
+		const sparam_t& strings) override
 	{
 		LLSD message;
 
@@ -286,6 +288,6 @@ void LLExperienceLog::setNotifyNewEvent( bool val )
 	}
 	else if( val && !mNotifyConnection.connected())
 	{
-		mNotifyConnection = addUpdateSignal(boost::function<void(LLSD&)>(LLExperienceLog::notify));
+		mNotifyConnection = addUpdateSignal(std::function<void(LLSD&)>(LLExperienceLog::notify));
 	}
 }

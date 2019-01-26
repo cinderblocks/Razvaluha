@@ -50,9 +50,9 @@ class LLPanelEditWearable;
 
 class LLFloaterCustomize : public LLFloater, public LLSingleton<LLFloaterCustomize>
 {
+	LLSINGLETON(LLFloaterCustomize);
 public:
 	// Ctor/Dtor
-	LLFloaterCustomize();
 	virtual ~LLFloaterCustomize();
 
 	// Inherited methods

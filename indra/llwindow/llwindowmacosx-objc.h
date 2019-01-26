@@ -55,13 +55,13 @@ struct NativeKeyEventData {
         KEYCHAR
     };
     
-    EventType   mKeyEvent;
-    uint32_t    mEventType;
-    uint32_t    mEventModifiers;
-    uint32_t    mEventKeyCode;
-    uint32_t    mEventChars;
-    uint32_t    mEventUnmodChars;
-    bool        mEventRepeat;
+    EventType   mKeyEvent = KEYUNKNOWN;
+    uint32_t    mEventType = 0;
+    uint32_t    mEventModifiers = 0;
+    uint32_t    mEventKeyCode = 0;
+    uint32_t    mEventChars = 0;
+    uint32_t    mEventUnmodChars = 0;
+    bool        mEventRepeat = false;
 };
 
 typedef const NativeKeyEventData * NSKeyEventRef;
@@ -69,7 +69,7 @@ typedef const NativeKeyEventData * NSKeyEventRef;
 // These are defined in llappviewermacosx.cpp.
 bool initViewer();
 void handleQuit();
-bool runMainLoop();
+bool pumpMainLoop();
 void initMainLoop();
 void cleanupViewer();
 void handleUrl(const char* url);
@@ -95,7 +95,7 @@ void showNSCursor();
 void hideNSCursorTillMove(bool hide);
 void requestUserAttention();
 long showAlert(std::string title, std::string text, int type);
-void setResizeMode(bool oldresize, void* glview);
+float getScaleFactor(GLViewRef view); //[CR:Retina]
 
 NSWindowRef createNSWindow(int x, int y, int width, int height);
 
@@ -105,13 +105,13 @@ void glSwapBuffers(void* context);
 CGLContextObj getCGLContextObj(GLViewRef view);
 unsigned long getVramSize(GLViewRef view);
 void getContentViewBounds(NSWindowRef window, float* bounds);
+void getScaledContentViewBounds(NSWindowRef window, GLViewRef view, float* bounds);
 void getWindowSize(NSWindowRef window, float* size);
 void setWindowSize(NSWindowRef window, int width, int height);
 void getCursorPos(NSWindowRef window, float* pos);
 void makeWindowOrderFront(NSWindowRef window);
 void convertScreenToWindow(NSWindowRef window, float *coord);
 void convertWindowToScreen(NSWindowRef window, float *coord);
-void convertScreenToView(NSWindowRef window, float *coord);
 void convertRectToScreen(NSWindowRef window, float *coord);
 void convertRectFromScreen(NSWindowRef window, float *coord);
 void setWindowPos(NSWindowRef window, float* pos);
@@ -139,7 +139,7 @@ void callWindowFocus();
 void callWindowUnfocus();
 void callWindowHide();
 void callWindowUnhide();
-void callDeltaUpdate(float *delta, unsigned int mask);
+void callDeltaUpdate(double *delta, unsigned int mask);
 void callMiddleMouseDown(float *pos, unsigned int mask);
 void callMiddleMouseUp(float *pos, unsigned int mask);
 void callFocus();
@@ -163,7 +163,7 @@ void updatePreeditor(unsigned short *str);
 void setPreeditMarkedRange(int position, int length);
 void resetPreedit();
 int wstring_length(const std::basic_string<wchar_t> & wstr, const int woffset, const int utf16_length, int *unaligned);
-void setMarkedText(unsigned short *text, unsigned int *selectedRange, unsigned int *replacementRange, long text_len, attributedStringInfo segments);
+void setMarkedText(unsigned short *text, unsigned int *replacementRange, long text_len, attributedStringInfo segments);
 void getPreeditLocation(float *location, unsigned int length);
 void allowDirectMarkedTextInput(bool allow, GLViewRef glView);
 
@@ -171,5 +171,7 @@ NSWindowRef getMainAppWindow();
 GLViewRef getGLView();
 
 unsigned int getModifiers();
+void updateBadge(int count);
+void setTitle(const std::string& title);
 
 #endif // LL_LLWINDOWMACOSX_OBJC_H

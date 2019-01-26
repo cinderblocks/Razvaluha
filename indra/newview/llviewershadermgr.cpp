@@ -33,6 +33,8 @@
 
 #include "llviewerprecompiledheaders.h"
 
+#include <boost/lexical_cast.hpp>
+
 #include "llfeaturemanager.h"
 #include "llviewershadermgr.h"
 
@@ -46,6 +48,8 @@
 #include "llsky.h"
 #include "llvosky.h"
 #include "llrender.h"
+#include "lljoint.h"
+#include "llskinningutil.h"
 
 #if LL_DARWIN
 #include "OpenGL/OpenGL.h"
@@ -98,7 +102,6 @@ LLGLSLShader	gOneTextureNoColorProgram(LLViewerShaderMgr::SHADER_INTERFACE);
 LLGLSLShader	gDebugProgram(LLViewerShaderMgr::SHADER_INTERFACE);
 LLGLSLShader	gClipProgram(LLViewerShaderMgr::SHADER_INTERFACE);
 LLGLSLShader	gDownsampleDepthProgram(LLViewerShaderMgr::SHADER_INTERFACE);
-LLGLSLShader	gDownsampleDepthRectProgram(LLViewerShaderMgr::SHADER_INTERFACE);
 LLGLSLShader	gAlphaMaskProgram(LLViewerShaderMgr::SHADER_INTERFACE);
 
 LLGLSLShader	gUIProgram(LLViewerShaderMgr::SHADER_INTERFACE);
@@ -583,11 +586,15 @@ BOOL LLViewerShaderMgr::loadBasicShaders()
 	}
 	shaders.push_back( make_pair( "objects/nonindexedTextureV.glsl",		1 ) );
 
+	std::map<std::string, std::string> attribs;
+	attribs["MAX_JOINTS_PER_MESH_OBJECT"] = 
+		boost::lexical_cast<std::string>(LLSkinningUtil::getMaxJointCount());
+	
 	// We no longer have to bind the shaders to global glhandles, they are automatically added to a map now.
 	for (U32 i = 0; i < shaders.size(); i++)
 	{
 		// Note usage of GL_VERTEX_SHADER_ARB
-		if (loadShaderFile(shaders[i].first, shaders[i].second, GL_VERTEX_SHADER_ARB) == 0)
+		if (loadShaderFile(shaders[i].first, shaders[i].second, GL_VERTEX_SHADER_ARB, &attribs) == 0)
 		{
 			return FALSE;
 		}
@@ -634,7 +641,7 @@ BOOL LLViewerShaderMgr::loadBasicShaders()
 	for (U32 i = 0; i < shaders.size(); i++)
 	{
 		// Note usage of GL_FRAGMENT_SHADER_ARB
-		if (loadShaderFile(shaders[i].first, shaders[i].second, GL_FRAGMENT_SHADER_ARB, NULL, index_channels[i]) == 0)
+		if (loadShaderFile(shaders[i].first, shaders[i].second, GL_FRAGMENT_SHADER_ARB, &attribs, index_channels[i]) == 0)
 		{
 			return FALSE;
 		}
@@ -887,7 +894,6 @@ BOOL LLViewerShaderMgr::loadShadersEffects()
 			shaderUniforms.reserve(3);
 			shaderUniforms.push_back(LLStaticHashedString("inv_proj"));
 			shaderUniforms.push_back(LLStaticHashedString("prev_proj"));
-			shaderUniforms.push_back(LLStaticHashedString("screen_res"));
 		}
 
 		gPostMotionBlurProgram.mName = "Motion Blur Shader (Post)";
@@ -910,7 +916,6 @@ BOOL LLViewerShaderMgr::loadShadersEffects()
 			shaderUniforms.reserve(3);
 			shaderUniforms.push_back(LLStaticHashedString("vignette_darkness"));
 			shaderUniforms.push_back(LLStaticHashedString("vignette_radius"));
-			shaderUniforms.push_back(LLStaticHashedString("screen_res"));
 		}
 
 		gPostVignetteProgram.mName = "Vignette Shader (Post)";
@@ -946,6 +951,8 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 	}
 
 	BOOL success = TRUE;
+
+	success = loadShaderFile("deferred/components/utilityFuncF.glsl", mVertexShaderLevel[SHADER_DEFERRED], GL_FRAGMENT_SHADER_ARB);
 
 	if (success)
 	{
@@ -1226,7 +1233,7 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 	if (success)
 	{
 		std::string fragment;
-		std::string vertex = "deferred/sunLightV.glsl";
+		std::string vertex = "deferred/postDeferredNoTCV.glsl";
 
 		if (gSavedSettings.getBOOL("RenderDeferredSSAO"))
 		{
@@ -1255,7 +1262,7 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 		{
 			gDeferredSSAOProgram.mName = "Deferred Ambient Occlusion Shader";
 			gDeferredSSAOProgram.mShaderFiles.clear();
-			gDeferredSSAOProgram.mShaderFiles.push_back(make_pair("deferred/sunLightV.glsl", GL_VERTEX_SHADER_ARB));
+			gDeferredSSAOProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredNoTCV.glsl", GL_VERTEX_SHADER_ARB));
 			gDeferredSSAOProgram.mShaderFiles.push_back(make_pair("deferred/SSAOF.glsl", GL_FRAGMENT_SHADER_ARB));
 			gDeferredSSAOProgram.mShaderLevel = mVertexShaderLevel[SHADER_DEFERRED];
 			success = gDeferredSSAOProgram.createShader(NULL, NULL);
@@ -1265,7 +1272,7 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 		{
 			gDeferredDownsampleDepthNearestProgram.mName = "Deferred Nearest Downsample Depth Shader";
 			gDeferredDownsampleDepthNearestProgram.mShaderFiles.clear();
-			gDeferredDownsampleDepthNearestProgram.mShaderFiles.push_back(make_pair("deferred/sunLightV.glsl", GL_VERTEX_SHADER_ARB));
+			gDeferredDownsampleDepthNearestProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredNoTCV.glsl", GL_VERTEX_SHADER_ARB));
 			gDeferredDownsampleDepthNearestProgram.mShaderFiles.push_back(make_pair("deferred/downsampleDepthNearestF.glsl", GL_FRAGMENT_SHADER_ARB));
 			gDeferredDownsampleDepthNearestProgram.mShaderLevel = mVertexShaderLevel[SHADER_DEFERRED];
 			success = gDeferredDownsampleDepthNearestProgram.createShader(NULL, NULL);
@@ -1276,7 +1283,7 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 	{
 		gDeferredBlurLightProgram.mName = "Deferred Blur Light Shader";
 		gDeferredBlurLightProgram.mShaderFiles.clear();
-		gDeferredBlurLightProgram.mShaderFiles.push_back(make_pair("deferred/blurLightV.glsl", GL_VERTEX_SHADER_ARB));
+		gDeferredBlurLightProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredNoTCV.glsl", GL_VERTEX_SHADER_ARB));
 		gDeferredBlurLightProgram.mShaderFiles.push_back(make_pair("deferred/blurLightF.glsl", GL_FRAGMENT_SHADER_ARB));
 		gDeferredBlurLightProgram.mShaderLevel = mVertexShaderLevel[SHADER_DEFERRED];
 		success = gDeferredBlurLightProgram.createShader(NULL, NULL);
@@ -1532,7 +1539,7 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 	{
 		gDeferredSoftenProgram.mName = "Deferred Soften Shader";
 		gDeferredSoftenProgram.mShaderFiles.clear();
-		gDeferredSoftenProgram.mShaderFiles.push_back(make_pair("deferred/softenLightV.glsl", GL_VERTEX_SHADER_ARB));
+		gDeferredSoftenProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredNoTCV.glsl", GL_VERTEX_SHADER_ARB));
 		gDeferredSoftenProgram.mShaderFiles.push_back(make_pair("deferred/softenLightF.glsl", GL_FRAGMENT_SHADER_ARB));
 
 		gDeferredSoftenProgram.mShaderLevel = mVertexShaderLevel[SHADER_DEFERRED];
@@ -1549,7 +1556,7 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 	{
 		gDeferredSoftenWaterProgram.mName = "Deferred Soften Underwater Shader";
 		gDeferredSoftenWaterProgram.mShaderFiles.clear();
-		gDeferredSoftenWaterProgram.mShaderFiles.push_back(make_pair("deferred/softenLightV.glsl", GL_VERTEX_SHADER_ARB));
+		gDeferredSoftenWaterProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredNoTCV.glsl", GL_VERTEX_SHADER_ARB));
 		gDeferredSoftenWaterProgram.mShaderFiles.push_back(make_pair("deferred/softenLightF.glsl", GL_FRAGMENT_SHADER_ARB));
 
 		gDeferredSoftenWaterProgram.mShaderLevel = mVertexShaderLevel[SHADER_DEFERRED];
@@ -1665,7 +1672,7 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 		gDeferredPostGammaCorrectProgram.mName = "Deferred Gamma Correction Post Process";
 		gDeferredPostGammaCorrectProgram.mShaderFiles.clear();
 		gDeferredPostGammaCorrectProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredNoTCV.glsl", GL_VERTEX_SHADER_ARB));
-		gDeferredPostGammaCorrectProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredGammaCorrect.glsl", GL_FRAGMENT_SHADER_ARB));
+		gDeferredPostGammaCorrectProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredGammaCorrectF.glsl", GL_FRAGMENT_SHADER_ARB));
 		gDeferredPostGammaCorrectProgram.mShaderLevel = mVertexShaderLevel[SHADER_DEFERRED];
 		success = gDeferredPostGammaCorrectProgram.createShader(NULL, NULL);
 	}
@@ -1674,8 +1681,10 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 	{
 		gFXAAProgram.mName = "FXAA Shader";
 		gFXAAProgram.mShaderFiles.clear();
-		gFXAAProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredV.glsl", GL_VERTEX_SHADER_ARB));
+		gFXAAProgram.mShaderFiles.push_back(make_pair("deferred/postDeferredNoTCV.glsl", GL_VERTEX_SHADER_ARB));
 		gFXAAProgram.mShaderFiles.push_back(make_pair("deferred/fxaaF.glsl", GL_FRAGMENT_SHADER_ARB));
+		static LLCachedControl<uint32_t> fxaaQuality("FXAAQuality", 12);
+		gFXAAProgram.addPermutation("FXAA_QUALITY_M_PRESET", std::to_string(fxaaQuality.get()));
 		gFXAAProgram.mShaderLevel = mVertexShaderLevel[SHADER_DEFERRED];
 		success = gFXAAProgram.createShader(NULL, NULL);
 	}
@@ -2364,16 +2373,6 @@ BOOL LLViewerShaderMgr::loadShadersInterface()
 
 	if (success)
 	{
-		gDownsampleDepthRectProgram.mName = "DownsampleDepthRect Shader";
-		gDownsampleDepthRectProgram.mShaderFiles.clear();
-		gDownsampleDepthRectProgram.mShaderFiles.push_back(make_pair("interface/downsampleDepthV.glsl", GL_VERTEX_SHADER_ARB));
-		gDownsampleDepthRectProgram.mShaderFiles.push_back(make_pair("interface/downsampleDepthRectF.glsl", GL_FRAGMENT_SHADER_ARB));
-		gDownsampleDepthRectProgram.mShaderLevel = mVertexShaderLevel[SHADER_INTERFACE];
-		success = gDownsampleDepthRectProgram.createShader(NULL, NULL);
-	}
-
-	if (success)
-	{
 		gAlphaMaskProgram.mName = "Alpha Mask Shader";
 		gAlphaMaskProgram.mShaderFiles.clear();
 		gAlphaMaskProgram.mShaderFiles.push_back(make_pair("interface/alphamaskV.glsl", GL_VERTEX_SHADER_ARB));
@@ -2534,6 +2533,17 @@ void LLViewerShaderMgr::updateShaderUniforms(LLGLSLShader * shader)
 {
 	LLWLParamManager::getInstance()->updateShaderUniforms(shader);
 	LLWaterParamManager::getInstance()->updateShaderUniforms(shader);
+}
+
+/* virtual */ bool LLViewerShaderMgr::attachClassSharedShaders(LLGLSLShader& shader, S32 shader_class)
+{
+	switch (shader_class)
+	{
+	case LLViewerShaderMgr::SHADER_DEFERRED:
+		LL_INFOS() << "deferred/components/utilityFuncF.glsl" << LL_ENDL;
+		return shader.attachObject("deferred/components/utilityFuncF.glsl");
+	}
+	return true;
 }
 
 /*static*/ void LLShaderMgr::unloadShaderClass(int shader_class)

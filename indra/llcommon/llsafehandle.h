@@ -27,6 +27,30 @@
 #define LLSAFEHANDLE_H
 
 #include "llerror.h"	// *TODO: consider eliminating this
+#include "llsingleton.h"
+
+/*==========================================================================*|
+ ____   ___    _   _  ___ _____   _   _ ____  _____ _
+|  _ \ / _ \  | \ | |/ _ \_   _| | | | / ___|| ____| |
+| | | | | | | |  \| | | | || |   | | | \___ \|  _| | |
+| |_| | |_| | | |\  | |_| || |   | |_| |___) | |___|_|
+|____/ \___/  |_| \_|\___/ |_|    \___/|____/|_____(_)
+
+This handle class is deprecated. Unfortunately it is already in widespread use
+to reference the LLObjectSelection and LLParcelSelection classes, but do not
+apply LLSafeHandle to other classes, or declare new instances.
+
+Instead, use LLPointer or other smart pointer types with appropriate checks
+for NULL. If you're certain the reference cannot (or must not) be NULL,
+consider storing a C++ reference instead -- or use (e.g.) LLCheckedHandle.
+
+When an LLSafeHandle<T> containing NULL is dereferenced, it resolves to a
+canonical "null" T instance. This raises issues about the lifespan of the
+"null" instance. In addition to encouraging sloppy coding practices, it
+potentially masks bugs when code that performs some mutating operation
+inadvertently applies it to the "null" instance. That result might or might
+not ever affect subsequent computations.
+|*==========================================================================*/
 
 // Expands LLPointer to return a pointer to a special instance of class Type instead of NULL.
 // This is useful in instances where operations on NULL pointers are semantically safe and/or
@@ -38,18 +62,18 @@ class LLSafeHandle
 {
 public:
 	LLSafeHandle() :
-		mPointer(NULL)
+		mPointer(nullptr)
 	{
 	}
 
 	LLSafeHandle(Type* ptr) : 
-		mPointer(NULL)
+		mPointer(nullptr)
 	{
 		assign(ptr);
 	}
 
 	LLSafeHandle(const LLSafeHandle<Type>& ptr) : 
-		mPointer(NULL)
+		mPointer(nullptr)
 	{
 		assign(ptr.mPointer);
 	}
@@ -57,7 +81,7 @@ public:
 	// support conversion up the type hierarchy.  See Item 45 in Effective C++, 3rd Ed.
 	template<typename Subclass>
 	LLSafeHandle(const LLSafeHandle<Subclass>& ptr) : 
-		mPointer(NULL)
+		mPointer(nullptr)
 	{
 		assign(ptr.get());
 	}
@@ -71,17 +95,17 @@ public:
 	Type*	operator->()						{ return nonNull(mPointer); }
 
 	Type*	get() const							{ return mPointer; }
-	void	clear()								{ assign(NULL); }
+	void	clear()								{ assign(nullptr); }
 	// we disallow these operations as they expose our null objects to direct manipulation
 	// and bypass the reference counting semantics
 	//const Type&	operator*() const			{ return *nonNull(mPointer); }
 	//Type&	operator*()							{ return *nonNull(mPointer); }
 
-	operator BOOL()  const						{ return mPointer != NULL; }
-	operator bool()  const						{ return mPointer != NULL; }
-	bool operator!() const						{ return mPointer == NULL; }
-	bool isNull() const							{ return mPointer == NULL; }
-	bool notNull() const						{ return mPointer != NULL; }
+	operator BOOL()  const						{ return mPointer != nullptr; }
+	operator bool()  const						{ return mPointer != nullptr; }
+	bool operator!() const						{ return mPointer == nullptr; }
+	bool isNull() const							{ return mPointer == nullptr; }
+	bool notNull() const						{ return mPointer != nullptr; }
 
 
 	operator Type*()       const				{ return mPointer; }
@@ -112,10 +136,6 @@ public:
 		return *this; 
 	}
 
-public:
-	typedef Type* (*NullFunc)();
-	static const NullFunc sNullFunc;
-
 protected:
 	void ref()                             
 	{ 
@@ -132,7 +152,7 @@ protected:
 			Type *tempp = mPointer;
 			mPointer = NULL;
 			tempp->unref();
-			if (mPointer != NULL)
+			if (mPointer != nullptr)
 			{
 				LL_WARNS() << "Unreference did assignment to non-NULL because of destructor" << LL_ENDL;
 				unref();
@@ -150,9 +170,25 @@ protected:
 		}
 	}
 
+	// Define an LLSingleton whose sole purpose is to hold a "null instance"
+	// of the subject Type: the canonical instance to dereference if this
+	// LLSafeHandle actually holds a null pointer. We use LLSingleton
+	// specifically so that the "null instance" can be cleaned up at a well-
+	// defined time, specifically LLSingletonBase::deleteAll().
+	// Of course, as with any LLSingleton, the "null instance" is only
+	// instantiated on demand -- in this case, if you actually try to
+	// dereference an LLSafeHandle containing null.
+	class NullInstanceHolder: public LLSingleton<NullInstanceHolder>
+	{
+		LLSINGLETON_EMPTY_CTOR(NullInstanceHolder);
+		~NullInstanceHolder() {}
+	public:
+		Type mNullInstance;
+	};
+
 	static Type* nonNull(Type* ptr)
 	{
-		return ptr == NULL ? sNullFunc() : ptr;
+		return ptr? ptr : &NullInstanceHolder::instance().mNullInstance;
 	}
 
 protected:

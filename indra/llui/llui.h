@@ -29,15 +29,21 @@
 #define LL_LLUI_H
 
 #include "llrect.h"
+#include "llcoord.h"
 #include "llcontrol.h"
 #include "llcoord.h"
-#include "v2math.h"
+#include "llcontrol.h"
+#include "llglslshader.h"
 #include "llinitparam.h"
+#include "llregistry.h"
 #include "llrender2dutils.h"
 #include "llpointer.h"
 #include "lluicolor.h"
 #include "lluiimage.h"
-#include <boost/signals2.hpp>
+#include "llframetimer.h"
+#include "v2math.h"
+#include <functional>
+#include <limits>
 
 // for initparam specialization
 #include "llfontgl.h"
@@ -50,6 +56,52 @@ class LLHtmlHelp;
 class LLUUID;
 class LLWindow;
 class LLView;
+
+// this enum is used by the llview.h (viewer) and the llassetstorage.h (viewer and sim) 
+enum EDragAndDropType
+{
+	DAD_NONE			= 0,
+	DAD_TEXTURE			= 1,
+	DAD_SOUND			= 2,
+	DAD_CALLINGCARD		= 3,
+	DAD_LANDMARK		= 4,
+	DAD_SCRIPT			= 5,
+	DAD_CLOTHING 		= 6,
+	DAD_OBJECT			= 7,
+	DAD_NOTECARD		= 8,
+	DAD_CATEGORY		= 9,
+	DAD_ROOT_CATEGORY 	= 10,
+	DAD_BODYPART		= 11,
+	DAD_ANIMATION		= 12,
+	DAD_GESTURE			= 13,
+	DAD_LINK			= 14,
+	DAD_MESH            = 15,
+	DAD_WIDGET          = 16,
+	DAD_PERSON          = 17,
+	DAD_COUNT           = 18,   // number of types in this enum
+};
+
+// Reasons for drags to be denied.
+// ordered by priority for multi-drag
+enum EAcceptance
+{
+	ACCEPT_POSTPONED,	// we are asynchronously determining acceptance
+	ACCEPT_NO,			// Uninformative, general purpose denial.
+	ACCEPT_NO_CUSTOM,	// Denial with custom message.
+	ACCEPT_NO_LOCKED,	// Operation would be valid, but permissions are set to disallow it.
+	ACCEPT_YES_COPY_SINGLE,	// We'll take a copy of a single item
+	ACCEPT_YES_SINGLE,		// Accepted. OK to drag and drop single item here.
+	ACCEPT_YES_COPY_MULTI,	// We'll take a copy of multiple items
+	ACCEPT_YES_MULTI		// Accepted. OK to drag and drop multiple items here.
+};
+
+enum EAddPosition
+{
+	ADD_TOP,
+	ADD_SORTED,
+	ADD_BOTTOM
+};
+
 
 void make_ui_sound(const char* name);
 
@@ -65,6 +117,123 @@ class LLUI
 	LOG_CLASS(LLUI);
 public:
 	//
+	// Classes
+	//
+
+	struct RangeS32 
+	{
+		struct Params : public LLInitParam::Block<Params>
+		{
+			Optional<S32>	minimum,
+							maximum;
+
+			Params()
+			:	minimum("min", 0),
+				maximum("max", S32_MAX)
+			{}
+		};
+
+		// correct for inverted params
+		RangeS32(const Params& p = Params())
+		:	mMin(p.minimum),
+			mMax(p.maximum)
+		{
+			sanitizeRange();
+		}
+
+		RangeS32(S32 minimum, S32 maximum)
+		:	mMin(minimum),
+			mMax(maximum)
+		{
+			sanitizeRange();
+		}
+
+		S32 clamp(S32 input)
+		{
+			if (input < mMin) return mMin;
+			if (input > mMax) return mMax;
+			return input;
+		}
+
+		void setRange(S32 minimum, S32 maximum)
+		{
+			mMin = minimum;
+			mMax = maximum;
+			sanitizeRange();
+		}
+
+		S32 getMin() { return mMin; }
+		S32 getMax() { return mMax; }
+
+		bool operator==(const RangeS32& other) const
+		{
+			return mMin == other.mMin 
+				&& mMax == other.mMax;
+		}
+	private:
+		void sanitizeRange()
+		{
+			if (mMin > mMax)
+			{
+				LL_WARNS() << "Bad interval range (" << mMin << ", " << mMax << ")" << LL_ENDL;
+				// since max is usually the most dangerous one to ignore (buffer overflow, etc), prefer it
+				// in the case of a malformed range
+				mMin = mMax;
+			}
+		}
+
+
+		S32	mMin,
+			mMax;
+	};
+
+	struct ClampedS32 : public RangeS32
+	{
+		struct Params : public LLInitParam::Block<Params, RangeS32::Params>
+		{
+			Mandatory<S32> value;
+
+			Params()
+			:	value("", 0)
+			{
+				addSynonym(value, "value");
+			}
+		};
+
+		ClampedS32(const Params& p)
+		:	RangeS32(p), mValue(0)
+		{
+		}
+
+		ClampedS32(const RangeS32& range)
+		:	RangeS32(range)
+		{
+			// set value here, after range has been sanitized
+			mValue = clamp(0);
+		}
+
+		ClampedS32(S32 value, const RangeS32& range = RangeS32())
+		:	RangeS32(range)
+		{
+			mValue = clamp(value);
+		}
+
+		S32 get()
+		{
+			return mValue;
+		}
+
+		void set(S32 value)
+		{
+			mValue = clamp(value);
+		}
+
+
+	private:
+		S32 mValue;
+	};
+
+	//
 	// Methods
 	//
 	static void initClass(LLControlGroup* config, 
@@ -72,8 +241,9 @@ public:
 						  LLControlGroup* ignores,
 						  LLControlGroup* colors, 
 						  LLImageProviderInterface* image_provider,
-						  LLUIAudioCallback audio_callback = NULL,
-						  const LLVector2 *scale_factor = NULL,
+						  LLUIAudioCallback audio_callback = nullptr,
+
+						  const LLVector2 *scale_factor = nullptr,
 						  const std::string& language = LLStringUtil::null);
 	static void cleanupClass();
 
@@ -201,62 +371,43 @@ public:
 	typedef FACTORY_POLICY factory_policy_t;
 	typedef VISIBILITY_POLICY visibility_policy_t;
 
-	LLUIFactory()
-	{
-	}
-
-	virtual ~LLUIFactory() 
-	{ 
-	}
+	LLUIFactory() {}
+	virtual ~LLUIFactory() {}
 
 	// default show and hide methods
 	static T* showInstance(const LLSD& key = LLSD()) 
 	{ 
 		T* instance = getInstance(key); 
-		if (instance != NULL)
-		{
+		if (instance != nullptr)
 			VISIBILITY_POLICY::show(instance, key);
-		}
 		return instance;
 	}
 
 	static void hideInstance(const LLSD& key = LLSD()) 
 	{ 
 		T* instance = getInstance(key); 
-		if (instance != NULL)
-		{
+		if (instance != nullptr)
 			VISIBILITY_POLICY::hide(instance, key);
-		}
 	}
 
 	static void toggleInstance(const LLSD& key = LLSD())
 	{
-		if (instanceVisible(key))
-		{
-			hideInstance(key);
-		}
-		else
-		{
-			showInstance(key);
-		}
+		instanceVisible(key) ? hideInstance(key) : showInstance(key);
 	}
 
 	static bool instanceVisible(const LLSD& key = LLSD())
 	{
 		T* instance = FACTORY_POLICY::findInstance(key);
-		return instance != NULL && VISIBILITY_POLICY::visible(instance, key);
+		return instance != nullptr && VISIBILITY_POLICY::visible(instance, key);
 	}
 
 	static T* getInstance(const LLSD& key = LLSD()) 
 	{
 		T* instance = FACTORY_POLICY::findInstance(key);
-		if (instance == NULL)
-		{
+		if (instance == nullptr)
 			instance = FACTORY_POLICY::createInstance(key);
-		}
 		return instance;
 	}
-
 };
 
 
@@ -287,7 +438,7 @@ protected:
 	// T must derive from LLUISingleton<T>
 	LLUISingleton() { sInstance = static_cast<T*>(this); }
 
-	~LLUISingleton() { sInstance = NULL; }
+	~LLUISingleton() { sInstance = nullptr; }
 
 public:
 	static T* findInstance(const LLSD& key = LLSD())
@@ -297,10 +448,8 @@ public:
 	
 	static T* createInstance(const LLSD& key = LLSD())
 	{
-		if (sInstance == NULL)
-		{
+		if (sInstance == nullptr)
 			sInstance = new T(key);
-		}
 		return sInstance;
 	}
 
@@ -308,100 +457,20 @@ private:
 	static T*	sInstance;
 };
 
-template <class T, class U> T* LLUISingleton<T,U>::sInstance = NULL;
+template <class T, class U> T* LLUISingleton<T,U>::sInstance = nullptr;
 
 // Moved LLLocalClipRect to lllocalcliprect.h
 
-class LLCallbackRegistry
+// useful parameter blocks
+struct TimeIntervalParam : public LLInitParam::ChoiceBlock<TimeIntervalParam>
 {
-public:
-	typedef boost::signals2::signal<void()> callback_signal_t;
-	
-	void registerCallback(const callback_signal_t::slot_type& slot)
-	{
-		mCallbacks.connect(slot);
-	}
-
-	void fireCallbacks()
-	{
-		mCallbacks();
-	}
-
-private:
-	callback_signal_t mCallbacks;
+	Alternative<F32>		seconds;
+	Alternative<S32>		frames;
+	TimeIntervalParam()
+	:	seconds("seconds"),
+		frames("frames")
+	{}
 };
-
-class LLInitClassList : 
-	public LLCallbackRegistry, 
-	public LLSingleton<LLInitClassList>
-{
-	friend class LLSingleton<LLInitClassList>;
-private:
-	LLInitClassList() {}
-};
-
-class LLDestroyClassList : 
-	public LLCallbackRegistry, 
-	public LLSingleton<LLDestroyClassList>
-{
-	friend class LLSingleton<LLDestroyClassList>;
-private:
-	LLDestroyClassList() {}
-};
-
-template<typename T>
-class LLRegisterWith
-{
-public:
-	LLRegisterWith(boost::function<void ()> func)
-	{
-		T::instance().registerCallback(func);
-	}
-
-	// this avoids a MSVC bug where non-referenced static members are "optimized" away
-	// even if their constructors have side effects
-	void reference()
-	{
-#if LL_WINDOWS
-		S32 dummy;
-		dummy = 0;
-#endif /*LL_WINDOWS*/
-	}
-};
-
-template<typename T>
-class LLInitClass
-{
-public:
-	LLInitClass() { sRegister.reference(); }
-
-	static LLRegisterWith<LLInitClassList> sRegister;
-private:
-
-	static void initClass()
-	{
-		LL_ERRS() << "No static initClass() method defined for " << typeid(T).name() << LL_ENDL;
-	}
-};
-
-template<typename T>
-class LLDestroyClass
-{
-public:
-	LLDestroyClass() { sRegister.reference(); }
-
-	static LLRegisterWith<LLDestroyClassList> sRegister;
-private:
-
-	static void destroyClass()
-	{
-		LL_ERRS() << "No static destroyClass() method defined for " << typeid(T).name() << LL_ENDL;
-	}
-};
-
-template <typename T> LLRegisterWith<LLInitClassList> LLInitClass<T>::sRegister(&T::initClass);
-template <typename T> LLRegisterWith<LLDestroyClassList> LLDestroyClass<T>::sRegister(&T::destroyClass);
-
 
 template <class T>
 class LLUICachedControl : public LLCachedControl<T>
@@ -485,7 +554,7 @@ protected:
 		DERIVED* mBlock;
 	};
 
-	// specialization that initializes pointer params to NULL
+	// specialization that initializes pointer params to nullptr
 	template<typename T> 
 	class LLOptionalParam<T*>
 	{
@@ -493,7 +562,7 @@ protected:
 		typedef typename boost::add_const<T*>::type T_const;
 
 		LLOptionalParam(T_const initial_val) : mVal(initial_val), mBlock(sBlock) {}
-		LLOptionalParam() : mVal((T*)NULL), mBlock(sBlock)  {}
+		LLOptionalParam() : mVal(nullptr), mBlock(sBlock)  {}
 		LLOptionalParam(const LLOptionalParam<T*>& other) : mVal(other.mVal) {}
 
 		DERIVED& operator ()(T_const set_value) { mVal = set_value; return *mBlock; }
@@ -507,16 +576,16 @@ protected:
 	static DERIVED* sBlock;
 };
 
-template <typename T> T* LLParamBlock<T>::sBlock = NULL;
+template <typename T> T* LLParamBlock<T>::sBlock = nullptr;
 
 
 namespace LLInitParam
 {
 	template<>
-	class ParamValue<LLRect>
+	class ParamValue<LLRect> 
 	:	public CustomParamValue<LLRect>
 	{
-		typedef CustomParamValue<LLRect> super_t;
+        typedef CustomParamValue<LLRect> super_t;
 	public:
 		Optional<S32>	left,
 						top,
@@ -532,10 +601,10 @@ namespace LLInitParam
 	};
 
 	template<>
-	class ParamValue<LLUIColor>
+	class ParamValue<LLUIColor> 
 	:	public CustomParamValue<LLUIColor>
 	{
-		typedef CustomParamValue<LLUIColor> super_t;
+        typedef CustomParamValue<LLUIColor> super_t;
 
 	public:
 		Optional<F32>			red,
@@ -550,10 +619,10 @@ namespace LLInitParam
 	};
 
 	template<>
-	class ParamValue<const LLFontGL*>
+	class ParamValue<const LLFontGL*> 
 	:	public CustomParamValue<const LLFontGL* >
 	{
-		typedef CustomParamValue<const LLFontGL*> super_t;
+        typedef CustomParamValue<const LLFontGL*> super_t;
 	public:
 		Optional<std::string>	name,
 								size,

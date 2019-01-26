@@ -27,12 +27,11 @@
 #ifndef LL_LLFOLDERTYPE_H
 #define LL_LLFOLDERTYPE_H
 
-#include <string>
 #include "llassettype.h"
 
 // This class handles folder types (similar to assettype, except for folders)
 // and operations on those.
-class LL_COMMON_API LLFolderType
+class LLFolderType
 {
 public:
 	// ! BACKWARDS COMPATIBILITY ! Folder type enums must match asset type enums.
@@ -90,8 +89,10 @@ public:
 		FT_MARKETPLACE_LISTINGS = 53,
 		FT_MARKETPLACE_STOCK = 54,
 		FT_MARKETPLACE_VERSION = 55,    // Note: We actually *never* create folders with that type. This is used for icon override only.
-
 		FT_SUITCASE = 100,
+
+		FT_ANIM_OVERRIDES,
+		FT_TOXIC,
 
 		FT_COUNT,
 

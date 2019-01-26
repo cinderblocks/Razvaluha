@@ -33,11 +33,9 @@
 // are not precompiled.
 
 #if defined(LL_WINDOWS) && defined(_DEBUG)
-# if _MSC_VER >= 1400 // Visual C++ 2005 or later
 #  define _CRTDBG_MAP_ALLOC
 #  include <stdlib.h>
 #  include <crtdbg.h>
-# endif
 #endif
 
 #include "llpreprocessor.h"
@@ -51,6 +49,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <iosfwd>
+#include <memory>
 
 // Linden only libs in alpha-order other than stdtypes.h
 // *NOTE: Please keep includes here to a minimum, see above.

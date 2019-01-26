@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfoldertype.cpp
  * @brief Implementation of LLViewerFolderType functionality.
@@ -30,9 +32,7 @@
 #include "lldictionary.h"
 #include "llmemory.h"
 #include "llvisualparam.h"
-#include "llcontrol.h"
-
-extern LLControlGroup gSavedSettings;
+#include "llviewercontrol.h"
 
 static const std::string empty_string;
 
@@ -48,9 +48,9 @@ struct ViewerFolderEntry : public LLDictionaryEntry
 		) 
 		:
 		LLDictionaryEntry(dictionary_name),
-		mNewCategoryName(new_category_name),
 		mIconNameOpen(icon_name_open),
 		mIconNameClosed(icon_name_closed),
+		mNewCategoryName(new_category_name),
 		mIsQuiet(is_quiet),
 		mHideIfEmpty(hide_if_empty)
 	{
@@ -103,8 +103,7 @@ struct ViewerFolderEntry : public LLDictionaryEntry
 class LLViewerFolderDictionary : public LLSingleton<LLViewerFolderDictionary>,
 								 public LLDictionary<LLFolderType::EType, ViewerFolderEntry>
 {
-public:
-	LLViewerFolderDictionary();
+	LLSINGLETON(LLViewerFolderDictionary);
 protected:
 	bool initEnsemblesFromFile(); // Reads in ensemble information from foldertypes.xml
 };
@@ -141,22 +140,20 @@ LLViewerFolderDictionary::LLViewerFolderDictionary()
 
 	addEntry(LLFolderType::FT_BASIC_ROOT, 			new ViewerFolderEntry("Basic Root",				"inv_folder_plain_open.tga",		"inv_folder_plain_closed.tga",	FALSE,		false));
 
-	addEntry(LLFolderType::FT_SUITCASE,				new ViewerFolderEntry("My Suitcase",			"inv_folder_plain_open.tga",		"inv_folder_plain_closed.tga",	FALSE,		false));
 
 	addEntry(LLFolderType::FT_MARKETPLACE_LISTINGS, new ViewerFolderEntry("Marketplace Listings",   "Inv_SysOpen",			"Inv_SysClosed",		FALSE,     boxes_invisible));
 	addEntry(LLFolderType::FT_MARKETPLACE_STOCK,    new ViewerFolderEntry("New Stock",              "Inv_StockFolderOpen",	"Inv_StockFolderClosed",		FALSE,     false, "default"));
 	addEntry(LLFolderType::FT_MARKETPLACE_VERSION,  new ViewerFolderEntry("New Version",            "Inv_VersionFolderOpen","Inv_VersionFolderClosed",		FALSE,     false, "default"));
+	addEntry(LLFolderType::FT_SUITCASE,				new ViewerFolderEntry("My Suitcase",			"inv_folder_plain_open.tga",		"inv_folder_plain_closed.tga",	FALSE,		false));
+	addEntry(LLFolderType::FT_ANIM_OVERRIDES,		new ViewerFolderEntry("Animation Overrides",	"inv_folder_plain_open.tga",			"inv_folder_plain_closed.tga",		FALSE,	false));
 
 	addEntry(LLFolderType::FT_NONE, 				new ViewerFolderEntry("New Folder",				"inv_folder_plain_open.tga",		"inv_folder_plain_closed.tga",	FALSE,		false,	"default"));
+	addEntry(LLFolderType::FT_TOXIC, 			new ViewerFolderEntry("Firestorm",				"Inv_FolderOpenToxic",		"Inv_FolderClosedToxic",		FALSE,     false));
 
-#if SUPPORT_ENSEMBLES
-	initEnsemblesFromFile();
-#else
 	for (U32 type = (U32)LLFolderType::FT_ENSEMBLE_START; type <= (U32)LLFolderType::FT_ENSEMBLE_END; ++type)
 	{
 		addEntry((LLFolderType::EType)type, 		new ViewerFolderEntry("New Folder",				"inv_folder_plain_open.tga",		"inv_folder_plain_closed.tga",		FALSE,		false));
 	}	
-#endif
 }
 
 bool LLViewerFolderDictionary::initEnsemblesFromFile()

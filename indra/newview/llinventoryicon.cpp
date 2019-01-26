@@ -43,8 +43,7 @@ struct IconEntry : public LLDictionaryEntry
 class LLIconDictionary : public LLSingleton<LLIconDictionary>,
 						 public LLDictionary<LLInventoryType::EIconName, IconEntry>
 {
-public:
-	LLIconDictionary();
+	LLSINGLETON(LLIconDictionary);
 };
 
 LLIconDictionary::LLIconDictionary()

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 * @file llprocinfo.cpp
 * @brief Process, cpu and resource usage information APIs.
@@ -31,8 +33,8 @@
 #if LL_WINDOWS
 
 #define	PSAPI_VERSION	1
-#include "windows.h"
-#include "psapi.h"
+#include "llwin32headerslean.h"
+#include <psapi.h>
 
 #elif LL_DARWIN
 

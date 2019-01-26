@@ -144,6 +144,7 @@ filterResult_t LLViewQuery::runFilters(LLView* view, viewList_t const& children,
 
 class SortByTabOrder : public LLQuerySorter, public LLSingleton<SortByTabOrder>
 {
+	LLSINGLETON_EMPTY_CTOR(SortByTabOrder);
 	/*virtual*/ void operator() (LLView* parent, viewList_t& children) const 
 	{
 		children.sort(LLCompareByTabOrder(parent->getCtrlOrder()));

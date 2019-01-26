@@ -1,25 +1,27 @@
-/**
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+/** 
  * @file llmarketplacefunctions.cpp
  * @brief Implementation of assorted functions related to the marketplace
  *
  * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
  * version 2.1 of the License only.
- *
+ * 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
+ * 
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
@@ -29,7 +31,6 @@
 #include "llmarketplacefunctions.h"
 
 #include "llagent.h"
-#include "llbufferstream.h"
 #include "llinventoryfunctions.h"
 #include "llinventoryobserver.h"
 #include "llnotificationsutil.h"
@@ -41,8 +42,6 @@
 #include "llviewermedia.h"
 #include "llviewernetwork.h"
 #include "llviewerregion.h"
-#include "jsoncpp/reader.h" // JSON
-#include "jsoncpp/writer.h" // JSON
 #include "lleventcoro.h"
 #include "llcoros.h"
 #include "llcorehttputil.h"
@@ -66,27 +65,17 @@ std::string getLoginUriDomain()
 
 namespace {
 	
-	// Apart from well-known cases, in general this function returns the domain of the loginUri (with the "login." stripped off).
-	// This should be correct for all SL BETA grids, assuming they have the form of "login.<gridId>.lindenlab.com", in which
-	// case it returns "<gridId>.lindenlab.com".
-	//
-	// Well-known cases that deviate from this:
-	// agni      --> "secondlife.com"
-	// damballah --> "secondlife-staging.com"
-	//
 	static std::string getMarketplaceDomain()
 	{
-		std::string domain;
+		std::string domain = "undefined";
 		if (gHippoGridManager->getCurrentGrid()->isSecondLife())
 		{
 			if (gHippoGridManager->getConnectedGrid()->isInProductionGrid())
 			{
-				domain = "secondlife.com";		// agni
+				domain = "secondlife.com";
 			}
 			else
 			{
-	
-	
 				// SecondLife(tm) BETA grid.
 				// Using the login URI is a bit of a kludge, but it's the best we've got at the moment.
 				domain = utf8str_tolower(getLoginUriDomain());				// <gridid>.lindenlab.com; ie, "aditi.lindenlab.com".
@@ -110,12 +99,12 @@ namespace {
 
     static std::string getMarketplaceURL(const std::string& urlStringName)
     {
-		LLStringUtil::format_map_t domain_arg;
-		domain_arg["[MARKETPLACE_DOMAIN_NAME]"] = getMarketplaceDomain();
-	
-		std::string marketplace_url = LLTrans::getString(urlStringName, domain_arg);
-	
-		return marketplace_url;
+        LLStringUtil::format_map_t domain_arg;
+        domain_arg["[MARKETPLACE_DOMAIN_NAME]"] = getMarketplaceDomain();
+
+        std::string marketplace_url = LLTrans::getString(urlStringName, domain_arg);
+
+        return marketplace_url;
     }
 
     // Get the version folder: if there is only one subfolder, we will use it as a version folder
@@ -153,7 +142,6 @@ namespace {
         {
             // Prompt the user with the warning (so they know why things are failing)
             LLSD subs;
-            subs["[ERROR_REASON]"] = reason;
             // We do show long descriptions in the alert (unlikely to be readable). The description string will be in the log though.
             std::string description;
             if (result.has(LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS_CONTENT))
@@ -176,6 +164,16 @@ namespace {
             else
             {
                 description = result.asString();
+            }
+            std::string reason_lc = reason;
+            LLStringUtil::toLower(reason_lc);
+            if (!description.empty() && reason_lc.find("unknown") != std::string::npos)
+            {
+                subs["[ERROR_REASON]"] = "";
+            }
+            else
+            {
+                subs["[ERROR_REASON]"] = "'" + reason +"'\n";
             }
             subs["[ERROR_DESCRIPTION]"] = description;
             LLNotificationsUtil::add("MerchantTransactionFailed", subs);
@@ -213,7 +211,7 @@ namespace LLMarketplaceImport
 	bool establishMarketplaceSessionCookie();
 	bool pollStatus();
 	bool triggerImport();
-
+	
 	// Internal state variables
 
 	static std::string sMarketplaceCookie = "";
@@ -227,7 +225,7 @@ namespace LLMarketplaceImport
 	// Responders
 
     void marketplacePostCoro(std::string url)
-	{
+    {
         LLCore::HttpRequest::policy_t httpPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID);
         LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t
             httpAdapter(new LLCoreHttpUtil::HttpCoroutineAdapter("marketplacePostCoro", httpPolicy));
@@ -252,27 +250,27 @@ namespace LLMarketplaceImport
         S32 httpCode = status.getType();
         if ((httpCode == MarketplaceErrorCodes::IMPORT_REDIRECT) ||
             (httpCode == MarketplaceErrorCodes::IMPORT_AUTHENTICATION_ERROR) ||
-			// MAINT-2301 : we determined we can safely ignore that error in that context
+            // MAINT-2301 : we determined we can safely ignore that error in that context
             (httpCode == MarketplaceErrorCodes::IMPORT_JOB_TIMEOUT))
-		{
-			if (gSavedSettings.getBOOL("InventoryOutboxLogging"))
-			{
-				LL_INFOS() << " SLM POST : Ignoring time out status and treating it as success" << LL_ENDL;
-			}
+        {
+            if (gSavedSettings.getBOOL("InventoryOutboxLogging"))
+            {
+                LL_INFOS() << " SLM POST : Ignoring time out status and treating it as success" << LL_ENDL;
+            }
             httpCode = MarketplaceErrorCodes::IMPORT_DONE;
-		}
+        }
 
         if (httpCode >= MarketplaceErrorCodes::IMPORT_BAD_REQUEST)
-		{
-			if (gSavedSettings.getBOOL("InventoryOutboxLogging"))
-			{
-				LL_INFOS() << " SLM POST clearing marketplace cookie due to client or server error" << LL_ENDL;
-			}
-			sMarketplaceCookie.clear();
-		}
+        {
+            if (gSavedSettings.getBOOL("InventoryOutboxLogging"))
+            {
+                LL_INFOS() << " SLM POST clearing marketplace cookie due to client or server error" << LL_ENDL;
+            }
+            sMarketplaceCookie.clear();
+        }
 
         sImportInProgress = (httpCode == MarketplaceErrorCodes::IMPORT_DONE);
-		sImportPostPending = false;
+        sImportPostPending = false;
         sImportResultStatus = httpCode;
 
         {
@@ -280,7 +278,7 @@ namespace LLMarketplaceImport
             LLSDSerialize::toPrettyXML(result, str);
 
             LL_INFOS() << "Full results:\n" << str.str() << "\n" << LL_ENDL;
-		}
+        }
 
         result.erase(LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS);
         sImportId = result;
@@ -288,7 +286,7 @@ namespace LLMarketplaceImport
     }
 
     void marketplaceGetCoro(std::string url, bool buildHeaders)
-	{
+    {
         LLCore::HttpRequest::policy_t httpPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID);
         LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t
             httpAdapter(new LLCoreHttpUtil::HttpCoroutineAdapter("marketplaceGetCoro", httpPolicy));
@@ -300,18 +298,18 @@ namespace LLMarketplaceImport
         httpOpts->setFollowRedirects(!sMarketplaceCookie.empty());
 
         if (buildHeaders)
-		{
-            httpHeaders = LLCore::HttpHeaders::ptr_t(new LLCore::HttpHeaders);
+        {
+            httpHeaders = boost::make_shared<LLCore::HttpHeaders>();
 
             httpHeaders->append(HTTP_OUT_HEADER_ACCEPT, "*/*");
             httpHeaders->append(HTTP_OUT_HEADER_COOKIE, sMarketplaceCookie);
             httpHeaders->append(HTTP_OUT_HEADER_CONTENT_TYPE, HTTP_CONTENT_LLSD_XML);
             httpHeaders->append(HTTP_OUT_HEADER_USER_AGENT, LLViewerMedia::getCurrentUserAgent());
-		}
+        }
         else
-		{
+        {
             httpHeaders = LLViewerMedia::getHttpHeaders();
-		}
+        }
 
         LLSD result = httpAdapter->getAndSuspend(httpRequest, url, httpOpts, httpHeaders);
 
@@ -320,30 +318,30 @@ namespace LLMarketplaceImport
         LLSD resultHeaders = httpResults[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS_HEADERS];
 
         if (sMarketplaceCookie.empty() && resultHeaders.has(HTTP_IN_HEADER_SET_COOKIE))
-		{
+        {
             sMarketplaceCookie = resultHeaders[HTTP_IN_HEADER_SET_COOKIE].asString();
-		}
+        }
 
-			// MAINT-2452 : Do not clear the cookie on IMPORT_DONE_WITH_ERRORS : Happens when trying to import objects with wrong permissions
-			// ACME-1221 : Do not clear the cookie on IMPORT_NOT_FOUND : Happens for newly created Merchant accounts that are initially empty
+        // MAINT-2452 : Do not clear the cookie on IMPORT_DONE_WITH_ERRORS : Happens when trying to import objects with wrong permissions
+        // ACME-1221 : Do not clear the cookie on IMPORT_NOT_FOUND : Happens for newly created Merchant accounts that are initially empty
         S32 httpCode = status.getType();
         if ((httpCode >= MarketplaceErrorCodes::IMPORT_BAD_REQUEST) &&
             (httpCode != MarketplaceErrorCodes::IMPORT_DONE_WITH_ERRORS) &&
             (httpCode != MarketplaceErrorCodes::IMPORT_NOT_FOUND))
-		{
-			if (gSavedSettings.getBOOL("InventoryOutboxLogging"))
-			{
+        {
+            if (gSavedSettings.getBOOL("InventoryOutboxLogging"))
+            {
                 LL_INFOS() << " SLM GET clearing marketplace cookie due to client or server error" << LL_ENDL;
-			}
-			sMarketplaceCookie.clear();
-		}
+            }
+            sMarketplaceCookie.clear();
+        }
         else if (gSavedSettings.getBOOL("InventoryOutboxLogging") && (httpCode >= MarketplaceErrorCodes::IMPORT_BAD_REQUEST))
-		{
+        {
             LL_INFOS() << " SLM GET : Got error status = " << httpCode << ", but marketplace cookie not cleared." << LL_ENDL;
-		}
+        }
 
         sImportInProgress = (httpCode == MarketplaceErrorCodes::IMPORT_PROCESSING);
-		sImportGetPending = false;
+        sImportGetPending = false;
         sImportResultStatus = httpCode;
 
         result.erase(LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS);
@@ -358,38 +356,38 @@ namespace LLMarketplaceImport
 	{
 		return !sMarketplaceCookie.empty();
 	}
-
+	
 	bool inProgress()
 	{
 		return sImportInProgress;
 	}
-
+	
 	bool resultPending()
 	{
 		return (sImportPostPending || sImportGetPending);
 	}
-
+	
 	S32 getResultStatus()
 	{
-		return sImportResultStatus;
+        return sImportResultStatus;
 	}
-
+	
 	const LLSD& getResults()
 	{
 		return sImportResults;
 	}
-
+	
 	static std::string getInventoryImportURL()
 	{
 		std::string url = getMarketplaceURL("MarketplaceURL");
-
+		
 		url += "api/1/";
 		url += gAgent.getID().getString();
 		url += "/inventory/import/";
-
+		
 		return url;
 	}
-
+	
 	bool establishMarketplaceSessionCookie()
 	{
 		if (hasSessionCookie())
@@ -399,7 +397,7 @@ namespace LLMarketplaceImport
 
 		sImportInProgress = true;
 		sImportGetPending = true;
-
+		
 		std::string url = getInventoryImportURL();
 
         LLCoros::instance().launch("marketplaceGetCoro",
@@ -407,14 +405,14 @@ namespace LLMarketplaceImport
 
 		return true;
 	}
-
+	
 	bool pollStatus()
 	{
 		if (!hasSessionCookie())
 		{
 			return false;
 		}
-
+		
 		sImportGetPending = true;
 
 		std::string url = getInventoryImportURL();
@@ -423,10 +421,10 @@ namespace LLMarketplaceImport
 
         LLCoros::instance().launch("marketplaceGetCoro",
             boost::bind(&marketplaceGetCoro, url, true));
-
+        
 		return true;
 	}
-
+	
 	bool triggerImport()
 	{
 		if (!hasSessionCookie())
@@ -441,7 +439,7 @@ namespace LLMarketplaceImport
 		sImportResults = LLSD::emptyMap();
 
 		std::string url = getInventoryImportURL();
-
+		
         LLCoros::instance().launch("marketplacePostCoro",
             boost::bind(&marketplacePostCoro, url));
 
@@ -453,7 +451,6 @@ namespace LLMarketplaceImport
 //
 // Interface class
 //
-
 static const F32 MARKET_IMPORTER_UPDATE_FREQUENCY = 1.0f;
 
 //static
@@ -475,25 +472,25 @@ LLMarketplaceInventoryImporter::LLMarketplaceInventoryImporter()
 	, mImportInProgress(false)
 	, mInitialized(false)
 	, mMarketPlaceStatus(MarketplaceStatusCodes::MARKET_PLACE_NOT_INITIALIZED)
-	, mErrorInitSignal(NULL)
-	, mStatusChangedSignal(NULL)
-	, mStatusReportSignal(NULL)
+	, mErrorInitSignal(nullptr)
+	, mStatusChangedSignal(nullptr)
+	, mStatusReportSignal(nullptr)
 {
 }
 
 boost::signals2::connection LLMarketplaceInventoryImporter::setInitializationErrorCallback(const status_report_signal_t::slot_type& cb)
 {
-	if (mErrorInitSignal == NULL)
+	if (mErrorInitSignal == nullptr)
 	{
 		mErrorInitSignal = new status_report_signal_t();
 	}
-
+	
 	return mErrorInitSignal->connect(cb);
 }
 
 boost::signals2::connection LLMarketplaceInventoryImporter::setStatusChangedCallback(const status_changed_signal_t::slot_type& cb)
 {
-	if (mStatusChangedSignal == NULL)
+	if (mStatusChangedSignal == nullptr)
 	{
 		mStatusChangedSignal = new status_changed_signal_t();
 	}
@@ -503,7 +500,7 @@ boost::signals2::connection LLMarketplaceInventoryImporter::setStatusChangedCall
 
 boost::signals2::connection LLMarketplaceInventoryImporter::setStatusReportCallback(const status_report_signal_t::slot_type& cb)
 {
-	if (mStatusReportSignal == NULL)
+	if (mStatusReportSignal == nullptr)
 	{
 		mStatusReportSignal = new status_report_signal_t();
 	}
@@ -513,20 +510,20 @@ boost::signals2::connection LLMarketplaceInventoryImporter::setStatusReportCallb
 
 void LLMarketplaceInventoryImporter::initialize()
 {
-	if (mInitialized)
-	{
-		return;
-	}
+    if (mInitialized)
+    {
+        return;
+    }
 
-	if (!LLMarketplaceImport::hasSessionCookie())
-	{
-		mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_INITIALIZING;
-		LLMarketplaceImport::establishMarketplaceSessionCookie();
-	}
-	else
-	{
-		mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_MERCHANT;
-	}
+    if (!LLMarketplaceImport::hasSessionCookie())
+    {
+        mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_INITIALIZING;
+        LLMarketplaceImport::establishMarketplaceSessionCookie();
+    }
+    else
+    {
+        mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_MERCHANT;
+    }
 }
 
 void LLMarketplaceInventoryImporter::reinitializeAndTriggerImport()
@@ -540,29 +537,29 @@ void LLMarketplaceInventoryImporter::reinitializeAndTriggerImport()
 bool LLMarketplaceInventoryImporter::triggerImport()
 {
 	const bool import_triggered = LLMarketplaceImport::triggerImport();
-
+	
 	if (!import_triggered)
 	{
 		reinitializeAndTriggerImport();
 	}
-
+	
 	return import_triggered;
 }
 
 void LLMarketplaceInventoryImporter::updateImport()
 {
 	const bool in_progress = LLMarketplaceImport::inProgress();
-
+	
 	if (in_progress && !LLMarketplaceImport::resultPending())
 	{
 		const bool polling_status = LLMarketplaceImport::pollStatus();
-
+		
 		if (!polling_status)
 		{
 			reinitializeAndTriggerImport();
 		}
-	}
-
+	}	
+	
 	if (mImportInProgress != in_progress)
 	{
 		mImportInProgress = in_progress;
@@ -573,51 +570,51 @@ void LLMarketplaceInventoryImporter::updateImport()
             // Look for results success
             mInitialized = LLMarketplaceImport::hasSessionCookie();
 
-			// Report results
-			if (mStatusReportSignal)
-			{
-				(*mStatusReportSignal)(LLMarketplaceImport::getResultStatus(), LLMarketplaceImport::getResults());
-			}
-
-			if (mInitialized)
-			{
-				mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_MERCHANT;
-				// Follow up with auto trigger of import
-				if (mAutoTriggerImport)
-				{
-					mAutoTriggerImport = false;
-					mImportInProgress = triggerImport();
-				}
-			}
-			else
-			{
-				U32 status = LLMarketplaceImport::getResultStatus();
-				if ((status == MarketplaceErrorCodes::IMPORT_FORBIDDEN) ||
-					(status == MarketplaceErrorCodes::IMPORT_AUTHENTICATION_ERROR))
-				{
-					mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_NOT_MERCHANT;
-				}
+            // Report results
+            if (mStatusReportSignal)
+            {
+                (*mStatusReportSignal)(LLMarketplaceImport::getResultStatus(), LLMarketplaceImport::getResults());
+            }
+            
+            if (mInitialized)
+            {
+                mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_MERCHANT;
+                // Follow up with auto trigger of import
+                if (mAutoTriggerImport)
+                {
+                    mAutoTriggerImport = false;
+                    mImportInProgress = triggerImport();
+                }
+            }
+            else
+            {
+                U32 status = LLMarketplaceImport::getResultStatus();
+                if ((status == MarketplaceErrorCodes::IMPORT_FORBIDDEN) ||
+                    (status == MarketplaceErrorCodes::IMPORT_AUTHENTICATION_ERROR))
+                {
+                    mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_NOT_MERCHANT;
+                }
                 else if (status == MarketplaceErrorCodes::IMPORT_SERVER_API_DISABLED)
                 {
                     mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_MIGRATED_MERCHANT;
                 }
-					else
-					{
-						mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_CONNECTION_FAILURE;
-					}
-					if (mErrorInitSignal && (mMarketPlaceStatus == MarketplaceStatusCodes::MARKET_PLACE_CONNECTION_FAILURE))
-					{
-						(*mErrorInitSignal)(LLMarketplaceImport::getResultStatus(), LLMarketplaceImport::getResults());
-					}
-				}
-			}
+                else
+                {
+                    mMarketPlaceStatus = MarketplaceStatusCodes::MARKET_PLACE_CONNECTION_FAILURE;
+                }
+                if (mErrorInitSignal && (mMarketPlaceStatus == MarketplaceStatusCodes::MARKET_PLACE_CONNECTION_FAILURE))
+                {
+                    (*mErrorInitSignal)(LLMarketplaceImport::getResultStatus(), LLMarketplaceImport::getResults());
+                }
+            }
 		}
-
-		// Make sure we trigger the status change with the final state (in case of auto trigger after initialize)
-		if (mStatusChangedSignal)
-		{
-			(*mStatusChangedSignal)(mImportInProgress);
-		}
+	}
+    
+    // Make sure we trigger the status change with the final state (in case of auto trigger after initialize)
+    if (mStatusChangedSignal)
+    {
+        (*mStatusChangedSignal)(mImportInProgress);
+    }
 }
 
 //
@@ -628,7 +625,7 @@ class LLMarketplaceInventoryObserver : public LLInventoryObserver
 public:
 	LLMarketplaceInventoryObserver() {}
 	virtual ~LLMarketplaceInventoryObserver() {}
-	virtual void changed(U32 mask);
+	void changed(U32 mask) override;
 };
 
 void LLMarketplaceInventoryObserver::changed(U32 mask)
@@ -737,10 +734,10 @@ LLMarketplaceTuple::LLMarketplaceTuple(const LLUUID& folder_id, S32 listing_id, 
 // Data map
 LLMarketplaceData::LLMarketplaceData() : 
  mMarketPlaceStatus(MarketplaceStatusCodes::MARKET_PLACE_NOT_INITIALIZED),
+ mStatusUpdatedSignal(nullptr),
+ mDirtyCount(false),
  mMarketPlaceDataFetched(MarketplaceFetchCodes::MARKET_FETCH_NOT_DONE),
- mStatusUpdatedSignal(NULL),
- mDataFetchedSignal(NULL),
- mDirtyCount(false)
+ mDataFetchedSignal(nullptr)
 {
     mInventoryObserver = new LLMarketplaceInventoryObserver;
     gInventory.addObserver(mInventoryObserver);
@@ -773,7 +770,7 @@ LLSD LLMarketplaceData::getMarketplaceStringSubstitutions()
 
 void LLMarketplaceData::initializeSLM(const status_updated_signal_t::slot_type& cb)
 {
-	if (mStatusUpdatedSignal == NULL)
+	if (mStatusUpdatedSignal == nullptr)
 	{
 		mStatusUpdatedSignal = new status_updated_signal_t();
 	}
@@ -806,7 +803,9 @@ void LLMarketplaceData::getMerchantStatusCoro()
     std::string url = getSLMConnectURL("/merchant");
     if (url.empty())
     {
-        LL_INFOS("Marketplace") << "No marketplace capability on Sim" << LL_ENDL;
+        LL_WARNS("Marketplace") << "No marketplace capability on Sim" << LL_ENDL;
+        setSLMStatus(MarketplaceStatusCodes::MARKET_PLACE_CONNECTION_FAILURE);
+        return;
     }
 
     LLSD result = httpAdapter->getAndSuspend(httpRequest, url, httpOpts);
@@ -828,6 +827,15 @@ void LLMarketplaceData::getMerchantStatusCoro()
             log_SLM_infos("Get /merchant", httpCode, std::string("Merchant is not migrated"));
             setSLMStatus(MarketplaceStatusCodes::MARKET_PLACE_NOT_MIGRATED_MERCHANT);
         }
+        else if (httpCode == HTTP_INTERNAL_ERROR)
+        {
+            // 499 includes timeout and ssl error - marketplace is down or having issues, we do not show it in this request according to MAINT-5938
+            LL_WARNS("SLM") << "SLM Merchant Request failed with status: " << httpCode
+                                    << ", reason : " << status.toString()
+                                    << ", code : " << result["error_code"].asString()
+                                    << ", description : " << result["error_description"].asString() << LL_ENDL;
+            LLMarketplaceData::instance().setSLMStatus(MarketplaceStatusCodes::MARKET_PLACE_CONNECTION_FAILURE);
+        }
         else
         {
             std::string err_code = result["error_code"].asString();
@@ -844,7 +852,7 @@ void LLMarketplaceData::getMerchantStatusCoro()
 
 void LLMarketplaceData::setDataFetchedSignal(const status_updated_signal_t::slot_type& cb)
 {
-	if (mDataFetchedSignal == NULL)
+	if (mDataFetchedSignal == nullptr)
 	{
 		mDataFetchedSignal = new status_updated_signal_t();
 	}
@@ -1295,7 +1303,7 @@ void LLMarketplaceData::setSLMStatus(U32 status)
     if (mStatusUpdatedSignal)
     {
         (*mStatusUpdatedSignal)();
-	}
+    }
 }
 
 void LLMarketplaceData::setSLMDataFetched(U32 status)

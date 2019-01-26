@@ -44,22 +44,30 @@ class LLNameListItem : public LLScrollListItem, public LLHandleProvider<LLNameLi
 public:
 	bool isGroup() const { return mIsGroup; }
 	void setIsGroup(bool is_group) { mIsGroup = is_group; }
+	bool isExperience() const { return mIsExperience; }
+	void setIsExperience(bool is_experience) { mIsExperience = is_experience; }
 
 protected:
 	friend class LLNameListCtrl;
 
 	LLNameListItem( const LLScrollListItem::Params& p )
-	:	LLScrollListItem(p), mIsGroup(false)
+	:	LLScrollListItem(p), mIsGroup(false), mIsExperience(false)
 	{
 	}
 
 	LLNameListItem( const LLScrollListItem::Params& p, bool is_group )
-	:	LLScrollListItem(p), mIsGroup(is_group)
+	:	LLScrollListItem(p), mIsGroup(is_group), mIsExperience(false)
+	{
+	}
+
+	LLNameListItem( const LLScrollListItem::Params& p, bool is_group, bool is_experience )
+	:	LLScrollListItem(p), mIsGroup(is_group), mIsExperience(is_experience)
 	{
 	}
 
 private:
 	bool mIsGroup;
+	bool mIsExperience;
 };
 
 
@@ -73,7 +81,8 @@ public:
 	{
 		INDIVIDUAL,
 		GROUP,
-		SPECIAL
+		SPECIAL,
+		EXPERIENCE
 	} ENameType;
 
 	// provide names for enums
@@ -98,13 +107,24 @@ public:
 		Alternative<S32>				column_index;
 		Alternative<std::string>		column_name;
 		NameColumn()
-		:	column_name("name_column"),
-			column_index("name_column_index", 0)
+		:	column_index("name_column_index", 0),
+			column_name("name_column")
 		{}
 	};
 
+	/* Singu TODO: LLScrollListCtrl::Params
+	struct Params : public LLInitParam::Block<Params, LLScrollListCtrl::Params>
+	{
+		Optional<NameColumn>	name_column;
+		Optional<bool>	allow_calling_card_drop;
+		Optional<std::string>	name_system;
+		Params();
+	};
+	*/
+
 protected:
 	LLNameListCtrl(const std::string& name, const LLRect& rect, BOOL allow_multiple_selection, BOOL draw_border = TRUE, bool draw_heading = false, S32 name_column_index = 0, const std::string& name_system = "PhoenixNameSystem", const std::string& tooltip = LLStringUtil::null);
+	LLNameListCtrl(const Params&);
 	virtual ~LLNameListCtrl()
 	{
 		for (avatar_name_cache_connection_map_t::iterator it = mAvatarNameCacheConnections.begin(); it != mAvatarNameCacheConnections.end(); ++it)
@@ -127,7 +147,7 @@ public:
 					 BOOL enabled = TRUE, const std::string& suffix = LLStringUtil::null);
 	LLScrollListItem* addNameItem(NameItem& item, EAddPosition pos = ADD_BOTTOM);
 
-	/*virtual*/ LLScrollListItem* addElement(const LLSD& element, EAddPosition pos = ADD_BOTTOM, void* userdata = NULL);
+	/*virtual*/ LLScrollListItem* addElement(const LLSD& element, EAddPosition pos = ADD_BOTTOM, void* userdata = nullptr) override;
 	LLScrollListItem* addNameItemRow(const NameItem& value, EAddPosition pos = ADD_BOTTOM, const std::string& suffix = LLStringUtil::null);
 
 	// Add a user to the list by name.  It will be added, the name 
@@ -143,7 +163,7 @@ public:
 	/*virtual*/ BOOL	handleDragAndDrop(S32 x, S32 y, MASK mask,
 									  BOOL drop, EDragAndDropType cargo_type, void *cargo_data,
 									  EAcceptance *accept,
-									  std::string& tooltip_msg);
+									  std::string& tooltip_msg) override;
 
 	void setAllowCallingCardDrop(BOOL b) { mAllowCallingCardDrop = b; }
 
@@ -153,8 +173,9 @@ private:
 
 private:
 	S32    	 mNameColumnIndex;
+	//std::string		mNameColumn;
 	BOOL	 mAllowCallingCardDrop;
-	const LLCachedControl<S32> mNameSystem;
+	const LLCachedControl<S32> mNameSystem; // Singu Note: Instead of mShortNames
 	typedef std::map<LLUUID, boost::signals2::connection> avatar_name_cache_connection_map_t;
 	avatar_name_cache_connection_map_t mAvatarNameCacheConnections;
 
@@ -162,7 +183,7 @@ private:
 	namelist_complete_signal_t mNameListCompleteSignal;
 
 public:
-	boost::signals2::connection setOnNameListCompleteCallback(boost::function<void(bool)> onNameListCompleteCallback)
+	boost::signals2::connection setOnNameListCompleteCallback(std::function<void(bool)> onNameListCompleteCallback)
 	{
 		return mNameListCompleteSignal.connect(onNameListCompleteCallback);
 	}

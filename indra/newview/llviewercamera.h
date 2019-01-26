@@ -47,10 +47,15 @@ static LL_ALIGN_16(const LLMatrix4a) OGL_TO_CFR_ROTATION(LLVector4a( 0.f,  0.f, 
 const BOOL FOR_SELECTION = TRUE;
 const BOOL NOT_FOR_SELECTION = FALSE;
 
+// Build time optimization, generate this once in .cpp file
+#ifndef LLVIEWERCAMERA_CPP
+extern template class LLViewerCamera* LLSingleton<class LLViewerCamera>::getInstance();
+#endif
 
 LL_ALIGN_PREFIX(16)
 class LLViewerCamera : public LLCamera, public LLSingleton<LLViewerCamera>
 {
+	LLSINGLETON(LLViewerCamera);
 public:
 	void* operator new(size_t size)
 	{
@@ -77,9 +82,7 @@ public:
 		NUM_CAMERAS
 	} eCameraID;
 
-	static LLViewerCamera::eCameraID sCurCameraID;
-
-	LLViewerCamera();
+	static eCameraID sCurCameraID;
 
 	void updateCameraLocation(const LLVector3 &center,
 								const LLVector3 &up_direction,
@@ -108,20 +111,20 @@ public:
 	LLVector3 roundToPixel(const LLVector3 &pos_agent);
 
 	// Sets the current matrix
-	/* virtual */ void setView(F32 vertical_fov_rads);
+	/* virtual */ void setView(F32 vertical_fov_rads) override;
 
 	void setDefaultFOV(F32 fov) ;
 	F32 getDefaultFOV() { return mCameraFOVDefault; }
 
-	bool mSavedFOVLoaded; // <exodus/>
-	F32 getAndSaveDefaultFOV() { mSavedFOVLoaded = false; return mSavedFOVDefault = mCameraFOVDefault; } // <exodus/>
-	void setAndSaveDefaultFOV(F32 fov) { setDefaultFOV(mSavedFOVDefault = fov); } // <exodus/>
-	void loadDefaultFOV(); // <exodus/>
+	bool mSavedFOVLoaded;
+	F32 getAndSaveDefaultFOV() { mSavedFOVLoaded = false; return mSavedFOVDefault = mCameraFOVDefault; }
+	void setAndSaveDefaultFOV(F32 fov) { setDefaultFOV(mSavedFOVDefault = fov); }
+	void loadDefaultFOV();
 
 	BOOL cameraUnderWater() const;
+	BOOL areVertsVisible(LLViewerObject* volumep, BOOL all_verts);
 
 	const LLVector3 &getPointOfInterest() { return mLastPointOfInterest; }
-	BOOL areVertsVisible(LLViewerObject* volumep, BOOL all_verts);
 	F32 getPixelMeterRatio() const				{ return mPixelMeterRatio; }
 	S32 getScreenPixelArea() const				{ return mScreenPixelArea; }
 
@@ -134,14 +137,14 @@ protected:
 
 	LLStat mVelocityStat;
 	LLStat mAngularVelocityStat;
+
 	LLVector3 mVelocityDir ;
 	F32       mAverageSpeed ;
 	F32       mAverageAngularSpeed ;
-
 	mutable LLMatrix4a	mProjectionMatrix;	// Cache of perspective matrix
 	mutable LLMatrix4a	mModelviewMatrix;
 	F32					mCameraFOVDefault;
-	F32					mSavedFOVDefault; // <exodus/>
+	F32					mSavedFOVDefault;
 	F32					mCosHalfCameraFOV;
 	LLVector3			mLastPointOfInterest;
 	F32					mPixelMeterRatio; // Divide by distance from camera to get pixels per meter at that distance.

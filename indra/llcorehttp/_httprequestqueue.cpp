@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file _httprequestqueue.cpp
  * @brief 
@@ -28,6 +30,7 @@
 
 #include "_httpoperation.h"
 #include "_mutex.h"
+#include "llmessagelog.h"
 
 
 using namespace LLCoreInt;
@@ -35,7 +38,7 @@ using namespace LLCoreInt;
 namespace LLCore
 {
 
-HttpRequestQueue * HttpRequestQueue::sInstance(NULL);
+HttpRequestQueue * HttpRequestQueue::sInstance(nullptr);
 
 
 HttpRequestQueue::HttpRequestQueue()
@@ -63,13 +66,14 @@ void HttpRequestQueue::term()
 	if (sInstance)
 	{
 		sInstance->release();
-		sInstance = NULL;
+		sInstance = nullptr;
 	}
 }
 
 
-HttpStatus HttpRequestQueue::addOp(const HttpRequestQueue::opPtr_t &op)
+HttpStatus HttpRequestQueue::addOp(const HttpRequestQueue::opPtr_t &op, bool loggable /* = true */)
 {
+    if (loggable && LLMessageLog::haveLogger()) LLMessageLog::log(op);
 	bool wake(false);
 	{
 		HttpScopedLock lock(mQueueMutex);

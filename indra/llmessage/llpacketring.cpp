@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpacketring.cpp
  * @brief implementation of LLPacketRing class for a packet.
@@ -29,7 +31,7 @@
 #include "llpacketring.h"
 
 #if LL_WINDOWS
-	#include <winsock2.h>
+	#include "llwin32headerslean.h"
 #else
 	#include <sys/socket.h>
 	#include <netinet/in.h>
@@ -43,9 +45,7 @@
 #include "message.h"
 #include "u64.h"
 
-//<edit>
 #include "llmessagelog.h"
-//</edit>
 
 ///////////////////////////////////////////////////////////
 LLPacketRing::LLPacketRing () :
@@ -130,7 +130,7 @@ S32 LLPacketRing::receiveFromRing (S32 socket, char *datap)
 		return 0;
 	}
 
-	LLPacketBuffer *packetp = NULL;
+	LLPacketBuffer *packetp = nullptr;
 	if (mReceiveQueue.empty())
 	{
 		// No packets on the queue, don't give them any.
@@ -141,7 +141,7 @@ S32 LLPacketRing::receiveFromRing (S32 socket, char *datap)
 	packetp = mReceiveQueue.front();
 	mReceiveQueue.pop();
 	packet_size = packetp->getSize();
-	if (packetp->getData() != NULL)
+	if (packetp->getData() != nullptr)
 	{
 		memcpy(datap, packetp->getData(), packet_size);	/*Flawfinder: ignore*/
 	}
@@ -186,7 +186,7 @@ S32 LLPacketRing::receivePacket (S32 socket, char *datap)
 				if (mPacketsToDrop)
 				{
 					delete packetp;
-					packetp = NULL;
+					packetp = nullptr;
 					packet_size = 0;
 					mPacketsToDrop--;
 				}
@@ -201,7 +201,7 @@ S32 LLPacketRing::receivePacket (S32 socket, char *datap)
 					// Toss it.
 					LL_WARNS() << "Throwing away packet, overflowing buffer" << LL_ENDL;
 					delete packetp;
-					packetp = NULL;
+					packetp = nullptr;
 				}
 				else if (packetp->getSize())
 				{
@@ -211,7 +211,7 @@ S32 LLPacketRing::receivePacket (S32 socket, char *datap)
 				else
 				{
 					delete packetp;
-					packetp = NULL;
+					packetp = nullptr;
 					done = true;
 				}
 			}
@@ -275,11 +275,10 @@ S32 LLPacketRing::receivePacket (S32 socket, char *datap)
 }
 
 BOOL LLPacketRing::sendPacket(int h_socket, char * send_buffer, S32 buf_size, LLHost host)
-{	
-	//<edit>
-	LLMessageLog::log(LLHost(16777343, gMessageSystem->getListenPort()), host, (U8*)send_buffer, buf_size);
-	//</edit>
-
+{
+#define LOCALHOST_ADDR 16777343
+	LLMessageLog::log(LLHost(LOCALHOST_ADDR, gMessageSystem->getListenPort()), host, (U8*)send_buffer, buf_size);
+#undef LOCALHOST_ADDR
 	BOOL status = TRUE;
 	if (!mUseOutThrottle)
 	{
@@ -288,7 +287,7 @@ BOOL LLPacketRing::sendPacket(int h_socket, char * send_buffer, S32 buf_size, LL
 	else
 	{
 		mActualBitsOut += buf_size * 8;
-		LLPacketBuffer *packetp = NULL;
+		LLPacketBuffer *packetp = nullptr;
 		// See if we've got enough throttle to send a packet.
 		while (!mOutThrottle.checkOverflow(0.f))
 		{

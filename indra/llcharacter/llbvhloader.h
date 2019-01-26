@@ -30,10 +30,31 @@
 #include "v3math.h"
 #include "m3math.h"
 #include "llmath.h"
+#include "llapr.h"
 #include "llbvhconsts.h"
 
 const S32 BVH_PARSER_LINE_SIZE = 2048;
 class LLDataPacker;
+
+//------------------------------------------------------------------------
+// FileCloser
+//------------------------------------------------------------------------
+class FileCloser
+{
+public:
+	FileCloser( apr_file_t *file )
+	{
+		mFile = file;
+	}
+
+	~FileCloser()
+	{
+		apr_file_close(mFile);
+	}
+protected:
+	apr_file_t* mFile;
+};
+
 
 //------------------------------------------------------------------------
 // Key
@@ -65,22 +86,23 @@ typedef  std::vector<Key> KeyVector;
 //------------------------------------------------------------------------
 struct Joint
 {
-	Joint(const char *name)
+	Joint(const char *name) :
+		mName(name),
+		mIgnore(FALSE),
+		mIgnorePositions(FALSE),
+		mRelativePositionKey(FALSE),
+		mRelativeRotationKey(FALSE),
+		mOutName(name),
+		mNumPosKeys(0),
+		mNumRotKeys(0),
+		mChildTreeMaxDepth(0),
+		mPriority(0),
+		mNumChannels(3)
 	{
-		mName = name;
-		mIgnore = FALSE;
-		mIgnorePositions = FALSE;
-		mRelativePositionKey = FALSE;
-		mRelativeRotationKey = FALSE;
-		mOutName = name;
 		mOrder[0] = 'X';
 		mOrder[1] = 'Y';
 		mOrder[2] = 'Z';
 		mOrder[3] = 0;
-		mNumPosKeys = 0;
-		mNumRotKeys = 0;
-		mChildTreeMaxDepth = 0;
-		mPriority = 0;
 	}
 
 	// Include aligned members first
@@ -102,6 +124,7 @@ struct Joint
 	S32				mNumRotKeys;
 	S32				mChildTreeMaxDepth;
 	S32				mPriority;
+	S32				mNumChannels;
 };
 
 
@@ -204,8 +227,7 @@ class LLBVHLoader
 	friend class LLKeyframeMotion;
 public:
 	// Constructor
-//	LLBVHLoader(const char* buffer);
-	LLBVHLoader(const char* buffer, ELoadStatus &loadStatus, S32 &errorLine);
+    LLBVHLoader(const char* buffer, ELoadStatus &loadStatus, S32 &errorLine, std::map<std::string, std::string>& joint_alias_map );
 	~LLBVHLoader();
 
 /*	
@@ -244,12 +266,21 @@ public:
 	static const char *ST_NO_XLT_EMOTE;
 	static const char *ST_BAD_ROOT;
 */
+
 	// Loads the specified translation table.
 	ELoadStatus loadTranslationTable(const char *fileName);
+
+    //Create a new joint alias
+    void makeTranslation(const std::string& key, const std::string& value);
+    
+    // Loads joint aliases from XML file.
+    ELoadStatus loadAliases(const char * filename);
 
 	// Load the specified BVH file.
 	// Returns status code.
 	ELoadStatus loadBVHFile(const char *buffer, char *error_text, S32 &error_line);
+
+	void dumpBVHInfo();
 
 	// Applies translations to BVH data loaded.
 	void applyTranslations();
@@ -277,7 +308,7 @@ public:
 
 protected:
 	// Consumes one line of input from file.
-	BOOL getLine(llifstream& stream);
+	BOOL getLine(apr_file_t *fp);
 
 	// parser state
 	char		mLine[BVH_PARSER_LINE_SIZE];		/* Flawfinder: ignore */

@@ -43,8 +43,8 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class LLInventoryModelBackgroundFetch : public LLSingleton<LLInventoryModelBackgroundFetch>
 {
+	LLSINGLETON(LLInventoryModelBackgroundFetch);
 public:
-	LLInventoryModelBackgroundFetch();
 	~LLInventoryModelBackgroundFetch();
 
 	// Start and stop background breadth-first fetching of inventory contents.

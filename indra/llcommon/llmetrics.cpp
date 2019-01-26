@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmetrics.cpp
  * @author Kelly
@@ -139,7 +141,7 @@ LLMetrics::LLMetrics()
 LLMetrics::~LLMetrics()
 {
 	delete mImpl;
-	mImpl = NULL;
+	mImpl = nullptr;
 }
 
 void LLMetrics::recordEvent(const std::string& location, const std::string& mesg, bool success)

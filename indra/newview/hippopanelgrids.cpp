@@ -277,6 +277,14 @@ void HippoPanelGridsImpl::loadCurGrid()
 	refresh();
 }
 
+void spawn_gridinfo_error(const AIAlert::ErrorCode& error)
+{
+	if (error.getCode() == HTTP_METHOD_NOT_ALLOWED || error.getCode() == HTTP_OK)
+		AIAlert::add("GridInfoError", error);
+	else // Append GridInfoErrorInstruction to error message.
+		AIAlert::add("GridInfoError", AIAlert::Error(AIAlert::Prefix(), AIAlert::not_modal, error, "GridInfoErrorInstruction"));
+}
+
 // returns false, if adding new grid failed
 bool HippoPanelGridsImpl::saveCurGrid()
 {
@@ -323,28 +331,23 @@ bool HippoPanelGridsImpl::saveCurGrid()
 		gridInfo = new HippoGridInfo(gridname);
 		gridInfo->setLoginUri(loginuri);
 		gHippoGridManager->addGrid(gridInfo);
-		try
-		{
-			gridInfo->getGridInfo();
-		}
-		catch (AIAlert::ErrorCode const& error)
-		{
-			if (error.getCode() == HTTP_NOT_FOUND || error.getCode() == HTTP_METHOD_NOT_ALLOWED)
+
+		const std::string&& name("HippoGridManager");
+		LLCoros::instance().launch(name, [gridInfo]{
+			try
 			{
-				// Ignore this error; it might be a user entered entry for a grid that has no get_grid_info support.
-				LL_WARNS() << AIAlert::text(error) << LL_ENDL;
+				gridInfo->getGridInfo();
 			}
-			else if (error.getCode() == HTTP_OK)
+			catch (AIAlert::ErrorCode const& error)
 			{
-				// XML parse error.
-				AIAlert::add("GridInfoError", error);
+				if (error.getCode() == HTTP_NOT_FOUND || error.getCode() == HTTP_METHOD_NOT_ALLOWED)
+				{
+					// Ignore this error; it might be a user entered entry for a grid that has no get_grid_info support.
+					LL_WARNS() << AIAlert::text(error) << LL_ENDL;
+				}
+				else spawn_gridinfo_error(error);
 			}
-			else
-			{
-				// Append GridInfoErrorInstruction to error message.
-				AIAlert::add("GridInfoError", AIAlert::Error(AIAlert::Prefix(), AIAlert::not_modal, error, "GridInfoErrorInstruction"));
-			}
-		}
+		});
 	}
 
 	if (!gridInfo) {
@@ -405,37 +408,33 @@ void HippoPanelGridsImpl::retrieveGridInfo()
 	}
 	
 	grid->setLoginUri(loginuri);
-	try
-	{
-		grid->getGridInfo();
-
-		if (grid->getPlatform() != HippoGridInfo::PLATFORM_OTHER)
-			getChild<LLComboBox>("platform")->setCurrentByIndex(grid->getPlatform());
-		if (grid->getGridName() != "") childSetText("gridname", grid->getGridName());
-		if (grid->getLoginUri() != "") childSetText("loginuri", grid->getLoginUri());
-		if (grid->getLoginPage() != "") childSetText("loginpage", grid->getLoginPage());
-		if (grid->getHelperUri() != "") childSetText("helperuri", grid->getHelperUri());
-		if (grid->getWebSite() != "") childSetText("website", grid->getWebSite());
-		if (grid->getSupportUrl() != "") childSetText("support", grid->getSupportUrl());
-		if (grid->getRegisterUrl() != "") childSetText("register", grid->getRegisterUrl());
-		if (grid->getPasswordUrl() != "") childSetText("password", grid->getPasswordUrl());
-		if (grid->getSearchUrl() != "") childSetText("search", grid->getSearchUrl());
-		if (grid->getGridMessage() != "") childSetText("gridmessage", grid->getGridMessage());
-	}
-	catch(AIAlert::ErrorCode const& error)
-	{
-		if (error.getCode() == HTTP_METHOD_NOT_ALLOWED || error.getCode() == HTTP_OK)
+	auto handle = getHandle();
+	LLCoros::instance().launch("HippoGridManager", [=]{
+		try
 		{
-			AIAlert::add("GridInfoError", error);
-		}
-		else
-		{
-			// Append GridInfoErrorInstruction to error message.
-			AIAlert::add("GridInfoError", AIAlert::Error(AIAlert::Prefix(), AIAlert::not_modal, error, "GridInfoErrorInstruction"));
-		}
-	}
+			grid->getGridInfo();
+			if (handle.isDead()) return;
 
-	if (cleanupGrid) delete grid;
+			if (grid->getPlatform() != HippoGridInfo::PLATFORM_OTHER)
+				getChild<LLComboBox>("platform")->setCurrentByIndex(grid->getPlatform());
+			if (grid->getGridName() != "") childSetText("gridname", grid->getGridName());
+			if (grid->getLoginUri() != "") childSetText("loginuri", grid->getLoginUri());
+			if (grid->getLoginPage() != "") childSetText("loginpage", grid->getLoginPage());
+			if (grid->getHelperUri() != "") childSetText("helperuri", grid->getHelperUri());
+			if (grid->getWebSite() != "") childSetText("website", grid->getWebSite());
+			if (grid->getSupportUrl() != "") childSetText("support", grid->getSupportUrl());
+			if (grid->getRegisterUrl() != "") childSetText("register", grid->getRegisterUrl());
+			if (grid->getPasswordUrl() != "") childSetText("password", grid->getPasswordUrl());
+			if (grid->getSearchUrl() != "") childSetText("search", grid->getSearchUrl());
+			if (grid->getGridMessage() != "") childSetText("gridmessage", grid->getGridMessage());
+		}
+		catch(AIAlert::ErrorCode const& error)
+		{
+			spawn_gridinfo_error(error);
+		}
+
+		if (cleanupGrid) delete grid;
+	});
 }
 
 

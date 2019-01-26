@@ -77,8 +77,8 @@ enum EReportType
 class LLFloaterReporter
 :	public LLFloater, public LLSingleton<LLFloaterReporter>
 {
+	LLSINGLETON(LLFloaterReporter);
 public:
-	LLFloaterReporter();
 	/*virtual*/ ~LLFloaterReporter();
 	/*virtual*/ BOOL postBuild();
 	virtual void draw();

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 * @file llpathfindingobject.cpp
 * @brief Implementation of llpathfindingobject
@@ -29,8 +31,6 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llpathfindingobject.h"
-
-#include <string>
 
 #include "llavatarname.h"
 #include "llavatarnamecache.h"
@@ -173,6 +173,7 @@ void LLPathfindingObject::fetchOwnerName()
 		mHasOwnerName = LLAvatarNameCache::get(mOwnerUUID, &mOwnerName);
 		if (!mHasOwnerName)
 		{
+			disconnectAvatarNameCacheConnection();
 			mAvatarNameCacheConnection = LLAvatarNameCache::get(mOwnerUUID, boost::bind(&LLPathfindingObject::handleAvatarNameFetch, this, _1, _2));
 		}
 	}

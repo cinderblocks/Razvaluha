@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llavatarnamecache.cpp
  * @brief Provides lookup of avatar SLIDs ("bobsmith123") and display names
@@ -44,6 +46,8 @@
 #include "llcoros.h"
 #include "lleventcoro.h"
 #include "llcorehttputil.h"
+#include "llexception.h"
+#include "stringize.h"
 
 #include <map>
 #include <set>
@@ -197,7 +201,7 @@ void LLAvatarNameCache::requestAvatarNameCache_(std::string url, std::vector<LLU
         << " with url '" << url << "', requesting " << agentIds.size() << " Agent Ids" << LL_ENDL;
 
     try
-	{
+    {
         bool success = true;
 
         LLCoreHttpUtil::HttpCoroutineAdapter httpAdapter("NameCache", LLAvatarNameCache::sHttpPolicy);
@@ -207,7 +211,7 @@ void LLAvatarNameCache::requestAvatarNameCache_(std::string url, std::vector<LLU
         LL_DEBUGS() << results << LL_ENDL;
 
         if (!results.isMap())
-		{
+        {
             LL_WARNS("AvNameCache") << " Invalid result returned from LLCoreHttpUtil::HttpCoroHandler." << LL_ENDL;
             success = false;
         }
@@ -231,8 +235,8 @@ void LLAvatarNameCache::requestAvatarNameCache_(std::string url, std::vector<LLU
                 const LLUUID& agent_id = *it;
                 LLAvatarNameCache::handleAgentError(agent_id);
             }
-			return;
-		}
+            return;
+        }
 
         LLAvatarNameCache::handleAvNameCacheSuccess(results, httpResults);
 
@@ -243,7 +247,10 @@ void LLAvatarNameCache::requestAvatarNameCache_(std::string url, std::vector<LLU
     }
     catch (...)
     {
-        LL_WARNS() << "Caught unknown exception." << LL_ENDL;
+        LOG_UNHANDLED_EXCEPTION(STRINGIZE("coroutine " << LLCoros::instance().getName()
+                                          << "('" << url << "', " << agentIds.size()
+                                          << " Agent Ids)"));
+        throw;
     }
 }
 
@@ -251,53 +258,53 @@ void LLAvatarNameCache::handleAvNameCacheSuccess(const LLSD &data, const LLSD &h
 {
 
     LLSD headers = httpResult["headers"];
-	// Pull expiration out of headers if available
+    // Pull expiration out of headers if available
     F64 expires = LLAvatarNameCache::nameExpirationFromHeaders(headers);
-	F64 now = LLFrameTimer::getTotalSeconds();
+    F64 now = LLFrameTimer::getTotalSeconds();
 
     const LLSD& agents = data["agents"];
-	LLSD::array_const_iterator it = agents.beginArray();
+    LLSD::array_const_iterator it = agents.beginArray();
     for (; it != agents.endArray(); ++it)
-	{
-		const LLSD& row = *it;
-		LLUUID agent_id = row["id"].asUUID();
+    {
+        const LLSD& row = *it;
+        LLUUID agent_id = row["id"].asUUID();
 
-		LLAvatarName av_name;
-		av_name.fromLLSD(row);
+			LLAvatarName av_name;
+			av_name.fromLLSD(row);
 
-		// Use expiration time from header
-		av_name.mExpires = expires;
+			// Use expiration time from header
+			av_name.mExpires = expires;
 
-		LL_DEBUGS("AvNameCache") << "LLAvatarNameResponder::result for " << agent_id << LL_ENDL;
-		av_name.dump();
-		
-		// cache it and fire signals
-		LLAvatarNameCache::processName(agent_id, av_name);
-	}
+			LL_DEBUGS("AvNameCache") << "LLAvatarNameResponder::result for " << agent_id << LL_ENDL;
+			av_name.dump();
+			
+			// cache it and fire signals
+			LLAvatarNameCache::processName(agent_id, av_name);
+		}
 
-	// Same logic as error response case
+    // Same logic as error response case
     const LLSD& unresolved_agents = data["bad_ids"];
-	S32  num_unresolved = unresolved_agents.size();
-	if (num_unresolved > 0)
-	{
+    S32  num_unresolved = unresolved_agents.size();
+    if (num_unresolved > 0)
+    {
         LL_WARNS("AvNameCache") << "LLAvatarNameResponder::result " << num_unresolved << " unresolved ids; "
-                                << "expires in " << expires - now << " seconds"
-                                << LL_ENDL;
-		it = unresolved_agents.beginArray();
+            << "expires in " << expires - now << " seconds"
+            << LL_ENDL;
+        it = unresolved_agents.beginArray();
         for (; it != unresolved_agents.endArray(); ++it)
-		{
-			const LLUUID& agent_id = *it;
+        {
+            const LLUUID& agent_id = *it;
 
-			LL_WARNS("AvNameCache") << "LLAvatarNameResponder::result "
-                                    << "failed id " << agent_id
-                                    << LL_ENDL;
+				LL_WARNS("AvNameCache") << "LLAvatarNameResponder::result "
+                                        << "failed id " << agent_id
+                                        << LL_ENDL;
 
             LLAvatarNameCache::handleAgentError(agent_id);
-		}
-	}
-    LL_DEBUGS("AvNameCache") << "LLAvatarNameResponder::result " 
-	     << LLAvatarNameCache::sCache.size() << " cached names"
-	     << LL_ENDL;
+        }
+    }
+    LL_DEBUGS("AvNameCache") << "LLAvatarNameResponder::result "
+        << LLAvatarNameCache::sCache.size() << " cached names"
+        << LL_ENDL;
 }
 
 // Provide some fallback for agents that return errors
@@ -308,7 +315,7 @@ void LLAvatarNameCache::handleAgentError(const LLUUID& agent_id)
     {
         // there is no existing cache entry, so make a temporary name from legacy
         LL_WARNS("AvNameCache") << "LLAvatarNameCache get legacy for agent "
-                                << agent_id << LL_ENDL;
+								<< agent_id << LL_ENDL;
         gCacheName->get(agent_id, false,  // legacy compatibility
                         boost::bind(&LLAvatarNameCache::legacyNameFetch, _1, _2, _3));
     }
@@ -347,7 +354,7 @@ void LLAvatarNameCache::processName(const LLUUID& agent_id, const LLAvatarName& 
 		sSignalMap.erase(agent_id);
 
 		delete signal;
-		signal = NULL;
+		signal = nullptr;
 	}
 }
 
@@ -401,9 +408,9 @@ void LLAvatarNameCache::requestNamesViaCapability()
 		}
 	}
 
-	if (!url.empty())
-	{
-        LL_DEBUGS("AvNameCache") << "LLAvatarNameCache::requestNamesViaCapability requested " << ids << " ids" << LL_ENDL;
+    if (!url.empty())
+    {
+        LL_DEBUGS("AvNameCache") << "requested " << ids << " ids" << LL_ENDL;
 
         std::string coroname = 
             LLCoros::instance().launch("LLAvatarNameCache::requestAvatarNameCache_",
@@ -434,13 +441,13 @@ void LLAvatarNameCache::legacyNameFetch(const LLUUID& agent_id,
 {
 	LL_DEBUGS("AvNameCache") << "LLAvatarNameCache agent " << agent_id << " "
 							 << "full name '" << full_name << "'"
-							 << ( is_group ? " [group]" : "" )
-							 << LL_ENDL;
-
+	                         << ( is_group ? " [group]" : "" )
+	                         << LL_ENDL;
+	
 	// Construct an av_name record from this name.
 	LLAvatarName av_name;
 	av_name.fromString(full_name);
-
+	
 	// Add to cache: we're still using the new cache even if we're using the old (legacy) protocol.
 	processName(agent_id, av_name);
 }
@@ -449,7 +456,6 @@ void LLAvatarNameCache::requestNamesViaLegacy()
 {
 	static const S32 MAX_REQUESTS = 100;
 	F64 now = LLFrameTimer::getTotalSeconds();
-	std::string full_name;
 	ask_queue_t::const_iterator it;
 	for (S32 requests = 0; !sAskQueue.empty() && requests < MAX_REQUESTS; ++requests)
 	{
@@ -473,9 +479,9 @@ void LLAvatarNameCache::initClass(bool running, bool usePeopleAPI)
 	sRunning = running;
 	sUsePeopleAPI = usePeopleAPI;
 
-    sHttpRequest = LLCore::HttpRequest::ptr_t(new LLCore::HttpRequest());
-    sHttpHeaders = LLCore::HttpHeaders::ptr_t(new LLCore::HttpHeaders());
-    sHttpOptions = LLCore::HttpOptions::ptr_t(new LLCore::HttpOptions());
+    sHttpRequest = boost::make_shared<LLCore::HttpRequest>();
+    sHttpHeaders = boost::make_shared<LLCore::HttpHeaders>();
+    sHttpOptions = boost::make_shared<LLCore::HttpOptions>();
     sHttpPolicy = LLCore::HttpRequest::DEFAULT_POLICY_ID;
     sHttpPriority = 0;
 }
@@ -485,7 +491,7 @@ void LLAvatarNameCache::cleanupClass()
     sHttpRequest.reset();
     sHttpHeaders.reset();
     sHttpOptions.reset();
-	sCache.clear();
+    sCache.clear();
 }
 
 bool LLAvatarNameCache::importFile(std::istream& istr)
@@ -661,7 +667,7 @@ bool LLAvatarNameCache::get(const LLUUID& agent_id, LLAvatarName *av_name)
 					sAskQueue.insert(agent_id);
 				}
 			}
-			
+				
 			return true;
 		}
 		else if (!usePeopleAPI())
@@ -805,21 +811,43 @@ void LLAvatarNameCache::insert(const LLUUID& agent_id, const LLAvatarName& av_na
 	sCache[agent_id] = av_name;
 }
 
+LLUUID LLAvatarNameCache::findIdByName(const std::string& name)
+{
+    std::map<LLUUID, LLAvatarName>::iterator it;
+    std::map<LLUUID, LLAvatarName>::iterator end = sCache.end();
+    for (it = sCache.begin(); it != end; ++it)
+    {
+        if (it->second.getUserName() == name)
+        {
+            return it->first;
+        }
+    }
+
+    // Legacy method
+    LLUUID id;
+    if (gCacheName->getUUID(name, id))
+    {
+        return id;
+    }
+
+    return LLUUID::null;
+}
+
 #if 0
 F64 LLAvatarNameCache::nameExpirationFromHeaders(LLCore::HttpHeaders *headers)
 {
-	F64 expires = 0.0;
-	if (expirationFromCacheControl(headers, &expires))
-	{
-		return expires;
-	}
-	else
-	{
-		// With no expiration info, default to an hour
-		const F64 DEFAULT_EXPIRES = 60.0 * 60.0;
-		F64 now = LLFrameTimer::getTotalSeconds();
-		return now + DEFAULT_EXPIRES;
-	}
+    F64 expires = 0.0;
+    if (expirationFromCacheControl(headers, &expires))
+    {
+        return expires;
+    }
+    else
+    {
+        // With no expiration info, default to an hour
+        const F64 DEFAULT_EXPIRES = 60.0 * 60.0;
+        F64 now = LLFrameTimer::getTotalSeconds();
+        return now + DEFAULT_EXPIRES;
+    }
 }
 
 bool LLAvatarNameCache::expirationFromCacheControl(LLCore::HttpHeaders *headers, F64 *expires)
@@ -890,7 +918,7 @@ bool LLAvatarNameCache::expirationFromCacheControl(const LLSD& headers, F64 *exp
 		<< ( fromCacheControl ? "expires based on cache control " : "default expiration " )
 		<< "in " << *expires - now << " seconds"
 		<< LL_ENDL;
-
+	
 	return fromCacheControl;
 }
 #endif
@@ -937,23 +965,25 @@ bool max_age_from_cache_control(const std::string& cache_control, S32 *max_age)
 			if (subtoken_it == subtokens.end()) return false;
 			subtoken = *subtoken_it;
 
-			// Must be a valid integer
-			// *NOTE: atoi() returns 0 for invalid values, so we have to
-			// check the string first.
-			// *TODO: Do servers ever send "0000" for zero?  We don't handle it
 			LLStringUtil::trim(subtoken);
-			if (subtoken == "0")
+
+			try
 			{
-				*max_age = 0;
-				return true;
+				S32 val = std::stoi(subtoken);
+				if (val >= 0 && val < S32_MAX)
+				{
+					*max_age = val;
+					return true;
+				}
 			}
-			S32 val = atoi( subtoken.c_str() );
-			if (val > 0 && val < S32_MAX)
+			catch (const std::invalid_argument&)
 			{
-				*max_age = val;
-				return true;
+				LL_WARNS("AvNameCache") << "Could not convert '" << subtoken << "' to integer" << LL_ENDL;
 			}
-			return false;
+			catch (const std::out_of_range&)
+			{
+				LL_WARNS("AvNameCache") << "Could not convert '" << subtoken << "' to integer" << LL_ENDL;
+			}
 		}
 	}
 	return false;

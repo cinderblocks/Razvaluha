@@ -918,25 +918,30 @@ void lggHunSpell_Wrapper::newDictSelection(std::string selection)
 
 void lggHunSpell_Wrapper::getMoreButton(void* data)
 {
-	std::vector<std::string> shortNames;
-	std::vector<std::string> longNames;
-	LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t httpAdapter(new LLCoreHttpUtil::HttpCoroutineAdapter("SHClientTagMgr", LLCore::HttpRequest::DEFAULT_POLICY_ID));
-	LLSD response = httpAdapter->getAndSuspend(LLCore::HttpRequest::ptr_t(new LLCore::HttpRequest), gSavedSettings.getString("SpellDownloadURL")+"dic_list.xml");
-	if (response.has("body"))
-	{
-		const LLSD &dict_list = response["body"];
-		if (dict_list.has("isComplete"))
+	const std::string&& name = "SHClientTagMgr";
+	LLCoros::instance().launch(name, [=] {
+		LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t httpAdapter(new LLCoreHttpUtil::HttpCoroutineAdapter(name, LLCore::HttpRequest::DEFAULT_POLICY_ID));
+		LLSD response = httpAdapter->getAndSuspend(LLCore::HttpRequest::ptr_t(new LLCore::HttpRequest), gSavedSettings.getString("SpellDownloadURL")+"dic_list.xml");
+		if (response.has("body"))
 		{
-			LLSD dics = dict_list["data"];
-			for (int i = 0; i < dics.size(); i++)
+			const LLSD &dict_list = response["body"];
+			if (dict_list.has("isComplete"))
 			{
-				std::string dicFullName = dictName2FullName(dics[i].asString());
-				longNames.push_back(dicFullName);
-				shortNames.push_back(fullName2DictName(dicFullName));
+				std::vector<std::string> shortNames;
+				std::vector<std::string> longNames;
+				LLSD dics = dict_list["data"];
+				for (int i = 0; i < dics.size(); i++)
+				{
+					std::string dicFullName = dictName2FullName(dics[i].asString());
+					longNames.push_back(dicFullName);
+					shortNames.push_back(fullName2DictName(dicFullName));
+				}
+				// Note for future contributors: We know the UI will be there because show calls showInstance and that assures an instance,
+				// should this change, we should grab a handle and use that to populate values if it's not dead. ~Liru
+				LggDicDownload::show(true,shortNames,longNames, data);	
 			}
-			LggDicDownload::show(true,shortNames,longNames, data);	
 		}
-	}
+	});
 }
 
 void lggHunSpell_Wrapper::editCustomButton()

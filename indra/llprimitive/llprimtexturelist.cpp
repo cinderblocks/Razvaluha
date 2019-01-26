@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltexturelist.cpp
  * @brief LLPrimTextureList (virtual) base class
@@ -70,7 +72,7 @@ void LLPrimTextureList::clear()
 	while (itr != mEntryList.end())
 	{
 		delete (*itr);
-		(*itr) = NULL;
+		(*itr) = nullptr;
 		++itr;
 	}
 	mEntryList.clear();
@@ -173,7 +175,7 @@ LLTextureEntry* LLPrimTextureList::getTexture(const U8 index) const
 	{
 		return mEntryList[index];
 	}
-	return NULL;
+	return nullptr;
 }
 
 //virtual 

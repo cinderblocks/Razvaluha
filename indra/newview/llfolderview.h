@@ -45,7 +45,6 @@
 
 #include "lluictrl.h"
 #include "v4color.h"
-#include "stdenums.h"
 #include "lldepthstack.h"
 #include "lleditmenuhandler.h"
 #include "llfontgl.h"
@@ -248,6 +247,7 @@ public:
 	void setNeedsAutoRename(BOOL val) { mNeedsAutoRename = val; }
 	void setPinningSelectedItem(BOOL val) { mPinningSelectedItem = val; }
 	void setAutoSelectOverride(BOOL val) { mAutoSelectOverride = val; }
+	bool getAutoSelectOverride() const { return mAutoSelectOverride; }
 
 	BOOL getDebugFilters() { return mDebugFilters; }
 

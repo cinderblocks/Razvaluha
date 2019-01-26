@@ -33,8 +33,6 @@
 
 #include "linden_common.h"
 
-#include "llboost.h"
-
 #include "llradiogroup.h"
 #include "indra_constants.h"
 
@@ -43,6 +41,9 @@
 #include "llcontrol.h"
 #include "llui.h"
 #include "llfocusmgr.h"
+#include "lluictrlfactory.h"
+#include "llsdutil.h"
+#include <boost\tokenizer.hpp>
 
 static LLRegisterWidget<LLRadioGroup> r("radio_group");
 

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llthread.cpp
  *
@@ -24,9 +26,9 @@
  */
 
 #include "linden_common.h"
-#include <apr_pools.h>
-#include <apr_queue.h>
+#include "llapr.h"
 #include "llthreadsafequeue.h"
+#include "llexception.h"
 
 
 
@@ -35,31 +37,31 @@
 
 
 LLThreadSafeQueueImplementation::LLThreadSafeQueueImplementation(apr_pool_t * pool, unsigned int capacity):
-	mOwnsPool(pool == 0),
+	mOwnsPool(pool == nullptr),
 	mPool(pool),
-	mQueue(0)
+	mQueue(nullptr)
 {
 	if(mOwnsPool) {
-		apr_status_t status = apr_pool_create(&mPool, 0);
-		if(status != APR_SUCCESS) throw LLThreadSafeQueueError("failed to allocate pool");
+		apr_status_t status = apr_pool_create(&mPool, nullptr);
+		if(status != APR_SUCCESS) LLTHROW(LLThreadSafeQueueError("failed to allocate pool"));
 	} else {
 		; // No op.
 	}
-
+	
 	apr_status_t status = apr_queue_create(&mQueue, capacity, mPool);
-	if(status != APR_SUCCESS) throw LLThreadSafeQueueError("failed to allocate queue");
+	if(status != APR_SUCCESS) LLTHROW(LLThreadSafeQueueError("failed to allocate queue"));
 }
 
 
 LLThreadSafeQueueImplementation::~LLThreadSafeQueueImplementation()
 {
-	if(mQueue != 0) {
+	if(mQueue != nullptr) {
 		if(apr_queue_size(mQueue) != 0) LL_WARNS() << 
 			"terminating queue which still contains " << apr_queue_size(mQueue) <<
 			" elements;" << "memory will be leaked" << LL_ENDL;
 		apr_queue_term(mQueue);
 	}
-	if(mOwnsPool && (mPool != 0)) apr_pool_destroy(mPool);
+	if(mOwnsPool && (mPool != nullptr)) apr_pool_destroy(mPool);
 }
 
 
@@ -68,9 +70,9 @@ void LLThreadSafeQueueImplementation::pushFront(void * element)
 	apr_status_t status = apr_queue_push(mQueue, element);
 	
 	if(status == APR_EINTR) {
-		throw LLThreadSafeQueueInterrupt();
+		LLTHROW(LLThreadSafeQueueInterrupt());
 	} else if(status != APR_SUCCESS) {
-		throw LLThreadSafeQueueError("push failed");
+		LLTHROW(LLThreadSafeQueueError("push failed"));
 	} else {
 		; // Success.
 	}
@@ -84,16 +86,16 @@ bool LLThreadSafeQueueImplementation::tryPushFront(void * element){
 
 void * LLThreadSafeQueueImplementation::popBack(void)
 {
-	void * element;
+	void * element = nullptr;
 	apr_status_t status = apr_queue_pop(mQueue, &element);
 
 	if(status == APR_EINTR) {
-		throw LLThreadSafeQueueInterrupt();
-	} else if(status != APR_SUCCESS) {
-		throw LLThreadSafeQueueError("pop failed");
-	} else {
-		return element;
+		LLTHROW(LLThreadSafeQueueInterrupt());
 	}
+	else if (status != APR_SUCCESS) {
+		LLTHROW(LLThreadSafeQueueError("pop failed"));
+	}
+	return element;
 }
 
 

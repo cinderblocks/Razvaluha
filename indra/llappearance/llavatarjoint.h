@@ -48,7 +48,7 @@ public:
 	LLAvatarJoint();
 	LLAvatarJoint(S32 joint_num);
 	// *TODO: Only used for LLVOAvatarSelf::mScreenp.  *DOES NOT INITIALIZE mResetAfterRestoreOldXform*
-	LLAvatarJoint(const std::string &name, LLJoint *parent = NULL);
+	LLAvatarJoint(const std::string &name, LLJoint *parent = nullptr);
 	virtual ~LLAvatarJoint();
 
 	// Gets the validity of this joint
@@ -127,18 +127,8 @@ public:
 	LLAvatarJointCollisionVolume();
 	virtual ~LLAvatarJointCollisionVolume() {};
 
-	void* operator new(size_t size)
-	{
-		return ll_aligned_malloc_16(size);
-	}
-
-	void operator delete(void* ptr)
-	{
-		ll_aligned_free_16(ptr);
-	}
-
-	/*virtual*/ BOOL inheritScale() { return TRUE; }
-	/*virtual*/ U32 render( F32 pixelArea, BOOL first_pass = TRUE, BOOL is_dummy = FALSE );
+	/*virtual*/ BOOL inheritScale() override { return TRUE; }
+	/*virtual*/ U32 render( F32 pixelArea, BOOL first_pass = TRUE, BOOL is_dummy = FALSE ) override;
 
 	void renderCollision();
 

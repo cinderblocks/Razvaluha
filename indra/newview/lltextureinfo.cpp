@@ -29,23 +29,19 @@
 #include "lltextureinfo.h"
 #include "lltexturestats.h"
 #include "llviewercontrol.h"
-#include "lltrace.h"
 
-static LLTrace::CountStatHandle<S32> sTextureDownloadsStarted("texture_downloads_started", "number of texture downloads initiated");
-static LLTrace::CountStatHandle<S32> sTextureDownloadsCompleted("texture_downloads_completed", "number of texture downloads completed");
-static LLTrace::CountStatHandle<S32Bytes > sTextureDataDownloaded("texture_data_downloaded", "amount of texture data downloaded");
-static LLTrace::CountStatHandle<U32Milliseconds > sTexureDownloadTime("texture_download_time", "amount of time spent fetching textures");
-
-LLTextureInfo::LLTextureInfo(bool postponeStartRecoreder) :
+LLTextureInfo::LLTextureInfo() : 
 	mLogTextureDownloadsToViewerLog(false),
 	mLogTextureDownloadsToSimulator(false),
+	mTotalBytes(0),
+	mTotalMilliseconds(0),
+	mTextureDownloadsStarted(0),
+	mTextureDownloadsCompleted(0),
 	mTextureDownloadProtocol("NONE"),
-	mTextureLogThreshold(LLUnits::Kilobytes::fromValue(100))
+	mTextureLogThreshold(LLUnits::Kilobytes::fromValue(100)),
+	mCurrentStatsBundleStartTime(0)
 {
-	if (!postponeStartRecoreder)
-{
-		startRecording();
-	}
+	mTextures.clear();
 }
 
 void LLTextureInfo::setUpLogging(bool writeToViewerLog, bool sendToSim, U32Bytes textureLogThreshold)
@@ -90,7 +86,7 @@ void LLTextureInfo::setRequestStartTime(const LLUUID& id, U64 startTime)
 		addRequest(id);
 	}
 	mTextures[id]->mStartTime = (U64Microseconds)startTime;
-	add(sTextureDownloadsStarted, 1);
+	mTextureDownloadsStarted++;
 }
 
 void LLTextureInfo::setRequestSize(const LLUUID& id, U32 size)
@@ -161,11 +157,12 @@ void LLTextureInfo::setRequestCompleteTimeAndLog(const LLUUID& id, U64Microsecon
 
 	if(mLogTextureDownloadsToSimulator)
 	{
-		add(sTextureDataDownloaded, details.mSize);
-		add(sTexureDownloadTime, details.mCompleteTime - details.mStartTime);
-		add(sTextureDownloadsCompleted, 1);
+		U32Bytes texture_stats_upload_threshold = mTextureLogThreshold;
+		mTotalBytes += details.mSize;
+		mTotalMilliseconds += details.mCompleteTime - details.mStartTime;
+		mTextureDownloadsCompleted++;
 		mTextureDownloadProtocol = protocol;
-		if (mRecording.getSum(sTextureDataDownloaded) >= mTextureLogThreshold)
+		if (mTotalBytes >= texture_stats_upload_threshold)
 		{
 			LLSD texture_data;
 			std::stringstream startTime;
@@ -187,35 +184,27 @@ LLSD LLTextureInfo::getAverages()
 {
 	LLSD averagedTextureData;
 	S32 averageDownloadRate = 0;
-	unsigned int download_time = mRecording.getSum(sTexureDownloadTime).valueInUnits<LLUnits::Seconds>();
-	
+	unsigned int download_time = mTotalMilliseconds.valueInUnits<LLUnits::Seconds>();
 	if (0 != download_time)
 	{
-		averageDownloadRate = mRecording.getSum(sTextureDataDownloaded).valueInUnits<LLUnits::Bits>() / download_time;
+		averageDownloadRate = mTotalBytes.valueInUnits<LLUnits::Bits>() / download_time;
 	}
 
 	averagedTextureData["bits_per_second"] = averageDownloadRate;
-	averagedTextureData["bytes_downloaded"]            = mRecording.getSum(sTextureDataDownloaded).valueInUnits<LLUnits::Bytes>();
-	averagedTextureData["texture_downloads_started"]   = mRecording.getSum(sTextureDownloadsStarted);
-	averagedTextureData["texture_downloads_completed"] = mRecording.getSum(sTextureDownloadsCompleted);
+	averagedTextureData["bytes_downloaded"] = (LLSD::Integer)mTotalBytes.valueInUnits<LLUnits::Bits>();
+	averagedTextureData["texture_downloads_started"] = mTextureDownloadsStarted;
+	averagedTextureData["texture_downloads_completed"] = mTextureDownloadsCompleted;
 	averagedTextureData["transport"] = mTextureDownloadProtocol;
 
 	return averagedTextureData;
 }
 
-void LLTextureInfo::startRecording()
-{
-	mRecording.start();
-}
-
-void LLTextureInfo::stopRecording()
-{
-	mRecording.stop();
-}
-
 void LLTextureInfo::resetTextureStatistics()
 {
-	mRecording.restart();
+	mTotalMilliseconds = U32Milliseconds(0);
+	mTotalBytes = U32Bytes(0);
+	mTextureDownloadsStarted = 0;
+	mTextureDownloadsCompleted = 0;
 	mTextureDownloadProtocol = "NONE";
 	mCurrentStatsBundleStartTime = LLTimer::getTotalTime();
 }

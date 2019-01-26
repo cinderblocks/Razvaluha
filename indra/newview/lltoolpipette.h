@@ -47,8 +47,8 @@ class LLPickInfo;
 class LLToolPipette
 :	public LLTool, public LLSingleton<LLToolPipette>
 {
+	LLSINGLETON(LLToolPipette);
 public:
-	LLToolPipette();
 	virtual ~LLToolPipette();
 
 	virtual BOOL	handleMouseDown(S32 x, S32 y, MASK mask);

@@ -27,8 +27,6 @@
 #ifndef LL_LLPOLYMESHINTERFACE_H
 #define LL_LLPOLYMESHINTERFACE_H
 
-#include <string>
-#include <map>
 #include "llstl.h"
 
 #include "v3math.h"
@@ -138,7 +136,9 @@ public:
 
 	const S32	*getSharedVert(S32 vert);
 
-	BOOL isLOD() { return (mReferenceData != NULL); }
+	const morphdata_list_t& getMorphList() const { return mMorphData; }
+
+	BOOL isLOD() { return (mReferenceData != nullptr); }
 };
 
 
@@ -166,7 +166,7 @@ public:
 	// Requests a mesh by name.
 	// If the mesh already exists in the global mesh table, it is returned,
 	// otherwise it is loaded from file, added to the table, and returned.
-	static LLPolyMesh *getMesh( const std::string &name, LLPolyMesh* reference_mesh = NULL);
+	static LLPolyMesh *getMesh( const std::string &name, LLPolyMesh* reference_mesh = nullptr);
 
 	// Saves the mesh information as a binary Linden Lab Mesh file.
 	BOOL saveLLM(LLFILE *fp);
@@ -324,9 +324,6 @@ public:
 		return mSharedData->mJointNames;
 	}
 
-	typedef std::map<std::string,LLPolyMorphData*> morph_list_t;
-	static void getMorphList (const std::string& mesh_name, morph_list_t* morph_list);
-
 	LLPolyMorphData*	getMorphData(const std::string& morph_name);
 // 	void	removeMorphData(LLPolyMorphData *morph_target);
 // 	void	deleteAllMorphData();
@@ -351,7 +348,7 @@ public:
 	U32				mCurVertexCount;
 
 	// Dumps diagnostic information about the global mesh table
-	static void dumpDiagInfo(void*);
+	static void dumpDiagInfo();
 
 private:
 	void initializeForMorph();

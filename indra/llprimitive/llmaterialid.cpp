@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 * @file llmaterialid.cpp
 * @brief Implementation of llmaterialid
@@ -28,8 +30,6 @@
 #include "linden_common.h"
 
 #include "llmaterialid.h"
-
-#include <string>
 
 #include "llformat.h"
 
@@ -170,14 +170,5 @@ void LLMaterialID::copyFromOtherMaterialID(const LLMaterialID& pOtherMaterialID)
 
 int LLMaterialID::compareToOtherMaterialID(const LLMaterialID& pOtherMaterialID) const
 {
-	int retVal = 0;
-
-	for (unsigned int i = 0U; (retVal == 0) && (i < static_cast<unsigned int>(MATERIAL_ID_SIZE / sizeof(U32))); ++i)
-	{
-		const U32 *thisValue = reinterpret_cast<const U32*>(&get()[i * sizeof(U32)]);
-		const U32 *otherValue = reinterpret_cast<const U32*>(&pOtherMaterialID.get()[i * sizeof(U32)]);
-		retVal = ((*thisValue < *otherValue) ? -1 : ((*thisValue > *otherValue) ? 1 : 0));
-	}
-
-	return retVal;
+	return memcmp(mID, pOtherMaterialID.mID, MATERIAL_ID_SIZE);
 }

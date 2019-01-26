@@ -179,6 +179,8 @@
 %type <event>			money
 %type <event>			email
 %type <event>			run_time_permissions
+%type <event>			experience_permissions
+%type <event>			experience_permissions_denied
 %type <event>			inventory
 %type <event>			attach
 %type <event>			dataserver
@@ -784,6 +786,16 @@ event
 	}
 	| run_time_permissions compound_statement														
 	{  
+		$$ = new LLScriptEventHandler(gLine, gColumn, $1, $2);
+		gAllocationManager->addAllocation($$);
+	}
+	| experience_permissions compound_statement
+	{
+		$$ = new LLScriptEventHandler(gLine, gColumn, $1, $2);
+		gAllocationManager->addAllocation($$);
+	}
+	| experience_permissions_denied compound_statement
+	{
 		$$ = new LLScriptEventHandler(gLine, gColumn, $1, $2);
 		gAllocationManager->addAllocation($$);
 	}

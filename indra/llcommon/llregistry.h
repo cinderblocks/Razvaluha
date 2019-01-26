@@ -29,9 +29,6 @@
 
 #include <list>
 
-//#include <boost/type_traits.hpp>
-#include <boost/type_traits/add_reference.hpp>
-#include <boost/type_traits/add_pointer.hpp>
 #include "llsingleton.h"
 #include "llstl.h"
 
@@ -40,8 +37,7 @@ struct LLRegistryDefaultComparator
 {
 	bool operator()(const T& lhs, const T& rhs) const
 	{
-		using std::less;
-		return less<T>()(lhs, rhs);
+		return std::less<T>()(lhs, rhs);
 	}
 };
 
@@ -49,12 +45,11 @@ template <typename KEY, typename VALUE, typename COMPARATOR = LLRegistryDefaultC
 class LLRegistry
 {
 public:
-	typedef LLRegistry<KEY, VALUE, COMPARATOR>											registry_t;
-	typedef typename boost::add_reference<typename boost::add_const<KEY>::type>::type	ref_const_key_t;
-	typedef typename boost::add_reference<typename boost::add_const<VALUE>::type>::type	ref_const_value_t;
-	typedef typename boost::add_reference<VALUE>::type									ref_value_t;
-	typedef typename boost::add_pointer<typename boost::add_const<VALUE>::type>::type	ptr_const_value_t;
-	typedef typename boost::add_pointer<VALUE>::type									ptr_value_t;
+	typedef LLRegistry<KEY, VALUE, COMPARATOR>		registry_t;
+	typedef const KEY& 								ref_const_key_t;
+	typedef const VALUE&							ref_const_value_t;
+	typedef const VALUE*							ptr_const_value_t;
+	typedef VALUE*									ptr_value_t;
 
 	class Registrar
 	{
@@ -64,7 +59,7 @@ public:
 
 		bool add(ref_const_key_t key, ref_const_value_t value)
 		{
-			if (mMap.insert(std::make_pair(key, value)).second == false)
+			if (mMap.emplace(key, value).second == false)
 			{
 				LL_WARNS() << "Tried to register " << key << " but it was already registered!" << LL_ENDL;
 				return false;
@@ -96,11 +91,11 @@ public:
 		ptr_value_t getValue(ref_const_key_t key)
 		{
 			typename registry_map_t::iterator found_it = mMap.find(key);
-			if (found_it != mMap.end())
+			if (found_it != mMap.cend())
 			{
 				return &(found_it->second);
 			}
-			return NULL;
+			return nullptr;
 		}
 
 		ptr_const_value_t getValue(ref_const_key_t key) const
@@ -110,7 +105,7 @@ public:
 			{
 				return &(found_it->second);
 			}
-			return NULL;
+			return nullptr;
 		}
 
 		// if the registry is used to store pointers, and null values are valid entries
@@ -150,7 +145,7 @@ public:
 			++it)
 		{
 			ptr_value_t valuep = (*it)->getValue(key);
-			if (valuep != NULL) return valuep;
+			if (valuep != nullptr) return valuep;
 		}
 		return mDefaultRegistrar.getValue(key);
 	}
@@ -162,7 +157,7 @@ public:
 			++it)
 		{
 			ptr_value_t valuep = (*it)->getValue(key);
-			if (valuep != NULL) return valuep;
+			if (valuep != nullptr) return valuep;
 		}
 		return mDefaultRegistrar.getValue(key);
 	}
@@ -251,7 +246,10 @@ class LLRegistrySingleton
 	:	public LLRegistry<KEY, VALUE, COMPARATOR>,
 		public LLSingleton<DERIVED_TYPE>
 {
-	friend class LLSingleton<DERIVED_TYPE>;
+	// This LLRegistrySingleton doesn't use LLSINGLETON(LLRegistrySingleton)
+	// because the concrete class is actually DERIVED_TYPE, not
+	// LLRegistrySingleton. So each concrete subclass needs
+	// LLSINGLETON(whatever) -- not this intermediate base class.
 public:
 	typedef LLRegistry<KEY, VALUE, COMPARATOR>		registry_t;
 	typedef const KEY&								ref_const_key_t;
@@ -273,7 +271,7 @@ public:
 
 		~ScopedRegistrar()
 		{
-			if (!singleton_t::destroyed())
+			if (singleton_t::instanceExists())
 			{
 				popScope();
 			}
@@ -337,10 +335,10 @@ public:
 protected:
 	// DERIVED_TYPE needs to derive from LLRegistrySingleton
 	LLRegistrySingleton()
-		: mStaticScope(NULL)
+		: mStaticScope(nullptr)
 	{}
 
-	virtual void initSingleton()
+	void initSingleton() override
 	{
 		mStaticScope = new ScopedRegistrar();
 	}

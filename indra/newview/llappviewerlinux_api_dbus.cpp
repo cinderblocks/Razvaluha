@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llappviewerlinux_api_dbus.cpp
  * @brief dynamic DBus symbol-grabbing code
@@ -83,7 +85,7 @@ bool grab_dbus_syms(std::string dbus_dso_name)
 	}
 	else
 	{
-		INFOMSG("Couldn't load DSO: %s", dbus_dso_name.c_str());
+		WARNMSG("Couldn't load DSO: %s", dbus_dso_name.c_str());
 		rtn = false; // failure
 	}
 

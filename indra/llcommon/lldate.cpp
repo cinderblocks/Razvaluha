@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lldate.cpp
  * @author Phoenix
@@ -46,6 +48,7 @@
 
 #define EPOCH_STR "1970-01-01T00:00:00Z"
 static const F64 DATE_EPOCH = 0.0;
+static std::string sPrevLocale = "";
 
 LLDate::LLDate() : mSecondsSinceEpoch(DATE_EPOCH)
 {}
@@ -82,12 +85,12 @@ std::string LLDate::asString() const
 //        is one of the standards used and the prefered format
 std::string LLDate::asRFC1123() const
 {
-	return toHTTPDateString (std::string ("%A, %d %b %Y %H:%M:%S GMT"));
+	return toHTTPDateString(LLStringExplicit("%A, %d %b %Y %H:%M:%S GMT"));
 }
 
 LLTrace::BlockTimerStatHandle FT_DATE_FORMAT("Date Format");
 
-std::string LLDate::toHTTPDateString(std::string fmt) const
+std::string LLDate::toHTTPDateString(const std::string& fmt) const
 {
 	LL_RECORD_BLOCK_TIME(FT_DATE_FORMAT);
 	
@@ -95,31 +98,31 @@ std::string LLDate::toHTTPDateString(std::string fmt) const
 	std::tm * gmt = gmtime (&locSeconds);
 	if (!gmt)
 	{
-		LL_WARNS() << "The impossible has happened!" << LL_ENDL;
-		return LLStringExplicit(EPOCH_STR);
+		return LLStringUtil::null;
 	}
 	return toHTTPDateString(gmt, fmt);
 }
 
-std::string LLDate::toHTTPDateString(tm * gmt, std::string fmt)
+std::string LLDate::toHTTPDateString(tm * gmt, const std::string& fmt)
 {
 	LL_RECORD_BLOCK_TIME(FT_DATE_FORMAT);
 
 	// avoid calling setlocale() unnecessarily - it's expensive.
-	static std::string prev_locale = "";
 	std::string this_locale = LLStringUtil::getLocale();
-	if (this_locale != prev_locale)
+	if (this_locale != sPrevLocale)
 	{
 		setlocale(LC_TIME, this_locale.c_str());
-		prev_locale = this_locale;
+		sPrevLocale = this_locale;
 	}
 
 	// use strftime() as it appears to be faster than std::time_put
-	char buffer[128];
-	if (std::strftime(buffer, 128, fmt.c_str(), gmt) == 0)
-		return LLStringExplicit(EPOCH_STR);
-	std::string res(buffer);
+	char buffer[128] = {};
+	if (std::strftime(buffer, sizeof(buffer), fmt.c_str(), gmt) == 0)
+	{
+		return LLStringUtil::null;
+	}
 
+	std::string res(buffer);
 #if LL_WINDOWS
 	// Convert from locale-dependant charset to UTF-8 (EXT-8524).
 	res = ll_convert_string_to_utf8_string(res);
@@ -130,10 +133,10 @@ std::string LLDate::toHTTPDateString(tm * gmt, std::string fmt)
 void LLDate::toStream(std::ostream& s) const
 {
 	std::ios::fmtflags f( s.flags() );
-	
-	std::tm exp_time = {0};
-	std::time_t time = static_cast<std::time_t>(mSecondsSinceEpoch);
 
+	std::tm exp_time = { };
+	std::time_t time = static_cast<std::time_t>(mSecondsSinceEpoch);
+	
 #if LL_WINDOWS
 	if (gmtime_s(&exp_time, &time) != 0)
 #else
@@ -164,7 +167,7 @@ void LLDate::toStream(std::ostream& s) const
 
 bool LLDate::split(S32 *year, S32 *month, S32 *day, S32 *hour, S32 *min, S32 *sec) const
 {
-	std::tm exp_time = {0};
+	std::tm exp_time = { };
 	std::time_t time = static_cast<std::time_t>(mSecondsSinceEpoch);
 	
 #if LL_WINDOWS
@@ -173,12 +176,18 @@ bool LLDate::split(S32 *year, S32 *month, S32 *day, S32 *hour, S32 *min, S32 *se
 	if (!gmtime_r(&time, &exp_time))
 #endif
 	{
-		*year = 1970;
-		*month = 01;
-		*day = 01;
-		*hour = 00;
-		*min = 00;
-		*sec = 00;
+		if (year)
+			*year = 1970;
+		if (month)
+			*month = 01;
+		if (day)
+			*day = 01;
+		if (hour)
+			*hour = 00;
+		if (min)
+			*min = 00;
+		if (sec)
+			*sec = 00;
 		return false;
 	}
 
@@ -211,7 +220,7 @@ bool LLDate::fromString(const std::string& iso8601_date)
 
 bool LLDate::fromStream(std::istream& s)
 {
-	std::tm time = {0};
+	std::tm time = { };
 	int c;
 #if LL_WINDOWS || LL_LINUX // GCC 4.8 lacks this Windows has broken std::get_time() Time for things to get ugly!
 	int32_t tm_part;
@@ -239,7 +248,7 @@ bool LLDate::fromStream(std::istream& s)
 	if (c != ':') { return false; }
 	s >> tm_part;
 	time.tm_sec = tm_part;
-
+	
 	c = s.peek();
 	if(c == '.')
 	{
@@ -275,26 +284,26 @@ bool LLDate::fromStream(std::istream& s)
 		S32 offset_hours = 0;
 		S32 offset_minutes = 0;
 		S32 offset_in_seconds = 0;
-
+		
 		s >> offset_hours;
-
+		
 		c = s.get(); // skip the colon a get the minutes if there are any
 		if (c == ':')
-		{		
+		{
 			s >> offset_minutes;
 		}
 		offset_in_seconds =  (offset_hours * 60 + offset_sign * offset_minutes) * 60;
 		seconds_since_epoch -= offset_in_seconds;
 	}
 	else if (c != 'Z') { return false; } // skip the Z
-
+	
 	mSecondsSinceEpoch = seconds_since_epoch;
 	return true;
 }
 
 bool LLDate::fromYMDHMS(S32 year, S32 month, S32 day, S32 hour, S32 min, S32 sec)
 {
-	std::tm exp_time = {0};
+	std::tm exp_time = { };
 	
 	exp_time.tm_year = year - 1900;
 	exp_time.tm_mon = month - 1;
@@ -302,11 +311,11 @@ bool LLDate::fromYMDHMS(S32 year, S32 month, S32 day, S32 hour, S32 min, S32 sec
 	exp_time.tm_hour = hour;
 	exp_time.tm_min = min;
 	exp_time.tm_sec = sec;
-
+	
 	std::time_t tm = timegm(&exp_time);
 	if (tm == -1)
 		return false;
-	
+
 	mSecondsSinceEpoch = static_cast<F64>(tm);
 
 	return true;
@@ -326,6 +335,12 @@ void LLDate::secondsSinceEpoch(F64 seconds)
 {
 	// time() returns seconds, we want fractions of a second, which LLTimer provides --RN
 	return LLDate(LLTimer::getTotalSeconds());
+}
+
+LLDate& LLDate::operator =(const LLDate& other)
+{
+	mSecondsSinceEpoch = other.mSecondsSinceEpoch;
+	return *this;
 }
 
 bool LLDate::operator<(const LLDate& rhs) const

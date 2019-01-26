@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llimagej2c.cpp
  *
@@ -24,44 +26,43 @@
  */
 #include "linden_common.h"
 
+#include "llapr.h"
 #include "lldir.h"
 #include "llimagej2c.h"
 #include "lltimer.h"
 #include "llmath.h"
 #include "llmemory.h"
 #include "llsd.h"
+#include <boost/scoped_ptr.hpp>
 #include "../llxml/llcontrol.h"
 
-typedef LLImageJ2CImpl* (*CreateLLImageJ2CFunction)();
-typedef void (*DestroyLLImageJ2CFunction)(LLImageJ2CImpl*);
-typedef const char* (*EngineInfoLLImageJ2CFunction)();
-
-// Declare the prototype for theses functions here. Their functionality
-//will be implemented in other files which define a derived LLImageJ2CImpl
-// but only ONE static library which has the implementation for these
-// functions should ever be included.
+// Declare the prototype for this factory function here. It is implemented in
+// other files which define a LLImageJ2CImpl subclass, but only ONE static
+// library which has the implementation for this function should ever be
+// linked.
 LLImageJ2CImpl* fallbackCreateLLImageJ2CImpl();
-void fallbackDestroyLLImageJ2CImpl(LLImageJ2CImpl* impl);
-const char* fallbackEngineInfoLLImageJ2CImpl();
 
 // Test data gathering handle
-LLImageCompressionTester* LLImageJ2C::sTesterp = NULL ;
+LLImageCompressionTester* LLImageJ2C::sTesterp = nullptr ;
 const std::string sTesterName("ImageCompressionTester");
 
 //static
 std::string LLImageJ2C::getEngineInfo()
 {
-    return fallbackEngineInfoLLImageJ2CImpl();
+	// All known LLImageJ2CImpl implementation subclasses are cheap to
+	// construct.
+	boost::scoped_ptr<LLImageJ2CImpl> impl(fallbackCreateLLImageJ2CImpl());
+	return impl->getEngineInfo();
 }
 
 LLImageJ2C::LLImageJ2C() : 	LLImageFormatted(IMG_CODEC_J2C),
 							mMaxBytes(0),
+							mAreaUsedForDataSizeCalcs(0),
 							mRawDiscardLevel(-1),
 							mRate(DEFAULT_COMPRESSION_RATE),
-							mReversible(FALSE),
-							mAreaUsedForDataSizeCalcs(0)
+							mReversible(false)
 {
-	mImpl = fallbackCreateLLImageJ2CImpl();
+	mImpl.reset(fallbackCreateLLImageJ2CImpl());
 	claimMem(mImpl);
 
 	// Clear data size table
@@ -77,19 +78,13 @@ LLImageJ2C::LLImageJ2C() : 	LLImageFormatted(IMG_CODEC_J2C),
 		if (!sTesterp->isValid())
 		{
 			delete sTesterp;
-			sTesterp = NULL;
+			sTesterp = nullptr;
 		}
 	}
 }
 
 // virtual
-LLImageJ2C::~LLImageJ2C()
-{
-	if ( mImpl )
-	{
-        fallbackDestroyLLImageJ2CImpl(mImpl);
-	}
-}
+LLImageJ2C::~LLImageJ2C() {}
 
 // virtual
 void LLImageJ2C::resetLastError()
@@ -111,22 +106,20 @@ S8  LLImageJ2C::getRawDiscardLevel()
 	return mRawDiscardLevel;
 }
 
-BOOL LLImageJ2C::updateData()
+bool LLImageJ2C::updateData()
 {
-	BOOL res = TRUE;
+	bool res = true;
 	resetLastError();
 
 	// Check to make sure that this instance has been initialized with data
 	if (!getData() || (getDataSize() < 16))
 	{
 		setLastError("LLImageJ2C uninitialized");
-		res = FALSE;
+		res = false;
 	}
 	else 
 	{
-		if (mImpl)
-			res = mImpl->getMetadata(*this);
-		else res = FALSE;
+		res = mImpl->getMetadata(*this);
 	}
 
 	if (res)
@@ -144,29 +137,29 @@ BOOL LLImageJ2C::updateData()
 	return res;
 }
 
-BOOL LLImageJ2C::initDecode(LLImageRaw &raw_image, int discard_level, int* region)
+bool LLImageJ2C::initDecode(LLImageRaw &raw_image, int discard_level, int* region)
 {
 	setDiscardLevel(discard_level != -1 ? discard_level : 0);
 	return mImpl->initDecode(*this,raw_image,discard_level,region);
 }
 
-BOOL LLImageJ2C::initEncode(LLImageRaw &raw_image, int blocks_size, int precincts_size, int levels)
+bool LLImageJ2C::initEncode(LLImageRaw &raw_image, int blocks_size, int precincts_size, int levels)
 {
 	return mImpl->initEncode(*this,raw_image,blocks_size,precincts_size,levels);
 }
 
-BOOL LLImageJ2C::decode(LLImageRaw *raw_imagep, F32 decode_time)
+bool LLImageJ2C::decode(LLImageRaw *raw_imagep, F32 decode_time)
 {
 	return decodeChannels(raw_imagep, decode_time, 0, 4);
 }
 
 
-// Returns TRUE to mean done, whether successful or not.
-BOOL LLImageJ2C::decodeChannels(LLImageRaw *raw_imagep, F32 decode_time, S32 first_channel, S32 max_channel_count )
+// Returns true to mean done, whether successful or not.
+bool LLImageJ2C::decodeChannels(LLImageRaw *raw_imagep, F32 decode_time, S32 first_channel, S32 max_channel_count )
 {
 	LLTimer elapsed;
 
-	BOOL res = TRUE;
+	bool res = true;
 	
 	resetLastError();
 
@@ -174,13 +167,13 @@ BOOL LLImageJ2C::decodeChannels(LLImageRaw *raw_imagep, F32 decode_time, S32 fir
 	if (!getData() || (getDataSize() < 16))
 	{
 		setLastError("LLImageJ2C uninitialized");
-		res = TRUE; // done
+		res = true; // done
 	}
 	else
 	{
 		// Update the raw discard level
 		updateRawDiscardLevel();
-		mDecoding = TRUE;
+		mDecoding = true;
 		res = mImpl->decodeImpl(*this, *raw_imagep, decode_time, first_channel, max_channel_count);
 	}
 	
@@ -193,7 +186,7 @@ BOOL LLImageJ2C::decodeChannels(LLImageRaw *raw_imagep, F32 decode_time, S32 fir
 		}
 		else
 		{
-			mDecoding = FALSE;
+			mDecoding = false;
 		}
 	}
 
@@ -212,7 +205,7 @@ BOOL LLImageJ2C::decodeChannels(LLImageRaw *raw_imagep, F32 decode_time, S32 fir
 		tester->updateDecompressionStats(elapsed.getElapsedTimeF32()) ;
 		if (res)
 		{
-			// The whole data stream is finally decompressed when res is returned as TRUE
+			// The whole data stream is finally decompressed when res is returned as true
 			tester->updateDecompressionStats(this->getDataSize(), raw_imagep->getDataSize()) ;
 		}
 	}
@@ -221,17 +214,17 @@ BOOL LLImageJ2C::decodeChannels(LLImageRaw *raw_imagep, F32 decode_time, S32 fir
 }
 
 
-BOOL LLImageJ2C::encode(const LLImageRaw *raw_imagep, F32 encode_time)
+bool LLImageJ2C::encode(const LLImageRaw *raw_imagep, F32 encode_time)
 {
-	return encode(raw_imagep, NULL, encode_time);
+	return encode(raw_imagep, nullptr, encode_time);
 }
 
 
-BOOL LLImageJ2C::encode(const LLImageRaw *raw_imagep, const char* comment_text, F32 encode_time)
+bool LLImageJ2C::encode(const LLImageRaw *raw_imagep, const char* comment_text, F32 encode_time)
 {
 	LLTimer elapsed;
 	resetLastError();
-	BOOL res = mImpl->encodeImpl(*this, *raw_imagep, comment_text, encode_time, mReversible);
+	bool res = mImpl->encodeImpl(*this, *raw_imagep, comment_text, encode_time, mReversible);
 	if (!mLastError.empty())
 	{
 		LLImage::setLastError(mLastError);
@@ -247,7 +240,7 @@ BOOL LLImageJ2C::encode(const LLImageRaw *raw_imagep, const char* comment_text, 
 		tester->updateCompressionStats(elapsed.getElapsedTimeF32()) ;
 		if (res)
 		{
-			// The whole data stream is finally compressed when res is returned as TRUE
+			// The whole data stream is finally compressed when res is returned as true
 			tester->updateCompressionStats(this->getDataSize(), raw_imagep->getDataSize()) ;
 		}
 	}
@@ -312,7 +305,7 @@ S32 LLImageJ2C::calcDataSize(S32 discard_level)
 
 	discard_level = llclamp(discard_level, 0, MAX_DISCARD_LEVEL);
 	if ( mAreaUsedForDataSizeCalcs != (getHeight() * getWidth()) 
-		|| mDataSizes[0] == 0)
+		|| (mDataSizes[0] == 0))
 	{
 		mAreaUsedForDataSizeCalcs = getHeight() * getWidth();
 		
@@ -335,7 +328,7 @@ S32 LLImageJ2C::calcDiscardLevelBytes(S32 bytes)
 	{
 		return MAX_DISCARD_LEVEL;
 	}
-	while (1)
+	while (true)
 	{
 		S32 bytes_needed = calcDataSize(discard_level);
 		// Use TextureReverseByteRange percent (see settings.xml) of the optimal size to qualify as correct rendering for the given discard level
@@ -362,44 +355,42 @@ void LLImageJ2C::setMaxBytes(S32 max_bytes)
 	mMaxBytes = max_bytes;
 }
 
-void LLImageJ2C::setReversible(const BOOL reversible)
+void LLImageJ2C::setReversible(const bool reversible)
 {
  	mReversible = reversible;
 }
 
 
-BOOL LLImageJ2C::loadAndValidate(const std::string &filename)
+bool LLImageJ2C::loadAndValidate(const std::string &filename)
 {
-	BOOL res = TRUE;
+	bool res = true;
 	
 	resetLastError();
 
-	S32 file_size = 0;
-	llifstream infile(filename, std::ios::in | std::ios::binary | std::ios::ate);
-	file_size = infile.tellg();
-	infile.seekg(0, std::ios::beg);
-	if (!infile.is_open())
+	apr_off_t file_size = 0;
+	LLAPRFile infile;
+	apr_status_t s = infile.open(filename, LL_APR_RB, nullptr, &file_size);
+	if (s != APR_SUCCESS)
 	{
 		setLastError("Unable to open file for reading", filename);
-		res = FALSE;
+		res = false;
 	}
-	else if (file_size <= 0)
+	else if (file_size == 0)
 	{
 		setLastError("File is empty",filename);
-		res = FALSE;
+		res = false;
 	}
 	else
 	{
-		U8 *data = (U8*) ll_aligned_malloc_16(file_size);
-		infile.read((char*) data, file_size);
-		std::streamsize bytes_read = infile.gcount();
-		infile.close() ;
+		U8 *data = (U8*)ll_aligned_malloc_16(file_size);
+		apr_size_t bytes_read = infile.read(data, (apr_size_t) file_size);
+		infile.close();
 
-		if (!infile.good() || bytes_read != file_size)
+		if ((bytes_read == 0) || (bytes_read != (apr_size_t) file_size))
 		{
 			ll_aligned_free_16(data);
 			setLastError("Unable to read entire file");
-			res = FALSE;
+			res = false;
 		}
 		else
 		{
@@ -416,27 +407,25 @@ BOOL LLImageJ2C::loadAndValidate(const std::string &filename)
 }
 
 
-BOOL LLImageJ2C::validate(U8 *data, U32 file_size)
+bool LLImageJ2C::validate(U8 *data, U32 file_size)
 {
 
 	resetLastError();
 	
 	setData(data, file_size);
 
-	BOOL res = updateData();
+	bool res = updateData();
 	if ( res )
 	{
 		// Check to make sure that this instance has been initialized with data
-		if (!getData() || (getDataSize() < 16))
+		if (!getData() || (0 == getDataSize()))
 		{
 			setLastError("LLImageJ2C uninitialized");
-			res = FALSE;
+			res = false;
 		}
 		else
 		{
-			if (mImpl)
-				res = mImpl->getMetadata(*this);
-			else res = FALSE;
+			res = mImpl->getMetadata(*this);
 		}
 	}
 	
@@ -449,7 +438,7 @@ BOOL LLImageJ2C::validate(U8 *data, U32 file_size)
 
 void LLImageJ2C::decodeFailed()
 {
-	mDecoding = FALSE;
+	mDecoding = false;
 }
 
 void LLImageJ2C::updateRawDiscardLevel()
@@ -495,7 +484,7 @@ LLImageCompressionTester::LLImageCompressionTester() : LLMetricPerformanceTester
 LLImageCompressionTester::~LLImageCompressionTester()
 {
 	outputTestResults();
-	LLImageJ2C::sTesterp = NULL;
+	LLImageJ2C::sTesterp = nullptr;
 }
 
 //virtual 
@@ -508,10 +497,10 @@ void LLImageCompressionTester::outputTestRecord(LLSD *sd)
 	F32 decompressionRate = 0.0f;
 	F32 compressionRate   = 0.0f;
 
-	F32 totalkBInDecompression  = (F32)(mTotalBytesInDecompression)  / 1000.f;
-	F32 totalkBOutDecompression = (F32)(mTotalBytesOutDecompression) / 1000.f;
-	F32 totalkBInCompression    = (F32)(mTotalBytesInCompression)    / 1000.f;
-	F32 totalkBOutCompression   = (F32)(mTotalBytesOutCompression)   / 1000.f;
+	F32 totalkBInDecompression  = (F32)(mTotalBytesInDecompression)  / 1024.f;
+	F32 totalkBOutDecompression = (F32)(mTotalBytesOutDecompression) / 1024.f;
+	F32 totalkBInCompression    = (F32)(mTotalBytesInCompression)    / 1024.f;
+	F32 totalkBOutCompression   = (F32)(mTotalBytesOutCompression)   / 1024.f;
 	
 	if (!is_approx_zero(mTotalTimeDecompression))
 	{

@@ -74,6 +74,7 @@ protected:
 
 class LLRemoteParcelInfoProcessor : public LLSingleton<LLRemoteParcelInfoProcessor>
 {
+	LLSINGLETON_EMPTY_CTOR(LLRemoteParcelInfoProcessor);
 public:
 	virtual ~LLRemoteParcelInfoProcessor() {}
 

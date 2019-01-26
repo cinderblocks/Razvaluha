@@ -38,8 +38,9 @@
 
 class AISAPI
 {
+	friend class AISCommand;
 public:
-    typedef boost::function<void(const LLUUID &invItem)>    completion_t;
+    typedef std::function<void(const LLUUID &invItem)>    completion_t;
 
 // [SL:KB] - Patch: Appearance-AISFilter | Checked: 2015-03-01 (Catznip-3.7)
 	// The debug setting is an OR of these values
@@ -84,7 +85,7 @@ private:
     static const std::string INVENTORY_CAP_NAME;
     static const std::string LIBRARY_CAP_NAME;
 
-    typedef boost::function < LLSD (LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t, LLCore::HttpRequest::ptr_t,
+    typedef std::function < LLSD (LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t, LLCore::HttpRequest::ptr_t,
         const std::string, LLSD, LLCore::HttpOptions::ptr_t, LLCore::HttpHeaders::ptr_t) > invokationFn_t;
 
     static void EnqueueAISCommand(const std::string &procName, LLCoprocedureManager::CoProcedure_t proc);
@@ -95,7 +96,6 @@ private:
     static void InvokeAISCommandCoro(LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t httpAdapter, 
         invokationFn_t invoke, std::string url, LLUUID targetId, LLSD body, 
         completion_t callback, COMMAND_TYPE type);
-
 };
 
 class AISUpdate

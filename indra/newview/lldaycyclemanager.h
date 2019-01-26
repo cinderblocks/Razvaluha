@@ -27,9 +27,6 @@
 #ifndef LL_LLDAYCYCLEMANAGER_H
 #define LL_LLDAYCYCLEMANAGER_H
 
-#include <map>
-#include <string>
-
 #include "llwldaycycle.h"
 #include "llwlparammanager.h"
 
@@ -40,6 +37,7 @@
  */
 class LLDayCycleManager : public LLSingleton<LLDayCycleManager>
 {
+	LLSINGLETON_EMPTY_CTOR(LLDayCycleManager);
 	LOG_CLASS(LLDayCycleManager);
 
 public:
@@ -69,8 +67,7 @@ public:
 	boost::signals2::connection setModifyCallback(const modify_signal_t::slot_type& cb);
 
 private:
-	friend class LLSingleton<LLDayCycleManager>;
-	/*virtual*/ void initSingleton();
+	/*virtual*/ void initSingleton() override;
 
 	void loadAllPresets();
 	void loadPresets(const std::string& dir);

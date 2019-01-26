@@ -92,13 +92,14 @@
 #include "lluictrlfactory.h"
 #include "llmeshrepository.h"
 
-#include "qtoolalign.h" //Thank Qarl!
+#include "qtoolalign.h" // <alchemy/>
 
 #include "llvograss.h"
 #include "llvotree.h"
 
 // Globals
-LLFloaterTools *gFloaterTools = NULL;
+LLFloaterTools *gFloaterTools = nullptr;
+
 
 const std::string PANEL_NAMES[LLFloaterTools::PANEL_COUNT] =
 {
@@ -135,7 +136,7 @@ void commit_select_tool(LLUICtrl *ctrl, void *data);
 class LLLandImpactsObserver : public LLParcelObserver
 {
 public:
-	virtual void changed()
+	void changed() override
 	{
 		LLFloaterTools* tools_floater = gFloaterTools;
 		if(tools_floater)
@@ -317,7 +318,6 @@ BOOL	LLFloaterTools::postBuild()
 	mRadioDozerNoise = getChild<LLCheckBoxCtrl>("radio noise");
 	mRadioDozerRevert = getChild<LLCheckBoxCtrl>("radio revert");
 	mBtnApplyToSelection = getChild<LLButton>("button apply to selection");
-
 	mSliderDozerSize		= getChild<LLSlider>("slider brush size");
 	getChild<LLUICtrl>("slider brush size")->setValue(gSavedSettings.getF32("LandBrushSize"));
 	mSliderDozerForce		= getChild<LLSlider>("slider force");
@@ -349,78 +349,81 @@ BOOL	LLFloaterTools::postBuild()
 // during LLViewerWindow's per-frame hover processing.
 LLFloaterTools::LLFloaterTools()
 :	LLFloater(std::string("toolbox floater")),
-	mBtnFocus(NULL),
-	mBtnMove(NULL),
-	mBtnEdit(NULL),
-	mBtnCreate(NULL),
-	mBtnLand(NULL),
-	mTextStatus(NULL),
+	mBtnFocus(nullptr),
+	mBtnMove(nullptr),
+	mBtnEdit(nullptr),
+	mBtnCreate(nullptr),
+	mBtnLand(nullptr),
+	mTextStatus(nullptr),
 
 	//Camera Focus
-	mRadioOrbit(NULL),
-	mRadioZoom(NULL),
-	mRadioPan(NULL),
+	mRadioOrbit(nullptr),
+	mRadioZoom(nullptr),
+	mRadioPan(nullptr),
 
 	//Move via physics
-	mRadioMove(NULL),
-	mRadioLift(NULL),
-	mRadioSpin(NULL),
+	mRadioMove(nullptr),
+	mRadioLift(nullptr),
+	mRadioSpin(nullptr),
 
 	//Edit prim
-	mRadioPosition(NULL),
-	mRadioRotate(NULL),
-	mRadioStretch(NULL),
-	mRadioSelectFace(NULL),
-	mRadioAlign(NULL),
-	mCheckSelectIndividual(NULL),
+	mRadioPosition(nullptr),
+	mRadioRotate(nullptr),
+	mRadioStretch(nullptr),
+	mRadioSelectFace(nullptr),
+	mRadioAlign(nullptr),
+	mCheckSelectIndividual(nullptr),
 
-	mCheckSnapToGrid(NULL),
-	mBtnGridOptions(NULL),
-	mTextGridMode(NULL),
-	mTitleMedia(NULL),
-	mComboGridMode(NULL),
-	mCheckStretchUniform(NULL),
-	mCheckStretchTexture(NULL),
-	mCheckLimitDrag(NULL),
-	mCheckShowHighlight(NULL),
-	mCheckActualRoot(NULL),
+	mCheckSnapToGrid(nullptr),
+	mBtnGridOptions(nullptr),
+	mTextGridMode(nullptr),
+	mTitleMedia(nullptr),
+	mComboGridMode(nullptr),
+	mCheckStretchUniform(nullptr),
 
-	mBtnRotateLeft(NULL),
-	mBtnRotateReset(NULL),
-	mBtnRotateRight(NULL),
+	mCheckStretchTexture(nullptr),
+	mCheckLimitDrag(nullptr),
+	mCheckShowHighlight(nullptr),
+	mCheckActualRoot(nullptr),
 
-	mBtnDelete(NULL),
-	mBtnDuplicate(NULL),
-	mBtnDuplicateInPlace(NULL),
+	mBtnRotateLeft(nullptr),
+	mBtnRotateReset(nullptr),
 
-	mComboTreesGrass(NULL),
-	mCheckSticky(NULL),
-	mCheckCopySelection(NULL),
-	mCheckCopyCenters(NULL),
-	mCheckCopyRotates(NULL),
+	mBtnRotateRight(nullptr),
+	mBtnDelete(nullptr),
+
+	mBtnDuplicate(nullptr),
+	mBtnDuplicateInPlace(nullptr),
+	mComboTreesGrass(nullptr),
+
+	mCheckSticky(nullptr),
+
+	mCheckCopySelection(nullptr),
+	mCheckCopyCenters(nullptr),
+	mCheckCopyRotates(nullptr),
 	
 	//Edit land
-	mRadioSelectLand(NULL),
-	mRadioDozerFlatten(NULL),
-	mRadioDozerRaise(NULL),
-	mRadioDozerLower(NULL),
-	mRadioDozerSmooth(NULL),
-	mRadioDozerNoise(NULL),
-	mRadioDozerRevert(NULL),
+	mRadioSelectLand(nullptr),
+	mRadioDozerFlatten(nullptr),
+	mRadioDozerRaise(nullptr),
+	mRadioDozerLower(nullptr),
+	mRadioDozerSmooth(nullptr),
+	mRadioDozerNoise(nullptr),
+	mRadioDozerRevert(nullptr),
 	
-	mSliderDozerSize(NULL),
-	mSliderDozerForce(NULL),
-	mBtnApplyToSelection(NULL),
+	mSliderDozerSize(nullptr),
+	mSliderDozerForce(nullptr),
+	mBtnApplyToSelection(nullptr),
+	mTab(nullptr),
 
-	mTab(NULL),
-	mPanelPermissions(NULL),
-	mPanelObject(NULL),
-	mPanelVolume(NULL),
-	mPanelContents(NULL),
-	mPanelFace(NULL),
-	mPanelLandInfo(NULL),
+	mPanelPermissions(nullptr),
+	mPanelObject(nullptr),
+	mPanelVolume(nullptr),
+	mPanelContents(nullptr),
+	mPanelFace(nullptr),
+	mPanelLandInfo(nullptr),
 
-	mLandImpactsObserver(NULL),
+	mLandImpactsObserver(nullptr),
 
 	mDirty(TRUE),
 	mNeedMediaTitle(TRUE)
@@ -466,7 +469,7 @@ LLFloaterTools::LLFloaterTools()
 LLFloaterTools::~LLFloaterTools()
 {
 	// children automatically deleted
-	gFloaterTools = NULL;
+	gFloaterTools = nullptr;
 
 	LLViewerParcelMgr::getInstance()->removeObserver(mLandImpactsObserver);
 	delete mLandImpactsObserver;
@@ -757,8 +760,8 @@ void LLFloaterTools::updatePopup(LLCoordGL center, MASK mask)
 						tool == LLToolCompRotate::getInstance() ||
 						tool == LLToolCompScale::getInstance() ||
 						tool == LLToolFace::getInstance() ||
-						tool == QToolAlign::getInstance() ||
 						tool == LLToolIndividual::getInstance() ||
+						tool == QToolAlign::getInstance() || // <alchemy/>
 						tool == LLToolPipette::getInstance();
 
 	mBtnEdit	->setToggleState( edit_visible );
@@ -931,12 +934,12 @@ void LLFloaterTools::updatePopup(LLCoordGL center, MASK mask)
 	static const LLCachedControl<bool> mini("LiruMiniBuildFloater");
 	mTab->setVisible(!mini && !land_visible);
 	getChildView("mini_button")->setVisible(!land_visible);
-	bool small = mini && !land_visible;
+	bool tiny = mini && !land_visible;
 	const S32 cur_height = getRect().getHeight();
 	static const S32 full_height = cur_height;
-	if (small == (cur_height == full_height))
+	if (tiny == (cur_height == full_height))
 	{
-		S32 new_height = small ? full_height - mTab->getRect().getHeight() + 8 : full_height;
+		S32 new_height = tiny ? full_height - mTab->getRect().getHeight() + 8 : full_height;
 		translate(0, cur_height - new_height);
 		reshape(getRect().getWidth(), new_height);
 	}
@@ -957,7 +960,7 @@ void LLFloaterTools::onOpen()
 	mParcelSelection = LLViewerParcelMgr::getInstance()->getFloatingParcelSelection();
 	mObjectSelection = LLSelectMgr::getInstance()->getEditSelection();
 	
-	//gMenuBarView->setItemVisible(std::string("Tools"), TRUE);
+	//gMenuBarView->setItemVisible("BuildTools", TRUE);
 	//gMenuBarView->arrange();
 }
 
@@ -986,8 +989,8 @@ void LLFloaterTools::onClose(bool app_quitting)
 
 	resetToolState();
 
-	mParcelSelection = NULL;
-	mObjectSelection = NULL;
+	mParcelSelection = nullptr;
+	mObjectSelection = nullptr;
 
 	if (!gAgentCamera.cameraMouselook())
 	{
@@ -1120,10 +1123,12 @@ void commit_radio_group_edit(LLUICtrl *ctrl)
 	{
 		LLFloaterTools::setEditTool( LLToolFace::getInstance() );
 	}
+	// <alchemy>
 	else if (selected == "radio align")
 	{
 		LLFloaterTools::setEditTool( QToolAlign::getInstance() );
 	}
+	// </alchemy>
 	gSavedSettings.setBOOL("ShowParcelOwners", show_owners);
 }
 
@@ -1159,8 +1164,9 @@ void LLFloaterTools::commitSelectComponent(bool select_individuals)
 	//forfeit focus
 	if (gFocusMgr.childHasKeyboardFocus(this))
 	{
-		gFocusMgr.setKeyboardFocus(NULL);
+		gFocusMgr.setKeyboardFocus(nullptr);
 	}
+
 	dirty();
 
 	if (select_individuals)
@@ -1178,7 +1184,7 @@ void LLFloaterTools::setObjectType( LLPCode pcode )
 {
 	LLToolPlacer::setObjectType( pcode );
 	gSavedSettings.setBOOL("CreateToolCopySelection", FALSE);
-	gFocusMgr.setMouseCapture(NULL);
+	gFocusMgr.setMouseCapture(nullptr);
 }
 
 void commit_grid_mode(LLUICtrl *ctrl)
@@ -1190,7 +1196,7 @@ void commit_grid_mode(LLUICtrl *ctrl)
 
 void LLFloaterTools::onClickGridOptions()
 {
-	LLFloaterBuildOptions::show(NULL);
+	LLFloaterBuildOptions::show(nullptr);
 	// RN: this makes grid options dependent on build tools window
 	//floaterp->addDependentFloater(LLFloaterBuildOptions::getInstance(), FALSE);
 }
@@ -1258,7 +1264,7 @@ bool LLFloaterTools::selectedMediaEditable()
 		
 		if ( ( owner_mask_on & PERM_MODIFY ) ||
 			( group_mask_on & PERM_MODIFY ) || 
-			( group_mask_on & PERM_MODIFY ) )
+			( everyone_mask_on & PERM_MODIFY ) )
 		{
 			selected_Media_editable = true;
 		}
@@ -1283,7 +1289,12 @@ void LLFloaterTools::updateLandImpacts()
 	/* Singu Note: We're not using this yet because we have no place to put it
 	S32 rezzed_prims = parcel->getSimWidePrimCount();
 	S32 total_capacity = parcel->getSimWideMaxPrimCapacity();
-
+	LLViewerRegion* region = LLViewerParcelMgr::getInstance()->getSelectionRegion();
+	if (region)
+	{
+		S32 max_tasks_per_region = (S32)region->getMaxTasks();
+		total_capacity = llmin(total_capacity, max_tasks_per_region);
+	}
 	std::string remaining_capacity_str = "";
 
 	bool show_mesh_cost = gMeshRepo.meshRezEnabled();
@@ -1347,7 +1358,7 @@ void LLFloaterTools::getMediaState()
 		{
 			LLSelectNode* node = *iter;
 			LLVOVolume* object = dynamic_cast<LLVOVolume*>(node->getObject());
-			if (NULL != object)
+			if (nullptr != object)
 			{
 				if (!object->permModify())
 				{
@@ -1379,7 +1390,7 @@ void LLFloaterTools::getMediaState()
 	bool bool_has_media = false;
 	struct media_functor : public LLSelectedTEGetFunctor<bool>
 	{
-		bool get(LLViewerObject* object, S32 face)
+		bool get(LLViewerObject* object, S32 face) override
 		{
 			LLTextureEntry *te = object->getTE(face);
 			if (te)
@@ -1400,12 +1411,10 @@ void LLFloaterTools::getMediaState()
     {
 		functor_getter_media_data(const LLMediaEntry& entry): mMediaEntry(entry) {}	
 
-        LLMediaEntry get( LLViewerObject* object, S32 face )
+		LLMediaEntry get( LLViewerObject* object, S32 face ) override
         {
-            if ( object )
-                if ( object->getTE(face) )
-                    if ( object->getTE(face)->getMediaData() )
-                        return *(object->getTE(face)->getMediaData());
+			if ( object && object->getTE(face) && object->getTE(face)->getMediaData() )
+				return *(object->getTE(face)->getMediaData());
 			return mMediaEntry;
         };
 		
@@ -1642,7 +1651,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_controls(const LLMediaEntry &entry) : mMediaEntry(entry) {}
 		
-        U8 get( LLViewerObject* object, S32 face )
+        U8 get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1665,7 +1674,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_first_click(const LLMediaEntry& entry): mMediaEntry(entry) {}		
 		
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1688,7 +1697,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_home_url(const LLMediaEntry& entry): mMediaEntry(entry) {}		
 		
-        std::string get( LLViewerObject* object, S32 face )
+        std::string get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1711,7 +1720,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_current_url(const LLMediaEntry& entry): mMediaEntry(entry) {}
         
-		std::string get( LLViewerObject* object, S32 face )
+		std::string get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1735,7 +1744,7 @@ void LLFloaterTools::updateMediaSettings()
 		
 		functor_getter_auto_zoom(const LLMediaEntry& entry)	: mMediaEntry(entry) {}	
 		
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1760,7 +1769,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_auto_play(const LLMediaEntry& entry)	: mMediaEntry(entry) {}	
 			
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1787,7 +1796,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_auto_scale(const LLMediaEntry& entry): mMediaEntry(entry) {}	
 
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1811,7 +1820,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_auto_loop(const LLMediaEntry& entry)	: mMediaEntry(entry) {}	
 
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1834,7 +1843,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_width_pixels(const LLMediaEntry& entry): mMediaEntry(entry) {}		
 
-        int get( LLViewerObject* object, S32 face )
+        int get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1857,7 +1866,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_height_pixels(const LLMediaEntry& entry)	: mMediaEntry(entry) {}
         
-		int get( LLViewerObject* object, S32 face )
+		int get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1880,7 +1889,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_enable_alt_image(const LLMediaEntry& entry): mMediaEntry(entry) {}
         
-		bool get( LLViewerObject* object, S32 face )
+		bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1903,7 +1912,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_perms_owner_interact(const LLMediaEntry& entry): mMediaEntry(entry) {}
         
-		bool get( LLViewerObject* object, S32 face )
+		bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1926,7 +1935,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_perms_owner_control(const LLMediaEntry& entry)	: mMediaEntry(entry) {}
         
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1949,7 +1958,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_perms_group_interact(const LLMediaEntry& entry): mMediaEntry(entry) {}
         
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1972,7 +1981,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_perms_group_control(const LLMediaEntry& entry): mMediaEntry(entry) {}
         
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -1995,7 +2004,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_perms_anyone_interact(const LLMediaEntry& entry): mMediaEntry(entry) {}
         
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -2018,7 +2027,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_perms_anyone_control(const LLMediaEntry& entry)	: mMediaEntry(entry) {}
         
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -2041,7 +2050,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_whitelist_enable(const LLMediaEntry& entry)	: mMediaEntry(entry) {}
         
-        bool get( LLViewerObject* object, S32 face )
+        bool get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )
@@ -2064,7 +2073,7 @@ void LLFloaterTools::updateMediaSettings()
     {
 		functor_getter_whitelist_urls(const LLMediaEntry& entry): mMediaEntry(entry) {}
         
-        std::vector<std::string> get( LLViewerObject* object, S32 face )
+        std::vector<std::string> get( LLViewerObject* object, S32 face ) override
         {
             if ( object )
                 if ( object->getTE(face) )

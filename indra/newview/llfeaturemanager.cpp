@@ -39,13 +39,13 @@
 #pragma warning( disable       : 4265 )	// "class has virtual functions, but destructor is not virtual"
 #endif
 #include <boost/regex.hpp>
+#include <boost/tokenizer.hpp>
 
 #include "llfeaturemanager.h"
 #include "lldir.h"
 
 #include "llsys.h"
 #include "llgl.h"
-#include "llsecondlifeurls.h"
 
 #include "llviewercontrol.h"
 #include "llworld.h"
@@ -259,7 +259,8 @@ BOOL LLFeatureManager::parseFeatureTable(std::string filename)
 
 	mTableVersion = version;
 
-	LLFeatureList *flp = NULL;
+	LLFeatureList *flp = nullptr;
+
 	while (file >> name)
 	{
 		char buffer[MAX_STRING];		 /*Flawfinder: ignore*/
@@ -365,8 +366,8 @@ void LLFeatureManager::parseGPUTable(std::string filename)
 		// setup the tokenizer
 		std::string buf(buffer);
 		std::string cls, label, expr, supported;
-		boost_tokenizer tokens(buf, boost::char_separator<char>("\t\n"));
-		boost_tokenizer::iterator token_iter = tokens.begin();
+		boost::tokenizer<boost::char_separator<char>> tokens(buf, boost::char_separator<char>("\t\n"));
+		auto token_iter = tokens.begin();
 
 		// grab the label, pseudo regular expression, and class
 		if(token_iter != tokens.end())
@@ -493,7 +494,7 @@ void LLFeatureManager::applyFeatures(bool skipFeatures)
 
 		// get the control setting
 		LLControlVariable* ctrl = gSavedSettings.getControl(mIt->first);
-		if(ctrl == NULL)
+		if(ctrl == nullptr)
 		{
 			LL_WARNS() << "AHHH! Control setting " << mIt->first << " does not exist!" << LL_ENDL;
 			continue;
@@ -567,7 +568,7 @@ void LLFeatureManager::applyBaseMasks()
 	mFeatures.clear();
 
 	LLFeatureList* maskp = findMask("all");
-	if(maskp == NULL)
+	if(maskp == nullptr)
 	{
 		LL_WARNS("RenderInit") << "AHH! No \"all\" in feature table!" << LL_ENDL;
 		return;
@@ -676,7 +677,7 @@ void LLFeatureManager::applyBaseMasks()
 	maskFeatures(gpustr);
 
 	// now mask cpu type ones
-	if (gSysMemory.getPhysicalMemoryClamped() <= U32Megabytes(256))
+	if (gSysMemory.getPhysicalMemoryKB() <= U32Megabytes(256))
 	{
 		maskFeatures("RAM256MB");
 	}

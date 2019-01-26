@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmotioncontroller.cpp
  * @brief Implementation of LLMotionController class.
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -43,8 +39,10 @@
 #include "llanimationstates.h"
 #include "llstl.h"
 
-const S32 NUM_JOINT_SIGNATURE_STRIDES = LL_CHARACTER_MAX_JOINTS / 4;
+// This is why LL_CHARACTER_MAX_ANIMATED_JOINTS needs to be a multiple of 4.
+const S32 NUM_JOINT_SIGNATURE_STRIDES = LL_CHARACTER_MAX_ANIMATED_JOINTS / 4;
 const U32 MAX_MOTION_INSTANCES = 32;
+constexpr size_t JOINT_SIGNATURE_STRIDE_SIZE = 4;
 
 //-----------------------------------------------------------------------------
 // Constants and statics
@@ -83,8 +81,18 @@ LLMotionRegistry::~LLMotionRegistry()
 //-----------------------------------------------------------------------------
 BOOL LLMotionRegistry::registerMotion( const LLUUID& id, LLMotionConstructor constructor )
 {
+#if USE_LL_APPEARANCE_CODE
 	//	LL_INFOS() << "Registering motion: " << name << LL_ENDL;
-	return mMotionTable.insert(std::make_pair(id,constructor)).second;
+	if (!is_in_map(mMotionTable, id))
+	{
+		mMotionTable[id] = constructor;
+		return TRUE;
+	}
+	
+	return FALSE;
+#else
+	return mMotionTable.emplace(id, constructor).second;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -92,25 +100,25 @@ BOOL LLMotionRegistry::registerMotion( const LLUUID& id, LLMotionConstructor con
 //-----------------------------------------------------------------------------
 void LLMotionRegistry::markBad( const LLUUID& id )
 {
-	mMotionTable[id] = LLMotionConstructor(NULL);
+	mMotionTable[id] = LLMotionConstructor(nullptr);
 }
 
 //-----------------------------------------------------------------------------
 // createMotion()
 //-----------------------------------------------------------------------------
-LLMotion* LLMotionRegistry::createMotion(LLUUID const& id, LLMotionController* controller)
+LLMotion *LLMotionRegistry::createMotion( const LLUUID &id )
 {
-	LLMotionConstructor constructor = get_if_there(mMotionTable, id, LLMotionConstructor(NULL));
-	LLMotion* motion = NULL;
+	LLMotionConstructor constructor = get_if_there(mMotionTable, id, LLMotionConstructor(nullptr));
+	LLMotion* motion = nullptr;
 
-	if ( constructor == NULL )
+	if ( constructor == nullptr )
 	{
 		// *FIX: need to replace with a better default scheme. RN
-		motion = LLKeyframeMotion::create(id, controller);
+		motion = LLKeyframeMotion::create(id);
 	}
 	else
 	{
-		motion = constructor(id, controller);
+		motion = constructor(id);
 	}
 
 	return motion;
@@ -129,11 +137,7 @@ LLMotion* LLMotionRegistry::createMotion(LLUUID const& id, LLMotionController* c
 LLMotionController::LLMotionController()
 	: mIsSelf(FALSE),
 	  mTimeFactor(sCurrentTimeFactor),
-	  mCharacter(NULL),
-	  mActiveMask(0),
-	  mDisableSyncing(0),
-	  mHidden(false),
-	  mHaveVisibleSyncedMotions(false),
+	  mCharacter(nullptr),
 	  mPrevTimerElapsed(0.f),
 	  mAnimTime(0.f),
 	  mLastTime(0.0f),
@@ -142,7 +146,8 @@ LLMotionController::LLMotionController()
 	  mPauseTime(0.f),
 	  mTimeStep(0.f),
 	  mTimeStepCount(0),
-	  mLastInterp(0.f)
+	  mLastInterp(0.f),
+	  mLastCountAfterPurge(0)
 {
 }
 
@@ -173,17 +178,16 @@ void LLMotionController::deleteAllMotions()
 	mLoadingMotions.clear();
 	mLoadedMotions.clear();
 	mActiveMotions.clear();
-	//<singu>
-	mActiveMask = 0;
-	for_each(mDeprecatedMotions.begin(), mDeprecatedMotions.end(), DeletePointer());
-	mDeprecatedMotions.clear();
-	for (motion_map_t::iterator iter = mAllMotions.begin(); iter != mAllMotions.end(); ++iter)
-	{
-		iter->second->unregister_client();
-	}
-	//</singu>
+
 	for_each(mAllMotions.begin(), mAllMotions.end(), DeletePairedPointer());
 	mAllMotions.clear();
+
+	// stinson 05/12/20014 : Ownership of the LLMotion pointers is transferred from
+	// mAllMotions to mDeprecatedMotions in method
+	// LLMotionController::deprecateMotionInstance().  Thus, we should also clean
+	// up the mDeprecatedMotions list as well.
+	for_each(mDeprecatedMotions.begin(), mDeprecatedMotions.end(), DeletePointer());
+	mDeprecatedMotions.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -191,19 +195,26 @@ void LLMotionController::deleteAllMotions()
 //-----------------------------------------------------------------------------
 void LLMotionController::purgeExcessMotions()
 {
-	//<singu>
-	// The old code attempted to remove non-active motions from mDeprecatedMotions,
-	// but that is nonsense: there are no motions in mDeprecatedMotions that are not active.
-	if (mLoadedMotions.size() <= MAX_MOTION_INSTANCES)
+	if (mLoadedMotions.size() > MAX_MOTION_INSTANCES)
 	{
-		// Speed up, no need to create motions_to_kill.
-		return;
+		// clean up deprecated motions
+		for (motion_set_t::iterator deprecated_motion_it = mDeprecatedMotions.begin(); 
+			 deprecated_motion_it != mDeprecatedMotions.end(); )
+		{
+			motion_set_t::iterator cur_iter = deprecated_motion_it++;
+			LLMotion* cur_motionp = *cur_iter;
+			if (!isMotionActive(cur_motionp))
+			{
+				// Motion is deprecated so we know it's not cannonical,
+				//  we can safely remove the instance
+				removeMotionInstance(cur_motionp); // modifies mDeprecatedMotions
+				mDeprecatedMotions.erase(cur_iter);
+			}
+		}
 	}
-	//</singu>
 
 	std::set<LLUUID> motions_to_kill;
-
-	if (1)	// Singu: leave indentation alone...
+	if (mLoadedMotions.size() > MAX_MOTION_INSTANCES)
 	{
 		// too many motions active this frame, kill all blenders
 		mPoseBlender.clearBlenders();
@@ -235,10 +246,12 @@ void LLMotionController::purgeExcessMotions()
 		}
 	}
 
-	if (mLoadedMotions.size() > 2*MAX_MOTION_INSTANCES)
+	U32 loaded_count = mLoadedMotions.size();
+	if (loaded_count > (2 * MAX_MOTION_INSTANCES) && loaded_count > mLastCountAfterPurge)
 	{
-		LL_WARNS_ONCE("Animation") << "> " << 2*MAX_MOTION_INSTANCES << " Loaded Motions" << LL_ENDL;
+		LL_WARNS_ONCE("Animation") << loaded_count << " Loaded Motions. Amount of motions is over limit." << LL_ENDL;
 	}
+	mLastCountAfterPurge = loaded_count;
 }
 
 //-----------------------------------------------------------------------------
@@ -314,44 +327,24 @@ BOOL LLMotionController::registerMotion( const LLUUID& id, LLMotionConstructor c
 void LLMotionController::removeMotion( const LLUUID& id)
 {
 	LLMotion* motionp = findMotion(id);
-	//<singu>
-	// If a motion is erased from mAllMotions, it must be deleted.
-	if (motionp)
-	{
-		mAllMotions.erase(id);
-		removeMotionInstance(motionp);
-		delete motionp;
-	}
-	//</singu>
+	mAllMotions.erase(id);
+	removeMotionInstance(motionp);
 }
 
 // removes instance of a motion from all runtime structures, but does
 // not erase entry by ID, as this could be a duplicate instance
-// use removeMotion(id) to remove a reference to a given motion by id
-// (that will not remove (active) deprecated motions).
+// use removeMotion(id) to remove all references to a given motion by id.
 void LLMotionController::removeMotionInstance(LLMotion* motionp)
 {
 	if (motionp)
 	{
 		llassert(findMotion(motionp->getID()) != motionp);
+		if (motionp->isActive())
+			motionp->deactivate();
 		mLoadingMotions.erase(motionp);
 		mLoadedMotions.erase(motionp);
 		mActiveMotions.remove(motionp);
-		//<singu>
-		// Deactivation moved here. Only delete motionp when it is being removed from mDeprecatedMotions.
-		if (motionp->isActive())
-		{
-			motionp->deactivate();
-			// If a motion is deactivated, it must be removed from mDeprecatedMotions if there.
-			motion_set_t::iterator found_it = mDeprecatedMotions.find(motionp);
-			if (found_it != mDeprecatedMotions.end())
-			{
-				mDeprecatedMotions.erase(found_it);
-				// If a motion is erased from mDeprecatedMotions, it must be deleted.
-				delete motionp;
-			}
-		}
-		//</singu>
+		delete motionp;
 	}
 }
 
@@ -367,10 +360,10 @@ LLMotion* LLMotionController::createMotion( const LLUUID &id )
 	if (!motion)
 	{
 		// look up constructor and create it
-		motion = sRegistry.createMotion(id, this);
+		motion = sRegistry.createMotion(id);
 		if (!motion)
 		{
-			return NULL;
+			return nullptr;
 		}
 
 		// look up name for default motions
@@ -388,7 +381,7 @@ LLMotion* LLMotionController::createMotion( const LLUUID &id )
 			LL_INFOS() << "Motion " << id << " init failed." << LL_ENDL;
 			sRegistry.markBad(id);
 			delete motion;
-			return NULL;
+			return nullptr;
 		case LLMotion::STATUS_HOLD:
 			mLoadingMotions.insert(motion);
 			break;
@@ -419,13 +412,12 @@ BOOL LLMotionController::startMotion(const LLUUID &id, F32 start_offset)
 	if (motion
 		&& !mPaused
 		&& motion->canDeprecate()
-		&& motion->isActive()											// singu: do not deprecate motions that are not active.
 		&& motion->getFadeWeight() > 0.01f // not LOD-ed out
 		&& (motion->isBlending() || motion->getStopTime() != 0.f))
 	{
 		deprecateMotionInstance(motion);
 		// force creation of new instance
-		motion = NULL;
+		motion = nullptr;
 	}
 
 	// create new motion instance
@@ -445,19 +437,7 @@ BOOL LLMotionController::startMotion(const LLUUID &id, F32 start_offset)
 	}
 
 //	LL_INFOS() << "Starting motion " << name << LL_ENDL;
-	//<singu>
-	F32 start_time = mAnimTime - start_offset;
-	if (!mDisableSyncing)
-	{
-	  start_time = motion->syncActivationTime(start_time);
-	}
-	++mDisableSyncing;
-	//</singu>
-	BOOL res = activateMotionInstance(motion, start_time);
-	//<singu>
-	--mDisableSyncing;
-	//</singu>
-	return res;
+	return activateMotionInstance(motion, mAnimTime - start_offset);
 }
 
 
@@ -478,7 +458,7 @@ BOOL LLMotionController::stopMotionInstance(LLMotion* motion, BOOL stop_immediat
 		return FALSE;
 	}
 
-
+	
 	// If on active list, stop it
 	if (isMotionActive(motion) && !motion->isStopped())
 	{
@@ -519,8 +499,8 @@ void LLMotionController::updateAdditiveMotions()
 //-----------------------------------------------------------------------------
 void LLMotionController::resetJointSignatures()
 {
-	memset(&mJointSignature[0][0], 0, sizeof(U8) * LL_CHARACTER_MAX_JOINTS);
-	memset(&mJointSignature[1][0], 0, sizeof(U8) * LL_CHARACTER_MAX_JOINTS);
+	memset(&mJointSignature[0][0], 0, sizeof(U8) * LL_CHARACTER_MAX_ANIMATED_JOINTS);
+	memset(&mJointSignature[1][0], 0, sizeof(U8) * LL_CHARACTER_MAX_ANIMATED_JOINTS);
 }
 
 //-----------------------------------------------------------------------------
@@ -584,9 +564,7 @@ static LLTrace::BlockTimerStatHandle FTM_MOTION_ON_UPDATE("Motion onUpdate");
 void LLMotionController::updateMotionsByType(LLMotion::LLMotionBlendType anim_type)
 {
 	BOOL update_result = TRUE;
-	U8 last_joint_signature[LL_CHARACTER_MAX_JOINTS];
-
-	memset(&last_joint_signature, 0, sizeof(U8) * LL_CHARACTER_MAX_JOINTS);
+	U8 last_joint_signature[LL_CHARACTER_MAX_ANIMATED_JOINTS] = {0};
 
 	// iterate through active motions in chronological order
 	for (motion_list_t::iterator iter = mActiveMotions.begin();
@@ -607,25 +585,27 @@ void LLMotionController::updateMotionsByType(LLMotion::LLMotionBlendType anim_ty
 		}
 		else
 		{
-			// NUM_JOINT_SIGNATURE_STRIDES should be multiple of 4
 			for (S32 i = 0; i < NUM_JOINT_SIGNATURE_STRIDES; i++)
 			{
-		 		U32 *current_signature = (U32*)&(mJointSignature[0][i * 4]);
-				U32 test_signature = *(U32*)&(motionp->mJointSignature[0][i * 4]);
+				const size_t current_joint_stride = i * JOINT_SIGNATURE_STRIDE_SIZE;
+		 		U32 current_signature, test_signature;
+				memcpy(&current_signature, &mJointSignature[0][current_joint_stride], sizeof(current_signature));
+				memcpy(&test_signature, &motionp->mJointSignature[0][current_joint_stride], sizeof(test_signature));
 				
-				if ((*current_signature | test_signature) > (*current_signature))
+				if ((current_signature | test_signature) > (current_signature))
 				{
-					*current_signature |= test_signature;
+					current_signature |= test_signature;
 					update_motion = TRUE;
 				}
 
-				*((U32*)&last_joint_signature[i * 4]) = *(U32*)&(mJointSignature[1][i * 4]);
-				current_signature = (U32*)&(mJointSignature[1][i * 4]);
-				test_signature = *(U32*)&(motionp->mJointSignature[1][i * 4]);
 
-				if ((*current_signature | test_signature) > (*current_signature))
+				memcpy(&last_joint_signature[current_joint_stride], &mJointSignature[1][current_joint_stride], JOINT_SIGNATURE_STRIDE_SIZE);
+				memcpy(&current_signature, &mJointSignature[1][current_joint_stride], sizeof(current_signature));
+				memcpy(&test_signature, &motionp->mJointSignature[1][current_joint_stride], sizeof(test_signature));
+
+				if ((current_signature | test_signature) > (current_signature))
 				{
-					*current_signature |= test_signature;
+					current_signature |= test_signature;
 					update_motion = TRUE;
 				}
 			}
@@ -814,19 +794,7 @@ void LLMotionController::updateLoadingMotions()
 			// this motion should be playing
 			if (!motionp->isStopped())
 			{
-				//<singu>
-				F32 start_time = mAnimTime;
-				if (!mDisableSyncing)
-				{
-				  motionp->aisync_loaded();
-				  start_time = motionp->syncActivationTime(start_time);
-				}
-				++mDisableSyncing;
-				//</singu>
-				activateMotionInstance(motionp, start_time);
-				//<singu>
-				--mDisableSyncing;
-				//</singu>
+				activateMotionInstance(motionp, mAnimTime);
 			}
 		}
 		else if (status == LLMotion::STATUS_FAILURE)
@@ -834,15 +802,12 @@ void LLMotionController::updateLoadingMotions()
 			LL_INFOS() << "Motion " << motionp->getID() << " init failed." << LL_ENDL;
 			sRegistry.markBad(motionp->getID());
 			mLoadingMotions.erase(curiter);
-			// Singu note: a motion in mLoadingMotions will not be in mActiveMotions
-			// and therefore not be in mDeprecatedMotions. So, we don't have to
-			// check for it's existence there.
-			llassert(mDeprecatedMotions.find(motionp) == mDeprecatedMotions.end());
+			motion_set_t::iterator found_it = mDeprecatedMotions.find(motionp);
+			if (found_it != mDeprecatedMotions.end())
+			{
+				mDeprecatedMotions.erase(found_it);
+			}
 			mAllMotions.erase(motionp->getID());
-			//<singu>
-			// Make sure we're not registered anymore.
-			motionp->unregister_client();
-			//</singu>
 			delete motionp;
 		}
 	}
@@ -867,7 +832,7 @@ void LLMotionController::updateMotions(bool force_update)
 
 	// Always cap the number of loaded motions
 	purgeExcessMotions();
-	
+		
 	// Update timing info for this time step.
 	if (!mPaused)
 	{
@@ -910,13 +875,12 @@ void LLMotionController::updateMotions(bool force_update)
 		}
 		else
 		{
-			// Singu note: mAnimTime may never be set back in time.
 			mAnimTime = llmax(mAnimTime, update_time);
 		}
 	}
 
 	updateLoadingMotions();
-
+	
 	resetJointSignatures();
 
 	if (mPaused && !force_update)
@@ -927,12 +891,12 @@ void LLMotionController::updateMotions(bool force_update)
 	{
 		// update additive motions
 		updateAdditiveMotions();
-
+				
 		resetJointSignatures();
-
+		
 		// update all regular motions
 		updateRegularMotions();
-
+		
 		if (use_quantum)
 		{
 			mPoseBlender.blendAndCache(TRUE);
@@ -972,19 +936,13 @@ BOOL LLMotionController::activateMotionInstance(LLMotion *motion, F32 time)
 {
 	// It's not clear why the getWeight() line seems to be crashing this, but
 	// hopefully this fixes it.
-	if (motion == NULL || motion->getPose() == NULL)
+	if (motion == nullptr || motion->getPose() == nullptr)
 	{
 		return FALSE;	
 	}
 
 	if (mLoadingMotions.find(motion) != mLoadingMotions.end())
 	{
-		//<singu>
-		if (!syncing_disabled())
-		{
-			motion->aisync_loading();
-		}
-		//</singu>
 		// we want to start this motion, but we can't yet, so flag it as started
 		motion->setStopped(FALSE);
 		// report pending animations as activated
@@ -1040,16 +998,18 @@ BOOL LLMotionController::activateMotionInstance(LLMotion *motion, F32 time)
 //-----------------------------------------------------------------------------
 BOOL LLMotionController::deactivateMotionInstance(LLMotion *motion)
 {
+	motion->deactivate();
+
 	motion_set_t::iterator found_it = mDeprecatedMotions.find(motion);
 	if (found_it != mDeprecatedMotions.end())
 	{
 		// deprecated motions need to be completely excised
-		removeMotionInstance(motion);							// singu note: this deactivates motion and removes it from mDeprecatedMotions.
+		removeMotionInstance(motion);	
+		mDeprecatedMotions.erase(found_it);
 	}
 	else
 	{
 		// for motions that we are keeping, simply remove from active queue
-		motion->deactivate();									// singu note: moved here from the top of the function.
 		mActiveMotions.remove(motion);
 	}
 
@@ -1091,7 +1051,7 @@ LLMotion* LLMotionController::findMotion(const LLUUID& id) const
 	motion_map_t::const_iterator iter = mAllMotions.find(id);
 	if(iter == mAllMotions.end())
 	{
-		return NULL;
+		return nullptr;
 	}
 	else
 	{
@@ -1106,7 +1066,7 @@ void LLMotionController::dumpMotions()
 {
 	LL_INFOS() << "=====================================" << LL_ENDL;
 	for (motion_map_t::iterator iter = mAllMotions.begin();
-		 iter != mAllMotions.end(); iter++)
+		 iter != mAllMotions.end(); ++iter)
 	{
 		LLUUID id = iter->first;
 		std::string state_string;
@@ -1117,8 +1077,8 @@ void LLMotionController::dumpMotions()
 			state_string += std::string("L");
 		if (std::find(mActiveMotions.begin(), mActiveMotions.end(), motion)!=mActiveMotions.end())
 			state_string += std::string("A");
-		llassert(mDeprecatedMotions.find(motion) == mDeprecatedMotions.end());	// singu: it's impossible that a motion is in mAllMotions and mDeprecatedMotions at the same time.
-		LL_INFOS() << gAnimLibrary.animationName(id) << " " << state_string << LL_ENDL;
+		if (mDeprecatedMotions.find(motion) != mDeprecatedMotions.end())
+			state_string += std::string("D");
 	}
 	//<singu>
 	// Also dump the deprecated motions.
@@ -1144,11 +1104,11 @@ void LLMotionController::dumpMotions()
 //-----------------------------------------------------------------------------
 void LLMotionController::deactivateAllMotions()
 {
-	// Singu note: this must run over mActiveMotions: other motions are not active,
-	// and running over mAllMotions will miss the ones in mDeprecatedMotions.
-	for (motion_list_t::iterator iter = mActiveMotions.begin(); iter != mActiveMotions.end();)
+	for (motion_map_t::iterator iter = mAllMotions.begin();
+		 iter != mAllMotions.end(); ++iter)
 	{
-		deactivateMotionInstance(*iter++);	// This might invalidate iter by erasing it from mActiveMotions.
+		LLMotion* motionp = iter->second;
+		deactivateMotionInstance(motionp);
 	}
 }
 
@@ -1169,7 +1129,8 @@ void LLMotionController::flushAllMotions()
 		active_motions.push_back(std::make_pair(motionp->getID(),dtime));
 		motionp->deactivate(); // don't call deactivateMotionInstance() because we are going to reactivate it
 	}
-
+ 	mActiveMotions.clear();
+	
 	// delete all motion instances
 	deleteAllMotions();
 
@@ -1178,135 +1139,12 @@ void LLMotionController::flushAllMotions()
 	mCharacter->removeAnimationData("Hand Pose");
 
 	// restart motions
-	//<singu>
-	// Because we called motionp->deactivate() above, instead of deactivateMotionInstance(),
-	// prevent calling AISyncClientMotion::activateInstance in startMotion below.
-	disable_syncing();
-	//</singu>
 	for (std::vector<std::pair<LLUUID,F32> >::iterator iter = active_motions.begin();
 		 iter != active_motions.end(); ++iter)
 	{
 		startMotion(iter->first, iter->second);
 	}
-	//<singu>
-	enable_syncing();
-	//</singu>
 }
-
-//<singu>
-//-----------------------------------------------------------------------------
-// toggle_hidden()
-//-----------------------------------------------------------------------------
-void LLMotionController::toggle_hidden(void)
-{
-	mHaveVisibleSyncedMotions = mHidden;		// Default is false if we just became invisible (otherwise this value isn't used).
-	mHidden = !mHidden;
-	synceventset_t const visible = mHidden ? 0 : 4;
-
-	// Run over all motions.
-	for (motion_list_t::iterator iter = mActiveMotions.begin(); iter != mActiveMotions.end(); ++iter)
-	{
-		LLMotion* motionp = *iter;
-		AISyncServer* server = motionp->server();
-		if (server && !server->never_synced() && motionp->isActive())			// Skip motions that aren't synchronized at all or that are not active.
-		{
-			bool visible_before = server->events_with_at_least_one_client_ready() & 4;
-			server->ready(4, visible, motionp);									// Mark that now we are visible or no longer visible.
-			bool visible_after = server->events_with_at_least_one_client_ready() & 4;
-			if (visible_after)													// Are there any synchronized motions (left) that ARE visible?
-			{
-				mHaveVisibleSyncedMotions = true;
-			}
-			if (visible_before != visible_after)
-			{
-				// The group as a whole now might need to change whether or not it is animated.
-				AISyncServer::client_list_t const& clients = server->getClients();
-				for (AISyncServer::client_list_t::const_iterator client = clients.begin(); client != clients.end(); ++client)
-				{
-					LLMotion* motion = dynamic_cast<LLMotion*>(client->mClientPtr);
-					if (!motion)
-					{
-						continue;
-					}
-					LLMotionController* controller = motion->getController();
-					if (controller == this)
-					{
-						continue;
-					}
-					if (visible_after)
-					{
-					  // Us becoming visible means that all synchronized avatars need to be animated again too.
-					  controller->setHaveVisibleSyncedMotions();
-					}
-					else
-					{
-					  // Us becoming hidden means that all synchronized avatars might stop animating.
-					  controller->refresh_hidden();		// It is extremely unlikely, but harmless, to call this twice on the same controller.
-					}
-				}
-			}
-		}
-	}
-}
-
-void LLMotionController::refresh_hidden(void)
-{
-	mHaveVisibleSyncedMotions = !mHidden;
-
-	// Run over all motions.
-	for (motion_list_t::iterator iter = mActiveMotions.begin(); iter != mActiveMotions.end(); ++iter)
-	{
-		LLMotion* motionp = *iter;
-		AISyncServer* server = motionp->server();
-		if (server && !server->never_synced() && motionp->isActive())			// Skip motions that aren't synchronized at all or that are not active.
-		{
-			bool visible_after = server->events_with_at_least_one_client_ready() & 4;
-			if (visible_after)													// Are there any synchronized motions (left) that ARE visible?
-			{
-				mHaveVisibleSyncedMotions = true;
-			}
-		}
-	}
-}
-
-void LLMotionController::pauseAllSyncedCharacters(std::vector<LLAnimPauseRequest>& avatar_pause_handles)
-{
-	// Run over all motions.
-	for (motion_list_t::iterator iter = mActiveMotions.begin(); iter != mActiveMotions.end(); ++iter)
-	{
-		LLMotion* motionp = *iter;
-		AISyncServer* server = motionp->server();
-		if (server && !server->never_synced() && motionp->isActive())			// Skip motions that aren't synchronized at all or that are not active.
-		{
-			// Run over all clients of the found servers.
-			AISyncServer::client_list_t const& clients = server->getClients();
-			for (AISyncServer::client_list_t::const_iterator client = clients.begin(); client != clients.end(); ++client)
-			{
-				LLMotion* motion = dynamic_cast<LLMotion*>(client->mClientPtr);
-				if (!motion)
-				{
-					continue;
-				}
-				LLMotionController* controller = motion->getController();
-				if (controller == this)
-				{
-					continue;
-				}
-				controller->requestPause(avatar_pause_handles);
-			}
-		}
-	}
-}
-
-void LLMotionController::requestPause(std::vector<LLAnimPauseRequest>& avatar_pause_handles)
-{
-	if (mCharacter)
-	{
-		mCharacter->requestPause(avatar_pause_handles);
-	}
-}
-
-//</singu>
 
 //-----------------------------------------------------------------------------
 // pause()

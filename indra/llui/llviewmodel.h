@@ -37,9 +37,9 @@
 #include "llpointer.h"
 #include "llsd.h"
 #include "llrefcount.h"
-#include "stdenums.h"
 #include "llstring.h"
-#include <string>
+#include "lltrace.h"
+#include "llui.h"
 
 class LLScrollListItem;
 
@@ -60,7 +60,9 @@ typedef LLPointer<LLListViewModel> LLListViewModelPtr;
  * LLViewModel data. This way, the LLViewModel is quietly deleted when the
  * last referencing widget is destroyed.
  */
-class LLViewModel: public LLRefCount
+class LLViewModel 
+:	public LLRefCount,
+	public LLTrace::MemTrackable<LLViewModel>
 {
 public:
     LLViewModel();
@@ -96,12 +98,13 @@ public:
     LLTextViewModel(const LLSD& value);
 	
 	// LLViewModel functions
-    virtual void setValue(const LLSD& value);
-    virtual LLSD getValue() const;
+	void setValue(const LLSD& value) override;
+	LLSD getValue() const override;
 
 	// New functions
     /// Get the stored value in string form
     const LLWString& getDisplay() const { return mDisplay; }
+	LLWString& getEditableDisplay() { mDirty = true; mUpdateFromDisplay = true; return mDisplay; }
 
     /**
      * Set the display string directly (see LLTextEditor). What the user is
@@ -133,7 +136,7 @@ public:
     virtual void clearColumns();
     virtual void setColumnLabel(const std::string& column, const std::string& label);
     virtual LLScrollListItem* addElement(const LLSD& value, EAddPosition pos = ADD_BOTTOM,
-                                         void* userdata = NULL);
+                                         void* userdata = nullptr);
     virtual LLScrollListItem* addSimpleElement(const std::string& value, EAddPosition pos,
                                                const LLSD& id);
     virtual void clearRows();

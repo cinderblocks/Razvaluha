@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llsdutil.cpp
  * @author Phoenix
@@ -17,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -31,9 +33,8 @@
 #include "llsdutil.h"
 
 #if LL_WINDOWS
-#	define WIN32_LEAN_AND_MEAN
-#	include <winsock2.h>	// for htonl
-#elif LL_LINUX || LL_SOLARIS
+#	include "llwin32headerslean.h"
+#elif LL_LINUX
 #	include <netinet/in.h>
 #elif LL_DARWIN
 #	include <arpa/inet.h>
@@ -45,7 +46,6 @@
 
 #include <map>
 #include <set>
-#include <boost/range.hpp>
 
 // U32
 LLSD ll_sd_from_U32(const U32 val)
@@ -177,7 +177,7 @@ char* ll_pretty_print_sd_ptr(const LLSD* sd)
 	{
 		return ll_pretty_print_sd(*sd);
 	}
-	return NULL;
+	return nullptr;
 }
 
 char* ll_pretty_print_sd(const LLSD& sd)
@@ -192,6 +192,14 @@ char* ll_pretty_print_sd(const LLSD& sd)
 	buffer[bufferSize - 1] = '\0';
 	return buffer;
 }
+
+std::string ll_stream_notation_sd(const LLSD& sd)
+{
+	std::ostringstream stream;
+	stream << LLSDOStreamer<LLSDNotationFormatter>(sd);
+    return stream.str();
+}
+
 
 //compares the structure of an LLSD to a template LLSD and stores the
 //"valid" values in a 3rd LLSD.  Default values pulled from the template
@@ -347,7 +355,7 @@ class TypeLookup
 public:
     TypeLookup()
     {
-        for (const Data *di(boost::begin(typedata)), *dend(boost::end(typedata)); di != dend; ++di)
+        for (const Data *di(std::begin(typedata)), *dend(std::end(typedata)); di != dend; ++di)
         {
             mMap[di->type] = di->name;
         }
@@ -527,7 +535,7 @@ std::string llsd_matches(const LLSD& prototype, const LLSD& data, const std::str
             LLSD::TypeURI
         };
         return match_types(prototype.type(),
-                           TypeVector(boost::begin(accept), boost::end(accept)),
+						   TypeVector(std::begin(accept), std::end(accept)),
                            data.type(),
                            pfx);
     }
@@ -544,7 +552,7 @@ std::string llsd_matches(const LLSD& prototype, const LLSD& data, const std::str
         };
         // Funny business: shuffle the set of acceptable types to include all
         // but the prototype's type. Get the acceptable types in a set.
-        std::set<LLSD::Type> rest(boost::begin(all), boost::end(all));
+        std::set<LLSD::Type> rest(std::begin(all), std::end(all));
         // Remove the prototype's type because we pass that separately.
         rest.erase(prototype.type());
         return match_types(prototype.type(),
@@ -560,7 +568,7 @@ std::string llsd_matches(const LLSD& prototype, const LLSD& data, const std::str
             LLSD::TypeString
         };
         return match_types(prototype.type(),
-                           TypeVector(boost::begin(accept), boost::end(accept)),
+                           TypeVector(std::begin(accept), std::end(accept)),
                            data.type(),
                            pfx);
     }

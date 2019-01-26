@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llavatarname.cpp
  * @brief Represents name-related data for an avatar, such as the
@@ -49,19 +51,20 @@ bool LLAvatarName::sUseUsernames = true;
 
 // Minimum time-to-live (in seconds) for a name entry.
 // Avatar name should always guarantee to expire reasonably soon by default
-// so if the failure to get a valid expiration time was due to something temporary
+// so if the failure to get a valid expiration time was due to something temporary 
 // we will eventually request and get the right data.
 const F64 MIN_ENTRY_LIFETIME = 60.0;
 
 LLAvatarName::LLAvatarName()
-:	mUsername(),
+:	mExpires(F64_MAX),
+	mNextUpdate(0.0),
+	mUsername(),
 	mDisplayName(),
 	mLegacyFirstName(),
 	mLegacyLastName(),
 	mIsDisplayNameDefault(false),
-	mIsTemporaryName(false),
-	mExpires(F64_MAX),
-	mNextUpdate(0.0)
+	mIsTemporaryName(false)
+
 { }
 
 bool LLAvatarName::operator<(const LLAvatarName& rhs) const
@@ -72,15 +75,15 @@ bool LLAvatarName::operator<(const LLAvatarName& rhs) const
 		return mUsername < rhs.mUsername;
 }
 
-//static
+//static 
 void LLAvatarName::setUseDisplayNames(bool use)
 {
 	sUseDisplayNames = use;
 }
-//static
-bool LLAvatarName::useDisplayNames()
-{
-	return sUseDisplayNames;
+//static 
+bool LLAvatarName::useDisplayNames() 
+{ 
+	return sUseDisplayNames; 
 }
 
 void LLAvatarName::setUseUsernames(bool use)
@@ -117,7 +120,7 @@ void LLAvatarName::fromLLSD(const LLSD& sd)
 	mExpires = expires.secondsSinceEpoch();
 	LLDate next_update = sd[DISPLAY_NAME_NEXT_UPDATE];
 	mNextUpdate = next_update.secondsSinceEpoch();
-
+	
 	// Some avatars don't have explicit display names set. Force a legible display name here.
 	if (mDisplayName.empty())
 	{
@@ -145,7 +148,7 @@ void LLAvatarName::fromString(const std::string& full_name)
 		}
 		else
 		{
-			// Very old names do have a dummy "Resident" last name
+			// Very old names do have a dummy "Resident" last name 
 			// that we choose to hide from users.
 			mUsername = mLegacyFirstName;
 			mDisplayName = mLegacyFirstName;
@@ -154,7 +157,7 @@ void LLAvatarName::fromString(const std::string& full_name)
 	else
 	{
 		mLegacyFirstName = full_name;
-		mLegacyLastName = "";
+		mLegacyLastName.clear();
 		mUsername = full_name;
 		mDisplayName = full_name;
 	}
@@ -168,10 +171,10 @@ void LLAvatarName::setExpires(F64 expires)
 	mExpires = LLFrameTimer::getTotalSeconds() + expires;
 }
 
-std::string LLAvatarName::getCompleteName(bool linefeed) const
+std::string LLAvatarName::getCompleteName(bool linefeed, bool use_parentheses, bool force_use_complete_name) const
 {
 	std::string name;
-	if (sUseDisplayNames)
+	if (sUseDisplayNames || force_use_complete_name)
 	{
 		if (mUsername.empty() || mIsDisplayNameDefault)
 		{
@@ -182,9 +185,16 @@ std::string LLAvatarName::getCompleteName(bool linefeed) const
 		else
 		{
 			name = mDisplayName;
-			if (sUseUsernames)
+			if(sUseUsernames || force_use_complete_name)
 			{
-				name += (linefeed ? "\n(" : " (") + mUsername + ")";
+				if(use_parentheses)
+				{
+					name += (linefeed ? "\n(" : " (") + mUsername + ")";
+				}
+				else // Singu Note: I doubt we're going to use this, so I'm not going to add in linefeed.
+				{
+				    name += "  [ " + mUsername + " ]";
+				}
 			}
 		}
 	}
@@ -208,9 +218,9 @@ std::string LLAvatarName::getLegacyName() const
 	return mLegacyFirstName;
 }
 
-std::string LLAvatarName::getDisplayName() const
+std::string LLAvatarName::getDisplayName(bool force_use_display_name) const
 {
-	if (sUseDisplayNames)
+	if (sUseDisplayNames || force_use_display_name)
 	{
 		return mDisplayName;
 	}
@@ -220,7 +230,7 @@ std::string LLAvatarName::getDisplayName() const
 	}
 }
 
-std::string LLAvatarName::getUserName() const
+std::string LLAvatarName::getUserName(bool lowercase) const
 {
 	std::string name;
 	if (mLegacyLastName.empty() /*|| (mLegacyLastName == "Resident")*/) // <alchemy/>
@@ -238,7 +248,15 @@ std::string LLAvatarName::getUserName() const
 	}
 	else
 	{
-		name = mLegacyFirstName + " " + mLegacyLastName;
+		if(lowercase)
+		{
+		    name = mLegacyFirstName + "." + mLegacyLastName;
+		    LLStringUtil::toLower(name);
+		}
+		else
+		{
+		    name = mLegacyFirstName + " " + mLegacyLastName;
+	    }
 	}
 	return name;
 }

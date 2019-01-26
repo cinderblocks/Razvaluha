@@ -42,6 +42,7 @@
 
 #include "llkeyboard.h"
 #include "llfloater.h"
+#include "llsafehandle.h"
 #include "lluistring.h"
 #include "llview.h"
 

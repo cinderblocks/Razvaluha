@@ -29,10 +29,9 @@
 #ifndef LL_LLEXPERIENCELOG_H
 #define LL_LLEXPERIENCELOG_H
 
-#include "llsingleton.h"
-
 class LLExperienceLog : public LLSingleton<LLExperienceLog>
 {
+	LLSINGLETON(LLExperienceLog);
 public:
 	typedef boost::signals2::signal<void(LLSD&)> 
 		callback_signal_t;
@@ -61,15 +60,12 @@ public:
 	static std::string getPermissionString(const LLSD& message, const std::string& base);
 	bool isExpired(const std::string& date);
 protected:
-	LLExperienceLog();
 	void handleExperienceMessage(LLSD& message);
 
 
 	void loadEvents();
 	void saveEvents();
 	void eraseExpired();
-
-
 
 	LLSD mEvents;
 	callback_signal_t mSignals;
@@ -79,7 +75,6 @@ protected:
 	bool mNotifyNewEvent;
 
 	friend class LLExperienceLogDispatchHandler;
-	friend class LLSingleton<LLExperienceLog>;
 };
 
 

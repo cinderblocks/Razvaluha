@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpermissions.cpp
  * @author Phoenix
@@ -587,7 +589,7 @@ BOOL LLPermissions::importFile(LLFILE* fp)
 
 	while (!feof(fp))
 	{
-		if (fgets(buffer, BUFSIZE, fp) == NULL)
+		if (fgets(buffer, BUFSIZE, fp) == nullptr)
 		{
 			buffer[0] = '\0';
 		}
@@ -799,8 +801,7 @@ BOOL LLPermissions::importLegacyStream(std::istream& input_stream)
 		}
 		else
 		{
-			LL_WARNS() << "unknown keyword " << keyword 
-					<< " in permissions import" << LL_ENDL;
+			LL_INFOS() << "unknown keyword " << keyword << " in permissions import" << LL_ENDL;
 		}
 	}
 	fix();
@@ -1131,10 +1132,10 @@ void mask_to_string(U32 mask, char* str)
 		*str = ' ';
 	}
 	str++;
-
+	
 	if (mask & PERM_EXPORT)
 	{
-		*str = 'E';
+		*str = 'X';
 	}
 	else
 	{

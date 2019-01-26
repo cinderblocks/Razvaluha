@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llresmgr.cpp
  * @brief Localized resource manager
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -36,7 +32,6 @@
 #include "linden_common.h"
 
 #include "llresmgr.h"
-#include "llimagegl.h"
 #include "llfontgl.h"
 #include "llerror.h"
 #include "llstring.h"
@@ -44,205 +39,26 @@
 
 LLResMgr::LLResMgr()
 {
-	U32 i;
-
-	// Init values for each locale.
-	// Note: This is only the most bare-bones version.  In the future, load these dynamically, on demand.
-
-	//////////////////////////////////////////////////////////////////////////////
-	// USA
-	// USA Fonts
-	for( i=0; i<LLFONT_COUNT; i++ )
-	{
-		mUSAFonts[i] = NULL;
-	}
-	mUSAFonts[ LLFONT_OCRA ]			= LLFontGL::getFontMonospace();
-	mUSAFonts[ LLFONT_SANSSERIF ]		= LLFontGL::getFontSansSerif();
-	mUSAFonts[ LLFONT_SANSSERIF_SMALL ]	= LLFontGL::getFontSansSerifSmall();
-	mUSAFonts[ LLFONT_SANSSERIF_BIG ]	= LLFontGL::getFontSansSerifBig();
-	mUSAFonts[ LLFONT_SMALL ]			= LLFontGL::getFontMonospace();
-/*
-	// USA Strings
-	for( i=0; i<LLSTR_COUNT; i++ )
-	{
-		mUSAStrings[i] = "";
-	}
-	mUSAStrings[ LLSTR_HELLO ]			= "hello";
-	mUSAStrings[ LLSTR_GOODBYE ]		= "goodbye";
-	mUSAStrings[ LLSTR_CHAT_LABEL ]		= "Chat";
-	mUSAStrings[ LLSTR_STATUS_LABEL ]	= "Properties";
-	mUSAStrings[ LLSTR_X ]				= "X";
-	mUSAStrings[ LLSTR_Y ]				= "Y";
-	mUSAStrings[ LLSTR_Z ]				= "Z";
-	mUSAStrings[ LLSTR_POSITION ]		= "Position (meters)";
-	mUSAStrings[ LLSTR_SCALE ]			= "Size (meters)";
-	mUSAStrings[ LLSTR_ROTATION ]		= "Rotation (degrees)";
-	mUSAStrings[ LLSTR_HAS_PHYSICS ]	= "Has Physics";
-	mUSAStrings[ LLSTR_SCRIPT ]			= "Script";
-	mUSAStrings[ LLSTR_HELP ]			= "Help";
-	mUSAStrings[ LLSTR_REMOVE ]			= "Remove";
-	mUSAStrings[ LLSTR_CLEAR ]			= "Clear";
-	mUSAStrings[ LLSTR_APPLY ]			= "Apply";
-	mUSAStrings[ LLSTR_CANCEL ]			= "Cancel";
-	mUSAStrings[ LLSTR_MATERIAL ]		= "Material";
-	mUSAStrings[ LLSTR_FACE ]			= "Face";
-	mUSAStrings[ LLSTR_TEXTURE ]		= "Texture";
-	mUSAStrings[ LLSTR_TEXTURE_SIZE ]	= "Repeats per Face";
-	mUSAStrings[ LLSTR_TEXTURE_OFFSET ]	= "Offset";
-	mUSAStrings[ LLSTR_TEXTURE_ROTATION ]	= "Rotation (degrees)";
-	mUSAStrings[ LLSTR_U ]				= "U";
-	mUSAStrings[ LLSTR_V ]				= "V";
-	mUSAStrings[ LLSTR_OWNERSHIP ]		= "Ownership";
-	mUSAStrings[ LLSTR_PUBLIC ]			= "Public";
-	mUSAStrings[ LLSTR_PRIVATE ]		= "Private";
-	mUSAStrings[ LLSTR_REVERT ]			= "Revert";
-	mUSAStrings[ LLSTR_INSERT_SAMPLE ]	= "Insert Sample";
-	mUSAStrings[ LLSTR_SET_TEXTURE ]	= "Set Texture";
-	mUSAStrings[ LLSTR_EDIT_SCRIPT ]	= "Edit Script...";
-	mUSAStrings[ LLSTR_MOUSELOOK_INSTRUCTIONS ] = "Press ESC to leave Mouselook.";
-	mUSAStrings[ LLSTR_EDIT_FACE_INSTRUCTIONS ] = "Click on face to select part.  Click and hold on a picture to look more like that.  Press ESC to leave Face Edit Mode.";
-	mUSAStrings[ LLSTR_CLOSE ]			= "Close";
-	mUSAStrings[ LLSTR_MOVE ]			= "Move";
-	mUSAStrings[ LLSTR_ROTATE ]			= "Rotate";
-	mUSAStrings[ LLSTR_RESIZE ]			= "Resize";
-	mUSAStrings[ LLSTR_PLACE_BOX ]		= "Place Box";
-	mUSAStrings[ LLSTR_PLACE_PRISM ]	= "Place Prism";
-	mUSAStrings[ LLSTR_PLACE_PYRAMID ]	= "Place Pyramid";
-	mUSAStrings[ LLSTR_PLACE_TETRAHEDRON ]	= "Place Tetrahedron";
-	mUSAStrings[ LLSTR_PLACE_CYLINDER ]	= "Place Cylinder";
-	mUSAStrings[ LLSTR_PLACE_HALF_CYLINDER ] = "Place Half-Cylinder";
-	mUSAStrings[ LLSTR_PLACE_CONE ]		= "Place Cone";
-	mUSAStrings[ LLSTR_PLACE_HALF_CONE ] = "Place Half-Cone";
-	mUSAStrings[ LLSTR_PLACE_SPHERE ]	= "Place Sphere";
-	mUSAStrings[ LLSTR_PLACE_HALF_SPHERE ] = "Place Half-Sphere";
-	mUSAStrings[ LLSTR_PLACE_BIRD ]		= "Place Bird";
-	mUSAStrings[ LLSTR_PLACE_SNAKE ]	= "Place Silly Snake";
-	mUSAStrings[ LLSTR_PLACE_ROCK ]		= "Place Rock";
-	mUSAStrings[ LLSTR_PLACE_TREE ]		= "Place Tree";
-	mUSAStrings[ LLSTR_PLACE_GRASS ]	= "Place Grass";
-	mUSAStrings[ LLSTR_MODIFY_LAND ]	= "Modify Land";
-*/
-	//////////////////////////////////////////////////////////////////////////////
-	// UK
-	// The Brits are a lot like us Americans, so initially assume we're the same and only code the exceptions.
-
-	// UK Fonts
-	for( i=0; i<LLFONT_COUNT; i++ )
-	{
-		mUKFonts[i] = mUSAFonts[i];
-	}
-/*
-	// UK Strings
-	for( i=0; i<LLSTR_COUNT; i++ )
-	{
-		mUKStrings[i] = mUSAStrings[i];
-	}
-	mUKStrings[ LLSTR_HELLO ]			= "hullo";
-	mUKStrings[ LLSTR_GOODBYE ]			= "cheerio";
-*/
-	//////////////////////////////////////////////////////////////////////////////
-	// Set default
-	setLocale( LLLOCALE_USA );
-
-}
-
-
-void LLResMgr::setLocale( LLLOCALE_ID locale_id )
-{
-	mLocale = locale_id;
-
-	//RN: for now, use normal 'C' locale for everything but specific UI input/output routines
-	switch( locale_id )
-	{
-	case LLLOCALE_USA: 
-//#if LL_WINDOWS
-//		// Windows doesn't use ISO country codes.
-//		LL_INFOS() << "Setting locale to " << setlocale( LC_ALL, "english-usa" ) << LL_ENDL;
-//#else	
-//		// posix version should work everywhere else.
-//		LL_INFOS() << "Setting locale to " << setlocale( LC_ALL, "en_US" ) << LL_ENDL;
-//#endif
-
-//		mStrings	= mUSAStrings;
-		mFonts		= mUSAFonts;
-		break;
-	case LLLOCALE_UK:
-//#if LL_WINDOWS
-//		// Windows doesn't use ISO country codes.
-//		LL_INFOS() << "Setting locale to " << setlocale( LC_ALL, "english-uk" ) << LL_ENDL;
-//#else
-//		// posix version should work everywhere else.
-//		LL_INFOS() << "Setting locale to " << setlocale( LC_ALL, "en_GB" ) << LL_ENDL;
-//#endif
-
-//		mStrings	= mUKStrings;
-		mFonts		= mUKFonts;
-		break;
-	default:
-		llassert(0);
-		setLocale(LLLOCALE_USA);
-		break;
-	}
 }
 
 char LLResMgr::getDecimalPoint() const					
-{ 
-	char decimal = localeconv()->decimal_point[0]; 
-
-#if LL_DARWIN
-	// On the Mac, locale support is broken before 10.4, which causes things to go all pear-shaped.
-	if(decimal == 0)
-	{
-		decimal = '.';
-	}
-#endif
-
-	return decimal;
+{
+	return localeconv()->decimal_point[0];
 }
 
 char LLResMgr::getThousandsSeparator() const			
 {
-	char separator = localeconv()->thousands_sep[0]; 
-
-#if LL_DARWIN
-	// On the Mac, locale support is broken before 10.4, which causes things to go all pear-shaped.
-	if(separator == 0)
-	{
-		separator = ',';
-	}
-#endif
-
-	return separator;
+	return localeconv()->thousands_sep[0];
 }
 
 char LLResMgr::getMonetaryDecimalPoint() const
 {
-	char decimal = localeconv()->mon_decimal_point[0]; 
-
-#if LL_DARWIN
-	// On the Mac, locale support is broken before 10.4, which causes things to go all pear-shaped.
-	if(decimal == 0)
-	{
-		decimal = '.';
-	}
-#endif
-
-	return decimal;
+	return localeconv()->mon_decimal_point[0];
 }
 
 char LLResMgr::getMonetaryThousandsSeparator() const	
 {
-	char separator = localeconv()->mon_thousands_sep[0]; 
-
-#if LL_DARWIN
-	// On the Mac, locale support is broken before 10.4, which causes things to go all pear-shaped.
-	if(separator == 0)
-	{
-		separator = ',';
-	}
-#endif
-
-	return separator;
+	return localeconv()->mon_thousands_sep[0];
 }
 
 
@@ -253,30 +69,6 @@ std::string LLResMgr::getMonetaryString( S32 input ) const
 
 	LLLocale locale(LLLocale::USER_LOCALE);
 	struct lconv *conv = localeconv();
-	
-#if LL_DARWIN
-	// On the Mac, locale support is broken before 10.4, which causes things to go all pear-shaped.
-	// Fake up a conv structure with some reasonable values for the fields this function uses.
-	struct lconv fakeconv;
-	char fake_neg[2] = "-";
-	char fake_mon_group[4] = "\x03\x03\x00"; // commas every 3 digits
-	if(conv->negative_sign[0] == 0)	// Real locales all seem to have something here...
-	{
-		fakeconv = *conv;	// start with what's there.
-		switch(mLocale)
-		{
-			default:  			// Unknown -- use the US defaults.
-			case LLLOCALE_USA: 
-			case LLLOCALE_UK:	// UK ends up being the same as US for the items used here.
-				fakeconv.negative_sign = fake_neg;
-				fakeconv.mon_grouping = fake_mon_group;
-				fakeconv.n_sign_posn = 1; // negative sign before the string
-			break;
-		}
-		conv = &fakeconv;
-	}
-#endif
-
 	char* negative_sign = conv->negative_sign;
 	char separator = getMonetaryThousandsSeparator();
 	char* grouping = conv->mon_grouping;
@@ -390,7 +182,8 @@ void LLResMgr::getIntegerString( std::string& output, S32 input ) const
 		output = "0";
 		return;
 	}
-
+	
+	// *NOTE: this method does not handle negative input integers correctly
 	S32 fraction = 0;
 	std::string fraction_string;
 	S32 remaining_count = input;
@@ -402,11 +195,11 @@ void LLResMgr::getIntegerString( std::string& output, S32 input ) const
 		{
 			if (fraction == remaining_count)
 			{
-				fraction_string = llformat("%d%c", fraction, getThousandsSeparator());
+				fraction_string = llformat_to_utf8("%d%c", fraction, getThousandsSeparator());
 			}
 			else
 			{
-				fraction_string = llformat("%3.3d%c", fraction, getThousandsSeparator());
+				fraction_string = llformat_to_utf8("%3.3d%c", fraction, getThousandsSeparator());
 			}
 			output = fraction_string + output;
 		}
@@ -424,27 +217,6 @@ void LLResMgr::getIntegerString( std::string& output, S32 input ) const
 		}
 		remaining_count /= 1000;
 	}
-}
-
-const std::string LLFONT_ID_NAMES[] =
-{
-	std::string("OCRA"),
-	std::string("SANSSERIF"),
-	std::string("SANSSERIF_SMALL"),
-	std::string("SANSSERIF_BIG"),
-	std::string("SMALL"),
-};
-
-const LLFontGL* LLResMgr::getRes( std::string font_id ) const
-{
-	for (S32 i=0; i<LLFONT_COUNT; ++i)
-	{
-		if (LLFONT_ID_NAMES[i] == font_id)
-		{
-			return getRes((LLFONT_ID)i);
-		}
-	}
-	return NULL;
 }
 
 #if LL_WINDOWS
@@ -465,11 +237,11 @@ static std::string PrevFailedLocaleString = "";
 
 LLLocale::LLLocale(const std::string& locale_string)
 {
-	mPrevLocaleString = setlocale( LC_ALL, NULL );
+	mPrevLocaleString = setlocale( LC_ALL, nullptr );
 	char* new_locale_string = setlocale( LC_ALL, locale_string.c_str());
-	if ( new_locale_string == NULL && PrevFailedLocaleString != locale_string )
+	if ( new_locale_string == nullptr && PrevFailedLocaleString != locale_string )
 	{
-		LL_WARNS() << "Failed to set locale " << locale_string.c_str() << LL_ENDL;
+		LL_WARNS_ONCE("LLLocale") << "Failed to set locale " << locale_string << LL_ENDL;
 		setlocale(LC_ALL, SYSTEM_LOCALE.c_str());
 		PrevFailedLocaleString = locale_string;
 	}

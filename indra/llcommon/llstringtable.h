@@ -42,14 +42,6 @@
 //# define STRING_TABLE_HASH_MAP 1
 #endif
 
-#if STRING_TABLE_HASH_MAP
-# if LL_WINDOWS
-#  include <hash_map>
-# else
-#  include <ext/hash_map>
-# endif
-#endif
-
 const U32 MAX_STRINGS_LENGTH = 256;
 
 class LL_COMMON_API LLStringTableEntry
@@ -144,7 +136,7 @@ public:
 		for (S32 i = 0; i<mTableSize; i++)
 		{
 			string_set_t& stringset = mStringList[i];
-			for (string_set_t::iterator iter = stringset.begin(); iter != stringset.end(); iter++)
+			for (string_set_t::iterator iter = stringset.begin(); iter != stringset.end(); ++iter)
 			{
 				delete *iter;
 			}
@@ -168,7 +160,7 @@ public:
 	{
 		U32 hashval = makehash(s);
 		LLStdStringHandle result = lookup(hashval, s);
-		if (result == NULL)
+		if (result == nullptr)
 		{
 			result = new std::string(s);
 			mStringList[hashval].insert(result);
@@ -203,7 +195,7 @@ private:
 		}
 		else
 		{
-			return NULL;
+			return nullptr;
 		}
 	}
 	

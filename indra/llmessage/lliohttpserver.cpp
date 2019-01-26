@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lliohttpserver.cpp
  * @author Phoenix
@@ -269,7 +271,6 @@ LLIOPipe::EStatus LLHTTPPipe::process_impl(
 			context[CONTEXT_RESPONSE][CONTEXT_HEADERS] = headers;
 			LLBufferStream ostr(channels, buffer.get());
 			LLSDSerialize::toXML(mResult, ostr);
-			ostr << std::flush;
 
 			return STATUS_DONE;
 		}
@@ -282,7 +283,7 @@ LLIOPipe::EStatus LLHTTPPipe::process_impl(
 			context[CONTEXT_RESPONSE]["statusCode"] = mStatusCode;
 			context[CONTEXT_RESPONSE]["statusMessage"] = mStatusMessage;
 			LLBufferStream ostr(channels, buffer.get());
-			ostr << mStatusMessage << std::flush;
+			ostr << mStatusMessage;
 
 			return STATUS_DONE;
 		}
@@ -291,7 +292,7 @@ LLIOPipe::EStatus LLHTTPPipe::process_impl(
 			context[CONTEXT_RESPONSE][CONTEXT_HEADERS] = mHeaders;
 			context[CONTEXT_RESPONSE]["statusCode"] = mStatusCode;
 			LLBufferStream ostr(channels, buffer.get());
-			ostr << mStatusMessage << std::flush;
+			ostr << mStatusMessage;
 
 			return STATUS_DONE;
 		}
@@ -346,7 +347,7 @@ void LLHTTPPipe::Response::result(const LLSD& r)
 	mPipe->mResult = r;
 	mPipe->mState = STATE_GOOD_RESULT;
 	mPipe->mHeaders = mHeaders;
-	mPipe->unlockChain();	
+	mPipe->unlockChain();
 }
 
 void LLHTTPPipe::Response::extendedResult(S32 code, const LLSD& r, const LLSD& headers)
@@ -653,7 +654,7 @@ void LLHTTPResponder::markBad(
 	LLBufferStream out(channels, buffer.get());
 	out << HTTP_VERSION_STR << " 400 Bad Request\r\n\r\n<html>\n"
 		<< "<title>Bad Request</title>\n<body>\nBad Request.\n"
-		<< "</body>\n</html>\n" << std::flush;
+		<< "</body>\n</html>\n";
 }
 
 static LLTrace::BlockTimerStatHandle FTM_PROCESS_HTTP_RESPONDER("HTTP Responder");
@@ -726,7 +727,7 @@ LLIOPipe::EStatus LLHTTPResponder::process_impl(
 					if (delimiter == std::string::npos)
 					{
 						mPath = mAbsPathAndQuery;
-						mQuery = "";
+						mQuery.clear();
 					}
 					else
 					{
@@ -945,7 +946,7 @@ LLIOPipe::EStatus LLHTTPResponder::process_impl(
 			mState = STATE_SHORT_CIRCUIT;
 			str << HTTP_VERSION_STR << " 404 Not Found\r\n\r\n<html>\n"
 				<< "<title>Not Found</title>\n<body>\nNode '" << mAbsPathAndQuery
-				<< "' not found.\n</body>\n</html>\n" << std::flush;
+				<< "' not found.\n</body>\n</html>\n";
 		}
 	}
 
@@ -989,15 +990,15 @@ LLHTTPNode& LLIOHTTPServer::create(
 {
 	LLSocket::ptr_t socket = LLSocket::create(
         pool,
-		LLSocket::STREAM_TCP,
-		port);
+        LLSocket::STREAM_TCP,
+        port);
     if(!socket)
     {
         LL_ERRS() << "Unable to initialize socket" << LL_ENDL;
     }
 
     LLHTTPResponseFactory* factory = new LLHTTPResponseFactory;
-	boost::shared_ptr<LLChainIOFactory> factory_ptr(factory);
+	std::shared_ptr<LLChainIOFactory> factory_ptr(factory);
 
     LLIOServerSocket* server = new LLIOServerSocket(pool, socket, factory_ptr);
 

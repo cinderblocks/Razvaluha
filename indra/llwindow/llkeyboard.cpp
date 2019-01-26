@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llkeyboard.cpp
  * @brief Handler for assignable key bindings
@@ -34,17 +36,20 @@
 // Globals
 //
 
-LLKeyboard *gKeyboard = NULL;
+LLKeyboard *gKeyboard = nullptr;
 
 //static
 std::map<KEY,std::string> LLKeyboard::sKeysToNames;
 std::map<std::string,KEY> LLKeyboard::sNamesToKeys;
+LLKeyStringTranslatorFunc*	LLKeyboard::mStringTranslator = nullptr;	// Used for l10n + PC/Mac/Linux accelerator labeling
+
 
 //
 // Class Implementation
 //
 
-LLKeyboard::LLKeyboard() : mCallbacks(NULL), mNumpadDistinct(ND_NUMLOCK_OFF)
+LLKeyboard::LLKeyboard() : mCallbacks(nullptr)
+, mNumpadDistinct(ND_NUMLOCK_OFF)
 {
 	S32 i;
 
@@ -178,13 +183,11 @@ void LLKeyboard::resetKeys()
 }
 
 
-BOOL LLKeyboard::translateKey(const U16 os_key, KEY *out_key)
+BOOL LLKeyboard::translateKey(const U32 os_key, KEY *out_key)
 {
-	std::map<U16, KEY>::iterator iter;
-
 	// Only translate keys in the map, ignore all other keys for now
-	iter = mTranslateKeyMap.find(os_key);
-	if (iter == mTranslateKeyMap.end())
+	std::map<U32, KEY>::const_iterator iter = mTranslateKeyMap.find(os_key);
+	if (iter == mTranslateKeyMap.cend())
 	{
 		//LL_WARNS() << "Unknown virtual key " << os_key << LL_ENDL;
 		*out_key = 0;
@@ -198,11 +201,10 @@ BOOL LLKeyboard::translateKey(const U16 os_key, KEY *out_key)
 }
 
 
-U16 LLKeyboard::inverseTranslateKey(const KEY translated_key)
+U32 LLKeyboard::inverseTranslateKey(const KEY translated_key)
 {
-	std::map<KEY, U16>::iterator iter;
-	iter = mInvTranslateKeyMap.find(translated_key);
-	if (iter == mInvTranslateKeyMap.end())
+	std::map<KEY, U32>::iterator iter = mInvTranslateKeyMap.find(translated_key);
+	if (iter == mInvTranslateKeyMap.cend())
 	{
 		return 0;
 	}
@@ -257,7 +259,7 @@ BOOL LLKeyboard::handleTranslatedKeyUp(KEY translated_key, U32 translated_mask)
 		handled = mCallbacks->handleTranslatedKeyUp(translated_key, translated_mask);
 	}
 	
-	LL_DEBUGS("LLERR_USER_INPUT") << "keyup -" << translated_key << "-" << LL_ENDL;
+	LL_DEBUGS("UserInput") << "keyup -" << translated_key << "-" << LL_ENDL;
 
 	return handled;
 }
@@ -336,9 +338,75 @@ std::string LLKeyboard::stringFromKey(KEY key)
 		buffer[1] = '\0';
 		res = std::string(buffer);
 	}
+
+	LLKeyStringTranslatorFunc *trans = gKeyboard->mStringTranslator;
+	if (trans != nullptr)
+	{
+		res = trans(res.c_str());
+	}
+
 	return res;
 }
 
+
+//static
+std::string LLKeyboard::stringFromAccelerator( MASK accel_mask, KEY key )
+{
+	std::string res;
+	
+	// break early if this is a silly thing to do.
+	if( KEY_NONE == key )
+	{
+	return res;
+}
+
+	LLKeyStringTranslatorFunc *trans = gKeyboard->mStringTranslator;
+	
+	if( trans == nullptr )
+	{
+		LL_ERRS() << "No mKeyStringTranslator" << LL_ENDL;
+		return res;
+	}
+	
+	// Append any masks
+#ifdef LL_DARWIN
+	// Standard Mac names for modifier keys in menu equivalents
+	// We could use the symbol characters, but they only exist in certain fonts.
+	if( accel_mask & MASK_CONTROL )
+	{
+		if ( accel_mask & MASK_MAC_CONTROL )
+		{
+			res.append( trans("accel-mac-control") );
+		}
+		else
+		{
+			res.append( trans("accel-mac-command") );		// Symbol would be "\xE2\x8C\x98"
+		}
+	}
+	if( accel_mask & MASK_ALT )
+		res.append( trans("accel-mac-option") );		// Symbol would be "\xE2\x8C\xA5"
+	if( accel_mask & MASK_SHIFT )
+		res.append( trans("accel-mac-shift") );		// Symbol would be "\xE2\x8C\xA7"
+#else
+	if( accel_mask & MASK_CONTROL )
+		res.append( trans("accel-win-control") );
+	if( accel_mask & MASK_ALT )
+		res.append( trans("accel-win-alt") );
+	if( accel_mask & MASK_SHIFT )
+		res.append( trans("accel-win-shift") );
+#endif
+	std::string key_string = LLKeyboard::stringFromKey(key);
+	if ((accel_mask & MASK_NORMALKEYS) &&
+		(key_string[0] == '-' || key_string[0] == '=' || key_string[0] == '+'))
+	{
+		res.append( " " );
+	}
+
+	std::string keystr = stringFromKey( key );
+	res.append( keystr );
+	
+	return res;
+}
 
 
 //static
@@ -389,4 +457,11 @@ BOOL LLKeyboard::maskFromString(const std::string& str, MASK *mask)
 	{
 		return FALSE;
 	}
+}
+
+
+//static
+void LLKeyboard::setStringTranslatorFunc( LLKeyStringTranslatorFunc *trans_func )
+{
+	mStringTranslator = trans_func;
 }

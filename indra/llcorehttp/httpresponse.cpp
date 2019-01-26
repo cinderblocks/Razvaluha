@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file httpresponse.cpp
  * @brief 
@@ -38,7 +40,7 @@ HttpResponse::HttpResponse()
 	  mReplyOffset(0U),
 	  mReplyLength(0U),
 	  mReplyFullLength(0U),
-	  mBufferArray(NULL),
+	  mBufferArray(nullptr),
 	  mHeaders(),
 	  mRetries(0U),
 	  m503Retries(0U),
@@ -48,7 +50,7 @@ HttpResponse::HttpResponse()
 
 HttpResponse::~HttpResponse()
 {
-	setBody(NULL);
+	setBody(nullptr);
 	//setHeaders();
 }
 

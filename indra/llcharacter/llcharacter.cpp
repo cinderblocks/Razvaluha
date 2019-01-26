@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llcharacter.cpp
  * @brief Implementation of LLCharacter class.
@@ -86,7 +88,7 @@ LLCharacter::~LLCharacter()
 //-----------------------------------------------------------------------------
 LLJoint *LLCharacter::getJoint( const std::string &name )
 {
-	LLJoint* joint = NULL;
+	LLJoint* joint = nullptr;
 
 	LLJoint *root = getRootJoint();
 	if (root)
@@ -186,26 +188,11 @@ void LLCharacter::updateMotions(e_update_t update_type)
 {
 	if (update_type == HIDDEN_UPDATE)
 	{
-		//<singu>
-		// Keep updating avatars that have at least one motion that is synchronized with a still running motion.
-		// This call tells the other controllers that we are in principle hidden.
-		// It returns false if we need to keep updating anyway.
-		if (!mMotionController.hidden(true))
-		{
-			mMotionController.updateMotions(LLCharacter::NORMAL_UPDATE);
-			return;
-		}
-		//</singu>
 		LL_RECORD_BLOCK_TIME(FTM_UPDATE_HIDDEN_ANIMATION);
 		mMotionController.updateMotionsMinimal();
 	}
 	else
 	{
-		//<singu>
-		// This call tells the other controllers that we are visible and that they need
-		// to keep updating if they are synchronized with us, even if they are hidden.
-		mMotionController.hidden(false);
-		//</singu>
 		LL_RECORD_BLOCK_TIME(FTM_UPDATE_ANIMATION);
 		// unpause if the number of outstanding pause requests has dropped to the initial one
 		if (mMotionController.isPaused() && mPauseRequest->getNumRefs() == 1)
@@ -245,7 +232,7 @@ void LLCharacter::flushAllMotions()
 void LLCharacter::dumpCharacter( LLJoint* joint )
 {
 	// handle top level entry into recursion
-	if (joint == NULL)
+	if (joint == nullptr)
 	{
 		LL_INFOS() << "DEBUG: Dumping Character @" << this << LL_ENDL;
 		dumpCharacter( getRootJoint() );
@@ -268,7 +255,7 @@ void LLCharacter::dumpCharacter( LLJoint* joint )
 //-----------------------------------------------------------------------------
 // setAnimationData()
 //-----------------------------------------------------------------------------
-void LLCharacter::setAnimationData(std::string name, void *data)
+void LLCharacter::setAnimationData(const std::string& name, void *data)
 {
 	mAnimationData[name] = data;
 }
@@ -276,15 +263,15 @@ void LLCharacter::setAnimationData(std::string name, void *data)
 //-----------------------------------------------------------------------------
 // getAnimationData()
 //-----------------------------------------------------------------------------
-void* LLCharacter::getAnimationData(std::string name)
+void* LLCharacter::getAnimationData(const std::string& name)
 {
-	return get_if_there(mAnimationData, name, (void*)NULL);
+	return get_if_there(mAnimationData, name, (void*)nullptr);
 }
 
 //-----------------------------------------------------------------------------
 // removeAnimationData()
 //-----------------------------------------------------------------------------
-void LLCharacter::removeAnimationData(std::string name)
+void LLCharacter::removeAnimationData(const std::string& name)
 {
 	mAnimationData.erase(name);
 }
@@ -292,7 +279,7 @@ void LLCharacter::removeAnimationData(std::string name)
 //-----------------------------------------------------------------------------
 // setVisualParamWeight()
 //-----------------------------------------------------------------------------
-BOOL LLCharacter::setVisualParamWeight(const LLVisualParam* which_param, F32 weight, bool upload_bake)
+BOOL LLCharacter::setVisualParamWeight(const LLVisualParam* which_param, F32 weight, BOOL upload_bake)
 {
 	S32 index = which_param->getID();
 	visual_param_index_map_t::iterator index_iter = mVisualParamIndexMap.find(index);
@@ -307,7 +294,7 @@ BOOL LLCharacter::setVisualParamWeight(const LLVisualParam* which_param, F32 wei
 //-----------------------------------------------------------------------------
 // setVisualParamWeight()
 //-----------------------------------------------------------------------------
-BOOL LLCharacter::setVisualParamWeight(const char* param_name, F32 weight, bool upload_bake)
+BOOL LLCharacter::setVisualParamWeight(const char* param_name, F32 weight, BOOL upload_bake)
 {
 	std::string tname(param_name);
 	LLStringUtil::toLower(tname);
@@ -325,7 +312,7 @@ BOOL LLCharacter::setVisualParamWeight(const char* param_name, F32 weight, bool 
 //-----------------------------------------------------------------------------
 // setVisualParamWeight()
 //-----------------------------------------------------------------------------
-BOOL LLCharacter::setVisualParamWeight(S32 index, F32 weight, bool upload_bake)
+BOOL LLCharacter::setVisualParamWeight(S32 index, F32 weight, BOOL upload_bake)
 {
 	visual_param_index_map_t::iterator index_iter = mVisualParamIndexMap.find(index);
 	if (index_iter != mVisualParamIndexMap.end())
@@ -400,7 +387,7 @@ void LLCharacter::clearVisualParamWeights()
 	{
 		if (param->isTweakable())
 		{
-			param->setWeight( param->getDefaultWeight(), FALSE );
+			param->setWeight( param->getDefaultWeight(), FALSE);
 		}
 	}
 }
@@ -440,7 +427,7 @@ LLVisualParam*	LLCharacter::getVisualParam(const char *param_name)
 		return name_iter->second;
 	}
 	LL_WARNS() << "LLCharacter::getVisualParam() Invalid visual parameter: " << param_name << LL_ENDL;
-	return NULL;
+	return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -450,7 +437,7 @@ void LLCharacter::addSharedVisualParam(LLVisualParam *param)
 {
 	S32 index = param->getID();
 	visual_param_index_map_t::iterator index_iter = mVisualParamIndexMap.find(index);
-	LLVisualParam* current_param = 0;
+	LLVisualParam* current_param = nullptr;
 	if (index_iter != mVisualParamIndexMap.end())
 		current_param = index_iter->second;
 	if( current_param )
@@ -486,8 +473,9 @@ void LLCharacter::addVisualParam(LLVisualParam *param)
 		visual_param_index_map_t::iterator index_iter = idxres.first;
 		index_iter->second = param;
 	}
-	
+#if !USE_LL_APPEARANCE_CODE
 	mVisualParamSortedVector[index] = param;
+#endif
 
 	if (param->getInfo())
 	{
@@ -533,19 +521,5 @@ LLAnimPauseRequest LLCharacter::requestPause()
 {
 	mMotionController.pauseAllMotions();
 	return mPauseRequest;
-}
-
-void LLCharacter::requestPause(std::vector<LLAnimPauseRequest>& avatar_pause_handles)
-{
-	mMotionController.pauseAllMotions();
-	avatar_pause_handles.push_back(mPauseRequest);
-}
-
-void LLCharacter::pauseAllSyncedCharacters(std::vector<LLAnimPauseRequest>& avatar_pause_handles)
-{
-	// Pause this avatar.
-	requestPause(avatar_pause_handles);
-	// Also pause all avatars with synchronized motions.
-	mMotionController.pauseAllSyncedCharacters(avatar_pause_handles);
 }
 

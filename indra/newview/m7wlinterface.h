@@ -25,8 +25,8 @@
 
 class M7WindlightInterface: public LLSingleton<M7WindlightInterface>
 {
+	LLSINGLETON(M7WindlightInterface);
 public:
-	M7WindlightInterface();
 	void receiveMessage(LLMessageSystem* msg);
 	void receiveReset();
 	bool hasOverride() {return mHasOverride;}

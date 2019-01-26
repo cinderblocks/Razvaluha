@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llapp.cpp
  * @brief Implementation of the LLApp class.
@@ -25,9 +27,8 @@
  */
 
 #include "linden_common.h"
-#include "llapp.h"
 
-#include <cstdlib>
+#include "llapp.h"
 
 #ifdef LL_DARWIN
 #include <sys/types.h>
@@ -45,7 +46,15 @@
 #include "llstl.h" // for DeletePointer()
 #include "llstring.h"
 #include "lleventtimer.h"
-#include "exception_handler.h"
+#if LL_WINDOWS
+#pragma warning (push)
+#pragma warning (disable : 4091) // compiler thinks might use uninitialized var, but no
+#endif
+#include "google_breakpad/exception_handler.h"
+#if LL_WINDOWS
+#pragma warning (pop)
+#endif
+#include "llcleanup.h"
 
 //
 // Signal handling
@@ -53,7 +62,7 @@
 // Windows uses structured exceptions, so it's handled a bit differently.
 //
 #if LL_WINDOWS
-#include "windows.h"
+#include "llwin32headerslean.h"
 
 LONG WINAPI default_windows_exception_handler(struct _EXCEPTION_POINTERS *exception_infop);
 BOOL ConsoleCtrlHandler(DWORD fdwCtrlType);
@@ -66,12 +75,11 @@ bool windows_post_minidump_callback(const wchar_t* dump_path,
 #else
 # include <signal.h>
 # include <unistd.h> // for fork()
-# include "apr_signal.h" // for apr_signal_description_get(int signum)
 void setup_signals();
 void default_unix_signal_handler(int signum, siginfo_t *info, void *);
 
 #if LL_LINUX
-#include "client/linux/handler/minidump_descriptor.h"
+#include "google_breakpad/minidump_descriptor.h"
 static bool unix_minidump_callback(const google_breakpad::MinidumpDescriptor& minidump_desc, 
                                    void* context, 
                                    bool succeeded);
@@ -98,7 +106,7 @@ S32 LL_HEARTBEAT_SIGNAL = (SIGRTMAX >= 0) ? (SIGRTMAX-0) : SIGUSR2;
 #endif // LL_WINDOWS
 
 // the static application instance
-LLApp* LLApp::sApplication = NULL;
+LLApp* LLApp::sApplication = nullptr;
 
 // Allows the generation of core files for post mortem under gdb
 // and disables crashlogger
@@ -110,21 +118,23 @@ BOOL LLApp::sLogInSignal = FALSE;
 
 // static
 LLApp::EAppStatus LLApp::sStatus = LLApp::APP_STATUS_STOPPED; // Keeps track of application status
-LLAppErrorHandler LLApp::sErrorHandler = NULL;
+LLAppErrorHandler LLApp::sErrorHandler = nullptr;
 BOOL LLApp::sErrorThreadRunning = FALSE;
-#if !LL_WINDOWS
-LLApp::child_map LLApp::sChildMap;
-LLAtomicU32* LLApp::sSigChildCount = NULL;
-LLAppChildCallback LLApp::sDefaultChildCallback = NULL;
-#endif
 
 
-LLApp::LLApp() : mThreadErrorp(NULL)
+LLApp::LLApp()
+	: mThreadErrorp(nullptr),
+	  mExceptionHandler(nullptr)
 {
 	commonCtor();
 }
 
-static void* sCrashLoggerReserve = NULL;
+LLApp::LLApp(LLErrorThread *error_thread)
+	: mThreadErrorp(error_thread),
+	  mExceptionHandler(nullptr)
+{
+	commonCtor();
+}
 
 void LLApp::commonCtor()
 {
@@ -150,40 +160,11 @@ void LLApp::commonCtor()
 	// Set the application to this instance.
 	sApplication = this;
 
-	mExceptionHandler = 0;
-
-#if LL_WINDOWS
-	sCrashLoggerReserve = VirtualAlloc(NULL, 512*1024, MEM_COMMIT|MEM_RESERVE, PAGE_NOACCESS);
-#else
-	sCrashLoggerReserve = malloc(512*1024);
-#endif
-	
 	// initialize the buffer to write the minidump filename to
 	// (this is used to avoid allocating memory in the crash handler)
 	memset(mMinidumpPath, 0, MAX_MINDUMP_PATH_LENGTH);
 	mCrashReportPipeStr = L"\\\\.\\pipe\\LLCrashReporterPipe";
 }
-
-#if LL_WINDOWS
-static bool clear_CrashLoggerReserve_callback(void* context, EXCEPTION_POINTERS* exinfo, MDRawAssertionInfo* assertion)
-{
-	VirtualFree(sCrashLoggerReserve, 0, MEM_RELEASE);
-	return true;
-}
-#else
-static bool clear_CrashLoggerReserve_callback(void* context)
-{
-	free(sCrashLoggerReserve);
-	return true;
-}
-#endif
-
-LLApp::LLApp(LLErrorThread *error_thread) :
-	mThreadErrorp(error_thread)
-{
-	commonCtor();
-}
-
 
 LLApp::~LLApp()
 {
@@ -198,12 +179,12 @@ LLApp::~LLApp()
 	if (mThreadErrorp)
 	{
 		delete mThreadErrorp;
-		mThreadErrorp = NULL;
+		mThreadErrorp = nullptr;
 	}
 	
-	if(mExceptionHandler != 0) delete mExceptionHandler;
+	if(mExceptionHandler != nullptr) delete mExceptionHandler;
 
-	LLCommon::cleanupClass();
+	SUBSYSTEM_CLEANUP(LLCommon);
 }
 
 // static
@@ -264,9 +245,9 @@ bool LLApp::parseCommandOptions(int argc, char** argv)
 
 #if LL_WINDOWS
 		//Windows changed command line parsing.  Deal with it.
-		S32 slen = value.length() - 1;
-		S32 start = 0;
-		S32 end = slen;
+		size_t slen = value.length() - 1;
+		size_t start = 0;
+		size_t end = slen;
 		if (argv[ii][start]=='"')start++;
 		if (argv[ii][end]=='"')end--;
 		if (start!=0 || end!=slen) 
@@ -281,6 +262,70 @@ bool LLApp::parseCommandOptions(int argc, char** argv)
 	return true;
 }
 
+bool LLApp::parseCommandOptions(int argc, wchar_t** wargv)
+{
+	LLSD commands;
+	std::string name;
+	std::string value;
+	for(int ii = 1; ii < argc; ++ii)
+	{
+		if(wargv[ii][0] != '-')
+		{
+			LL_INFOS() << "Did not find option identifier while parsing token: "
+				<< wargv[ii] << LL_ENDL;
+			return false;
+		}
+		int offset = 1;
+		if(wargv[ii][1] == '-') ++offset;
+
+#if LL_WINDOWS
+	name.assign(utf16str_to_utf8str(&wargv[ii][offset]));
+#else
+	name.assign(wstring_to_utf8str(&wargv[ii][offset]));
+#endif
+		if(((ii+1) >= argc) || (wargv[ii+1][0] == '-'))
+		{
+			// we found another option after this one or we have
+			// reached the end. simply record that this option was
+			// found and continue.
+			int flag = name.compare("logfile");
+			if (0 == flag)
+			{
+				commands[name] = "log";
+			}
+			else
+			{
+				commands[name] = true;
+			}
+			
+			continue;
+		}
+		++ii;
+
+#if LL_WINDOWS
+	value.assign(utf16str_to_utf8str((wargv[ii])));
+#else
+	value.assign(wstring_to_utf8str((wargv[ii])));
+#endif
+
+#if LL_WINDOWS
+		//Windows changed command line parsing.  Deal with it.
+		S32 slen = value.length() - 1;
+		S32 start = 0;
+		S32 end = slen;
+		if (wargv[ii][start]=='"')start++;
+		if (wargv[ii][end]=='"')end--;
+		if (start!=0 || end!=slen) 
+		{
+			value = value.substr (start,end);
+		}
+#endif
+
+		commands[name] = value;
+	}
+	setOptionData(PRIORITY_COMMAND_LINE, commands);
+	return true;
+}
 
 void LLApp::manageLiveFile(LLLiveFile* livefile)
 {
@@ -311,6 +356,14 @@ LLSD LLApp::getOptionData(OptionPriority level)
 	return mOptions[level];
 }
 
+void LLApp::stepFrame()
+{
+	LLFrameTimer::updateFrameTime();
+	LLFrameTimer::updateFrameCount();
+	LLEventTimer::updateClass();
+	mRunner.run();
+}
+
 #if LL_WINDOWS
 //The following code is needed for 32-bit apps on 64-bit windows to keep it from eating
 //crashes.   It is a lovely undocumented 'feature' in SP1 of Windows 7. An excellent
@@ -321,7 +374,7 @@ void EnableCrashingOnCrashes()
 	typedef BOOL (WINAPI *tSetPolicy)(DWORD dwFlags);
 	const DWORD EXCEPTION_SWALLOWING = 0x1;
 
-	HMODULE kernel32 = LoadLibraryA("kernel32.dll");
+	HMODULE kernel32 = LoadLibraryW(TEXT("kernel32.dll"));
 	tGetPolicy pGetPolicy = (tGetPolicy)GetProcAddress(kernel32,
 		"GetProcessUserModeExceptionPolicy");
 	tSetPolicy pSetPolicy = (tSetPolicy)GetProcAddress(kernel32,
@@ -338,7 +391,7 @@ void EnableCrashingOnCrashes()
 }
 #endif
 
-void LLApp::setupErrorHandling()
+void LLApp::setupErrorHandling(bool second_instance)
 {
 	// Error handling is done by starting up an error handling thread, which just sleeps and
 	// occasionally checks to see if the app is in an error state, and sees if it needs to be run.
@@ -355,12 +408,53 @@ void LLApp::setupErrorHandling()
 	// Install the Google Breakpad crash handler for Windows
 	if(mExceptionHandler == 0)
 	{
-		mExceptionHandler = new google_breakpad::ExceptionHandler(
-			std::wstring(mDumpPath.begin(),mDumpPath.end()), //Dump path
-			clear_CrashLoggerReserve_callback,
-			windows_post_minidump_callback, 
-			0, 
-			google_breakpad::ExceptionHandler::HANDLER_ALL);
+		if ( second_instance )  //BUG-5707 Firing teleport from a web browser causes second 
+		{
+			mExceptionHandler = new google_breakpad::ExceptionHandler(
+															L"C:\\Temp\\",		
+															0,		//No filter
+															windows_post_minidump_callback,
+															0,
+															google_breakpad::ExceptionHandler::HANDLER_ALL);  //No custom client info.
+		}
+		else
+		{
+			LL_WARNS() << "adding breakpad exception handler" << LL_ENDL;
+
+			std::wstring wpipe_name;
+			wpipe_name =  mCrashReportPipeStr + std::to_wstring(getPid());
+
+			const std::wstring wdump_path(utf8str_to_utf16str(mDumpPath));
+
+			int retries = 30;
+			for (; retries > 0; --retries)
+			{
+				if (mExceptionHandler != 0) delete mExceptionHandler;
+
+				mExceptionHandler = new google_breakpad::ExceptionHandler(
+															wdump_path,		
+															NULL,		//No filter
+															windows_post_minidump_callback,
+															0,
+															google_breakpad::ExceptionHandler::HANDLER_ALL,
+															MiniDumpNormal, //Generate a 'normal' minidump.
+															wpipe_name.c_str(),
+															NULL);  //No custom client info.
+				if (mExceptionHandler->IsOutOfProcess())
+				{
+					LL_INFOS("CRASHREPORT") << "Successfully attached to Out of Process exception handler." << LL_ENDL;
+					break;
+				}
+				else
+				{
+					LL_WARNS("CRASHREPORT") << "Unable to attach to Out of Process exception handler.  " << retries << " retries remaining." << LL_ENDL; 
+					::Sleep(100);  //Wait a tick and try again.
+				}
+			}
+
+			if (retries == 0) LL_WARNS("CRASHREPORT") << "Unable to attach to Out of Process exception handler." << LL_ENDL;
+		}
+
 		if (mExceptionHandler)
 		{
 			mExceptionHandler->set_handle_debug_exceptions(true);
@@ -374,7 +468,6 @@ void LLApp::setupErrorHandling()
 	// There are two different classes of signals.  Synchronous signals are delivered to a specific
 	// thread, asynchronous signals can be delivered to any thread (in theory)
 	//
-
 	setup_signals();
 	
 	// Add google breakpad exception handler configured for Darwin/Linux.
@@ -387,15 +480,14 @@ void LLApp::setupErrorHandling()
 	// API.  We disable this test for shipping versions to avoid conflicts with
 	// future releases of Darwin.  This test is really only needed for developers
 	// starting the app from a debugger anyway.
-	#ifndef LL_RELEASE_FOR_DOWNLOAD
+	#if 0
     int mib[4];
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_PROC;
 	mib[2] = KERN_PROC_PID;
 	mib[3] = getpid();
 	
-	struct kinfo_proc info;
-	memset(&info, 0, sizeof(info));
+	struct kinfo_proc info = {0};
 	
 	size_t size = sizeof(info);
 	int result = sysctl(mib, sizeof(mib) / sizeof(*mib), &info, &size, NULL, 0);
@@ -411,12 +503,12 @@ void LLApp::setupErrorHandling()
 		// installing the handler.
 		installHandler = true;
 	}
+	#endif
 
 	if(installHandler && (mExceptionHandler == 0))
 	{
-		mExceptionHandler = new google_breakpad::ExceptionHandler(mDumpPath, clear_CrashLoggerReserve_callback, &unix_post_minidump_callback, 0, true, 0);
+		mExceptionHandler = new google_breakpad::ExceptionHandler(mDumpPath, 0, &unix_post_minidump_callback, 0, true, 0);
 	}
-	#endif
 #elif LL_LINUX
 	if(installHandler && (mExceptionHandler == 0))
 	{
@@ -425,7 +517,7 @@ void LLApp::setupErrorHandling()
 			mDumpPath = "/tmp";
 		}
 		google_breakpad::MinidumpDescriptor desc(mDumpPath);
-		mExceptionHandler = new google_breakpad::ExceptionHandler(desc, clear_CrashLoggerReserve_callback, unix_minidump_callback, NULL, true, -1);
+	    mExceptionHandler = new google_breakpad::ExceptionHandler(desc, NULL, unix_minidump_callback, NULL, true, -1);
 	}
 #endif
 
@@ -448,25 +540,10 @@ void LLApp::startErrorThread()
 	}
 }
 
-void LLApp::stopErrorThread()
-{
-	LLApp::setStopped();	// Signal error thread that we stopped.
-	int count = 0;
-	while (mThreadErrorp && !mThreadErrorp->isStopped() && ++count < 100)
-	{
-		ms_sleep(10);
-	}
-	if (mThreadErrorp && !mThreadErrorp->isStopped())
-	{
-		LL_WARNS() << "Failed to stop Error Thread." << LL_ENDL;
-	}
-}
-
 void LLApp::setErrorHandler(LLAppErrorHandler handler)
 {
 	LLApp::sErrorHandler = handler;
 }
-
 
 // static
 void LLApp::runErrorHandler()
@@ -479,7 +556,6 @@ void LLApp::runErrorHandler()
 	//LL_INFOS() << "App status now STOPPED" << LL_ENDL;
 	LLApp::setStopped();
 }
-
 
 // static
 void LLApp::setStatus(EAppStatus status)
@@ -506,11 +582,11 @@ void LLApp::setMiniDumpDir(const std::string &path)
 		mDumpPath = path;
 	}
 
-	if(mExceptionHandler == 0) return;
+	if(mExceptionHandler == nullptr) return;
 #ifdef LL_WINDOWS
-	wchar_t buffer[MAX_MINDUMP_PATH_LENGTH];
-	mbstowcs(buffer, mDumpPath.c_str(), MAX_MINDUMP_PATH_LENGTH);
-	mExceptionHandler->set_dump_path(std::wstring(buffer));
+	std::wstring buffer(utf8str_to_utf16str(mDumpPath));
+	if (buffer.size() > MAX_MINDUMP_PATH_LENGTH) buffer.resize(MAX_MINDUMP_PATH_LENGTH);
+	mExceptionHandler->set_dump_path(buffer);
 #elif LL_LINUX
         //google_breakpad::MinidumpDescriptor desc("/tmp");	//path works in debug fails in production inside breakpad lib so linux gets a little less stack reporting until it is patched.
         google_breakpad::MinidumpDescriptor desc(mDumpPath);	//path works in debug fails in production inside breakpad lib so linux gets a little less stack reporting until it is patched.
@@ -528,7 +604,7 @@ void LLApp::setDebugFileNames(const std::string &path)
 
 void LLApp::writeMiniDump()
 {
-	if(mExceptionHandler == 0) return;
+	if(mExceptionHandler == nullptr) return;
 	mExceptionHandler->WriteMinidump();
 }
 
@@ -581,16 +657,16 @@ bool LLApp::isQuitting()
 // static
 bool LLApp::isExiting()
 {
-	return isQuitting() || isError() || isStopped();
+	return isQuitting() || isError();
 }
 
 void LLApp::disableCrashlogger()
 {
 	// Disable Breakpad exception handler.
-	if (mExceptionHandler != 0)
+	if (mExceptionHandler != nullptr)
 	{
 		delete mExceptionHandler;
-		mExceptionHandler = 0;
+		mExceptionHandler = nullptr;
 	}
 
 	sDisableCrashlogger = TRUE;
@@ -602,34 +678,11 @@ bool LLApp::isCrashloggerDisabled()
 	return (sDisableCrashlogger == TRUE); 
 }
 
-#if !LL_WINDOWS
-// static
-U32 LLApp::getSigChildCount()
-{
-	if (sSigChildCount)
-	{
-		return U32(*sSigChildCount);
-	}
-	return 0;
-}
-
-// static
-void LLApp::incSigChildCount()
-{
-	if (sSigChildCount)
-	{
-		(*sSigChildCount)++;
-	}
-}
-
-#endif
-
-
 // static
 int LLApp::getPid()
 {
 #if LL_WINDOWS
-	return GetCurrentProcessId();
+    return GetCurrentProcessId();
 #else
 	return getpid();
 #endif
@@ -660,12 +713,6 @@ LONG WINAPI default_windows_exception_handler(struct _EXCEPTION_POINTERS *except
 	{
 		ms_sleep(10);
 	}
-
-	//
-	// Generate a minidump if we can.
-	//
-	// TODO: This needs to be ported over form the viewer-specific
-	// LLWinDebug class
 
 	//
 	// At this point, we always want to exit the app.  There's no graceful
@@ -705,43 +752,6 @@ BOOL ConsoleCtrlHandler(DWORD fdwCtrlType)
 } 
 
 #else //!LL_WINDOWS
-void LLApp::setChildCallback(pid_t pid, LLAppChildCallback callback)
-{
-	LLChildInfo child_info;
-	child_info.mCallback = callback;
-	LLApp::sChildMap[pid] = child_info;
-}
-
-void LLApp::setDefaultChildCallback(LLAppChildCallback callback)
-{
-	LLApp::sDefaultChildCallback = callback;
-}
-
-pid_t LLApp::fork()
-{
-	fflush(NULL); // flush all buffers before the child inherits them
-	pid_t pid = ::fork();
-	if( pid < 0 )
-	{
-		int system_error = errno;
-		LL_WARNS() << "Unable to fork! Operating system error code: "
-				<< system_error << LL_ENDL;
-	}
-	else if (pid == 0)
-	{
-		// Sleep a bit to allow the parent to set up child callbacks.
-		ms_sleep(10);
-
-		// We need to disable signal handling, because we don't have a
-		// signal handling thread anymore.
-		setupErrorHandling();
-	}
-	else
-	{
-		LL_INFOS() << "Forked child process " << pid << LL_ENDL;
-	}
-	return pid;
-}
 
 void setup_signals()
 {
@@ -780,6 +790,7 @@ void setup_signals()
 
 	// Asynchronous signals that result in core
 	sigaction(SIGQUIT, &act, NULL);
+	
 }
 
 void clear_signals()
@@ -840,19 +851,6 @@ void default_unix_signal_handler(int signum, siginfo_t *info, void *)
 		{
 			LL_INFOS() << "Signal handler - Got SIGCHLD from " << info->si_pid << LL_ENDL;
 		}
-
-		// Check result code for all child procs for which we've
-		// registered callbacks THIS WILL NOT WORK IF SIGCHLD IS SENT
-		// w/o killing the child (Go, launcher!)
-		// TODO: Now that we're using SIGACTION, we can actually
-		// implement the launcher behavior to determine who sent the
-		// SIGCHLD even if it doesn't result in child termination
-		if (LLApp::sChildMap.count(info->si_pid))
-		{
-			LLApp::sChildMap[info->si_pid].mGotSigChild = TRUE;
-		}
-		
-		LLApp::incSigChildCount();
 
 		return;
 	case SIGABRT:
@@ -995,7 +993,7 @@ bool unix_minidump_callback(const google_breakpad::MinidumpDescriptor& minidump_
 
 	strncpy(path, minidump_desc.path(), remaining);
 	
-	LL_INFOS() << "generated minidump: " << LLApp::instance()->getMiniDumpFilename() << LL_ENDL;
+	LL_INFOS("CRASHREPORT") << "generated minidump: " << LLApp::instance()->getMiniDumpFilename() << LL_ENDL;
 	LLApp::runErrorHandler();
 	
 #ifndef LL_RELEASE_FOR_DOWNLOAD
@@ -1041,7 +1039,7 @@ bool unix_post_minidump_callback(const char *dump_dir,
 		strncpy(path, ".dmp", remaining);
 	}
 	
-	LL_INFOS() << "generated minidump: " << path << LL_ENDL;
+	LL_INFOS("CRASHREPORT") << "generated minidump: " << LLApp::instance()->getMiniDumpFilename() << LL_ENDL;
 	LLApp::runErrorHandler();
 	
 #ifndef LL_RELEASE_FOR_DOWNLOAD
@@ -1062,7 +1060,7 @@ bool windows_post_minidump_callback(const wchar_t* dump_path,
 									bool succeeded)
 {
 	char * path = LLApp::instance()->getMiniDumpFilename();
-	S32 remaining = LLApp::MAX_MINDUMP_PATH_LENGTH;
+	size_t remaining = LLApp::MAX_MINDUMP_PATH_LENGTH;
 	size_t bytesUsed;
 
 	LL_INFOS("MINIDUMPCALLBACK") << "Dump file was generated." << LL_ENDL;
@@ -1085,7 +1083,7 @@ bool windows_post_minidump_callback(const wchar_t* dump_path,
 		strncpy(path, ".dmp", remaining);
 	}
 
-	LL_INFOS() << "generated minidump: " << LLApp::instance()->getMiniDumpFilename() << LL_ENDL;
+	LL_INFOS("CRASHREPORT") << "generated minidump: " << LLApp::instance()->getMiniDumpFilename() << LL_ENDL;
    // *NOTE:Mani - this code is stolen from LLApp, where its never actually used.
 	//OSMessageBox("Attach Debugger Now", "Error", OSMB_OK);
    // *TODO: Translate the signals/exceptions into cross-platform stuff

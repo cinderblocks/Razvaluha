@@ -6,14 +6,15 @@ include(00-Common)
 include(Boost)
 include(BuildPackagesInfo)
 include(BuildVersion)
-include(CEFPlugin)
+include(BuildBranding)
 include(CMakeCopyIfDifferent)
 include(DBusGlib)
 include(FMODSTUDIO)
 include(GLOD)
 include(FindOpenGL)
 include(Hunspell)
-include(JsonCpp)
+include(Json)
+include(LibXML2)
 include(LLAddBuildTest)
 include(LLAppearance)
 include(LLAudio)
@@ -37,11 +38,13 @@ include(Linking)
 include(NDOF)
 include(NVAPI)
 include(OPENAL)
+include(OpenSSL)
 include(TemplateCheck)
 include(UI)
 include(ViewerMiscLibs)
 include(WinManifest)
 include(ZLIB)
+include(URIPARSER)
 
 if (MSVC)
     use_prebuilt_binary(vcredist)
@@ -50,8 +53,9 @@ endif (MSVC)
 include_directories(
     ${DBUSGLIB_INCLUDE_DIRS}
     ${ZLIB_INCLUDE_DIRS}
-    ${JSONCPP_INCLUDE_DIR}
+    ${JSON_INCLUDE_DIR}
     ${GLOD_INCLUDE_DIR}
+    ${LIBXML2_INCLUDES}
     ${LLAUDIO_INCLUDE_DIRS}
     ${LLCHARACTER_INCLUDE_DIRS}
     ${LLCOMMON_INCLUDE_DIRS}
@@ -110,7 +114,6 @@ set(viewer_SOURCE_FILES
     lggdicdownload.cpp
     lgghunspell_wrapper.cpp
     llaccountingcostmanager.cpp
-    llaisapi.cpp
     llagent.cpp
     llagentaccess.cpp
     llagentcamera.cpp
@@ -120,6 +123,7 @@ set(viewer_SOURCE_FILES
     llagentui.cpp
     llagentwearables.cpp
     llagentwearablesfetch.cpp
+    llaisapi.cpp
     llanimstatelabels.cpp
     llappcorehttp.cpp
     llappearancemgr.cpp
@@ -143,7 +147,6 @@ set(viewer_SOURCE_FILES
     llcompilequeue.cpp
     llconfirmationmanager.cpp
     llconsole.cpp
-    llcrashlogger.cpp
     llcurrencyuimanager.cpp
     llcylinder.cpp
     lldaycyclemanager.cpp
@@ -166,6 +169,9 @@ set(viewer_SOURCE_FILES
     lldrawpoolwlsky.cpp
     lldroptarget.cpp
     lldynamictexture.cpp
+    lleasymessagelogentry.cpp
+    lleasymessagereader.cpp
+    lleasymessagesender.cpp
     llemote.cpp
     llenvmanager.cpp
     llestateinfomodel.cpp
@@ -212,6 +218,9 @@ set(viewer_SOURCE_FILES
     llfloatereditui.cpp
     llfloaterenvsettings.cpp
     llfloaterevent.cpp
+    llfloaterexperiencepicker.cpp
+    llfloaterexperienceprofile.cpp
+    llfloaterexperiences.cpp
     llfloaterexploreanimations.cpp
     llfloaterexploresounds.cpp
     llfloaterfeed.cpp
@@ -237,7 +246,9 @@ set(viewer_SOURCE_FILES
     llfloatermediafilter.cpp
     llfloatermediasettings.cpp
     llfloatermemleak.cpp
+    llfloatermessagebuilder.cpp
     llfloatermessagelog.cpp
+    llfloatermessagerewriter.cpp
     llfloatermodelpreview.cpp
     llfloatermodeluploadbase.cpp
     llfloatermute.cpp
@@ -370,11 +381,16 @@ set(viewer_SOURCE_FILES
     llpaneldisplay.cpp
     llpaneleditwearable.cpp
     llpanelevent.cpp
+    llpanelexperiencelisteditor.cpp
+    llpanelexperiencelog.cpp
+    llpanelexperiencepicker.cpp
+    llpanelexperiences.cpp
     llpanelface.cpp
     llpanelgeneral.cpp
     llpanelgroup.cpp
     llpanelgroupbulk.cpp
     llpanelgroupbulkban.cpp
+    llpanelgroupexperiences.cpp
     llpanelgroupgeneral.cpp
     llpanelgroupinvite.cpp
     llpanelgrouplandmoney.cpp
@@ -447,6 +463,7 @@ set(viewer_SOURCE_FILES
     llsechandler_basic.cpp
     llselectmgr.cpp
     llshareavatarhandler.cpp
+    llskinningutil.cpp
     llsky.cpp
     llslurl.cpp
     llspatialpartition.cpp
@@ -599,6 +616,7 @@ set(viewer_SOURCE_FILES
     scriptcounter.cpp
     sgmemstat.cpp
     shcommandhandler.cpp
+    shupdatechecker.cpp
     shfloatermediaticker.cpp
     wlfPanel_AdvSettings.cpp
     )
@@ -641,7 +659,6 @@ set(viewer_HEADER_FILES
     lggdicdownload.h
     lgghunspell_wrapper.h
     llaccountingcostmanager.h
-    llaisapi.h
     llagent.h
     llagentaccess.h
     llagentcamera.h
@@ -651,6 +668,7 @@ set(viewer_HEADER_FILES
     llagentui.h
     llagentwearables.h
     llagentwearablesfetch.h
+    llaisapi.h
     llanimstatelabels.h
     llappcorehttp.h
     llappearance.h
@@ -674,7 +692,6 @@ set(viewer_HEADER_FILES
     llcompilequeue.h
     llconfirmationmanager.h
     llconsole.h
-    llcrashlogger.h
     llcurrencyuimanager.h
     llcylinder.h
     lldaycyclemanager.h
@@ -687,8 +704,8 @@ set(viewer_HEADER_FILES
     lldrawpoolalpha.h
     lldrawpoolavatar.h
     lldrawpoolbump.h
-    lldrawpoolmaterials.h
     lldrawpoolground.h
+    lldrawpoolmaterials.h
     lldrawpoolsimple.h
     lldrawpoolsky.h
     lldrawpoolterrain.h
@@ -697,6 +714,9 @@ set(viewer_HEADER_FILES
     lldrawpoolwlsky.h
     lldroptarget.h
     lldynamictexture.h
+    lleasymessagelogentry.h
+    lleasymessagereader.h
+    lleasymessagesender.h
     llemote.h
     llenvmanager.h
     llestateinfomodel.h
@@ -743,6 +763,9 @@ set(viewer_HEADER_FILES
     llfloatereditui.h
     llfloaterenvsettings.h
     llfloaterevent.h
+    llfloaterexperiencepicker.h
+    llfloaterexperienceprofile.h
+    llfloaterexperiences.h
     llfloaterexploreanimations.h
     llfloaterexploresounds.h
     llfloaterfeed.h
@@ -768,7 +791,9 @@ set(viewer_HEADER_FILES
     llfloatermediafilter.h
     llfloatermediasettings.h
     llfloatermemleak.h
+    llfloatermessagebuilder.h
     llfloatermessagelog.h
+    llfloatermessagerewriter.h
     llfloatermodelpreview.h
     llfloatermodeluploadbase.h
     llfloatermute.h
@@ -901,12 +926,17 @@ set(viewer_HEADER_FILES
     llpaneldisplay.h
     llpaneleditwearable.h
     llpanelevent.h
+    llpanelexperiencelisteditor.h
+    llpanelexperiencelog.h
+    llpanelexperiencepicker.h
+    llpanelexperiences.h
     llpanelface.h
     llpanelgeneral.h
     llpanelgroup.h
     llpanelgroupbulk.h
     llpanelgroupbulkban.h
     llpanelgroupbulkimpl.h
+    llpanelgroupexperiences.h
     llpanelgroupgeneral.h
     llpanelgroupinvite.h
     llpanelgrouplandmoney.h
@@ -980,6 +1010,7 @@ set(viewer_HEADER_FILES
     llsechandler_basic.h
     llselectmgr.h
     llsimplestat.h
+    llskinningutil.h
     llsky.h
     llslurl.h
     llspatialpartition.h
@@ -1123,7 +1154,6 @@ set(viewer_HEADER_FILES
     llxmlrpclistener.h
     llxmlrpctransaction.h
     m7wlinterface.h
-    macmain.h
     pipeline.h
     qtoolalign.h
     rlvactions.h
@@ -1141,6 +1171,7 @@ set(viewer_HEADER_FILES
     sgmemstat.h
     shcommandhandler.h
     shfloatermediaticker.h
+    shupdatechecker.h
     wlfPanel_AdvSettings.h
     )
 
@@ -1165,7 +1196,7 @@ set_source_files_properties(
 if (DARWIN)
   LIST(APPEND viewer_SOURCE_FILES llappviewermacosx.cpp)
   LIST(APPEND viewer_SOURCE_FILES llappviewermacosx-objc.mm)
-  LIST(APPEND viewer_SOURCE_FILES llappviewermacosx-objc.h)
+  LIST(APPEND viewer_HEADER_FILES llappviewermacosx-objc.h)
   LIST(APPEND viewer_SOURCE_FILES llfilepicker_mac.mm)
   LIST(APPEND viewer_HEADER_FILES llfilepicker_mac.h)
 
@@ -1177,19 +1208,21 @@ if (DARWIN)
   find_library(COCOA_LIBRARY Cocoa)
   find_library(IOKIT_LIBRARY IOKit)
   find_library(COREAUDIO_LIBRARY CoreAudio)
+  find_library(CARBON_LIBRARY Carbon)
 
   set(viewer_LIBRARIES
     ${COCOA_LIBRARY}
     ${AGL_LIBRARY}
     ${IOKIT_LIBRARY}
     ${COREAUDIO_LIBRARY}
+    ${CARBON_LIBRARY}
     )
 
   # Add resource files to the project.
   set(viewer_RESOURCE_FILES
     macview.r
     gpu_table.txt
-    SecondLife.nib/
+    SecondLife.xib
     # CMake doesn't seem to support Xcode language variants well just yet
     English.lproj/InfoPlist.strings
     English.lproj/language.txt
@@ -1314,9 +1347,6 @@ if (WINDOWS)
     set_source_files_properties(${viewer_RESOURCE_FILES}
                                 PROPERTIES HEADER_FILE_ONLY TRUE)
 
-    configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/res/viewerRes.rc
-                    ${CMAKE_CURRENT_BINARY_DIR}/viewerRes.rc
-                    )
     set(viewer_RESOURCE_FILES
         ${CMAKE_CURRENT_BINARY_DIR}/viewerRes.rc
         ${viewer_RESOURCE_FILES}
@@ -1333,21 +1363,14 @@ if (WINDOWS)
 # see EXP-1765 - theory is opengl32.lib needs to be included before gdi32.lib (windows libs)
     set(viewer_LIBRARIES
         opengl32
-        advapi32
+        ${WINDOWS_LIBRARIES}
         comdlg32
-        dinput8
         dxguid
-        gdi32
         kernel32
-        odbc32
-        odbccp32
         ole32
         oleaut32
         shell32
-        user32
-        Vfw32
-        Wbemuuid
-        winspool
+        wer
         )
 endif (WINDOWS)
 
@@ -1436,6 +1459,12 @@ endif (WINDOWS)
 
 set_source_files_properties(llstartup.cpp PROPERTIES COMPILE_FLAGS "${LLSTARTUP_COMPILE_FLAGS}")
 
+if (LIBVLCPLUGIN)
+    set_source_files_properties(llappviewer.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=1")
+else (LIBVLCPLUGIN)
+    set_source_files_properties(llappviewer.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=0")
+endif (LIBVLCPLUGIN)
+
 list(APPEND viewer_SOURCE_FILES ${viewer_HEADER_FILES})
 
 set_source_files_properties(${viewer_HEADER_FILES}
@@ -1522,26 +1551,32 @@ if (WINDOWS)
       ${ARCH_PREBUILT_DIRS_RELEASE}/ssleay32.dll
       ${ARCH_PREBUILT_DIRS_DEBUG}/libeay32.dll
       ${ARCH_PREBUILT_DIRS_DEBUG}/ssleay32.dll
-      SLPlugin
-      media_plugin_quicktime
+      AlchemyPlugin
       media_plugin_cef
       windows-crash-logger
       )
 
+    if(LIBVLCPLUGIN)
+      list(APPEND COPY_INPUT_DEPENDENCIES
+	    media_plugin_libvlc
+	    )
+    endif(LIBVLCPLUGIN)
+
+
     if (FMODSTUDIO)
-      if (WORD_SIZE EQUAL 64)
-        list(APPEND COPY_INPUT_DEPENDENCIES
-             ${SHARED_LIB_STAGING_DIR}/Release/fmod64.dll
-             ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod64.dll
-             ${SHARED_LIB_STAGING_DIR}/Debug/fmodL64.dll
-            )
-      else (WORD_SIZE EQUAL 64)
+      if (WORD_SIZE EQUAL 32)
         list(APPEND COPY_INPUT_DEPENDENCIES
              ${SHARED_LIB_STAGING_DIR}/Release/fmod.dll
              ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod.dll
              ${SHARED_LIB_STAGING_DIR}/Debug/fmodL.dll
             )
-      endif (WORD_SIZE EQUAL 64)
+      elseif (WORD_SIZE EQUAL 64)
+        list(APPEND COPY_INPUT_DEPENDENCIES
+             ${SHARED_LIB_STAGING_DIR}/Release/fmod64.dll
+             ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod64.dll
+             ${SHARED_LIB_STAGING_DIR}/Debug/fmodL64.dll
+            )
+      endif (WORD_SIZE EQUAL 32)
     endif (FMODSTUDIO)
 
     add_custom_command(
@@ -1552,6 +1587,7 @@ if (WINDOWS)
         --actions=copy
         --arch=${ARCH}
         --artwork=${ARTWORK_DIR}
+        --branding_id=${VIEWER_BRANDING_ID}
         --build=${CMAKE_CURRENT_BINARY_DIR}
         --buildtype=${CMAKE_BUILD_TYPE}
         --configuration=${CMAKE_CFG_INTDIR}
@@ -1578,25 +1614,12 @@ if (WINDOWS)
     endif (EXISTS ${CMAKE_SOURCE_DIR}/copy_win_scripts)
 
     add_dependencies(${VIEWER_BINARY_NAME}
-      SLPlugin
+      AlchemyPlugin
+      windows-crash-logger
       )
 
     EMBED_MANIFEST(${VIEWER_BINARY_NAME} 1)
 
-    # sets the 'working directory' for debugging from visual studio.
-    if (NOT UNATTENDED)
-        add_custom_command(
-            TARGET ${VIEWER_BINARY_NAME} PRE_BUILD
-            COMMAND ${CMAKE_SOURCE_DIR}/tools/vstool/vstool.exe
-            ARGS
-              --solution
-              ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.sln
-              --workingdir
-              ${VIEWER_BINARY_NAME}
-              "${CMAKE_CURRENT_SOURCE_DIR}"
-            COMMENT "Setting the ${VIEWER_BINARY_NAME} working directory for debugging."
-            )
-    endif (NOT UNATTENDED)
     if (PACKAGE)
 
       add_custom_command(
@@ -1606,6 +1629,7 @@ if (WINDOWS)
           ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
           --arch=${ARCH}
           --artwork=${ARTWORK_DIR}
+          --branding_id=${VIEWER_BRANDING_ID}
           --build=${CMAKE_CURRENT_BINARY_DIR}
           --buildtype=${CMAKE_BUILD_TYPE}
           --channel=${VIEWER_CHANNEL}
@@ -1626,7 +1650,22 @@ if (WINDOWS)
         ${CMAKE_CFG_INTDIR}/touched.bat
         windows-setup-build-all
         )
+        # temporarily disable packaging of event_host until hg subrepos get
+        # sorted out on the parabuild cluster...
+        #${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/event_host.tar.bz2)
+
     endif (PACKAGE)
+elseif (DARWIN)
+    set_target_properties(${VIEWER_BINARY_NAME}
+        PROPERTIES
+        LINK_FLAGS_RELEASE "${LINK_FLAGS_RELEASE} -Xlinker -dead_strip -Xlinker -map -Xlinker ${CMAKE_CURRENT_BINARY_DIR}/${VIEWER_BINARY_NAME}.MAP"
+        )
+else (WINDOWS)
+        # Linux
+    set_target_properties(${VIEWER_BINARY_NAME}
+        PROPERTIES
+        LINK_FLAGS_RELEASE "${LINK_FLAGS_RELEASE} -Wl,--Map=${VIEWER_BINARY_NAME}.MAP"
+        )
 endif (WINDOWS)
 
 # *NOTE: - this list is very sensitive to ordering, test carefully on all
@@ -1635,6 +1674,28 @@ endif (WINDOWS)
 # appears to sometimes de-duplicate redundantly listed dependencies improperly.
 # To work around this, higher level modules should be listed before the modules
 # that they depend upon. -brad
+#
+# *NOTE:  On mixing system shared libraries and updated static archives.
+# We use a number of libraries that have an existence as system libraries,
+# internal-use libraries and applications libraries.  The most-referenced
+# one of these being libz where you can find four or more versions in play
+# at once.  On Linux, libz can be found at link and run time via a number
+# of paths:
+#     
+#      => -lfreetype
+#        => libz.so.1 (on install machine, not build)
+#      => -lSDL
+#        => libz.so.1 (on install machine, not build)
+#      => -lgdk-x11-2.0
+#        => libz.so.1
+#      => -lz
+#
+# We generally want the newest version of the library to provide all symbol
+# resolution.  To that end, when using static archives, the *_PRELOAD_ARCHIVES
+# variables, PNG_PRELOAD_ARCHIVES and ZLIB_PRELOAD_ARCHIVES, get the archives
+# dumped into the target binary and runtime lookup will find the most
+# modern version.
+
 target_link_libraries(${VIEWER_BINARY_NAME}
     ${PNG_PRELOAD_ARCHIVES}
     ${ZLIB_PRELOAD_ARCHIVES}
@@ -1659,6 +1720,7 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${LLCOMMON_LIBRARIES}
     ${NDOF_LIBRARY}
     ${NVAPI_LIBRARY}
+    ${URIPARSER_LIBRARY}
     ${viewer_LIBRARIES}
     ${BOOST_CONTEXT_LIBRARY}
     ${BOOST_FILESYSTEM_LIBRARY}
@@ -1678,6 +1740,9 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${WINDOWS_LIBRARIES}
     ${EXPAT_LIBRARIES}
     ${XMLRPCEPI_LIBRARIES}
+    ${CRYPTO_LIBRARIES}
+    ${OPENSSL_LIBRARIES}
+    ${CRYPTO_LIBRARIES}
     ${HUNSPELL_LIBRARY}
     ${LLPHYSICSEXTENSIONS_LIBRARIES}
     ${LLAPPEARANCE_LIBRARIES}
@@ -1689,7 +1754,8 @@ if (LINUX)
   # These are the generated targets that are copied to package/
   set(COPY_INPUT_DEPENDENCIES
     ${VIEWER_BINARY_NAME}
-    SLPlugin
+    linux-crash-logger
+    AlchemyPlugin
     media_plugin_gstreamer010
     llcommon
     )
@@ -1703,6 +1769,7 @@ if (LINUX)
         ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
         --arch=${ARCH}
         --artwork=${ARTWORK_DIR}
+        --branding_id=${VIEWER_BRANDING_ID}
         --build=${CMAKE_CURRENT_BINARY_DIR}
         --buildtype=${CMAKE_BUILD_TYPE}
         --channel=${VIEWER_CHANNEL}
@@ -1726,6 +1793,7 @@ if (LINUX)
         --arch=${ARCH}
         --actions=copy
         --artwork=${ARTWORK_DIR}
+        --branding_id=${VIEWER_BRANDING_ID}
         --build=${CMAKE_CURRENT_BINARY_DIR}
         --buildtype=${CMAKE_BUILD_TYPE}
         --configuration=${CMAKE_CFG_INTDIR}
@@ -1740,7 +1808,7 @@ if (LINUX)
     COMMENT "Performing viewer_manifest copy"
       )
 
-  add_dependencies(${VIEWER_BINARY_NAME} SLPlugin media_plugin_gstreamer010)
+  add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin)
   add_custom_target(copy_l_viewer_manifest ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.copy_touched)
 
   if (PACKAGE)
@@ -1761,6 +1829,8 @@ if (DARWIN)
   set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VIEWER_SHORT_VERSION}")
   set(MACOSX_BUNDLE_BUNDLE_VERSION "${${ROOT_PROJECT_NAME}_VERSION}")
   set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2010-2016 Siana Gearz")
+  set(MACOSX_BUNDLE_NSMAIN_NIB_FILE "${VIEWER_BRANDING_NAME}")
+  set(MACOSX_BUNDLE_NSPRINCIPAL_CLASS "LLNSApplication")
 
   set_target_properties(
     ${VIEWER_BINARY_NAME}
@@ -1783,6 +1853,7 @@ if (DARWIN)
     ARGS
       ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
       --actions=copy
+      --arch=${ARCH}
       --artwork=${ARTWORK_DIR}
       --branding_id=${VIEWER_BRANDING_ID}
       --build=${CMAKE_CURRENT_BINARY_DIR}
@@ -1796,8 +1867,17 @@ if (DARWIN)
       ${VIEWER_BINARY_NAME}
       ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
     )
+  if (WORD_SIZE EQUAL 32)
+      add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin media_plugin_cef mac-crash-logger)
+  elseif (WORD_SIZE EQUAL 64)
+     add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin media_plugin_cef mac-crash-logger)
+  endif (WORD_SIZE EQUAL 32)
 
-  add_dependencies(${VIEWER_BINARY_NAME} SLPlugin media_plugin_quicktime media_plugin_cef)
+  if (ENABLE_SIGNING)
+      set(SIGNING_SETTING "--signature=${SIGNING_IDENTITY}")
+  else (ENABLE_SIGNING)
+      set(SIGNING_SETTING "")
+  endif (ENABLE_SIGNING)
 
   if (PACKAGE)
       add_custom_target(llpackage ALL DEPENDS ${VIEWER_BINARY_NAME})
@@ -1820,6 +1900,7 @@ if (DARWIN)
           --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
           --source=${CMAKE_CURRENT_SOURCE_DIR}
           --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.touched
+          ${SIGNING_SETTING}
         DEPENDS
 		  ${VIEWER_BINARY_NAME}
           ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
@@ -1837,8 +1918,8 @@ if (PACKAGE)
   if (WINDOWS)
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}")
     set(VIEWER_SYMBOL_FILE "${SYMBOL_NAME}-${AUTOBUILD_PLATFORM_NAME}.tar.bz2")
-    # slplugin.exe failing symbols dump - need to debug, might have to do with updated version of google breakpad
-    # set(VIEWER_EXE_GLOBS "${VIEWER_BINARY_NAME}${CMAKE_EXECUTABLE_SUFFIX} slplugin.exe")
+    # AlchemyPlugin.exe failing symbols dump - need to debug, might have to do with updated version of google breakpad
+    # set(VIEWER_EXE_GLOBS "${VIEWER_BINARY_NAME}${CMAKE_EXECUTABLE_SUFFIX} AlchemyPlugin.exe")
     set(VIEWER_EXE_GLOBS "${VIEWER_BINARY_NAME}${CMAKE_EXECUTABLE_SUFFIX}")
     set(VIEWER_LIB_GLOB "*${CMAKE_SHARED_MODULE_SUFFIX}")
     set(VIEWER_COPY_MANIFEST copy_w_viewer_manifest)
@@ -1847,17 +1928,18 @@ if (PACKAGE)
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}")
     # *TODO: Generate these search dirs in the cmake files related to each binary.
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/llplugin/slplugin/${CMAKE_CFG_INTDIR}")
-    list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/plugins/gstreamer010/${CMAKE_CFG_INTDIR}")
-    list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/plugins/quicktime/${CMAKE_CFG_INTDIR}")
-    list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/plugins/webkit/${CMAKE_CFG_INTDIR}")
+    list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/llplugin/AlchemyPlugin/${CMAKE_CFG_INTDIR}")
+    list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/mac_crash_logger/${CMAKE_CFG_INTDIR}")
+    list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/media_plugins/gstreamer010/${CMAKE_CFG_INTDIR}")
+
     set(VIEWER_SYMBOL_FILE "${SYMBOL_NAME}-darwin.tar.bz2")
-    set(VIEWER_EXE_GLOBS "'${VIEWER_BRANDING_NAME}' SLPlugin")
+    set(VIEWER_EXE_GLOBS "'${VIEWER_BRANDING_NAME}' AlchemyPlugin mac-crash-logger")
     set(VIEWER_LIB_GLOB "*.dylib")
   endif (DARWIN)
   if (LINUX)
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_CURRENT_BINARY_DIR}/packaged")
     set(VIEWER_SYMBOL_FILE "${SYMBOL_NAME}-${AUTOBUILD_PLATFORM_NAME}.tar.bz2")
-    set(VIEWER_EXE_GLOBS "${VIEWER_BRANDING_ID}-do-not-run-directly SLPlugin")
+    set(VIEWER_EXE_GLOBS "${VIEWER_BRANDING_ID}-do-not-run-directly AlchemyPlugin")
     set(VIEWER_LIB_GLOB "*${CMAKE_SHARED_MODULE_SUFFIX}*")
     set(VIEWER_COPY_MANIFEST copy_l_viewer_manifest)
   endif (LINUX)
@@ -1884,15 +1966,15 @@ if (PACKAGE)
         VERBATIM)
 
   add_custom_target(generate_breakpad_symbols DEPENDS "${VIEWER_SYMBOL_FILE}")
-  add_dependencies(generate_breakpad_symbols ${VIEWER_BINARY_NAME})
-if(VIEWER_COPY_MANIFEST)
-  add_dependencies(generate_breakpad_symbols ${VIEWER_COPY_MANIFEST})
-endif(VIEWER_COPY_MANIFEST)
+  if (WINDOWS OR LINUX)
+    add_dependencies(generate_breakpad_symbols "${VIEWER_BINARY_NAME}" "${VIEWER_COPY_MANIFEST}")
+  elseif (DARWIN)
+    add_dependencies(generate_breakpad_symbols "${VIEWER_BINARY_NAME}")
+  endif (WINDOWS OR LINUX)
   add_dependencies(llpackage generate_breakpad_symbols)
   endif(RELEASE_CRASH_REPORTING OR NON_RELEASE_CRASH_REPORTING)
 endif (PACKAGE)
 
-# Add tests
 if (LL_TESTS)
 endif (LL_TESTS)
 

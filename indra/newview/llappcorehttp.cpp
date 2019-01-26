@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llappcorehttp.cpp
  * @brief 
@@ -30,11 +32,16 @@
 
 #include "llappviewer.h"
 #include "llviewercontrol.h"
+#include "llexception.h"
+#include "stringize.h"
 
 #include <openssl/x509_vfy.h>
 #include <openssl/ssl.h>
 #include "llsecapi.h"
 #include <curl/curl.h>
+
+#include "llcorehttputil.h"
+#include "httpstats.h"
 
 // Here is where we begin to get our connection usage under control.
 // This establishes llcorehttp policy classes that, among other
@@ -63,8 +70,13 @@ static const struct
 		"",
 		"other"
 	},
+	{ // AP_ASSET
+		12,		1,		16,		0,		true,
+		"AssetFetchConcurrency",
+		"asset fetch"
+	},
 	{ // AP_TEXTURE
-		8,		1,		12,		0,		true,
+		12,		1,		16,		0,		true,
 		"TextureFetchConcurrency",
 		"texture fetch"
 	},
@@ -121,7 +133,7 @@ LLAppCoreHttp::HttpClass::HttpClass()
 
 
 LLAppCoreHttp::LLAppCoreHttp()
-	: mRequest(NULL),
+	: mRequest(nullptr),
 	  mStopHandle(LLCORE_HTTP_HANDLE_INVALID),
 	  mStopRequested(0.0),
 	  mStopped(false),
@@ -132,12 +144,15 @@ LLAppCoreHttp::LLAppCoreHttp()
 LLAppCoreHttp::~LLAppCoreHttp()
 {
 	delete mRequest;
-	mRequest = NULL;
+	mRequest = nullptr;
 }
 
 
 void LLAppCoreHttp::init()
 {
+    LLCoreHttpUtil::setPropertyMethods(
+        boost::bind(&LLControlGroup::getBOOL, boost::ref(gSavedSettings), _1),
+        boost::bind(&LLControlGroup::declareBOOL, boost::ref(gSavedSettings), _1, _2, _3, LLControlVariable::PERSIST_NONDFT));
 
     LLCore::LLHttp::initialize();
 
@@ -149,9 +164,19 @@ void LLAppCoreHttp::init()
 	}
 
 	// Point to our certs or SSH/https: will fail on connect
-	status = LLCore::HttpRequest::setStaticPolicyOption(LLCore::HttpRequest::PO_CA_FILE,
+    std::string ca_file = gDirUtilp->getCAFile();
+    if ( LLFile::isfile(ca_file) )
+    {
+        LL_DEBUGS("Init") << "Setting CA File to " << ca_file << LL_ENDL;
+		status = LLCore::HttpRequest::setStaticPolicyOption(LLCore::HttpRequest::PO_CA_FILE,
 														LLCore::HttpRequest::GLOBAL_POLICY_ID,
-														gDirUtilp->getCAFile(), NULL);
+                                                            ca_file, nullptr);
+    }
+    else
+    {
+        LL_ERRS("Init") << "Missing CA File; should be at " << ca_file << LL_ENDL;
+    }
+    
 	if (! status)
 	{
 		LL_ERRS("Init") << "Failed to set CA File for HTTP services.  Reason:  " << status.toString()
@@ -161,7 +186,7 @@ void LLAppCoreHttp::init()
 	// Establish HTTP Proxy, if desired.
 	status = LLCore::HttpRequest::setStaticPolicyOption(LLCore::HttpRequest::PO_LLPROXY,
 														LLCore::HttpRequest::GLOBAL_POLICY_ID,
-														1, NULL);
+														1, nullptr);
 	if (! status)
 	{
 		LL_WARNS("Init") << "Failed to set HTTP proxy for HTTP services.  Reason:  " << status.toString()
@@ -171,7 +196,7 @@ void LLAppCoreHttp::init()
 	// Set up SSL Verification call back.
 	status = LLCore::HttpRequest::setStaticPolicyOption(LLCore::HttpRequest::PO_SSL_VERIFY_CALLBACK,
 														LLCore::HttpRequest::GLOBAL_POLICY_ID,
-														sslVerify, NULL);
+														sslVerify, nullptr);
 	if (!status)
 	{
 		LL_WARNS("Init") << "Failed to set SSL Verification.  Reason:  " << status.toString() << LL_ENDL;
@@ -189,7 +214,7 @@ void LLAppCoreHttp::init()
 		trace_level = long(gSavedSettings.getU32(http_trace));
 		status = LLCore::HttpRequest::setStaticPolicyOption(LLCore::HttpRequest::PO_TRACE,
 															LLCore::HttpRequest::GLOBAL_POLICY_ID,
-															trace_level, NULL);
+															trace_level, nullptr);
 	}
 	
 	// Setup default policy and constrain if directed to
@@ -306,6 +331,8 @@ void LLAppCoreHttp::requestStop()
 
 void LLAppCoreHttp::cleanup()
 {
+    LLCore::HTTPStats::instance().dumpStats();
+
 	if (LLCORE_HTTP_HANDLE_INVALID == mStopHandle)
 	{
 		// Should have been started already...
@@ -338,7 +365,7 @@ void LLAppCoreHttp::cleanup()
 	mPipelinedSignal.disconnect();
 	
 	delete mRequest;
-	mRequest = NULL;
+	mRequest = nullptr;
 
 	LLCore::HttpStatus status = LLCore::HttpRequest::destroyService();
 	if (! status)
@@ -360,7 +387,9 @@ void LLAppCoreHttp::refreshSettings(bool initial)
 	if (gSavedSettings.controlExists(http_pipelining))
 	{
 		// Default to true (in ctor) if absent.
-		bool pipelined(gSavedSettings.getBOOL(http_pipelining));
+		// FIXME: Http Pipelining is still broken.
+		//bool pipelined(gSavedSettings.getBOOL(http_pipelining));
+		bool pipelined(false);
 		if (pipelined != mPipelined)
 		{
 			mPipelined = pipelined;
@@ -383,7 +412,7 @@ void LLAppCoreHttp::refreshSettings(bool initial)
 				status = LLCore::HttpRequest::setStaticPolicyOption(LLCore::HttpRequest::PO_THROTTLE_RATE,
 																	mHttpClasses[app_policy].mPolicy,
 																	init_data[i].mRate,
-																	NULL);
+																	nullptr);
 				if (! status)
 				{
 					LL_WARNS("Init") << "Unable to set " << init_data[i].mUsage
@@ -519,7 +548,7 @@ LLCore::HttpStatus LLAppCoreHttp::sslVerify(const std::string &url,
 		// don't validate hostname.  Let libcurl do it instead.  That way, it'll handle redirects
 		store->validate(VALIDATION_POLICY_SSL & (~VALIDATION_POLICY_HOSTNAME), chain, validation_params);
 	}
-	catch (LLCertValidationTrustException &cert_exception)
+	catch (const LLCertValidationTrustException &cert_exception)
 	{
 		// this exception is is handled differently than the general cert
 		// exceptions, as we allow the user to actually add the certificate
@@ -529,23 +558,22 @@ LLCore::HttpStatus LLAppCoreHttp::sslVerify(const std::string &url,
 		// somewhat clumsy, as we may run into errors that do not map directly to curl
 		// error codes.  Should be refactored with login refactoring, perhaps.
 		result = LLCore::HttpStatus(LLCore::HttpStatus::EXT_CURL_EASY, CURLE_SSL_CACERT);
-		result.setMessage(cert_exception.getMessage());
-		LLPointer<LLCertificate> cert = cert_exception.getCert();
-		cert->ref(); // adding an extra ref here
-		result.setErrorData(cert.get());
+		result.setMessage(cert_exception.what());
+		LLSD certdata = cert_exception.getCertData();
+		result.setErrorData(certdata);
 		// We should probably have a more generic way of passing information
 		// back to the error handlers.
 	}
-	catch (LLCertException &cert_exception)
+	catch (const LLCertException &cert_exception)
 	{
 		result = LLCore::HttpStatus(LLCore::HttpStatus::EXT_CURL_EASY, CURLE_SSL_PEER_CERTIFICATE);
-		result.setMessage(cert_exception.getMessage());
-		LLPointer<LLCertificate> cert = cert_exception.getCert();
-		cert->ref(); // adding an extra ref here
-		result.setErrorData(cert.get());
+		result.setMessage(cert_exception.what());
+		LLSD certdata = cert_exception.getCertData();
+		result.setErrorData(certdata);
 	}
 	catch (...)
 	{
+		LOG_UNHANDLED_EXCEPTION(STRINGIZE("('" << url << "')"));
 		// any other odd error, we just handle as a connect error.
 		result = LLCore::HttpStatus(LLCore::HttpStatus::EXT_CURL_EASY, CURLE_SSL_CONNECT_ERROR);
 	}

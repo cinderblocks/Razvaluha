@@ -18,7 +18,6 @@
 
 #include "llfloateravatarlist.h"
 #include "llaudioengine.h"
-#include "llavatarconstants.h"
 #include "llavatarnamecache.h"
 
 #include "llnotificationsutil.h"
@@ -1047,7 +1046,7 @@ void LLFloaterAvatarList::onClickTrack()
 
 	if (mTracking && mTrackedAvatar == agent_id)
 	{
-		LLTracker::stopTracking(false);
+		LLTracker::instance().stopTracking(false);
 		mTracking = false;
 	}
 	else
@@ -1064,11 +1063,11 @@ void LLFloaterAvatarList::refreshTracker()
 {
 	if (!mTracking) return;
 
-	if (LLTracker::isTracking())
+	if (LLTracker::instance().isTracking())
 	{
 		if(LLAvatarListEntry* entry = getAvatarEntry(mTrackedAvatar))
 		{
-			if (entry->getPosition() != LLTracker::getTrackedPositionGlobal())
+			if (entry->getPosition() != LLTracker::instance().getTrackedPositionGlobal())
 			{
 				trackAvatar(entry);
 			}
@@ -1076,7 +1075,7 @@ void LLFloaterAvatarList::refreshTracker()
 	}
 	else
 	{	// Tracker stopped.
-		LLTracker::stopTracking(false);
+		LLTracker::instance().stopTracking(false);
 		mTracking = false;
 //		LL_INFOS() << "Tracking stopped." << LL_ENDL;
 	}
@@ -1087,7 +1086,7 @@ void LLFloaterAvatarList::trackAvatar(const LLAvatarListEntry* entry) const
 	if (!entry) return;
 	std::string name = entry->getName();
 	if (!mUpdate) name += "\n(last known position)";
-	LLTracker::trackLocation(entry->getPosition(), name, name);
+	LLTracker::instance().trackLocation(entry->getPosition(), name, name);
 }
 
 LLAvatarListEntry* LLFloaterAvatarList::getAvatarEntry(const LLUUID& avatar) const
@@ -1355,38 +1354,7 @@ void send_eject(const LLUUID& avatar_id, bool ban)
 	}
 }
 
-static void send_estate_message(
-	const char* request,
-	const LLUUID& target)
-{
-
-	LLMessageSystem* msg = gMessageSystem;
-	LLUUID invoice;
-
-	// This seems to provide an ID so that the sim can say which request it's
-	// replying to. I think this can be ignored for now.
-	invoice.generate();
-
-	LL_INFOS() << "Sending estate request '" << request << "'" << LL_ENDL;
-	msg->newMessage("EstateOwnerMessage");
-	msg->nextBlockFast(_PREHASH_AgentData);
-	msg->addUUIDFast(_PREHASH_AgentID, gAgentID);
-	msg->addUUIDFast(_PREHASH_SessionID, gAgentSessionID);
-	msg->addUUIDFast(_PREHASH_TransactionID, LLUUID::null); //not used
-	msg->nextBlock("MethodData");
-	msg->addString("Method", request);
-	msg->addUUID("Invoice", invoice);
-
-	// Agent id
-	msg->nextBlock("ParamList");
-	msg->addString("Parameter", gAgentID.asString().c_str());
-
-	// Target
-	msg->nextBlock("ParamList");
-	msg->addString("Parameter", target.asString().c_str());
-
-	msg->sendReliable(gAgent.getRegion()->getHost());
-}
+void send_estate_message(const std::string request, const std::vector<std::string>& strings);
 
 static void cmd_append_names(const LLAvatarListEntry* entry, std::string &str, std::string &sep)
 															{ if(!str.empty())str.append(sep);str.append(entry->getName()); }
@@ -1398,7 +1366,8 @@ static void cmd_freeze(const LLAvatarListEntry* entry)		{ send_freeze(entry->get
 static void cmd_unfreeze(const LLAvatarListEntry* entry)	{ send_freeze(entry->getID(), false); }
 static void cmd_eject(const LLAvatarListEntry* entry)		{ send_eject(entry->getID(), false); }
 static void cmd_ban(const LLAvatarListEntry* entry)			{ send_eject(entry->getID(), true); }
-static void cmd_estate_eject(const LLAvatarListEntry* entry){ send_estate_message("teleporthomeuser", entry->getID()); }
+static void cmd_estate_eject(const LLAvatarListEntry* entry){ send_estate_message("kickestate", {entry->getID().asString()}); }
+static void cmd_estate_tp_home(const LLAvatarListEntry* entry){ send_estate_message("teleporthomeuser", {gAgentID.asString(), entry->getID().asString()}); }
 static void cmd_estate_ban(const LLAvatarListEntry* entry)	{ LLPanelEstateInfo::sendEstateAccessDelta(ESTATE_ACCESS_BANNED_AGENT_ADD | ESTATE_ACCESS_ALLOWED_AGENT_REMOVE | ESTATE_ACCESS_NO_REPLY, entry->getID()); }
 
 void LLFloaterAvatarList::doCommand(avlist_command_t func, bool single/*=false*/) const
@@ -1469,8 +1438,9 @@ void LLFloaterAvatarList::callbackEjectFromEstate(const LLSD& notification, cons
 {
 	if (!instanceExists()) return;
 	LLFloaterAvatarList& inst(instance());
-	if (!LLNotification::getSelectedOption(notification, response)) // if == 0
-		inst.doCommand(cmd_estate_eject);
+	S32 option = LLNotification::getSelectedOption(notification, response);
+	if (option != 2)
+		inst.doCommand(option ? cmd_estate_tp_home : cmd_estate_eject);
 }
 
 //static

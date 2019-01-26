@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 * @file llpathfindingcharacterlist.cpp
 * @brief Implementation of llpathfindingcharacterlist
@@ -61,6 +63,8 @@ void LLPathfindingCharacterList::parseCharacterListData(const LLSD& pCharacterLi
 	for (LLSD::map_const_iterator characterDataIter = pCharacterListData.beginMap();
 		characterDataIter != pCharacterListData.endMap(); ++characterDataIter)
 	{
+        if (characterDataIter->second.isUndefined())
+            continue;
 		const std::string& uuid(characterDataIter->first);
 		const LLSD& characterData = characterDataIter->second;
 		LLPathfindingObjectPtr character(new LLPathfindingCharacter(uuid, characterData));

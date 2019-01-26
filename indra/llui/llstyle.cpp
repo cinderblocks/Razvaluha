@@ -116,28 +116,6 @@ LLStyle &LLStyle::operator=(const LLStyle &rhs)
 void LLStyle::setFontName(const std::string& fontname)
 {
 	mFontName = fontname;
-
-	std::string fontname_lc = fontname;
-	LLStringUtil::toLower(fontname_lc);
-	
-	mFontID = LLFONT_OCRA; // default
-	
-	if ((fontname_lc == "sansserif") || (fontname_lc == "sans-serif"))
-	{
-		mFontID = LLFONT_SANSSERIF;
-	}
-	else if ((fontname_lc == "serif"))
-	{
-		mFontID = LLFONT_SMALL;
-	}
-	else if ((fontname_lc == "sansserifbig"))
-	{
-		mFontID = LLFONT_SANSSERIF_BIG;
-	}
-	else if (fontname_lc ==  "small")
-	{
-		mFontID = LLFONT_SANSSERIF_SMALL;
-	}
 }
 
 

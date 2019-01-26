@@ -37,6 +37,7 @@
 
 #include "lluictrl.h"
 #include "llframetimer.h"
+#include "llnotificationptr.h"
 
 class LLViewBorder;
 class LLUICtrlFactory;
@@ -93,14 +94,14 @@ public:
 		static LLView* fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFactory *factory);
 
 		// handle mouse related methods
-		virtual BOOL handleHover( S32 x, S32 y, MASK mask );
-		virtual BOOL handleMouseUp( S32 x, S32 y, MASK mask );
-		virtual BOOL handleMouseDown( S32 x, S32 y, MASK mask );
-		virtual BOOL handleRightMouseDown(S32 x, S32 y, MASK mask);
-		virtual BOOL handleRightMouseUp(S32 x, S32 y, MASK mask);
-		virtual BOOL handleDoubleClick( S32 x, S32 y, MASK mask );
-		virtual BOOL handleScrollWheel( S32 x, S32 y, S32 clicks );
-		virtual BOOL handleToolTip(S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen);
+	BOOL handleHover( S32 x, S32 y, MASK mask ) override;
+	BOOL handleMouseUp( S32 x, S32 y, MASK mask ) override;
+	BOOL handleMouseDown( S32 x, S32 y, MASK mask ) override;
+	BOOL handleRightMouseDown(S32 x, S32 y, MASK mask) override;
+	BOOL handleRightMouseUp(S32 x, S32 y, MASK mask) override;
+	BOOL handleDoubleClick( S32 x, S32 y, MASK mask ) override;
+	BOOL handleScrollWheel( S32 x, S32 y, S32 clicks ) override;
+	BOOL handleToolTip(S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen) override;
 
 		// navigation
 		void navigateTo( std::string url_in, std::string mime_type = "", bool clean_browser = false);
@@ -152,26 +153,26 @@ public:
 
 		void setTextureSize(S32 width, S32 height);
 
-		void showNotification(boost::shared_ptr<class LLNotification> notify);
+		void showNotification(LLNotificationPtr notify);
 		void hideNotification();
 
 		void setTrustedContent(bool trusted);
 
 		// over-rides
-		virtual BOOL handleKeyHere( KEY key, MASK mask);
-		virtual BOOL handleKeyUpHere(KEY key, MASK mask);
-		virtual void handleVisibilityChange ( BOOL new_visibility );
-		virtual BOOL handleUnicodeCharHere(llwchar uni_char);
-		virtual void reshape( S32 width, S32 height, BOOL called_from_parent = TRUE);
-		virtual void draw();
-		virtual BOOL postBuild();
+	BOOL handleKeyHere( KEY key, MASK mask) override;
+	BOOL handleKeyUpHere(KEY key, MASK mask) override;
+	void handleVisibilityChange ( BOOL new_visibility ) override;
+	BOOL handleUnicodeCharHere(llwchar uni_char) override;
+	void reshape( S32 width, S32 height, BOOL called_from_parent = TRUE) override;
+	void draw() override;
+	BOOL postBuild() override;
 
 		// focus overrides
-		void onFocusLost();
-		void onFocusReceived();
+		void onFocusLost() override;
+		void onFocusReceived() override;
 		
 		// Incoming media event dispatcher
-		virtual void handleMediaEvent(LLPluginClassMedia* self, EMediaEvent event);
+	void handleMediaEvent(LLPluginClassMedia* self, EMediaEvent event) override;
 
 		// right click debugging item
 		void onOpenWebInspector();
@@ -179,8 +180,8 @@ public:
 		LLUUID getTextureID() {return mMediaTextureID;}
 
         // The Browser windows want keyup and keydown events. Overridden from LLFocusableElement to return true.
-        virtual bool    wantsKeyUpKeyDown() const;
-        virtual bool    wantsReturnKey() const;
+	bool    wantsKeyUpKeyDown() const override;
+	bool    wantsReturnKey() const override;
 
 	protected:
 		void convertInputCoords(S32& x, S32& y);

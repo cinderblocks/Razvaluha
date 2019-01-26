@@ -27,7 +27,6 @@
 #ifndef LL_OUTFITOBSERVER_H
 #define LL_OUTFITOBSERVER_H
 
-#include "llsingleton.h"
 #include "llmd5.h"
 
 /**
@@ -36,12 +35,12 @@
  */
 class LLOutfitObserver: public LLInventoryObserver, public LLSingleton<LLOutfitObserver>
 {
-public:
+	LLSINGLETON(LLOutfitObserver);
 	virtual ~LLOutfitObserver();
 
-	friend class LLSingleton<LLOutfitObserver>;
+public:
 
-	virtual void changed(U32 mask);
+	void changed(U32 mask) override;
 
 	void notifyOutfitLockChanged() { mOutfitLockChanged();  }
 
@@ -58,7 +57,6 @@ public:
 	void addOutfitLockChangedCallback(const signal_t::slot_type& cb) { mOutfitLockChanged.connect(cb); }
 
 protected:
-	LLOutfitObserver();
 
 	/** Get a version of an inventory category specified by its UUID */
 	static S32 getCategoryVersion(const LLUUID& cat_id);

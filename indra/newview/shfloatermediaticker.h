@@ -7,9 +7,8 @@ class LLIconCtrl;
 
 class SHFloaterMediaTicker : public LLFloater, public LLSingleton<SHFloaterMediaTicker>
 {
-	friend class LLSingleton<SHFloaterMediaTicker>;
+	LLSINGLETON(SHFloaterMediaTicker);
 public:
-	SHFloaterMediaTicker();	//ctor
 
 	virtual ~SHFloaterMediaTicker() {}
 	/*virtual*/ BOOL postBuild();

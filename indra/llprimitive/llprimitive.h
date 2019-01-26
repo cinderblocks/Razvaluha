@@ -138,10 +138,10 @@ protected:
 
 public:
 	LLLightParams();
-	/*virtual*/ BOOL pack(LLDataPacker &dp) const;
-	/*virtual*/ BOOL unpack(LLDataPacker &dp);
-	/*virtual*/ bool operator==(const LLNetworkData& data) const;
-	/*virtual*/ void copy(const LLNetworkData& data);
+	/*virtual*/ BOOL pack(LLDataPacker &dp) const override;
+	/*virtual*/ BOOL unpack(LLDataPacker &dp) override;
+	/*virtual*/ bool operator==(const LLNetworkData& data) const override;
+	/*virtual*/ void copy(const LLNetworkData& data) override;
 	// LLSD implementations here are provided by Eddy Stryker.
 	// NOTE: there are currently unused in protocols
 	LLSD asLLSD() const;
@@ -232,10 +232,10 @@ public:
 
 	//------ the constructor for the structure ------------
 	LLFlexibleObjectData();
-	BOOL pack(LLDataPacker &dp) const;
-	BOOL unpack(LLDataPacker &dp);
-	bool operator==(const LLNetworkData& data) const;
-	void copy(const LLNetworkData& data);
+	BOOL pack(LLDataPacker &dp) const override;
+	BOOL unpack(LLDataPacker &dp) override;
+	bool operator==(const LLNetworkData& data) const override;
+	void copy(const LLNetworkData& data) override;
 	LLSD asLLSD() const;
 	operator LLSD() const { return asLLSD(); }
 	bool fromLLSD(LLSD& sd);
@@ -251,10 +251,10 @@ protected:
 	
 public:
 	LLSculptParams();
-	/*virtual*/ BOOL pack(LLDataPacker &dp) const;
-	/*virtual*/ BOOL unpack(LLDataPacker &dp);
-	/*virtual*/ bool operator==(const LLNetworkData& data) const;
-	/*virtual*/ void copy(const LLNetworkData& data);
+	/*virtual*/ BOOL pack(LLDataPacker &dp) const override;
+	/*virtual*/ BOOL unpack(LLDataPacker &dp) override;
+	/*virtual*/ bool operator==(const LLNetworkData& data) const override;
+	/*virtual*/ void copy(const LLNetworkData& data) override;
 	LLSD asLLSD() const;
 	operator LLSD() const { return asLLSD(); }
 	bool fromLLSD(LLSD& sd);
@@ -272,10 +272,10 @@ protected:
 	
 public:
 	LLLightImageParams();
-	/*virtual*/ BOOL pack(LLDataPacker &dp) const;
-	/*virtual*/ BOOL unpack(LLDataPacker &dp);
-	/*virtual*/ bool operator==(const LLNetworkData& data) const;
-	/*virtual*/ void copy(const LLNetworkData& data);
+	/*virtual*/ BOOL pack(LLDataPacker &dp) const override;
+	/*virtual*/ BOOL unpack(LLDataPacker &dp) override;
+	/*virtual*/ bool operator==(const LLNetworkData& data) const override;
+	/*virtual*/ void copy(const LLNetworkData& data) override;
 	LLSD asLLSD() const;
 	operator LLSD() const { return asLLSD(); }
 	bool fromLLSD(LLSD& sd);
@@ -310,7 +310,7 @@ struct LLTEContents
 	U8	   media_flags[MAX_TES];
     U8     glow[MAX_TES];
 	LLMaterialID material_ids[MAX_TES];
-	
+
 	static const U32 MAX_TE_BUFFER = 4096;
 	U8 packed_buffer[MAX_TE_BUFFER];
 
@@ -354,7 +354,7 @@ public:
 	const LLVolume *getVolumeConst() const { return mVolumep; }		// HACK for Windoze confusion about ostream operator in LLVolume
 	LLVolume *getVolume() const { return mVolumep; }
 	virtual BOOL setVolume(const LLVolumeParams &volume_params, const S32 detail, bool unique_volume = false);
-
+	
 	// Modify texture entry properties
 	inline BOOL validTE(const U8 te_num) const;
 	LLTextureEntry* getTE(const U8 te_num) const;
@@ -457,7 +457,8 @@ public:
 	inline BOOL	isAvatar() const;
 	inline BOOL	isSittingAvatar() const;
 	inline BOOL	isSittingAvatarOnGround() const;
-
+	inline bool hasBumpmap() const  { return mNumBumpmapTEs > 0;}
+	
 	void setFlags(U32 flags) { mMiscFlags = flags; }
 	void addFlags(U32 flags) { mMiscFlags |= flags; }
 	void removeFlags(U32 flags) { mMiscFlags &= ~flags; }
@@ -471,6 +472,9 @@ public:
 	inline static BOOL isPrimitive(const LLPCode pcode);
 	inline static BOOL isApp(const LLPCode pcode);
 
+private:
+	void updateNumBumpmap(const U8 index, const U8 bump);
+
 protected:
 	LLPCode				mPrimitiveCode;		// Primitive code
 	LLVector3			mVelocity;			// how fast are we moving?
@@ -480,8 +484,10 @@ protected:
 	LLPrimTextureList	mTextureList;		// list of texture GUIDs, scales, offsets
 	U8					mMaterial;			// Material code
 	U8					mNumTEs;			// # of faces on the primitve	
+	U8                  mNumBumpmapTEs;     // number of bumpmap TEs.
 	U32 				mMiscFlags;			// home for misc bools
 
+public:
 	static LLVolumeMgr* sVolumeManager;
 };
 
@@ -529,7 +535,7 @@ inline BOOL LLPrimitive::isApp(const LLPCode pcode)
 // Special case for setPosition.  If not check-for-finite, fall through to LLXform method.
 void LLPrimitive::setPosition(const F32 x, const F32 y, const F32 z)
 {
-	if (std::isfinite(x) && std::isfinite(y) && std::isfinite(z))
+	if (llfinite(x) && llfinite(y) && llfinite(z))
 	{
 		LLXform::setPosition(x, y, z);
 	}
@@ -566,7 +572,7 @@ void LLPrimitive::setAngularVelocity(const LLVector3& avel)
 
 void LLPrimitive::setAngularVelocity(const F32 x, const F32 y, const F32 z)		
 { 
-	if (std::isfinite(x) && std::isfinite(y) && std::isfinite(z))
+	if (llfinite(x) && llfinite(y) && llfinite(z))
 	{
 		mAngularVelocity.setVec(x,y,z);
 	}
@@ -590,7 +596,7 @@ void LLPrimitive::setVelocity(const LLVector3& vel)
 
 void LLPrimitive::setVelocity(const F32 x, const F32 y, const F32 z)			
 { 
-	if (std::isfinite(x) && std::isfinite(y) && std::isfinite(z))
+	if (llfinite(x) && llfinite(y) && llfinite(z))
 	{
 		mVelocity.setVec(x,y,z); 
 	}
@@ -602,7 +608,7 @@ void LLPrimitive::setVelocity(const F32 x, const F32 y, const F32 z)
 
 void LLPrimitive::setVelocityX(const F32 x)							
 { 
-	if (std::isfinite(x))
+	if (llfinite(x))
 	{
 		mVelocity.mV[VX] = x;
 	}
@@ -614,7 +620,7 @@ void LLPrimitive::setVelocityX(const F32 x)
 
 void LLPrimitive::setVelocityY(const F32 y)							
 { 
-	if (std::isfinite(y))
+	if (llfinite(y))
 	{
 		mVelocity.mV[VY] = y;
 	}
@@ -626,7 +632,7 @@ void LLPrimitive::setVelocityY(const F32 y)
 
 void LLPrimitive::setVelocityZ(const F32 z)							
 { 
-	if (std::isfinite(z))
+	if (llfinite(z))
 	{
 		mVelocity.mV[VZ] = z;
 	}
@@ -662,7 +668,7 @@ void LLPrimitive::setAcceleration(const LLVector3& accel)
 
 void LLPrimitive::setAcceleration(const F32 x, const F32 y, const F32 z)		
 { 
-	if (std::isfinite(x) && std::isfinite(y) && std::isfinite(z))
+	if (llfinite(x) && llfinite(y) && llfinite(z))
 	{
 		mAcceleration.setVec(x,y,z); 
 	}

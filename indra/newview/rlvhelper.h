@@ -214,8 +214,7 @@ protected:
 
 class RlvForceWear : public LLSingleton<RlvForceWear>
 {
-protected:
-	RlvForceWear() {}
+	LLSINGLETON_EMPTY_CTOR(RlvForceWear);
 
 public:
 	// Folders
@@ -318,9 +317,8 @@ private:
 
 class RlvBehaviourNotifyHandler : public LLSingleton<RlvBehaviourNotifyHandler>
 {
-	friend class LLSingleton<RlvBehaviourNotifyHandler>;
+	LLSINGLETON(RlvBehaviourNotifyHandler);
 protected:
-	RlvBehaviourNotifyHandler();
 	virtual ~RlvBehaviourNotifyHandler() { if (m_ConnCommand.connected()) m_ConnCommand.disconnect(); }
 
 public:

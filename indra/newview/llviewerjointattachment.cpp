@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llviewerjointattachment.cpp
  * @brief Implementation of LLViewerJointAttachment class
@@ -28,7 +30,6 @@
 
 #include "llviewerjointattachment.h"
 
-#include "llagentconstants.h"
 #include "llviewercontrol.h"
 #include "lldrawable.h"
 #include "llgl.h"
@@ -46,6 +47,7 @@
 #include "llglheaders.h"
 
 extern LLPipeline gPipeline;
+const F32 MAX_ATTACHMENT_DIST = 3.5f; // meters?
 
 //-----------------------------------------------------------------------------
 // LLViewerJointAttachment()
@@ -86,12 +88,12 @@ U32 LLViewerJointAttachment::drawShape( F32 pixelArea, BOOL first_pass, BOOL is_
 		LLGLDisable cull_face(GL_CULL_FACE);
 		
 		gGL.color4f(1.f, 1.f, 1.f, 1.f);
-		gGL.begin(LLRender::QUADS);
+		gGL.begin(LLRender::TRIANGLE_STRIP);
 		{
 			gGL.vertex3f(-0.1f, 0.1f, 0.f);
 			gGL.vertex3f(-0.1f, -0.1f, 0.f);
-			gGL.vertex3f(0.1f, -0.1f, 0.f);
 			gGL.vertex3f(0.1f, 0.1f, 0.f);
+			gGL.vertex3f(0.1f, -0.1f, 0.f);
 		}gGL.end();
 	}
 	return 0;
@@ -358,6 +360,7 @@ void LLViewerJointAttachment::setAttachmentVisibility(BOOL visible)
 void LLViewerJointAttachment::setOriginalPosition(LLVector3& position)
 {
 	mOriginalPos = position;
+	// SL-315
 	setPosition(position);
 }
 
@@ -452,7 +455,7 @@ const LLViewerObject *LLViewerJointAttachment::getAttachedObject(const LLUUID &o
 			return attached_object;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 LLViewerObject *LLViewerJointAttachment::getAttachedObject(const LLUUID &object_id)
@@ -467,5 +470,5 @@ LLViewerObject *LLViewerJointAttachment::getAttachedObject(const LLUUID &object_
 			return attached_object;
 		}
 	}
-	return NULL;
+	return nullptr;
 }

@@ -27,12 +27,6 @@
 #ifndef LL_LLKEYBOARD_H
 #define LL_LLKEYBOARD_H
 
-#include <map>
-#ifndef BOOST_FUNCTION_HPP_INCLUDED
-#include <boost/function.hpp>
-#define BOOST_FUNCTION_HPP_INCLUDED
-#endif
-
 #include "llstringtable.h"
 #include "lltimer.h"
 #include "indra_constants.h"
@@ -44,7 +38,8 @@ enum EKeystate
 	KEYSTATE_UP 
 };
 
-typedef boost::function<void(EKeystate keystate)> LLKeyFunc;
+typedef std::function<void(EKeystate keystate)> LLKeyFunc;
+typedef std::string (LLKeyStringTranslatorFunc)(const char *label);
 
 enum EKeyboardInsertMode
 {
@@ -85,14 +80,19 @@ public:
 	BOOL			getKeyDown(const KEY key) { return mKeyLevel[key]; }
 	BOOL			getKeyRepeated(const KEY key) { return mKeyRepeated[key]; }
 
-	BOOL			translateKey(const U16 os_key, KEY *translated_key);
-	U16				inverseTranslateKey(const KEY translated_key);
+	BOOL			translateKey(const U32 os_key, KEY *translated_key);
+	U32				inverseTranslateKey(const KEY translated_key);
 	BOOL			handleTranslatedKeyUp(KEY translated_key, U32 translated_mask);		// Translated into "Linden" keycodes
 	BOOL			handleTranslatedKeyDown(KEY translated_key, U32 translated_mask);	// Translated into "Linden" keycodes
 
 
-	virtual BOOL	handleKeyUp(const U16 key, MASK mask) = 0;
-	virtual BOOL	handleKeyDown(const U16 key, MASK mask) = 0;
+	virtual BOOL	handleKeyUp(const U32 key, MASK mask) = 0;
+	virtual BOOL	handleKeyDown(const U32 key, MASK mask) = 0;
+
+#ifdef LL_DARWIN
+	// We only actually use this for OS X.
+	virtual void	handleModifier(MASK mask) = 0;
+#endif // LL_DARWIN
 
 	// Asynchronously poll the control, alt, and shift keys and set the
 	// appropriate internal key masks.
@@ -109,13 +109,16 @@ public:
 	static BOOL		maskFromString(const std::string& str, MASK *mask);		// False on failure
 	static BOOL		keyFromString(const std::string& str, KEY *key);			// False on failure
 	static std::string stringFromKey(KEY key);
+	static std::string stringFromAccelerator( MASK accel_mask, KEY key );
 
-	e_numpad_distinct getNumpadDistinct() { return mNumpadDistinct; }
+	e_numpad_distinct getNumpadDistinct() const { return mNumpadDistinct; }
 	void setNumpadDistinct(e_numpad_distinct val) { mNumpadDistinct = val; }
 
 	void setCallbacks(LLWindowCallbacks *cbs) { mCallbacks = cbs; }
 	F32				getKeyElapsedTime( KEY key );  // Returns time in seconds since key was pressed.
 	S32				getKeyElapsedFrameCount( KEY key );  // Returns time in frames since key was pressed.
+
+	static void		setStringTranslatorFunc( LLKeyStringTranslatorFunc *trans_func );
 
 	void setControllerKey(KEY key, bool level)
 	{
@@ -127,8 +130,8 @@ protected:
 	void 			addKeyName(KEY key, const std::string& name);
 
 protected:
-	std::map<U16, KEY>	mTranslateKeyMap;		// Map of translations from OS keys to Linden KEYs
-	std::map<KEY, U16>	mInvTranslateKeyMap;	// Map of translations from Linden KEYs to OS keys
+	std::map<U32, KEY>	mTranslateKeyMap;		// Map of translations from OS keys to Linden KEYs
+	std::map<KEY, U32>	mInvTranslateKeyMap;	// Map of translations from Linden KEYs to OS keys
 	LLWindowCallbacks *mCallbacks;
 
 	LLTimer			mKeyLevelTimer[KEY_COUNT];	// Time since level was set
@@ -143,6 +146,8 @@ protected:
 
 	e_numpad_distinct mNumpadDistinct;
 
+	static LLKeyStringTranslatorFunc*	mStringTranslator;	// Used for l10n + PC/Mac/Linux accelerator labeling
+	
 	EKeyboardInsertMode mInsertMode;
 
 	static std::map<KEY,std::string> sKeysToNames;

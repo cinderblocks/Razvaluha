@@ -106,10 +106,14 @@ public:
 	
 	// Is any media currently "showing"?  Includes Parcel Media.  Does not include media in the UI.
 	static bool isAnyMediaShowing();
+	// Shows if any media is playing, counts visible non time based media as playing. Does not include media in the UI.
+	static bool isAnyMediaPlaying();
 	// Set all media enabled or disabled, depending on val.   Does not include media in the UI.
 	static void setAllMediaEnabled(bool val);
+	// Set all media paused(stopped for non time based) or playing, depending on val.   Does not include media in the UI.
+	static void setAllMediaPaused(bool val);
 	
-	static void updateMedia(void* dummy_arg = NULL);
+	static void updateMedia(void* dummy_arg = nullptr);
 	
 	static void initClass();
 	static void cleanupClass();
@@ -200,7 +204,7 @@ public:
 	~LLViewerMediaImpl();
 	
 	// Override inherited version from LLViewerMediaEventEmitter 
-	virtual void emitEvent(LLPluginClassMedia* self, LLViewerMediaObserver::EMediaEvent event);
+	void emitEvent(LLPluginClassMedia* self, LLViewerMediaObserver::EMediaEvent event) override;
 
 	void createMediaSource();
 	void destroyMediaSource();
@@ -300,7 +304,7 @@ public:
 	void setTarget(const std::string& target) { mTarget = target; }
 	
 	// utility function to create a ready-to-use media instance from a desired media type.
-	static LLPluginClassMedia* newSourceFromMediaType(std::string media_type, LLPluginClassMediaOwner *owner /* may be NULL */, S32 default_width, S32 default_height, const std::string target = LLStringUtil::null, bool clean_browser = false);
+	static LLPluginClassMedia* newSourceFromMediaType(std::string media_type, LLPluginClassMediaOwner *owner /* may be NULL */, S32 default_width, S32 default_height, F64 zoom_factor, const std::string target = LLStringUtil::null, bool clean_browser = false);
 
 	// Internally set our desired browser user agent string, including
 	// the Second Life version and skin name.  Used because we can
@@ -312,40 +316,40 @@ public:
 	static bool handleSkinCurrentChanged(const LLSD& newvalue);
 
 	// need these to handle mouseup...
-	/*virtual*/ void	onMouseCaptureLost();
-	/*virtual*/ BOOL	handleMouseUp(S32 x, S32 y, MASK mask);
+	/*virtual*/ void	onMouseCaptureLost() override;
+	/*virtual*/ BOOL	handleMouseUp(S32 x, S32 y, MASK mask) override;
 
 	// Grr... the only thing I want as an LLMouseHandler are the onMouseCaptureLost and handleMouseUp calls.
 	// Sadly, these are all pure virtual, so I have to supply implementations here:
-	/*virtual*/ BOOL	handleMouseDown(S32 x, S32 y, MASK mask) { return FALSE; };
-	/*virtual*/ BOOL	handleHover(S32 x, S32 y, MASK mask) { return FALSE; };
-	/*virtual*/ BOOL	handleScrollWheel(S32 x, S32 y, S32 clicks) { return FALSE; };
-	/*virtual*/ BOOL	handleDoubleClick(S32 x, S32 y, MASK mask) { return FALSE; };
-	/*virtual*/ BOOL	handleRightMouseDown(S32 x, S32 y, MASK mask) { return FALSE; };
-	/*virtual*/ BOOL	handleRightMouseUp(S32 x, S32 y, MASK mask) { return FALSE; };
-	/*virtual*/ BOOL	handleToolTip(S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen) { return FALSE; };
-	/*virtual*/ BOOL	handleMiddleMouseDown(S32 x, S32 y, MASK mask) { return FALSE; };
-	/*virtual*/ BOOL	handleMiddleMouseUp(S32 x, S32 y, MASK mask) {return FALSE; };
-	/*virtual*/ const std::string& getName() const;
+	/*virtual*/ BOOL	handleMouseDown(S32 x, S32 y, MASK mask) override { return FALSE; };
+	/*virtual*/ BOOL	handleHover(S32 x, S32 y, MASK mask) override { return FALSE; };
+	/*virtual*/ BOOL	handleScrollWheel(S32 x, S32 y, S32 clicks) override { return FALSE; };
+	/*virtual*/ BOOL	handleDoubleClick(S32 x, S32 y, MASK mask) override { return FALSE; };
+	/*virtual*/ BOOL	handleRightMouseDown(S32 x, S32 y, MASK mask) override { return FALSE; };
+	/*virtual*/ BOOL	handleRightMouseUp(S32 x, S32 y, MASK mask) override { return FALSE; };
+	/*virtual*/ BOOL	handleToolTip(S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen) override { return FALSE; };
+	/*virtual*/ BOOL	handleMiddleMouseDown(S32 x, S32 y, MASK mask) override { return FALSE; };
+	/*virtual*/ BOOL	handleMiddleMouseUp(S32 x, S32 y, MASK mask) override {return FALSE; };
+	/*virtual*/ const std::string& getName() const override;
 	/*virtual*/ BOOL isView() const { return FALSE; };
 
-	/*virtual*/ void	screenPointToLocal(S32 screen_x, S32 screen_y, S32* local_x, S32* local_y) const {};
-	/*virtual*/ void	localPointToScreen(S32 local_x, S32 local_y, S32* screen_x, S32* screen_y) const {};
-	/*virtual*/ BOOL hasMouseCapture() { return gFocusMgr.getMouseCapture() == this; };
+	/*virtual*/ void	screenPointToLocal(S32 screen_x, S32 screen_y, S32* local_x, S32* local_y) const override {};
+	/*virtual*/ void	localPointToScreen(S32 local_x, S32 local_y, S32* screen_x, S32* screen_y) const override {};
+	/*virtual*/ BOOL hasMouseCapture() override { return gFocusMgr.getMouseCapture() == this; };
 
 	// Inherited from LLPluginClassMediaOwner
-	/*virtual*/ void handleMediaEvent(LLPluginClassMedia* plugin, LLPluginClassMediaOwner::EMediaEvent);
-	/*virtual*/ void handleCookieSet(LLPluginClassMedia* self, const std::string &cookie);
+	/*virtual*/ void handleMediaEvent(LLPluginClassMedia* plugin, LLPluginClassMediaOwner::EMediaEvent) override;
+	/*virtual*/ void handleCookieSet(LLPluginClassMedia* self, const std::string &cookie) override;
 
 	// LLEditMenuHandler overrides
-	/*virtual*/ void	cut();
-	/*virtual*/ BOOL	canCut() const;
+	/*virtual*/ void	cut() override;
+	/*virtual*/ BOOL	canCut() const override;
 
-	/*virtual*/ void	copy();
-	/*virtual*/ BOOL	canCopy() const;
+	/*virtual*/ void	copy() override;
+	/*virtual*/ BOOL	canCopy() const override;
 
-	/*virtual*/ void	paste();
-	/*virtual*/ BOOL	canPaste() const;
+	/*virtual*/ void	paste() override;
+	/*virtual*/ BOOL	canPaste() const override;
 	
 	void addObject(LLVOVolume* obj) ;
 	void removeObject(LLVOVolume* obj) ;

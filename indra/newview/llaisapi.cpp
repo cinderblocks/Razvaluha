@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llaisapi.cpp
  * @brief classes and functions for interfacing with the v3+ ais inventory service. 
@@ -38,6 +40,7 @@
 #include "llviewerregion.h"
 #include "llinventoryobserver.h"
 #include "llviewercontrol.h"
+#include <boost/bind.hpp>
 
 ///----------------------------------------------------------------------------
 /// Classes for AISv3 support.
@@ -68,7 +71,7 @@ bool AISAPI::isAvailable(EAISCommand cmd)
     }
 	return false;
 }
-	
+
 /*static*/
 void AISAPI::getCapNames(LLSD& capNames)
 {
@@ -80,19 +83,19 @@ void AISAPI::getCapNames(LLSD& capNames)
 std::string AISAPI::getInvCap()
 {
     if (gAgent.getRegion())
-	{
+    {
         return gAgent.getRegion()->getCapability(INVENTORY_CAP_NAME);
-	}
+    }
     return std::string();
 }
 
 /*static*/
 std::string AISAPI::getLibCap()
 {
-	if (gAgent.getRegion())
-	{
+    if (gAgent.getRegion())
+    {
         return gAgent.getRegion()->getCapability(LIBRARY_CAP_NAME);
-	}
+    }
     return std::string();
 }
 
@@ -101,10 +104,10 @@ void AISAPI::CreateInventory(const LLUUID& parentId, const LLSD& newInventory, c
 {
     std::string cap = getInvCap();
     if (cap.empty())
-	{
+    {
         LL_WARNS("Inventory") << "Inventory cap not found!" << LL_ENDL;
         return;
-	}
+    }
 
     LLUUID tid;
     tid.generate();
@@ -143,10 +146,10 @@ void AISAPI::SlamFolder(const LLUUID& folderId, const LLSD& newInventory, comple
 {
     std::string cap = getInvCap();
     if (cap.empty())
-	{
+    {
         LL_WARNS("Inventory") << "Inventory cap not found!" << LL_ENDL;
         return;
-	}
+    }
 
     LLUUID tid;
     tid.generate();
@@ -174,16 +177,17 @@ void AISAPI::SlamFolder(const LLUUID& folderId, const LLSD& newInventory, comple
 
 void AISAPI::RemoveCategory(const LLUUID &categoryId, completion_t callback)
 {
-	std::string cap;
+    std::string cap;
 
     cap = getInvCap();
     if (cap.empty())
-	{
+    {
         LL_WARNS("Inventory") << "Inventory cap not found!" << LL_ENDL;
-		return;
-	}
+        return;
+    }
+
     std::string url = cap + std::string("/category/") + categoryId.asString();
-	LL_DEBUGS("Inventory") << "url: " << url << LL_ENDL;
+    LL_DEBUGS("Inventory") << "url: " << url << LL_ENDL;
 
     invokationFn_t delFn = boost::bind(
         // Humans ignore next line.  It is just a cast to specify which LLCoreHttpUtil::HttpCoroutineAdapter routine overload.
@@ -206,16 +210,17 @@ void AISAPI::RemoveCategory(const LLUUID &categoryId, completion_t callback)
 /*static*/ 
 void AISAPI::RemoveItem(const LLUUID &itemId, completion_t callback)
 {
-	std::string cap;
+    std::string cap;
 
     cap = getInvCap();
     if (cap.empty())
-	{
+    {
         LL_WARNS("Inventory") << "Inventory cap not found!" << LL_ENDL;
-		return;
-	}
+        return;
+    }
+
     std::string url = cap + std::string("/item/") + itemId.asString();
-	LL_DEBUGS("Inventory") << "url: " << url << LL_ENDL;
+    LL_DEBUGS("Inventory") << "url: " << url << LL_ENDL;
 
     invokationFn_t delFn = boost::bind(
         // Humans ignore next line.  It is just a cast to specify which LLCoreHttpUtil::HttpCoroutineAdapter routine overload.
@@ -237,14 +242,14 @@ void AISAPI::RemoveItem(const LLUUID &itemId, completion_t callback)
 
 void AISAPI::CopyLibraryCategory(const LLUUID& sourceId, const LLUUID& destId, bool copySubfolders, completion_t callback)
 {
-	std::string cap;
+    std::string cap;
 
     cap = getLibCap();
     if (cap.empty())
-	{
+    {
         LL_WARNS("Inventory") << "Library cap not found!" << LL_ENDL;
-		return;
-	}
+        return;
+    }
 
     LL_DEBUGS("Inventory") << "Copying library category: " << sourceId << " => " << destId << LL_ENDL;
 
@@ -253,9 +258,9 @@ void AISAPI::CopyLibraryCategory(const LLUUID& sourceId, const LLUUID& destId, b
 
     std::string url = cap + std::string("/category/") + sourceId.asString() + "?tid=" + tid.asString();
     if (!copySubfolders)
-	{
+    {
         url += ",depth=0";
-	}
+    }
     LL_INFOS() << url << LL_ENDL;
 
     std::string destination = destId.asString();
@@ -281,16 +286,17 @@ void AISAPI::CopyLibraryCategory(const LLUUID& sourceId, const LLUUID& destId, b
 /*static*/ 
 void AISAPI::PurgeDescendents(const LLUUID &categoryId, completion_t callback)
 {
-	std::string cap;
+    std::string cap;
 
     cap = getInvCap();
     if (cap.empty())
-	{
+    {
         LL_WARNS("Inventory") << "Inventory cap not found!" << LL_ENDL;
-		return;
-	}
+        return;
+    }
+
     std::string url = cap + std::string("/category/") + categoryId.asString() + "/children";
-	LL_DEBUGS("Inventory") << "url: " << url << LL_ENDL;
+    LL_DEBUGS("Inventory") << "url: " << url << LL_ENDL;
 
     invokationFn_t delFn = boost::bind(
         // Humans ignore next line.  It is just a cast to specify which LLCoreHttpUtil::HttpCoroutineAdapter routine overload.
@@ -314,14 +320,14 @@ void AISAPI::PurgeDescendents(const LLUUID &categoryId, completion_t callback)
 /*static*/
 void AISAPI::UpdateCategory(const LLUUID &categoryId, const LLSD &updates, completion_t callback)
 {
-	std::string cap;
+    std::string cap;
 
     cap = getInvCap();
     if (cap.empty())
-	{
+    {
         LL_WARNS("Inventory") << "Inventory cap not found!" << LL_ENDL;
-		return;
-	}
+        return;
+    }
     std::string url = cap + std::string("/category/") + categoryId.asString();
 
     invokationFn_t patchFn = boost::bind(
@@ -345,14 +351,15 @@ void AISAPI::UpdateCategory(const LLUUID &categoryId, const LLSD &updates, compl
 /*static*/
 void AISAPI::UpdateItem(const LLUUID &itemId, const LLSD &updates, completion_t callback)
 {
-	std::string cap;
+
+    std::string cap;
 
     cap = getInvCap();
     if (cap.empty())
-	{
+    {
         LL_WARNS("Inventory") << "Inventory cap not found!" << LL_ENDL;
-		return;
-	}
+        return;
+    }
     std::string url = cap + std::string("/item/") + itemId.asString();
 
     invokationFn_t patchFn = boost::bind(
@@ -401,16 +408,50 @@ void AISAPI::InvokeAISCommandCoro(LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t ht
     if (!status || !result.isMap())
     {
         if (!result.isMap())
-		{
+        {
             status = LLCore::HttpStatus(HTTP_INTERNAL_ERROR, "Malformed response contents");
-		}
+        }
+        else if (status.getType() == 410) //GONE
+        {
+            // Item does not exist or was already deleted from server.
+            // parent folder is out of sync
+            if (type == REMOVECATEGORY)
+            {
+                LLViewerInventoryCategory *cat = gInventory.getCategory(targetId);
+                if (cat)
+                {
+                    LL_WARNS("Inventory") << "Purge failed for '" << cat->getName()
+                        << "' local version:" << cat->getVersion()
+                        << " since folder no longer exists at server. Descendent count: server == " << cat->getDescendentCount()
+                        << ", viewer == " << cat->getViewerDescendentCount()
+                        << LL_ENDL;
+                    gInventory.fetchDescendentsOf(cat->getParentUUID());
+                    // Note: don't delete folder here - contained items will be deparented (or deleted)
+                    // and since we are clearly out of sync we can't be sure we won't get rid of something we need.
+                    // For example folder could have been moved or renamed with items intact, let it fetch first.
+                }
+            }
+            else if (type == REMOVEITEM)
+            {
+                LLViewerInventoryItem *item = gInventory.getItem(targetId);
+                if (item)
+                {
+                    LL_WARNS("Inventory") << "Purge failed for '" << item->getName()
+                        << "' since item no longer exists at server." << LL_ENDL;
+                    gInventory.fetchDescendentsOf(item->getParentUUID());
+                    // since item not on the server and exists at viewer, so it needs an update at the least,
+                    // so delete it, in worst case item will be refetched with new params.
+                    gInventory.onObjectDeletedFromServer(targetId);
+                }
+            }
+        }
         LL_WARNS("Inventory") << "Inventory error: " << status.toString() << LL_ENDL;
         LL_WARNS("Inventory") << ll_pretty_print_sd(result) << LL_ENDL;
     }
 
     gInventory.onAISUpdateReceived("AISCommand", result);
 
-    if (callback && !callback.empty())
+    if (callback && callback != nullptr)
     {   
         LLUUID id(LLUUID::null);
 
@@ -641,7 +682,7 @@ void AISUpdate::parseCategory(const LLSD& category_map)
 		parseDescendentCount(category_id, category_map["_embedded"]);
 	}
 
-	LLPointer<LLViewerInventoryCategory> new_cat(new LLViewerInventoryCategory(category_id));
+	LLPointer<LLViewerInventoryCategory> new_cat;
 	LLViewerInventoryCategory *curr_cat = gInventory.getCategory(category_id);
 	if (curr_cat)
 	{
@@ -659,7 +700,7 @@ void AISUpdate::parseCategory(const LLSD& category_map)
             LL_DEBUGS() << "No owner provided, folder might be assigned wrong owner" << LL_ENDL;
             new_cat = new LLViewerInventoryCategory(LLUUID::null);
         }
-	}
+    }
 	BOOL rv = new_cat->unpackMessage(category_map);
 	// *NOTE: unpackMessage does not unpack version or descendent count.
 	//if (category_map.has("version"))
@@ -852,7 +893,7 @@ void AISUpdate::doUpdate()
 	for (std::map<LLUUID,S32>::const_iterator catit = mCatDescendentDeltas.begin();
 		 catit != mCatDescendentDeltas.end(); ++catit)
 	{
-		LL_DEBUGS("Inventory") << "descendent accounting for " << catit->first << LL_ENDL;
+		LL_DEBUGS("Inventory") << "descendant accounting for " << catit->first << LL_ENDL;
 
 		const LLUUID cat_id(catit->first);
 		// Don't account for update if we just created this category.
@@ -875,7 +916,7 @@ void AISUpdate::doUpdate()
 		{
 			S32 descendent_delta = catit->second;
 			S32 old_count = cat->getDescendentCount();
-			LL_DEBUGS("Inventory") << "Updating descendent count for "
+			LL_DEBUGS("Inventory") << "Updating descendant count for "
 								   << cat->getName() << " " << cat_id
 								   << " with delta " << descendent_delta << " from "
 								   << old_count << " to " << (old_count+descendent_delta) << LL_ENDL;
@@ -953,7 +994,7 @@ void AISUpdate::doUpdate()
 	for (uuid_list_t::const_iterator del_it = mObjectsDeletedIds.begin();
 		 del_it != mObjectsDeletedIds.end(); ++del_it)
 	{
-		LL_INFOS("Inventory") << "deleted item " << *del_it << LL_ENDL;
+		LL_DEBUGS("Inventory") << "deleted item " << *del_it << LL_ENDL;
 		gInventory.onObjectDeletedFromServer(*del_it, false, false, false);
 	}
 
@@ -971,7 +1012,25 @@ void AISUpdate::doUpdate()
 		{
 			LL_WARNS() << "Possible version mismatch for category " << cat->getName()
 					<< ", viewer version " << cat->getVersion()
-					<< " server version " << version << LL_ENDL;
+					<< " AIS version " << version << " !!!Adjusting local version!!!" <<  LL_ENDL;
+
+            // the AIS version should be considered the true version. Adjust 
+            // our local category model to reflect this version number.  Otherwise 
+            // it becomes possible to get stuck with the viewer being out of 
+            // sync with the inventory system.  Under normal circumstances 
+            // inventory COF is maintained on the viewer through calls to 
+            // LLInventoryModel::accountForUpdate when a changing operation 
+            // is performed.  This occasionally gets out of sync however.
+            if (version != LLViewerInventoryCategory::VERSION_UNKNOWN)
+            {
+                cat->setVersion(version);
+            }
+            else
+            {
+                // We do not account for update if version is UNKNOWN, so we shouldn't rise version
+                // either or viewer will get stuck on descendants count -1, try to refetch folder instead
+                cat->fetch();
+            }
 		}
 	}
 

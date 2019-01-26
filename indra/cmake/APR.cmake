@@ -49,4 +49,8 @@ else (STANDALONE)
     set(APRICONV_LIBRARIES iconv)
   endif (WINDOWS)
   set(APR_INCLUDE_DIR ${LIBS_PREBUILT_DIR}/include/apr-1)
+
+  if (LINUX)
+    list(APPEND APRUTIL_LIBRARIES rt)
+  endif (LINUX)
 endif (STANDALONE)

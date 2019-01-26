@@ -34,8 +34,8 @@ class LLLineEditor;
 class LLFloaterWhiteListEntry : 
 	public LLFloater, public LLSingleton<LLFloaterWhiteListEntry>
 {
-	public:
-		LLFloaterWhiteListEntry();
+	LLSINGLETON(LLFloaterWhiteListEntry);
+	public:	
 		~LLFloaterWhiteListEntry();
 	
 		BOOL postBuild();

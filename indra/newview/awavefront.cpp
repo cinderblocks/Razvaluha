@@ -315,10 +315,8 @@ namespace
 void WavefrontSaver::Add(const LLVOAvatar* av_vo) //adds attachments, too!
 {
 	offset = -av_vo->getRenderPosition();
-	avatar_joint_list_t vjv = av_vo->mMeshLOD;
-	for (avatar_joint_list_t::const_iterator itervj = vjv.begin(); itervj != vjv.end(); ++itervj)
+	for (const LLAvatarJoint* vj : av_vo->getMeshLOD())
 	{
-		const LLViewerJoint* vj = dynamic_cast<LLViewerJoint*>(*itervj);
 		if (!vj || vj->mMeshParts.empty()) continue;
 
 		LLViewerJointMesh* vjm = dynamic_cast<LLViewerJointMesh*>(vj->mMeshParts[0]); //highest LOD

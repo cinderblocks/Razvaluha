@@ -2,7 +2,7 @@
  * @file llvfsthread.h
  * @brief LLVFSThread definition
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
  * 
@@ -26,11 +26,6 @@
 
 #ifndef LL_LLVFSTHREAD_H
 #define LL_LLVFSTHREAD_H
-
-#include <queue>
-#include <string>
-#include <map>
-#include <set>
 
 #include "llqueuedthread.h"
 
@@ -85,9 +80,9 @@ public:
 			return tstring;
 		}
 		
-		/*virtual*/ bool processRequest();
-		/*virtual*/ void finishRequest(bool completed);
-		/*virtual*/ void deleteRequest();
+		/*virtual*/ bool processRequest() override;
+		/*virtual*/ void finishRequest(bool completed) override;
+		/*virtual*/ void deleteRequest() override;
 		
 	private:
 		operation_t mOperation;
@@ -124,8 +119,6 @@ public:
 					  U8* buffer, S32 offset, S32 numbytes);
 	S32 writeImmediate(LLVFS* vfs, const LLUUID &file_id, const LLAssetType::EType file_type,
 					   U8* buffer, S32 offset, S32 numbytes);
-
-	/*virtual*/ bool processRequest(QueuedRequest* req);
 
 public:
 	static void initClass(bool local_is_threaded = TRUE); // Setup sLocal

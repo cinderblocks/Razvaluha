@@ -34,6 +34,7 @@
 #define LL_LLTOOLSELECTLAND_H
 
 #include "lltool.h"
+#include "llsafehandle.h"
 #include "v3dmath.h"
 
 class LLParcelSelection;
@@ -41,8 +42,8 @@ class LLParcelSelection;
 class LLToolSelectLand
 :	public LLTool, public LLSingleton<LLToolSelectLand>
 {
+	LLSINGLETON(LLToolSelectLand);
 public:
-	LLToolSelectLand( );
 	virtual ~LLToolSelectLand();
 
 	/*virtual*/ BOOL		handleMouseDown(S32 x, S32 y, MASK mask);

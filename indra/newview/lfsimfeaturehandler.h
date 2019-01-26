@@ -53,9 +53,7 @@ private:
 
 class LFSimFeatureHandler : public LLSingleton<LFSimFeatureHandler>
 {
-protected:
-	friend class LLSingleton<LFSimFeatureHandler>;
-	LFSimFeatureHandler();
+	LLSINGLETON(LFSimFeatureHandler);
 
 public:
 	void handleRegionChange();

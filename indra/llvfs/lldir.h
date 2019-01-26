@@ -32,7 +32,7 @@
 #define MAX_PATH MAXPATHLEN
 #endif
 
-// these numbers *may* get serialized (really??), so we need to be explicit
+// these numbers are read from settings_files.xml, so we need to be explicit
 typedef enum ELLPath
 {
 	LL_PATH_NONE = 0,
@@ -53,7 +53,7 @@ typedef enum ELLPath
 	LL_PATH_EXECUTABLE = 16,
 	LL_PATH_DEFAULT_SKIN = 17,
 	LL_PATH_FONTS = 18,
-	LL_PATH_DUMP = 19,
+    LL_PATH_DUMP = 19,
 	LL_PATH_LAST
 } ELLPath;
 
@@ -198,7 +198,7 @@ class LLDir
 	virtual void updatePerAccountChatLogsDir(const std::string &grid);
 
 	virtual void dumpCurrentDirectories();
-	
+
 	// Utility routine
 	std::string buildSLOSCacheDir() const;
 

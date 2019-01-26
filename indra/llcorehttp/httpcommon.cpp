@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file httpcommon.cpp
  * @brief 
@@ -23,13 +25,6 @@
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
-#if LL_WINDOWS
-#define SAFE_SSL 1
-#elif LL_DARWIN
-#define SAFE_SSL 1
-#else
-#define SAFE_SSL 1
-#endif
 
 #include "linden_common.h"		// Modifies curl/curl.h interfaces
 #include "httpcommon.h"
@@ -38,21 +33,15 @@
 #include <curl/curl.h>
 #include <string>
 #include <sstream>
-#if SAFE_SSL
-#include <openssl/crypto.h>
-#endif
-
 
 namespace LLCore
 {
 
-HttpStatus::type_enum_t EXT_CURL_EASY;
-HttpStatus::type_enum_t EXT_CURL_MULTI;
-HttpStatus::type_enum_t LLCORE;
-
 HttpStatus::operator unsigned long() const
 {
-	unsigned long result(((unsigned long)mDetails->mType) << 16 | (unsigned long)(int)mDetails->mStatus);
+	static const int shift(16);
+
+	unsigned long result(((unsigned long)mDetails->mType) << shift | (unsigned long)(int)mDetails->mStatus);
 	return result;
 }
 
@@ -139,7 +128,7 @@ std::string HttpStatus::toString() const
 	
 	if (*this)
 	{
-		return std::string("");
+        return LLStringUtil::null;
 	}
 	switch (getType())
 	{
@@ -188,7 +177,7 @@ std::string HttpStatus::toString() const
 		}
 		break;
 	}
-	return std::string("Unknown error");
+	return LLStringExplicit("Unknown error");
 }
 
 
@@ -277,17 +266,14 @@ namespace LLHttp
 {
 namespace
 {
-typedef boost::shared_ptr<LLMutex> LLMutex_ptr;
-std::vector<LLMutex_ptr> sSSLMutex;
-
 CURL *getCurlTemplateHandle()
 {
-    static CURL *curlpTemplateHandle = NULL;
+    static CURL *curlpTemplateHandle = nullptr;
 
-    if (curlpTemplateHandle == NULL)
+    if (curlpTemplateHandle == nullptr)
     {	// Late creation of the template curl handle
         curlpTemplateHandle = curl_easy_init();
-        if (curlpTemplateHandle == NULL)
+        if (curlpTemplateHandle == nullptr)
         {
             LL_WARNS() << "curl error calling curl_easy_init()" << LL_ENDL;
         }
@@ -299,8 +285,8 @@ CURL *getCurlTemplateHandle()
             check_curl_code(result, CURLOPT_NOSIGNAL);
             result = curl_easy_setopt(curlpTemplateHandle, CURLOPT_NOPROGRESS, 1);
             check_curl_code(result, CURLOPT_NOPROGRESS);
-            result = curl_easy_setopt(curlpTemplateHandle, CURLOPT_ENCODING, "");
-            check_curl_code(result, CURLOPT_ENCODING);
+            result = curl_easy_setopt(curlpTemplateHandle, CURLOPT_ACCEPT_ENCODING, NULL);
+            check_curl_code(result, CURLOPT_ACCEPT_ENCODING);
             result = curl_easy_setopt(curlpTemplateHandle, CURLOPT_AUTOREFERER, 1);
             check_curl_code(result, CURLOPT_AUTOREFERER);
             result = curl_easy_setopt(curlpTemplateHandle, CURLOPT_FOLLOWLOCATION, 1);
@@ -326,7 +312,7 @@ CURL *getCurlTemplateHandle()
     
 LLMutex *getCurlMutex()
 {
-    static LLMutex* sHandleMutexp = NULL;
+    static LLMutex* sHandleMutexp = nullptr;
 
     if (!sHandleMutexp)
     {
@@ -343,34 +329,6 @@ void deallocateEasyCurl(CURL *curlp)
     curl_easy_cleanup(curlp);
 }
 
-
-#if SAFE_SSL
-//static
-void ssl_locking_callback(int mode, int type, const char *file, int line)
-{
-    if (type >= sSSLMutex.size())
-    {
-        LL_WARNS() << "Attempt to get unknown MUTEX in SSL Lock." << LL_ENDL;
-    }
-
-    if (mode & CRYPTO_LOCK)
-    {
-        sSSLMutex[type]->lock();
-    }
-    else
-    {
-        sSSLMutex[type]->unlock();
-    }
-}
-
-//static
-unsigned long ssl_thread_id(void)
-{
-	return static_cast<unsigned long>(boost::hash<boost::thread::id>()(LLThread::currentID()));
-}
-#endif
-
-
 }
 
 void initialize()
@@ -381,28 +339,11 @@ void initialize()
     CURLcode code = curl_global_init(CURL_GLOBAL_ALL);
 
     check_curl_code(code, CURL_GLOBAL_ALL);
-
-#if SAFE_SSL
-    S32 mutex_count = CRYPTO_num_locks();
-    for (S32 i = 0; i < mutex_count; i++)
-    {
-        sSSLMutex.push_back(LLMutex_ptr(new LLMutex()));
-    }
-    CRYPTO_set_id_callback(&ssl_thread_id);
-    CRYPTO_set_locking_callback(&ssl_locking_callback);
-#endif
-
 }
 
 
 void cleanup()
 {
-#if SAFE_SSL
-    CRYPTO_set_id_callback(NULL);
-    CRYPTO_set_locking_callback(NULL);
-    sSSLMutex.clear();
-#endif
-
     curl_global_cleanup();
 }
 
@@ -438,3 +379,4 @@ void check_curl_code(CURLcode code, int curl_setopt_option)
 
 }
 } // end namespace LLCore
+

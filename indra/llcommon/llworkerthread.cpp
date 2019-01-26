@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llworkerthread.cpp
  *
@@ -38,6 +40,11 @@ LLWorkerThread::LLWorkerThread(const std::string& name, bool threaded, bool shou
 	LLQueuedThread(name, threaded, should_pause)
 {
 	mDeleteMutex = new LLMutex();
+
+	if(!mLocalAPRFilePoolp)
+	{
+		mLocalAPRFilePoolp = new LLVolatileAPRPool(name) ;
+	}
 }
 
 LLWorkerThread::~LLWorkerThread()
@@ -221,8 +228,7 @@ LLWorkerClass::~LLWorkerClass()
 			LL_ERRS() << "LLWorkerClass destroyed with stale work handle" << LL_ENDL;
 		}
 		if (workreq->getStatus() != LLWorkerThread::STATUS_ABORTED &&
-			workreq->getStatus() != LLWorkerThread::STATUS_COMPLETE &&
-			!(workreq->getFlags() & LLWorkerThread::FLAG_LOCKED))
+			workreq->getStatus() != LLWorkerThread::STATUS_COMPLETE)
 		{
 			LL_ERRS() << "LLWorkerClass destroyed with active worker! Worker Status: " << workreq->getStatus() << LL_ENDL;
 		}
@@ -348,12 +354,12 @@ bool LLWorkerClass::checkWork(bool aborting)
 		LLQueuedThread::status_t status = workreq->getStatus();
 		if (status == LLWorkerThread::STATUS_ABORTED)
 		{
-			complete = !(workreq->getFlags() & LLWorkerThread::FLAG_LOCKED);
+			complete = true;
 			abort = true;
 		}
 		else if (status == LLWorkerThread::STATUS_COMPLETE)
 		{
-			complete = !(workreq->getFlags() & LLWorkerThread::FLAG_LOCKED);
+			complete = true;
 		}
 		else
 		{

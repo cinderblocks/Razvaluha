@@ -22,8 +22,6 @@
 #ifndef LLAUTOREPLACE_H
 #define LLAUTOREPLACE_H
 
-#include "lllineeditor.h"
-
 class LLAutoReplace;
 
 /** The configuration data for the LLAutoReplace object
@@ -191,6 +189,7 @@ class LLAutoReplaceSettings
  */
 class LLAutoReplace : public LLSingleton<LLAutoReplace>
 {
+    LLSINGLETON(LLAutoReplace);
 public:
     /// Callback that provides the hook for use in text entry methods
     void autoreplaceCallback(S32& replacement_start, S32& replacement_length, LLWString& replacement_string, S32& cursor_pos, const LLWString& input_text);
@@ -202,9 +201,7 @@ public:
     void setSettings(const LLAutoReplaceSettings& settings);
 
 private:
-    friend class LLSingleton<LLAutoReplace>;
-    LLAutoReplace();
-    /*virtual*/ void initSingleton();
+    /*virtual*/ void initSingleton() override;
 
     LLAutoReplaceSettings mSettings; ///< configuration information
 	

@@ -157,10 +157,8 @@ bool RlvWindLightControl::setFloat(F32 nValue)
 
 class RlvWindLight : public LLSingleton<RlvWindLight>
 {
-	friend class LLSingleton<RlvWindLight>;
+	LLSINGLETON(RlvWindLight);
 public:
-	RlvWindLight();
-
 	std::string	getValue(const std::string& strSetting, bool& fError);
 	bool		setValue(const std::string& strRlvName, const std::string& strValue);
 
@@ -385,11 +383,9 @@ RlvExtGetSet::RlvExtGetSet()
 	{
 		m_DbgAllowed.insert(std::pair<std::string, S16>("AvatarSex", DBG_READ | DBG_WRITE | DBG_PSEUDO));
 		m_DbgAllowed.insert(std::pair<std::string, S16>("RenderResolutionDivisor", DBG_READ | DBG_WRITE));
-		#ifdef RLV_EXTENSION_CMD_GETSETDEBUG_EX
-			m_DbgAllowed.insert(std::pair<std::string, S16>(RLV_SETTING_FORBIDGIVETORLV, DBG_READ));
-			m_DbgAllowed.insert(std::pair<std::string, S16>(RLV_SETTING_NOSETENV, DBG_READ));
-			m_DbgAllowed.insert(std::pair<std::string, S16>("WindLightUseAtmosShaders", DBG_READ));
-		#endif // RLV_EXTENSION_CMD_GETSETDEBUG_EX
+		m_DbgAllowed.insert(std::pair<std::string, S16>(RLV_SETTING_FORBIDGIVETORLV, DBG_READ));
+		m_DbgAllowed.insert(std::pair<std::string, S16>(RLV_SETTING_NOSETENV, DBG_READ));
+		m_DbgAllowed.insert(std::pair<std::string, S16>("WindLightUseAtmosShaders", DBG_READ));
 
 		// Cache persistance of every setting
 		LLControlVariable* pSetting;
@@ -612,7 +608,7 @@ ERlvCmdRet RlvExtGetSet::onSetDebug(std::string strSetting, const std::string& s
 				}
 
 				// Default settings should persist if they were marked that way, but non-default settings should never persist
-				pSetting->setPersist( (pSetting->isDefault()) ? ((dbgFlags & DBG_PERSIST) == DBG_PERSIST) : false );
+				pSetting->setPersist( ((pSetting->isDefault()) && ((dbgFlags & DBG_PERSIST) == DBG_PERSIST)) ? LLControlVariable::PERSIST_NONDFT : LLControlVariable::PERSIST_NO );
 			}
 		}
 		else

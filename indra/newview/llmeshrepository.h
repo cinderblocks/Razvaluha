@@ -40,6 +40,8 @@
 #include "httphandler.h"
 #include "llthread.h"
 
+#include <boost/unordered_map.hpp> // <alchemy/>
+
 #define LLCONVEXDECOMPINTER_STATIC 1
 
 #include "llconvexdecomposition.h"
@@ -142,7 +144,7 @@ public:
 	LLPhysicsDecomp();
 	~LLPhysicsDecomp();
 
-	void shutdown();
+	void shutdown() override;
 		
 	void submitRequest(Request* request);
 	static S32 llcdCallback(const char*, S32, S32);
@@ -152,7 +154,7 @@ public:
 	void doDecomposition();
 	void doDecompositionSingleHull();
 
-	virtual void run();
+	void run() override;
 	
 	void completeCurrent();
 	void notifyCompleted();
@@ -220,7 +222,7 @@ public:
 
 	struct CompareScoreGreater
 	{
-		bool operator()(const LODRequest& lhs, const LODRequest& rhs)
+		bool operator()(const LODRequest& lhs, const LODRequest& rhs) const
 		{
 			return lhs.mScore > rhs.mScore; // greatest = first
 		}
@@ -286,14 +288,15 @@ public:
 	typedef std::set<LLCore::HttpHandler::ptr_t> http_request_set;
 	http_request_set					mHttpRequestSet;			// Outstanding HTTP requests
 
+	std::string mLegacyGetMeshCapability;
+	std::string mLegacyGetMesh2Capability;
+	int mLegacyGetMeshVersion;
 	std::string mGetMeshCapability;
-	std::string mGetMesh2Capability;
-	int mGetMeshVersion;
 
 	LLMeshRepoThread();
 	~LLMeshRepoThread();
 
-	virtual void run();
+	void run() override;
 
 	void lockAndLoadMeshLOD(const LLVolumeParams& mesh_params, S32 lod);
 	void loadMeshLOD(const LLVolumeParams& mesh_params, S32 lod);
@@ -335,12 +338,10 @@ public:
 	// mesh fetch URLs.
 	//
 	// Mutex:  must be holding mMutex when called
-	void setGetMeshCaps(const std::string & get_mesh1,
-						const std::string & get_mesh2,
-						int pref_version);
+	void setGetMeshCap(const std::string & get_mesh, const std::string & legacy_get_mesh1, const std::string & legacy_get_mesh2, int legacy_pref_version);
 
 	// Mutex:  acquires mMutex
-	void constructUrl(LLUUID mesh_id, std::string * url, int * version);
+	void constructUrl(LLUUID mesh_id, std::string * url, int * legacy_version);
 
 private:
 	// Issue a GET request to a URL with 'Range' header using
@@ -349,7 +350,7 @@ private:
 	// or dispose of handler.
 	//
 	// Threads:  Repo thread only
-	LLCore::HttpHandle getByteRange(const std::string & url, int cap_version,
+	LLCore::HttpHandle getByteRange(const std::string & url, int legacy_cap_version,
 									size_t offset, size_t len, 
 									const LLCore::HttpHandler::ptr_t &handler);
 };
@@ -377,8 +378,8 @@ public:
 
 		DecompRequest(LLModel* mdl, LLModel* base_model, LLMeshUploadThread* thread);
 
-		S32 statusCallback(const char* status, S32 p1, S32 p2) { return 1; }
-		void completed();
+		S32 statusCallback(const char* status, S32 p1, S32 p2) override { return 1; }
+		void completed() override;
 	};
 
 	LLPointer<DecompRequest> mFinalDecomp;
@@ -400,6 +401,7 @@ public:
 	bool			mUploadTextures;
 	bool			mUploadSkin;
 	bool			mUploadJoints;
+    bool			mLockScaleIfJointPosition;
 	volatile bool	mDiscarded;
 
 	LLHost			mHost;
@@ -407,13 +409,14 @@ public:
 	std::string		mWholeModelUploadURL;
 
 	LLMeshUploadThread(instance_list& data, LLVector3& scale, bool upload_textures,
-					   bool upload_skin, bool upload_joints, const std::string & upload_url, bool do_upload = true,
+					   bool upload_skin, bool upload_joints, bool lock_scale_if_joint_position,
+                       const std::string & upload_url, bool do_upload = true,
 					   LLHandle<LLWholeModelFeeObserver> fee_observer = (LLHandle<LLWholeModelFeeObserver>()),
 					   LLHandle<LLWholeModelUploadObserver> upload_observer = (LLHandle<LLWholeModelUploadObserver>()));
 	~LLMeshUploadThread();
 
 	bool finished() const { return mFinished; }
-	virtual void run();
+	void run() override;
 	void preStart();
 	void discard() ;
 	bool isDiscarded() const;
@@ -434,9 +437,10 @@ public:
 	void setUploadObserverHandle(LLHandle<LLWholeModelUploadObserver> observer_handle) { mUploadObserverHandle = observer_handle; }
 
 	// Inherited from LLCore::HttpHandler
-	virtual void onCompleted(LLCore::HttpHandle handle, LLCore::HttpResponse * response);
+	void onCompleted(LLCore::HttpHandle handle, LLCore::HttpResponse * response) override;
 
 	LLViewerFetchedTexture* FindViewerTexture(const LLImportMaterial& material);
+
 private:
 	LLHandle<LLWholeModelFeeObserver> mFeeObserverHandle;
 	LLHandle<LLWholeModelUploadObserver> mUploadObserverHandle;
@@ -474,7 +478,8 @@ public:
 	
 	static LLDeadmanTimer sQuiescentTimer;		// Time-to-complete-mesh-downloads after significant events
 	
-	static F32 getStreamingCost(LLSD& header, F32 radius, S32* bytes = NULL, S32* visible_bytes = NULL, S32 detail = -1, F32 *unscaled_value = NULL);
+	F32 getStreamingCost(LLUUID mesh_id, F32 radius, S32* bytes = nullptr, S32* visible_bytes = nullptr, S32 detail = -1, F32 *unscaled_value = nullptr);
+	static F32 getStreamingCost(LLSD& header, F32 radius, S32* bytes = nullptr, S32* visible_bytes = nullptr, S32 detail = -1, F32 *unscaled_value = nullptr);
 
 	LLMeshRepository();
 
@@ -508,8 +513,10 @@ public:
 	LLSD& getMeshHeader(const LLUUID& mesh_id);
 
 	void uploadModel(std::vector<LLModelInstance>& data, LLVector3& scale, bool upload_textures,
-					 bool upload_skin, bool upload_joints, std::string upload_url, bool do_upload = true,
-					 LLHandle<LLWholeModelFeeObserver> fee_observer= (LLHandle<LLWholeModelFeeObserver>()), LLHandle<LLWholeModelUploadObserver> upload_observer = (LLHandle<LLWholeModelUploadObserver>()));
+                     bool upload_skin, bool upload_joints, bool lock_scale_if_joint_position,
+                     std::string upload_url, bool do_upload = true,
+					 LLHandle<LLWholeModelFeeObserver> fee_observer= (LLHandle<LLWholeModelFeeObserver>()), 
+                     LLHandle<LLWholeModelUploadObserver> upload_observer = (LLHandle<LLWholeModelUploadObserver>()));
 
 	S32 getMeshSize(const LLUUID& mesh_id, S32 lod);
 
@@ -522,7 +529,9 @@ public:
 	typedef std::map<LLVolumeParams, std::set<LLUUID> > mesh_load_map;
 	mesh_load_map mLoadingMeshes[4];
 
-	typedef std::map<LLUUID, LLMeshSkinInfo> skin_map;
+	// <alchemy> - War on std::map
+	//typedef std::map<LLUUID, LLMeshSkinInfo> skin_map;
+	typedef boost::unordered_map<LLUUID, LLMeshSkinInfo> skin_map;
 	skin_map mSkinMap;
 
 	typedef std::map<LLUUID, LLModel::Decomposition*> decomposition_map;
@@ -579,11 +588,10 @@ public:
 
 	void uploadError(LLSD& args);
 	void updateInventory(inventory_data data);
-
-	int mGetMeshVersion;		// Shadows value in LLMeshRepoThread
-
+	int mLegacyGetMeshVersion;		// Shadows value in LLMeshRepoThread
 };
 
 extern LLMeshRepository gMeshRepo;
 
 #endif
+

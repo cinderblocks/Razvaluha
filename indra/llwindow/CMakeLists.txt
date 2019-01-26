@@ -11,6 +11,7 @@
 project(llwindow)
 
 include(00-Common)
+include(DragDrop)
 include(LLCommon)
 include(LLImage)
 include(LLMath)
@@ -36,20 +37,22 @@ include_directories(SYSTEM
     )
 
 set(llwindow_SOURCE_FILES
+    llcursortypes.cpp
     llkeyboard.cpp
     llkeyboardheadless.cpp
-    llwindow.cpp
-    llwindowcallbacks.cpp
     llwindowheadless.cpp
+    llwindowcallbacks.cpp
+    llwindow.cpp
     )
 
 set(llwindow_HEADER_FILES
     CMakeLists.txt
 
+    llcursortypes.h
     llkeyboard.h
     llkeyboardheadless.h
-    llwindowcallbacks.h
     llwindowheadless.h
+    llwindowcallbacks.h
     )
 
 set(viewer_SOURCE_FILES
@@ -57,9 +60,9 @@ set(viewer_SOURCE_FILES
     )
 
 set(viewer_HEADER_FILES
-    llmousehandler.h
-    llpreeditor.h
     llwindow.h
+    llpreeditor.h
+    llmousehandler.h
     )
 
 # Libraries on which this library depends, needed for Linux builds
@@ -116,28 +119,46 @@ if (DARWIN)
     llappdelegate-objc.h
     )
 
-  # We use a bunch of deprecated system APIs.
   set_source_files_properties(
       llkeyboardmacosx.cpp
       llwindowmacosx.cpp
       PROPERTIES
-      COMPILE_FLAGS "-Wno-deprecated-declarations -fpascal-strings"
+      COMPILE_FLAGS "-fpascal-strings"
       )
 endif (DARWIN)
 
 
 if (WINDOWS)
+  if (LLWINDOW_SDL2)
   list(APPEND llwindow_SOURCE_FILES
+         llwindowsdl2.cpp
+         llkeyboardsdl2.cpp
+         )
+    list(APPEND llwindow_HEADER_FILES
+         llwindowsdl2.h
+         llkeyboardsdl2.h
+         )
+    list(APPEND llwindow_LINK_LIBRARIES
+         ${SDL2_LIBRARY}
+         )
+  else ()
+    list(APPEND llwindow_SOURCE_FILES
+         llwindowwin32.cpp
+         llkeyboardwin32.cpp
        lldragdropwin32.cpp
+         )
+    list(APPEND llwindow_HEADER_FILES
+         llwindowwin32.h
+         llkeyboardwin32.h
+         lldragdropwin32.h
+         )
+  endif ()
+
+  list(APPEND llwindow_SOURCE_FILES
        lldxhardware.cpp
-       llkeyboardwin32.cpp
-       llwindowwin32.cpp
        )
   list(APPEND llwindow_HEADER_FILES
-       lldragdropwin32.h
        lldxhardware.h
-       llkeyboardwin32.h
-       llwindowwin32.h
        )
   list(APPEND llwindow_LINK_LIBRARIES
        comdlg32     # Common Dialogs for ChooseColor
@@ -187,10 +208,15 @@ endif (llwindow_HEADER_FILES)
     ${viewer_SOURCE_FILES}
     )
 
-if (SDL_FOUND)
+if (LLWINDOW_SDL2)
+  set_property(TARGET llwindow
+    PROPERTY COMPILE_DEFINITIONS LL_SDL2=1
+    )
+elseif (SDL_FOUND)
   set_property(TARGET llwindow
     PROPERTY COMPILE_DEFINITIONS LL_SDL=1
     )
-endif (SDL_FOUND)
+endif (LLWINDOW_SDL2)
 
 target_link_libraries (llwindow ${llwindow_LINK_LIBRARIES})
+

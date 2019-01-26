@@ -2,42 +2,33 @@
  * @file llagent.h
  * @brief LLAgent class header file
  *
- * $LicenseInfo:firstyear=2000&license=viewergpl$
- * 
- * Copyright (c) 2000-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2000&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
 #ifndef LL_LLAGENT_H
 #define LL_LLAGENT_H
 
-#include <set>
-
 #include "indra_constants.h"
 #include "llevent.h" 				// LLObservable base class
-#include "llagentconstants.h"
 #include "llagentdata.h" 			// gAgentID, gAgentSessionID
 #include "llcharacter.h"
 #include "llcoordframe.h"			// for mFrameAgent
@@ -48,8 +39,6 @@
 #include "httprequest.h"
 #include "llcorehttputil.h"
 
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/signals2.hpp>
 
 extern const BOOL 	ANIMATE;
@@ -73,7 +62,9 @@ class LLSLURL;
 class LLSimInfo;
 class LLTeleportRequest;
 
-typedef boost::shared_ptr<LLTeleportRequest> LLTeleportRequestPtr;
+
+
+typedef std::shared_ptr<LLTeleportRequest> LLTeleportRequestPtr;
 
 //--------------------------------------------------------------------
 // Types
@@ -195,11 +186,11 @@ private:
 	//--------------------------------------------------------------------
 public:
 	LLVector3		getPosAgentFromGlobal(const LLVector3d &pos_global) const;
-	LLVector3d		getPosGlobalFromAgent(const LLVector3 &pos_agent)	const;
-	const LLVector3d	&getPositionGlobal() const;
+	LLVector3d		getPosGlobalFromAgent(const LLVector3 &pos_agent) const;	
+	const LLVector3d &getPositionGlobal() const;
 	const LLVector3	&getPositionAgent();
 	// Call once per frame to update position, angles (radians).
-	void			updateAgentPosition(const F32 dt, const F32 yaw, const S32 mouse_x, const S32 mouse_y);		// call once per frame to update position, angles radians
+	void			updateAgentPosition(const F32 dt, const F32 yaw, const S32 mouse_x, const S32 mouse_y);	
 	void			setPositionAgent(const LLVector3 &center);
 protected:
 	void			propagate(const F32 dt); // ! BUG ! Should roll into updateAgentPosition
@@ -218,7 +209,7 @@ public:
 	//--------------------------------------------------------------------
 public:
 	const LLCoordFrame&	getFrameAgent()	const	{ return mFrameAgent; }
-	void			initOriginGlobal(const LLVector3d &origin_global); // Only to be used in ONE place
+	void 			initOriginGlobal(const LLVector3d &origin_global); // Only to be used in ONE place
 	void			resetAxes();
 	void			resetAxes(const LLVector3 &look_at); // Makes reasonable left and up
 	// The following three get*Axis functions return direction avatar is looking, not camera.
@@ -250,9 +241,9 @@ private:
 	//--------------------------------------------------------------------
 public:
 	void changeParcels(); // called by LLViewerParcelMgr when we cross a parcel boundary
-
+	
 	// Register a boost callback to be called when the agent changes parcels
-	typedef boost::function<void()> parcel_changed_callback_t;
+	typedef std::function<void()> parcel_changed_callback_t;
 	boost::signals2::connection     addParcelChangedCallback(parcel_changed_callback_t);
 
 private:
@@ -268,8 +259,8 @@ public:
 	LLHost			getRegionHost() const;
 	BOOL			inPrelude();
 
-	// Capability
-	std::string     getRegionCapability(const std::string &name); // short hand for if (getRegion()) { getRegion()->getCapability(name) }
+    // Capability 
+    std::string     getRegionCapability(const std::string &name); // short hand for if (getRegion()) { getRegion()->getCapability(name) }
 
 	/**
 	 * Register a boost callback to be called when the agent changes regions
@@ -374,7 +365,7 @@ public:
 	// Voice
 	//--------------------------------------------------------------------
 public:
-	bool			isVoiceConnected() const { return mVoiceConnected; }
+	bool 			isVoiceConnected() const { return mVoiceConnected; }
 	void			setVoiceConnected(const bool b)	{ mVoiceConnected = b; }
 
 	static void		pressMicrophone(const LLSD& name);
@@ -469,10 +460,10 @@ public:
 	void			standUp();
 	/// @brief ground-sit at agent's current position
 	void			sitDown();
-
+	
 	void			setSitDownAway(bool away);
 	bool			isAwaySitting() const { return mIsAwaySitting; }
-
+	
 private:
 	bool			mIsAwaySitting;
 
@@ -521,7 +512,7 @@ private:
 	U32				mControlFlags;					// Replacement for the mFooKey's
 	BOOL 			mbFlagsDirty;
 	BOOL 			mbFlagsNeedReset;				// ! HACK ! For preventing incorrect flags sent when crossing region boundaries
-
+	
 	//--------------------------------------------------------------------
 	// Animations
 	//--------------------------------------------------------------------
@@ -675,7 +666,7 @@ public:
 	void 			teleportViaLocation(const LLVector3d& pos_global);		// To a global location - this will probably need to be deprecated
 	void			teleportViaLocationLookAt(const LLVector3d& pos_global);// To a global location, preserving camera rotation
 	void 			teleportCancel();										// May or may not be allowed by server
-	void            restoreCanceledTeleportRequest();
+    void            restoreCanceledTeleportRequest();
 	bool			getTeleportKeepsLookAt() { return mbTeleportKeepsLookAt; } // Whether look-at reset after teleport
 protected:
 	bool 			teleportCore(bool is_local = false); 					// Stuff for all teleports; returns true if the teleport can proceed
@@ -721,11 +712,13 @@ private:
 public:
 	void			handleServerBakeRegionTransition(const LLUUID& region_id);
 
+    static void     onCapabilitiesReceivedAfterTeleport();
+
 	//--------------------------------------------------------------------
 	// Teleport State
 	//--------------------------------------------------------------------
 public:
-	ETeleportState	getTeleportState() const;
+    ETeleportState	getTeleportState() const;
 	void			setTeleportState(ETeleportState state);
 private:
 	ETeleportState	mTeleportState;
@@ -782,7 +775,7 @@ public:
 	void			requestEnterGodMode();
 	void			requestLeaveGodMode();
 
-	typedef boost::function<void (U8)>         god_level_change_callback_t;
+	typedef std::function<void (U8)>         god_level_change_callback_t;
 	typedef boost::signals2::signal<void (U8)> god_level_change_signal_t;
 	typedef boost::signals2::connection        god_level_change_slot_t;
 
@@ -853,7 +846,7 @@ public:
 	BOOL			needsRenderHead();
 	void			setShowAvatar(BOOL show) { mShowAvatar = show; }
 	BOOL			getShowAvatar() const { return mShowAvatar; }
-
+	
 private:
 	BOOL			mShowAvatar; 		// Should we render the avatar?
 	U32				mAppearanceSerialNum;
@@ -962,8 +955,16 @@ public:
 	void			sendAgentSetAppearance();
 	void 			sendAgentDataUpdateRequest();
 	void 			sendAgentUserInfoRequest();
-	// IM to Email and Online visibility
+
+// IM to Email and Online visibility
 	void			sendAgentUpdateUserInfo(bool im_to_email, const std::string& directory_visibility);
+
+private:
+    void            requestAgentUserInfoCoro(std::string capurl);
+    void            updateAgentUserInfoCoro(std::string capurl, bool im_via_email, std::string directory_visibility);
+    // DEPRECATED: may be removed when User Info cap propagates 
+    void 			sendAgentUserInfoRequestMessage();
+    void            sendAgentUpdateUserInfoMessage(bool im_via_email, const std::string& directory_visibility);
 
 	//--------------------------------------------------------------------
 	// Receive
@@ -1033,8 +1034,8 @@ public:
 	S32 			getNumPendingQueries() const 	{ return mNumPendingQueries; }
 private:
 	S32				mNumPendingQueries;
-	S32				mWearablesCacheQueryID; //mTextureCacheQueryID;
-	U32				mUpdateSerialNum; //mAgentWearablesUpdateSerialNum
+	S32				mWearablesCacheQueryID;
+	U32				mUpdateSerialNum;
 	S32		    	mActiveCacheQueries[LLAvatarAppearanceDefines::BAKED_NUM_INDICES];
 };
 

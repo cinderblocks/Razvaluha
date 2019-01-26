@@ -51,8 +51,8 @@ public:
 	{
 		U8         mV[LENGTHOFCOLOR4U];
 		U32        mAll;
-		//LLColor4*  mSources;
-		//LLColor4U* mSourcesU;
+//		LLColor4*  mSources;
+//		LLColor4U* mSourcesU;
 	};
 
 
@@ -60,6 +60,7 @@ public:
 	LLColor4U(U8 r, U8 g, U8 b);		// Initializes LLColor4U to (r, g, b, 1)
 	LLColor4U(U8 r, U8 g, U8 b, U8 a);		// Initializes LLColor4U to (r. g, b, a)
 	LLColor4U(const U8 *vec);			// Initializes LLColor4U to (vec[0]. vec[1], vec[2], 1)
+	explicit LLColor4U(const LLColor4& vec);
 	/*explicit */LLColor4U(const LLSD& sd)
 	{
 		setValue(sd);
@@ -175,6 +176,14 @@ inline LLColor4U::LLColor4U(const U8 *vec)
 	mV[VY] = vec[VY];
 	mV[VZ] = vec[VZ];
 	mV[VW] = vec[VW];
+}
+
+inline LLColor4U::LLColor4U(const LLColor4& vec)
+{
+	mV[VX] = llclampb(ll_round(vec.mV[VRED] * 255.f));
+	mV[VY] = llclampb(ll_round(vec.mV[VGREEN] * 255.f));
+	mV[VZ] = llclampb(ll_round(vec.mV[VBLUE] * 255.f));
+	mV[VW] = llclampb(ll_round(vec.mV[VALPHA] * 255.f));
 }
 
 /*

@@ -60,40 +60,46 @@ public:
 
 class LLLeavesFilter : public LLQueryFilter, public LLSingleton<LLLeavesFilter>
 {
-	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const;
+	LLSINGLETON_EMPTY_CTOR(LLLeavesFilter);
+	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const override;
 };
 
 class LLRootsFilter : public LLQueryFilter, public LLSingleton<LLRootsFilter>
 {
-	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const;
+	LLSINGLETON_EMPTY_CTOR(LLRootsFilter);
+	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const override;
 };
 
 class LLVisibleFilter : public LLQueryFilter, public LLSingleton<LLVisibleFilter>
 {
-	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const;
+	LLSINGLETON_EMPTY_CTOR(LLVisibleFilter);
+	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const override;
 };
 
 class LLEnabledFilter : public LLQueryFilter, public LLSingleton<LLEnabledFilter>
 {
-	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const;
+	LLSINGLETON_EMPTY_CTOR(LLEnabledFilter);
+	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const override;
 };
 
 class LLTabStopFilter : public LLQueryFilter, public LLSingleton<LLTabStopFilter>
 {
-	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const;
+	LLSINGLETON_EMPTY_CTOR(LLTabStopFilter);
+	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const override;
 };
 
 class LLCtrlFilter : public LLQueryFilter, public LLSingleton<LLCtrlFilter>
 {
-	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const;
+	LLSINGLETON_EMPTY_CTOR(LLCtrlFilter);
+	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const override;
 };
 
 template <class T>
 class LLWidgetTypeFilter : public LLQueryFilter
 {
-	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const
+	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const override
 	{
-		return filterResult_t(dynamic_cast<const T*>(view) != NULL, TRUE);
+		return filterResult_t(dynamic_cast<const T*>(view) != nullptr, TRUE);
 	}
 
 };
@@ -122,7 +128,7 @@ public:
 	viewList_t operator () (LLView * view) const { return run(view); }
 
 	// override this method to provide iteration over other types of children
-	virtual void filterChildren(LLView * view, viewList_t & filtered_children) const;
+	virtual void filterChildren(LLView * view, viewList_t& filtered_children) const;
 
 private:
 

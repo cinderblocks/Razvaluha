@@ -81,7 +81,7 @@ LLFloaterPay::LLFloaterPay(const std::string& name,
 	mTargetIsGroup(FALSE),
 	mDefaultValue(0),
 	mQuickPayButton({ {nullptr,nullptr,nullptr,nullptr} }),
-	mQuickPayInfo({ {PAY_BUTTON_DEFAULT_0, PAY_BUTTON_DEFAULT_1, PAY_BUTTON_DEFAULT_2, PAY_BUTTON_DEFAULT_3} })
+	mQuickPayInfo({ {1, 5, 10, 20} })
 {
 	BOOST_STATIC_ASSERT(MAX_PAY_BUTTONS == 4);
 
@@ -155,6 +155,7 @@ void LLFloaterPay::processPayPriceReply(LLMessageSystem* msg, void **userdata)
 
 		msg->getS32Fast(_PREHASH_ObjectData,_PREHASH_DefaultPayPrice,price);
 		
+		constexpr S32 PAY_PRICE_HIDE = -1, PAY_PRICE_DEFAULT = -2;
 		if (PAY_PRICE_HIDE == price)
 		{
 			self->childSetVisible("amount", FALSE);
@@ -216,7 +217,7 @@ void LLFloaterPay::processPayPriceReply(LLMessageSystem* msg, void **userdata)
 		// build a string containing the maximum value and calc nerw button width from it.
 		std::string balance_str = gHippoGridManager->getConnectedGrid()->getCurrencySymbol();
 		balance_str += LLResMgr::getInstance()->getMonetaryString( max_pay_amount );
-		const LLFontGL* font = LLResMgr::getInstance()->getRes(LLFONT_SANSSERIF);
+		const LLFontGL* font = LLFontGL::getFontSansSerif();
 		S32 new_button_width = font->getWidth( std::string(balance_str));
 		new_button_width += ( 12 + 12 );	// padding
 

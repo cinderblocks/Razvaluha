@@ -1,6 +1,6 @@
 /** 
  *
- * Copyright (c) 2009-2011, Kitty Barnett
+ * Copyright (c) 2009-2016, Kitty Barnett
  * 
  * The source code in this file is provided to you under the terms of the 
  * GNU Lesser General Public License, version 2.1, but WITHOUT ANY WARRANTY;
@@ -20,12 +20,17 @@
 #include <stack>
 
 #include "rlvcommon.h"
-#include "rlvhelper.h"		// Needed to make GCC happy
+#include "rlvhelper.h"
 
 // ============================================================================
 
 class RlvHandler : public LLOldEvents::LLSimpleListener
 {
+	// Temporary LLSingleton look-alike
+public:
+	static RlvHandler& instance();
+	static RlvHandler* getInstance();
+
 public:
 	RlvHandler();
 	~RlvHandler();
@@ -112,9 +117,9 @@ public:
 	const LLUUID&     getCurrentObject() const	{ return (!m_CurObjectStack.empty()) ? m_CurObjectStack.top() : LLUUID::null; }
 
 	// Initialization
-	static BOOL canDisable();
-	static BOOL isEnabled()	{ return m_fEnabled; }
-	static BOOL setEnabled(BOOL fEnable);
+	static bool canEnable() { return false; }
+	static bool isEnabled()	{ return m_fEnabled; }
+	static bool setEnabled(bool fEnable);
 protected:
 	void clearState();
 
@@ -132,11 +137,11 @@ public:
 	typedef boost::signals2::signal<void (const RlvCommand&, ERlvCmdRet, bool)> rlv_command_signal_t;
 	boost::signals2::connection setCommandCallback(const rlv_command_signal_t::slot_type& cb )			 { return m_OnCommand.connect(cb); }
 
-	void addCommandHandler(RlvCommandHandler* pHandler);
-	void removeCommandHandler(RlvCommandHandler* pHandler);
+	void addCommandHandler(RlvExtCommandHandler* pHandler);
+	void removeCommandHandler(RlvExtCommandHandler* pHandler);
 protected:
 	void clearCommandHandlers();
-	bool notifyCommandHandlers(rlvCommandHandler f, const RlvCommand& rlvCmd, ERlvCmdRet& eRet, bool fNotifyAll) const;
+	bool notifyCommandHandlers(rlvExtCommandHandler f, const RlvCommand& rlvCmd, ERlvCmdRet& eRet, bool fNotifyAll) const;
 
 	// Externally invoked event handlers
 public:
@@ -205,9 +210,9 @@ protected:
 	rlv_behaviour_signal_t m_OnBehaviour;
 	rlv_behaviour_signal_t m_OnBehaviourToggle;
 	rlv_command_signal_t   m_OnCommand;
-	mutable std::list<RlvCommandHandler*> m_CommandHandlers;
+	mutable std::list<RlvExtCommandHandler*> m_CommandHandlers;
 
-	static BOOL			  m_fEnabled;				// Use setEnabled() to toggle this
+	static bool         m_fEnabled;					// Use setEnabled() to toggle this
 
 	bool				m_fCanCancelTp;				// @accepttp=n and @tpto=force
 	mutable LLVector3d	m_posSitSource;				// @standtp=n (mutable because onForceXXX handles are all declared as const)
@@ -219,11 +224,10 @@ protected:
 	// --------------------------------
 
 	/*
-	 * Internal access functions used by unit tests
+	 * Internal access functions
 	 */
 public:
-	const rlv_object_map_t*    getObjectMap() const		{ return &m_Objects; }
-	//const rlv_exception_map_t* getExceptionMap() const	{ return &m_Exceptions; }
+	const rlv_object_map_t& getObjectMap() const { return m_Objects; }
 };
 
 typedef RlvHandler rlv_handler_t;
@@ -232,6 +236,16 @@ extern rlv_handler_t gRlvHandler;
 // ============================================================================
 // Inlined member functions
 //
+
+inline RlvHandler& RlvHandler::instance()
+{
+	return gRlvHandler;
+}
+
+inline RlvHandler* RlvHandler::getInstance()
+{
+	return &gRlvHandler;
+}
 
 // Checked: 2010-11-29 (RLVa-1.3.0c) | Added: RLVa-1.3.0c
 inline bool RlvHandler::canEdit(const LLViewerObject* pObj) const

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmorphview.cpp
  * @brief Container for Morph functionality
@@ -46,7 +48,7 @@
 #include "llviewerwindow.h"
 #include "pipeline.h"
 
-LLMorphView *gMorphView = NULL;
+LLMorphView *gMorphView = nullptr;
 
 
 const F32 EDIT_AVATAR_ORBIT_SPEED = 0.1f;
@@ -73,8 +75,7 @@ LLMorphView::LLMorphView(const std::string& name, const LLRect& rect)
 	mCameraYaw( 0.f ),
 	mCameraDist( -1.f ),
 	mCameraDrivenByKeys( FALSE )
-{
-}
+{}
 
 //-----------------------------------------------------------------------------
 // initialize()

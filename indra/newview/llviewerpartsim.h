@@ -142,8 +142,8 @@ protected:
 
 class LLViewerPartSim : public LLSingleton<LLViewerPartSim>
 {
+	LLSINGLETON(LLViewerPartSim);
 public:
-	LLViewerPartSim();
 	virtual ~LLViewerPartSim(){}
 	void destroyClass();
 

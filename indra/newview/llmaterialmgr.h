@@ -38,9 +38,7 @@ class LLViewerRegion;
 
 class LLMaterialMgr : public LLSingleton<LLMaterialMgr>
 {
-	friend class LLSingleton<LLMaterialMgr>;
-protected:
-	LLMaterialMgr();
+	LLSINGLETON(LLMaterialMgr);
 	virtual ~LLMaterialMgr();
 
 public:
@@ -103,7 +101,7 @@ private:
 	struct TEMaterialPairHasher
 	{
 		enum { bucket_size = 8 };
-		size_t operator()(const TEMaterialPair& key_value) const { return *((size_t*)key_value.materialID.get());  } // cheesy, but effective
+		size_t operator()(const TEMaterialPair& key_value) const { return key_value.materialID.hash();  }
 		bool   operator()(const TEMaterialPair& left, const TEMaterialPair& right) const { return left < right; }
 	};
 
@@ -118,7 +116,6 @@ private:
 	typedef std::set<LLUUID> getall_queue_t;
 	typedef std::map<LLUUID, F64> getall_pending_map_t;
 	typedef std::map<LLUUID, getall_callback_t*> getall_callback_map_t;
-
 	typedef std::map<U8, LLMaterial> facematerial_map_t;
 	typedef std::map<LLUUID, facematerial_map_t> put_queue_t;
 
@@ -134,7 +131,8 @@ private:
 	getall_pending_map_t	mGetAllPending;
 	getall_callback_map_t	mGetAllCallbacks;
 	put_queue_t				mPutQueue;
-	material_map_t mMaterials;
+	material_map_t			mMaterials;
+
 	LLCore::HttpRequest::ptr_t		mHttpRequest;
 	LLCore::HttpHeaders::ptr_t		mHttpHeaders;
 	LLCore::HttpOptions::ptr_t		mHttpOptions;

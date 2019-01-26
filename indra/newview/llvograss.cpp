@@ -1,32 +1,28 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llvograss.cpp
  * @brief Not a blade, but a clump of grass
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -34,12 +30,10 @@
 
 #include "llvograss.h"
 
-#include "imageids.h"
 #include "llviewercontrol.h"
 
 #include "llagentcamera.h"
 #include "llnotificationsutil.h"
-#include "llviewerwindow.h"
 #include "lldrawable.h"
 #include "lldrawpoolalpha.h"
 #include "llface.h"
@@ -81,7 +75,7 @@ LLVOGrass::SpeciesNames LLVOGrass::sSpeciesNames;
 LLVOGrass::LLVOGrass(const LLUUID &id, const LLPCode pcode, LLViewerRegion *regionp)
 :	LLAlphaObject(id, pcode, regionp)
 {
-	mPatch               = NULL;
+	mPatch               = nullptr;
 	mLastPatchUpdateTime = 0;
 	mGrassVel.clearVec();
 	mGrassBend.clearVec();
@@ -146,6 +140,7 @@ void LLVOGrass::initClass()
 		}
 		F32 F32_val;
 		LLUUID id;
+		std::string name;
 
 		BOOL success = TRUE;
 
@@ -188,6 +183,11 @@ void LLVOGrass::initClass()
 		success &= grass_def->getFastAttributeF32(blade_sizey_string, F32_val);
 		newGrass->mBladeSizeY = F32_val;
 
+		static LLStdStringHandle name_string = LLXmlTree::addAttributeString("name");
+		grass_def->getFastAttributeString(name_string, name);
+		newGrass->mName = name;
+		sSpeciesNames[name] = species;
+
 		if (sSpeciesTable.count(species))
 		{
 			LL_INFOS() << "Grass species " << species << " already defined! Duplicate discarded." << LL_ENDL;
@@ -201,16 +201,8 @@ void LLVOGrass::initClass()
 
 		if (species >= sMaxGrassSpecies) sMaxGrassSpecies = species + 1;
 
-		std::string name;
-		static LLStdStringHandle name_string = LLXmlTree::addAttributeString("name");
-		success &= grass_def->getFastAttributeString(name_string, name);
-		sSpeciesNames[name] = species;
-
 		if (!success)
 		{
-			std::string name;
-			static LLStdStringHandle name_string = LLXmlTree::addAttributeString("name");
-			grass_def->getFastAttributeString(name_string, name);
 			LL_WARNS() << "Incomplete definition of grass " << name << LL_ENDL;
 		}
 	}
@@ -236,7 +228,7 @@ void LLVOGrass::initClass()
 
 	for (S32 i = 0; i < GRASS_MAX_BLADES; ++i)
 	{
-		if (1)   //(i%2 == 0)			Uncomment for X blading
+		if (/* DISABLES CODE */ (true))   //(i%2 == 0)			Uncomment for X blading
 		{
 			F32 u = sqrt(-2.0f * log(ll_frand()));
 			F32 v = 2.0f * F_PI * ll_frand();
@@ -476,7 +468,7 @@ void LLVOGrass::plantBlades()
 	
 	if (mDrawable->getNumFaces() < 1)
 	{
-		mDrawable->setNumFaces(1, NULL, getTEImage(0));
+		mDrawable->setNumFaces(1, nullptr, getTEImage(0));
 	}
 		
 	LLFace *face = mDrawable->getFace(0);
@@ -485,7 +477,7 @@ void LLVOGrass::plantBlades()
 		face->setTexture(getTEImage(0));
 		face->setState(LLFace::GLOBAL);
 		face->setSize(mNumBlades * 8, mNumBlades * 12);
-		face->setVertexBuffer(NULL);
+		face->setVertexBuffer(nullptr);
 		face->setTEOffset(0);
 		face->mCenterLocal = mPosition + mRegionp->getOriginAgent();
 	}
@@ -651,7 +643,7 @@ void LLGrassPartition::addGeometryCount(LLSpatialGroup* group, U32& vertex_count
 	{
 		LLDrawable* drawablep = (LLDrawable*)(*i)->getDrawable();
 		
-		if (drawablep->isDead())
+		if (!drawablep || drawablep->isDead())
 		{
 			continue;
 		}
@@ -767,9 +759,10 @@ void LLGrassPartition::getGeometry(LLSpatialGroup* group)
 			LLDrawInfo* info = new LLDrawInfo(start,end,count,offset,facep->getTexture(), 
 				//facep->getTexture(),
 				buffer, fullbright); 
-			const LLVector4a* bounds = group->getObjectExtents();
-			info->mExtents[0] = bounds[0];
-			info->mExtents[1] = bounds[1];
+
+			const LLVector4a* exts = group->getObjectExtents();
+			info->mExtents[0] = exts[0];
+			info->mExtents[1] = exts[1];
 			info->mVSize = vsize;
 			draw_vec.push_back(info);
 			//for alpha sorting
@@ -925,18 +918,18 @@ BOOL LLVOGrass::lineSegmentIntersect(const LLVector4a& start, const LLVector4a& 
 					getTEImage(0)->getMask(hit_tc))
 				{
 					closest_t = t;
-					if (intersection != NULL)
+					if (intersection != nullptr)
 					{
 						dir.mul(closest_t);
 						intersection->setAdd(start, dir);
 					}
 
-					if (tex_coord != NULL)
+					if (tex_coord != nullptr)
 					{
 						*tex_coord = hit_tc;
 					}
 
-					if (normal != NULL)
+					if (normal != nullptr)
 					{
 						normal->load3(normal1.mV);
 					}

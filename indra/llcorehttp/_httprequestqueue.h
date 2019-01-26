@@ -57,8 +57,8 @@ protected:
 	virtual ~HttpRequestQueue();						// Use release()
 
 private:
-	HttpRequestQueue(const HttpRequestQueue &);			// Not defined
-	void operator=(const HttpRequestQueue &);			// Not defined
+	HttpRequestQueue(const HttpRequestQueue &) = delete;				// Not defined
+	HttpRequestQueue& operator=(const HttpRequestQueue &) = delete;		// Not defined
 
 public:
     typedef boost::shared_ptr<HttpOperation> opPtr_t;
@@ -85,7 +85,7 @@ public:
 	///					an explicit release() call.
 	///
 	/// Threading:  callable by any thread.
-    HttpStatus addOp(const opPtr_t &op);
+    HttpStatus addOp(const opPtr_t &op, bool loggable = true);
 
 	/// Return the operation on the front of the queue.  If
 	/// the queue is empty and @wait is false, call returns

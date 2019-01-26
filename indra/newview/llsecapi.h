@@ -32,6 +32,8 @@
 #include <openssl/x509.h>
 #include <ostream>
 #include "llpointer.h"
+#include "llexception.h"
+#include "llsdutil.h"
 
 #ifdef LL_WINDOWS
 #pragma warning(disable:4250)
@@ -116,17 +118,13 @@
 
 
 
-class LLProtectedDataException
+struct LLProtectedDataException: public LLException
 {
-public:
-	LLProtectedDataException(const char *msg) 
+	LLProtectedDataException(const std::string& msg):
+		LLException(msg)
 	{
-		LL_WARNS("SECAPI") << "Protected Data Error: " << (std::string)msg << LL_ENDL;
-		mMsg = (std::string)msg;
+		LL_WARNS("SECAPI") << "Protected Data Error: " << msg << LL_ENDL;
 	}
-	std::string getMessage() { return mMsg; }
-protected:
-	std::string mMsg;
 };
 
 // class LLCertificate
@@ -294,15 +292,8 @@ bool operator!=(const LLCertificateVector::iterator& _lhs, const LLCertificateVe
 class LLCredential  : public LLThreadSafeRefCount
 {
 public:
-	
 	LLCredential() {}
-	
-	LLCredential(const std::string& grid)
-	{
-		mGrid = grid;
-		mIdentifier = LLSD::emptyMap();
-		mAuthenticator = LLSD::emptyMap();
-	}
+    LLCredential(const std::string& grid) : mGrid(grid) {}
 	
 	virtual ~LLCredential() {}
 	
@@ -318,11 +309,20 @@ public:
 	virtual LLSD getLoginParams();
 	virtual std::string getGrid() { return mGrid; }
 	
+	virtual bool hasIdentifier() { return !mIdentifier.isUndefined(); }
+	virtual bool hasAuthenticator() { return !mAuthenticator.isUndefined(); }
 
 	virtual void clearAuthenticator() { mAuthenticator = LLSD(); } 
 	virtual std::string userID() const { return std::string("unknown");}
+	virtual std::string username() const { return std::string("unknown");}
+
+	virtual LLSD asLLSD(bool save_authenticator);
 	virtual std::string asString() const { return std::string("unknown");}
 	operator std::string() const { return asString(); }
+    
+    static std::string userIDFromIdentifier(const LLSD& identifier);
+    static std::string usernameFromIdentifier(const LLSD& identifier);
+    
 protected:
 	LLSD mIdentifier;
 	LLSD mAuthenticator;
@@ -334,39 +334,39 @@ std::ostream& operator <<(std::ostream& s, const LLCredential& cred);
 
 // All error handling is via exceptions.
 
-class LLCertException
+class LLCertException: public LLException
 {
 public:
-	LLCertException(LLPointer<LLCertificate> cert, const char* msg)
+	LLCertException(const LLSD& cert_data, const std::string& msg): LLException(msg),
+        mCertData(cert_data)
 	{
-
-		mCert = cert;
-
-		LL_WARNS("SECAPI") << "Certificate Error: " << (std::string)msg << LL_ENDL;
-		mMsg = (std::string)msg;
+		LL_WARNS("SECAPI") << "Certificate Error: " << msg;
+		LL_CONT << " in certificate: \n";
+		LL_CONT << ll_pretty_print_sd(cert_data) << LL_ENDL;
 	}
-	LLPointer<LLCertificate> getCert() { return mCert; }
-	std::string getMessage() { return mMsg; }
+	virtual ~LLCertException() throw() {}
+	LLSD getCertData() const { return mCertData; }
 protected:
-	LLPointer<LLCertificate> mCert;
-	std::string mMsg;
+	LLSD mCertData;
 };
 
 class LLInvalidCertificate : public LLCertException
 {
 public:
-	LLInvalidCertificate(LLPointer<LLCertificate> cert) : LLCertException(cert, "CertInvalid")
+	LLInvalidCertificate(const LLSD& cert_data) : LLCertException(cert_data, "CertInvalid")
 	{
 	}
+	virtual ~LLInvalidCertificate() throw() {}
 protected:
 };
 
 class LLCertValidationTrustException : public LLCertException
 {
 public:
-	LLCertValidationTrustException(LLPointer<LLCertificate> cert) : LLCertException(cert, "CertUntrusted")
+	LLCertValidationTrustException(const LLSD& cert_data) : LLCertException(cert_data, "CertUntrusted")
 	{
 	}
+	virtual ~LLCertValidationTrustException() throw() {}
 protected:
 };
 
@@ -374,11 +374,11 @@ class LLCertValidationHostnameException : public LLCertException
 {
 public:
 	LLCertValidationHostnameException(std::string hostname,
-									  LLPointer<LLCertificate> cert) : LLCertException(cert, "CertInvalidHostname")
+									  const LLSD& cert_data) : LLCertException(cert_data, "CertInvalidHostname")
 	{
 		mHostname = hostname;
 	}
-	
+	virtual ~LLCertValidationHostnameException() throw() {}
 	std::string getHostname() { return mHostname; }
 protected:
 	std::string mHostname;
@@ -387,11 +387,12 @@ protected:
 class LLCertValidationExpirationException : public LLCertException
 {
 public:
-	LLCertValidationExpirationException(LLPointer<LLCertificate> cert,
-										LLDate current_time) : LLCertException(cert, "CertExpired")
+	LLCertValidationExpirationException(const LLSD& cert_data,
+										LLDate current_time) : LLCertException(cert_data, "CertExpired")
 	{
 		mTime = current_time;
 	}
+	virtual ~LLCertValidationExpirationException() throw() {}
 	LLDate GetTime() { return mTime; }
 protected:
 	LLDate mTime;
@@ -400,27 +401,30 @@ protected:
 class LLCertKeyUsageValidationException : public LLCertException
 {
 public:
-	LLCertKeyUsageValidationException(LLPointer<LLCertificate> cert) : LLCertException(cert, "CertKeyUsage")
+	LLCertKeyUsageValidationException(const LLSD& cert_data) : LLCertException(cert_data, "CertKeyUsage")
 	{
 	}
+	virtual ~LLCertKeyUsageValidationException() throw() {}
 protected:
 };
 
 class LLCertBasicConstraintsValidationException : public LLCertException
 {
 public:
-	LLCertBasicConstraintsValidationException(LLPointer<LLCertificate> cert) : LLCertException(cert, "CertBasicConstraints")
+	LLCertBasicConstraintsValidationException(const LLSD& cert_data) : LLCertException(cert_data, "CertBasicConstraints")
 	{
 	}
+	virtual ~LLCertBasicConstraintsValidationException() throw() {}
 protected:
 };
 
 class LLCertValidationInvalidSignatureException : public LLCertException
 {
 public:
-	LLCertValidationInvalidSignatureException(LLPointer<LLCertificate> cert) : LLCertException(cert, "CertInvalidSignature")
+	LLCertValidationInvalidSignatureException(const LLSD& cert_data) : LLCertException(cert_data, "CertInvalidSignature")
 	{
 	}
+	virtual ~LLCertValidationInvalidSignatureException() throw() {}
 protected:
 };
 
@@ -446,7 +450,7 @@ public:
 	virtual LLPointer<LLCertificate> getCertificate(X509* openssl_cert)=0;
 	
 	// instantiate a chain from an X509_STORE_CTX
-	virtual LLPointer<LLCertificateChain> getCertificateChain(const X509_STORE_CTX* chain)=0;
+	virtual LLPointer<LLCertificateChain> getCertificateChain(X509_STORE_CTX* chain)=0;
 	
 	// instantiate a cert store given it's id.  if a persisted version
 	// exists, it'll be loaded.  If not, one will be created (but not
@@ -469,16 +473,20 @@ public:
 	virtual LLPointer<LLCredential> createCredential(const std::string& grid,
 													 const LLSD& identifier, 
 													 const LLSD& authenticator)=0;
-	
-	virtual LLPointer<LLCredential> loadCredential(const std::string& grid)=0;
+
+	virtual LLPointer<LLCredential> loadCredential(const std::string& grid, const std::string& user_id = LLStringUtil::null) = 0;
+	virtual LLPointer<LLCredential> loadCredential(const std::string& grid, const LLSD& identifier) = 0;
 	
 	virtual void saveCredential(LLPointer<LLCredential> cred, bool save_authenticator)=0;
 	
+	virtual void deleteCredential(const std::string& grid, const LLSD& identifier) = 0;
 	virtual void deleteCredential(LLPointer<LLCredential> cred)=0;
-	
+
+	virtual bool getCredentialIdentifierList(const std::string& grid, std::vector<LLSD>& identifiers) = 0;
 };
 
 void initializeSecHandler();
+void cleanupSecHandler();
 				
 // retrieve a security api depending on the api type
 LLPointer<LLSecAPIHandler> getSecHandler(const std::string& handler_type);

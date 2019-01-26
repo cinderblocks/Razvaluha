@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
 * @file llpathfindingnavmeshstatus.cpp
 * @brief Implementation of llpathfindingnavmeshstatus
@@ -29,8 +31,6 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llpathfindingnavmeshstatus.h"
-
-#include <string>
 
 #include "llsd.h"
 #include "llstring.h"

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llcontrol.cpp
  * @brief Holds global state for viewer.
@@ -44,10 +46,13 @@
 #include "llxmltree.h"
 #include "llsdserialize.h"
 
+#include <boost/exception/diagnostic_information.hpp> 
+#include <boost/exception_ptr.hpp>
+
 #if LL_RELEASE_WITH_DEBUG_INFO || LL_DEBUG
 #define CONTROL_ERRS LL_ERRS("ControlErrors")
 #else
-#define CONTROL_ERRS LL_ERRS("ControlErrors")
+#define CONTROL_ERRS LL_WARNS("ControlErrors")
 #endif
 
 
@@ -88,6 +93,7 @@ template <> LLColor4 convert_from_llsd<LLColor4>(const LLSD& sd, eControlType ty
 template <> LLColor4U convert_from_llsd<LLColor4U>(const LLSD& sd, eControlType type, const std::string& control_name);
 template <> LLColor3 convert_from_llsd<LLColor3>(const LLSD& sd, eControlType type, const std::string& control_name);
 template <> LLSD convert_from_llsd<LLSD>(const LLSD& sd, eControlType type, const std::string& control_name);
+
 //this defines the current version of the settings file
 const S32 CURRENT_VERSION = 101;
 
@@ -96,32 +102,28 @@ const S32 CURRENT_VERSION = 101;
 //Can't use llcachedcontrol as an alternative as that drags in LLCachedControl constructors that refer to gSavedSettings.. which'll break
 // the crashlogger which also includes llxml.lib (unresolved externals).
 //So, a global it is!
-bool gCOAEnabled = false; 
+bool gCOAEnabled = false;
 
 LLControlVariable* LLControlVariable::getCOAActive()
 {
 	//if no coa connection, return 'this'
 	//if per account is ON and this IS a parent, return child var
-	//if per account is ON and this IS NOT a parent, return 'this'
+	//if per account is ON and this IS NO`T a parent, return 'this'
 	//if per account is OFF and this IS NOT a parent, return parent var
 	//if per account is OFF and this IS a parent, return 'this'
-	if(getCOAConnection() && gCOAEnabled == isCOAParent())
-		return getCOAConnection();
-	else
-		return this;
+	auto* coa = getCOAConnection();
+	return coa && gCOAEnabled == isCOAParent() ? coa : this;
 }
 
-LLControlVariable const* LLControlVariable::getCOAActive() const
+const LLControlVariable* LLControlVariable::getCOAActive() const
 {
 	//if no coa connection, return 'this'
 	//if per account is ON and this IS a parent, return child var
-	//if per account is ON and this IS NOT a parent, return 'this'
+	//if per account is ON and this IS NO`T a parent, return 'this'
 	//if per account is OFF and this IS NOT a parent, return parent var
 	//if per account is OFF and this IS a parent, return 'this'
-	if(getCOAConnection() && gCOAEnabled == isCOAParent())
-		return getCOAConnection();
-	else
-		return this;
+	auto* coa = getCOAConnection();
+	return coa && gCOAEnabled == isCOAParent() ? coa : this;
 }
 
 bool LLControlVariable::llsd_compare(const LLSD& a, const LLSD & b)
@@ -164,7 +166,7 @@ bool LLControlVariable::llsd_compare(const LLSD& a, const LLSD & b)
 
 LLControlVariable::LLControlVariable(const std::string& name, eControlType type,
 							 LLSD initial, const std::string& comment,
-							 bool persist, bool hidefromsettingseditor, bool IsCOA)
+							 ePersist persist, bool hidefromsettingseditor, bool IsCOA)
 	: mName(name),
 	  mComment(comment),
 	  mType(type),
@@ -179,7 +181,7 @@ LLControlVariable::LLControlVariable(const std::string& name, eControlType type,
 	  mIsCOAParent(false),
 	  mCOAConnectedVar(NULL)
 {
-	if (mPersist && mComment.empty())
+	if ((persist != PERSIST_NO) && mComment.empty())
 	{
 		LL_ERRS() << "Must supply a comment for control " << mName << LL_ENDL;
 	}
@@ -241,7 +243,8 @@ void LLControlVariable::setValue(const LLSD& new_value, bool saved_value)
 	}
 	
 	LLSD storable_value = getComparableValue(new_value);
-	bool value_changed = llsd_compare(getValue(), storable_value) == FALSE;
+	LLSD original_value = getValue();
+	bool value_changed = llsd_compare(original_value, storable_value) == FALSE;
 	if(saved_value)
 	{
     	// If we're going to save this value, return to default but don't fire
@@ -253,7 +256,7 @@ void LLControlVariable::setValue(const LLSD& new_value, bool saved_value)
 	}
     else
     {
-        // This is a unsaved value. Its needs to reside at
+        // This is an unsaved value. Its needs to reside at
         // mValues[2] (or greater). It must not affect 
         // the result of getSaveValue()
 	    if (llsd_compare(mValues.back(), storable_value) == FALSE)
@@ -275,7 +278,6 @@ void LLControlVariable::setValue(const LLSD& new_value, bool saved_value)
 	    }
     }
 
-
     if(value_changed)
     {
 		if(getCOAActive() == this)
@@ -291,7 +293,8 @@ void LLControlVariable::setDefaultValue(const LLSD& value)
 	// *NOTE: Default values are not saved, only read.
 
 	LLSD comparable_value = getComparableValue(value);
-	bool value_changed = (llsd_compare(getValue(), comparable_value) == FALSE);
+	LLSD original_value = getValue();
+	bool value_changed = (llsd_compare(original_value, comparable_value) == FALSE);
 	resetToDefault(false);
 	mValues[0] = comparable_value;
 	if(value_changed)
@@ -301,7 +304,7 @@ void LLControlVariable::setDefaultValue(const LLSD& value)
 	}
 }
 
-void LLControlVariable::setPersist(bool state)
+void LLControlVariable::setPersist(ePersist state)
 {
 	mPersist = state;
 }
@@ -338,11 +341,36 @@ bool LLControlVariable::isSaveValueDefault()
         || ((mValues.size() > 1) && llsd_compare(mValues[1], mValues[0]));
 }
 
+bool LLControlVariable::shouldSave(bool nondefault_only)
+{
+	// This method is used to decide whether we should save a given
+	// variable. Two of the three values of mPersist are easy.
+	if (mPersist == PERSIST_NO)
+		return false;
+
+	if (mPersist == PERSIST_ALWAYS)
+		return true;
+
+	// PERSIST_NONDFT
+	// If caller doesn't need us to filter, just save.
+	if (! nondefault_only)
+		return true;
+
+	// PERSIST_NONDFT: caller only wants us to save this variable if its value
+	// differs from default.
+	if (isDefault())                // never been altered
+		return false;
+
+	// We've set at least one other value: compare it to default. Save only if
+	// they differ.
+	return ! llsd_compare(getSaveValue(), getDefault());
+}
+
 LLSD LLControlVariable::getSaveValue() const
 {
 	//The first level of the stack is default
 	//We assume that the second level is user preferences that should be saved
-	if(mValues.size() > 1) return mValues[1]; 
+	if(mValues.size() > 1) return mValues[1];
 	return mValues[0];
 }
 
@@ -356,46 +384,44 @@ void LLControlGroup::updateLookupMap(ctrl_name_table_t::const_iterator iter) con
 }
 #endif //PROF_CTRL_CALLS
 
-LLControlVariable* LLControlGroup::getControl(std::string const& name)
+LLPointer<LLControlVariable> LLControlGroup::getControl(const std::string& name)
 {
 	ctrl_name_table_t::iterator iter = mNameTable.find(name);
 #ifdef PROF_CTRL_CALLS
 	updateLookupMap(iter);
 #endif //PROF_CTRL_CALLS
-	if(iter != mNameTable.end())
-		return iter->second->getCOAActive();
-	else
-		return NULL;
+	return iter == mNameTable.end() ? LLPointer<LLControlVariable>() : iter->second->getCOAActive();
 }
 
-LLControlVariable const* LLControlGroup::getControl(std::string const& name) const
+LLPointer<const LLControlVariable> LLControlGroup::getControl(const std::string& name) const
 {
 	ctrl_name_table_t::const_iterator iter = mNameTable.find(name);
 #ifdef PROF_CTRL_CALLS
 	updateLookupMap(iter);
 #endif //PROF_CTRL_CALLS
-	if(iter != mNameTable.end())
-		return iter->second->getCOAActive();
-	else
-		return NULL;
+	return iter == mNameTable.end() ? LLPointer<const LLControlVariable>() : iter->second->getCOAActive();
 }
 
+
 ////////////////////////////////////////////////////////////////////////////
+
+// Must match the type definition in llcontrol.h
+const std::string LLControlGroup::mTypeString[TYPE_COUNT] = { "U32"
+                                                             ,"S32"
+                                                             ,"F32"
+                                                             ,"Boolean"
+                                                             ,"String"
+                                                             ,"Vector3"
+                                                             ,"Vector3D"
+                                                             ,"Rect"
+                                                             ,"Color4"
+                                                             ,"Color3"
+                                                             ,"LLSD"
+                                                             };
 
 LLControlGroup::LLControlGroup(const std::string& name)
 :	LLInstanceTracker<LLControlGroup, std::string>(name)
 {
-	mTypeString[TYPE_U32] = "U32";
-	mTypeString[TYPE_S32] = "S32";
-	mTypeString[TYPE_F32] = "F32";
-	mTypeString[TYPE_BOOLEAN] = "Boolean";
-	mTypeString[TYPE_STRING] = "String";
-	mTypeString[TYPE_VEC3] = "Vector3";
-    mTypeString[TYPE_VEC3D] = "Vector3D";
-	mTypeString[TYPE_RECT] = "Rect";
-	mTypeString[TYPE_COL4] = "Color4";
-	mTypeString[TYPE_COL3] = "Color3";
-	mTypeString[TYPE_LLSD] = "LLSD";
 }
 
 LLControlGroup::~LLControlGroup()
@@ -422,12 +448,12 @@ std::string LLControlGroup::typeEnumToString(eControlType typeenum)
 	return mTypeString[typeenum];
 }
 
-BOOL LLControlGroup::declareControl(const std::string& name, eControlType type, const LLSD initial_val, const std::string& comment, BOOL persist, BOOL hidefromsettingseditor, bool IsCOA)
+LLControlVariable* LLControlGroup::declareControl(const std::string& name, eControlType type, const LLSD initial_val, const std::string& comment, LLControlVariable::ePersist persist, BOOL hidefromsettingseditor, bool IsCOA)
 {
 	LLControlVariable* existing_control = getControl(name);
 	if (existing_control)
  	{
-		if (persist && existing_control->isType(type))
+		if ((persist != LLControlVariable::PERSIST_NO) && existing_control->isType(type))
 		{
 			if (!existing_control->llsd_compare(existing_control->getDefault(), initial_val))
 			{
@@ -440,95 +466,100 @@ BOOL LLControlGroup::declareControl(const std::string& name, eControlType type, 
 		}
 		else
 		{
-			LL_WARNS() << "Control named " << name << " already exists, ignoring new declaration." << LL_ENDL;
+			LL_WARNS("Settings") << "Control named " << name << " already exists, ignoring new declaration." << LL_ENDL;
 		}
- 		return TRUE;
+ 		return existing_control;
 	}
 
 	// if not, create the control and add it to the name table
 	LLControlVariable* control = new LLControlVariable(name, type, initial_val, comment, persist, hidefromsettingseditor, IsCOA);
 	mNameTable[name] = control;	
-	return TRUE;
+	return control;
 }
 
-BOOL LLControlGroup::declareU32(const std::string& name, const U32 initial_val, const std::string& comment, BOOL persist)
+LLControlVariable* LLControlGroup::declareU32(const std::string& name, const U32 initial_val, const std::string& comment, LLControlVariable::ePersist persist)
 {
 	return declareControl(name, TYPE_U32, (LLSD::Integer) initial_val, comment, persist);
 }
 
-BOOL LLControlGroup::declareS32(const std::string& name, const S32 initial_val, const std::string& comment, BOOL persist)
+LLControlVariable* LLControlGroup::declareS32(const std::string& name, const S32 initial_val, const std::string& comment, LLControlVariable::ePersist persist)
 {
 	return declareControl(name, TYPE_S32, initial_val, comment, persist);
 }
 
-BOOL LLControlGroup::declareF32(const std::string& name, const F32 initial_val, const std::string& comment, BOOL persist)
+LLControlVariable* LLControlGroup::declareF32(const std::string& name, const F32 initial_val, const std::string& comment, LLControlVariable::ePersist persist)
 {
 	return declareControl(name, TYPE_F32, initial_val, comment, persist);
 }
 
-BOOL LLControlGroup::declareBOOL(const std::string& name, const BOOL initial_val, const std::string& comment, BOOL persist)
+LLControlVariable* LLControlGroup::declareBOOL(const std::string& name, const BOOL initial_val, const std::string& comment, LLControlVariable::ePersist persist)
 {
 	return declareControl(name, TYPE_BOOLEAN, initial_val, comment, persist);
 }
 
-BOOL LLControlGroup::declareString(const std::string& name, const std::string& initial_val, const std::string& comment, BOOL persist)
+LLControlVariable* LLControlGroup::declareString(const std::string& name, const std::string& initial_val, const std::string& comment, LLControlVariable::ePersist persist)
 {
 	return declareControl(name, TYPE_STRING, initial_val, comment, persist);
 }
 
-BOOL LLControlGroup::declareVec3(const std::string& name, const LLVector3 &initial_val, const std::string& comment, BOOL persist)
+LLControlVariable* LLControlGroup::declareVec3(const std::string& name, const LLVector3 &initial_val, const std::string& comment, LLControlVariable::ePersist persist)
 {
 	return declareControl(name, TYPE_VEC3, initial_val.getValue(), comment, persist);
 }
 
-BOOL LLControlGroup::declareVec3d(const std::string& name, const LLVector3d &initial_val, const std::string& comment, BOOL persist)
+LLControlVariable* LLControlGroup::declareVec3d(const std::string& name, const LLVector3d &initial_val, const std::string& comment, LLControlVariable::ePersist persist)
 {
 	return declareControl(name, TYPE_VEC3D, initial_val.getValue(), comment, persist);
 }
 
-BOOL LLControlGroup::declareRect(const std::string& name, const LLRect &initial_val, const std::string& comment, BOOL persist)
+LLControlVariable* LLControlGroup::declareRect(const std::string& name, const LLRect &initial_val, const std::string& comment, LLControlVariable::ePersist persist)
 {
 	return declareControl(name, TYPE_RECT, initial_val.getValue(), comment, persist);
 }
 
-BOOL LLControlGroup::declareColor4(const std::string& name, const LLColor4 &initial_val, const std::string& comment, BOOL persist )
+LLControlVariable* LLControlGroup::declareColor4(const std::string& name, const LLColor4 &initial_val, const std::string& comment, LLControlVariable::ePersist persist )
 {
 	return declareControl(name, TYPE_COL4, initial_val.getValue(), comment, persist);
 }
 
-BOOL LLControlGroup::declareColor3(const std::string& name, const LLColor3 &initial_val, const std::string& comment, BOOL persist )
+LLControlVariable* LLControlGroup::declareColor3(const std::string& name, const LLColor3 &initial_val, const std::string& comment, LLControlVariable::ePersist persist )
 {
 	return declareControl(name, TYPE_COL3, initial_val.getValue(), comment, persist);
 }
 
-BOOL LLControlGroup::declareLLSD(const std::string& name, const LLSD &initial_val, const std::string& comment, BOOL persist )
+LLControlVariable* LLControlGroup::declareLLSD(const std::string& name, const LLSD &initial_val, const std::string& comment, LLControlVariable::ePersist persist )
 {
 	return declareControl(name, TYPE_LLSD, initial_val, comment, persist);
 }
 
-BOOL LLControlGroup::getBOOL(const std::string& name)
+BOOL LLControlGroup::getBOOL(const std::string& name) const
 {
 	return (BOOL)get<bool>(name);
 }
 
-S32 LLControlGroup::getS32(const std::string& name)
+bool LLControlGroup::getBool(const std::string& name) const
+{
+	return get<bool>(name);
+}
+
+S32 LLControlGroup::getS32(const std::string& name) const
 {
 	return get<S32>(name);
 }
 
-U32 LLControlGroup::getU32(const std::string& name)
+U32 LLControlGroup::getU32(const std::string& name) const
 {
 	return get<U32>(name);
 }
 
-F32 LLControlGroup::getF32(const std::string& name)
+F32 LLControlGroup::getF32(const std::string& name) const
 {
 	return get<F32>(name);
 }
 
-std::string LLControlGroup::findString(const std::string& name)
+std::string LLControlGroup::findString(const std::string& name) const
 {
-	LLControlVariable* control = getControl(name);
+	const LLControlVariable* control = getControl(name);
 	
 	if (control && control->isType(TYPE_STRING))
 		return control->get().asString();
@@ -540,12 +571,12 @@ std::string LLControlGroup::getString(const std::string& name) const
 	return get<std::string>(name);
 }
 
-LLWString LLControlGroup::getWString(const std::string& name)
+LLWString LLControlGroup::getWString(const std::string& name) const
 {
 	return get<LLWString>(name);
 }
 
-std::string LLControlGroup::getText(const std::string& name)
+std::string LLControlGroup::getText(const std::string& name) const
 {
 	std::string utf8_string = getString(name);
 	LLStringUtil::replaceChar(utf8_string, '^', '\n');
@@ -553,38 +584,37 @@ std::string LLControlGroup::getText(const std::string& name)
 	return (utf8_string);
 }
 
-LLVector3 LLControlGroup::getVector3(const std::string& name)
+LLVector3 LLControlGroup::getVector3(const std::string& name) const
 {
 	return get<LLVector3>(name);
 }
 
-LLVector3d LLControlGroup::getVector3d(const std::string& name)
+LLVector3d LLControlGroup::getVector3d(const std::string& name) const
 {
 	return get<LLVector3d>(name);
 }
 
-LLRect LLControlGroup::getRect(const std::string& name)
+LLRect LLControlGroup::getRect(const std::string& name) const
 {
 	return get<LLRect>(name);
 }
 
-
-LLColor4 LLControlGroup::getColor(const std::string& name)
+LLColor4 LLControlGroup::getColor(const std::string& name) const
 {
 	return get<LLColor4>(name);
 }
 
-LLColor4 LLControlGroup::getColor4(const std::string& name)
+LLColor4 LLControlGroup::getColor4(const std::string& name) const
 {
 	return get<LLColor4>(name);
 }
 
-LLColor3 LLControlGroup::getColor3(const std::string& name)
+LLColor3 LLControlGroup::getColor3(const std::string& name) const
 {
 	return get<LLColor3>(name);
 }
 
-LLSD LLControlGroup::getLLSD(const std::string& name)
+LLSD LLControlGroup::getLLSD(const std::string& name) const
 {
 	return get<LLSD>(name);
 }
@@ -692,14 +722,14 @@ U32 LLControlGroup::loadFromFileLegacy(const std::string& filename, BOOL require
 
 	if (!xml_controls.parseFile(filename))
 	{
-		LL_WARNS() << "Unable to open control file " << filename << LL_ENDL;
+		LL_WARNS("Settings") << "Unable to open control file " << filename << LL_ENDL;
 		return 0;
 	}
 
 	LLXmlTreeNode* rootp = xml_controls.getRoot();
 	if (!rootp || !rootp->hasAttribute("version"))
 	{
-		LL_WARNS() << "No valid settings header found in control file " << filename << LL_ENDL;
+		LL_WARNS("Settings") << "No valid settings header found in control file " << filename << LL_ENDL;
 		return 0;
 	}
 
@@ -712,7 +742,7 @@ U32 LLControlGroup::loadFromFileLegacy(const std::string& filename, BOOL require
 	// Check file version
 	if (version != CURRENT_VERSION)
 	{
-		LL_INFOS() << filename << " does not appear to be a version " << CURRENT_VERSION << " controls file" << LL_ENDL;
+		LL_INFOS("Settings") << filename << " does not appear to be a version " << CURRENT_VERSION << " controls file" << LL_ENDL;
 		return 0;
 	}
 
@@ -730,7 +760,7 @@ U32 LLControlGroup::loadFromFileLegacy(const std::string& filename, BOOL require
 			if (!name.empty())
 			{
 				//read in to end of line
-				LL_WARNS() << "LLControlGroup::loadFromFile() : Trying to set \"" << name << "\", setting doesn't exist." << LL_ENDL;
+				LL_WARNS("Settings") << "LLControlGroup::loadFromFile() : Trying to set \"" << name << "\", setting doesn't exist." << LL_ENDL;
 			}
 			child_nodep = rootp->getNextChild();
 			continue;
@@ -746,11 +776,11 @@ U32 LLControlGroup::loadFromFileLegacy(const std::string& filename, BOOL require
 			{
 			case TYPE_COL4U:
 			case TYPE_COL4:
-				declareColor4(name, LLColor4::white, LLStringUtil::null, NO_PERSIST);
+				declareColor4(name, LLColor4::white, LLStringUtil::null, LLControlVariable::PERSIST_NO);
 				break;
 			case TYPE_STRING:
 			default:
-				declareString(name, LLStringUtil::null, LLStringUtil::null, NO_PERSIST);
+				declareString(name, LLStringUtil::null, LLStringUtil::null, LLControlVariable::PERSIST_NO);
 				break;
 			}
 		}
@@ -895,37 +925,28 @@ U32 LLControlGroup::saveToFile(const std::string& filename, BOOL nondefault_only
 		LLControlVariable* control = iter->second;
 		if (!control)
 		{
-			LL_WARNS() << "Tried to save invalid control: " << iter->first << LL_ENDL;
+			LL_WARNS("Settings") << "Tried to save invalid control: " << iter->first << LL_ENDL;
 		}
-
-		if( control && control->isPersisted() )
+		else if( control->shouldSave(nondefault_only) )
 		{
-			if (!(nondefault_only && (control->isSaveValueDefault())))
-			{
-				settings[iter->first]["Type"] = typeEnumToString(control->type());
-				settings[iter->first]["Comment"] = control->getComment();
-				settings[iter->first]["Value"] = control->getSaveValue();
-				++num_saved;
-			}
-			else
-			{
-				// Debug spam
-				// LL_INFOS() << "Skipping " << control->getName() << LL_ENDL;
-			}
+			settings[iter->first]["Type"] = typeEnumToString(control->type());
+			settings[iter->first]["Comment"] = control->getComment();
+			settings[iter->first]["Value"] = control->getSaveValue();
+			++num_saved;
 		}
 	}
 	llofstream file;
-	file.open(filename);
+	file.open(filename.c_str());
 	if (file.is_open())
 	{
 		LLSDSerialize::toPrettyXML(settings, file);
 		file.close();
-		LL_INFOS() << "Saved to " << filename << LL_ENDL;
+		LL_INFOS("Settings") << "Saved to " << filename << LL_ENDL;
 	}
 	else
 	{
         // This is a warning because sometime we want to use settings files which can't be written...
-		LL_WARNS() << "Unable to open settings file: " << filename << LL_ENDL;
+		LL_WARNS("Settings") << "Unable to open settings file: " << filename << LL_ENDL;
 		return 0;
 	}
 	return num_saved;
@@ -933,24 +954,24 @@ U32 LLControlGroup::saveToFile(const std::string& filename, BOOL nondefault_only
 
 U32 LLControlGroup::loadFromFile(const std::string& filename, bool set_default_values, bool save_values)
 {
-	if(!mIncludedFiles.insert(filename).second)
+	if (!mIncludedFiles.insert(filename).second) // <alchemy/>
+	{
 		return 0; //Already included this file.
+	}
 
 	LLSD settings;
 	llifstream infile;
-	infile.open(filename);
+	infile.open(filename.c_str());
 	if(!infile.is_open())
 	{
-		LL_WARNS() << "Cannot find file " << filename << " to load." << LL_ENDL;
+		LL_WARNS("Settings") << "Cannot find file " << filename << " to load." << LL_ENDL;
 		return 0;
 	}
 
-	S32 ret = LLSDSerialize::fromXML(settings, infile);
-
-	if (ret <= 0)
+	if (LLSDParser::PARSE_FAILURE == LLSDSerialize::fromXML(settings, infile))
 	{
 		infile.close();
-		LL_WARNS() << "Unable to open LLSD control file " << filename << ". Trying Legacy Method." << LL_ENDL;		
+		LL_WARNS("Settings") << "Unable to parse LLSD control file " << filename << ". Trying Legacy Method." << LL_ENDL;
 		return loadFromFileLegacy(filename, TRUE, TYPE_STRING);
 	}
 
@@ -959,18 +980,19 @@ U32 LLControlGroup::loadFromFile(const std::string& filename, bool set_default_v
 	
 	for(LLSD::map_const_iterator itr = settings.beginMap(); itr != settings.endMap(); ++itr)
 	{
-		bool persist = true;
+		LLControlVariable::ePersist persist = LLControlVariable::PERSIST_NONDFT;
 		std::string const & name = itr->first;
 		LLSD const & control_map = itr->second;
 		
+// <alchemy>
 		if(name == "Include")
 		{
 			if(control_map.isArray())
 			{
 #if LL_WINDOWS
-				size_t pos = filename.find_last_of("\\");
+				size_t pos = filename.find_last_of('\\');
 #else
-				size_t pos = filename.find_last_of("/");
+				size_t pos = filename.find_last_of('/');
 #endif			
 				if(pos!=std::string::npos)
 				{
@@ -981,9 +1003,11 @@ U32 LLControlGroup::loadFromFile(const std::string& filename, bool set_default_v
 			}
 			continue;
 		}
+// </alchemy>
 		if(control_map.has("Persist")) 
 		{
-			persist = control_map["Persist"].asInteger();
+			persist = control_map["Persist"].asInteger()?
+					  LLControlVariable::PERSIST_NONDFT : LLControlVariable::PERSIST_NO;
 		}
 		
 		// Sometimes we want to use the settings system to provide cheap persistence, but we
@@ -1002,6 +1026,8 @@ U32 LLControlGroup::loadFromFile(const std::string& filename, bool set_default_v
 		LLControlVariable* existing_control = getControl(name);
 		if(existing_control)
 		{
+			// set_default_values is true when we're loading the initial,
+			// immutable files from app_settings, e.g. settings.xml.
 			if(set_default_values)
 			{
 				// Override all previously set properties of this control.
@@ -1023,6 +1049,9 @@ U32 LLControlGroup::loadFromFile(const std::string& filename, bool set_default_v
 			}
 			else if(existing_control->isPersisted())
 			{
+				// save_values is specifically false for (e.g.)
+				// SessionSettingsFile and UserSessionSettingsFile -- in other
+				// words, for a file that's supposed to be transient.
 				existing_control->setValue(control_map["Value"], save_values);
 			}
 			// *NOTE: If not persisted and not setting defaults, 
@@ -1030,6 +1059,39 @@ U32 LLControlGroup::loadFromFile(const std::string& filename, bool set_default_v
 		}
 		else
 		{
+			// We've never seen this control before. Either we're loading up
+			// the initial set of default settings files (set_default_values)
+			// -- or we're loading user settings last saved by a viewer that
+			// supports a superset of the variables we know.
+			// CHOP-962: if we're loading an unrecognized user setting, make
+			// sure we save it later. If you try an experimental viewer, tweak
+			// a new setting, briefly revert to an old viewer, then return to
+			// the new one, we don't want the old viewer to discard the
+			// setting you changed.
+			if (! set_default_values)
+			{
+				// Using PERSIST_ALWAYS insists that saveToFile() (which calls
+				// LLControlVariable::shouldSave()) must save this control
+				// variable regardless of its value. We can safely set this
+				// LLControlVariable persistent because the 'persistent' flag
+				// is not itself persisted!
+				persist = LLControlVariable::PERSIST_ALWAYS;
+				// We want to mention unrecognized user settings variables
+				// (e.g. from a newer version of the viewer) in the log. But
+				// we also arrive here for Boolean variables generated by
+				// the notifications subsystem when the user checks "Don't
+				// show me this again." These aren't declared in settings.xml;
+				// they're actually named for the notification they suppress.
+				// We don't want to mention those. Apologies, this is a bit of
+				// a hack: we happen to know that user settings go into an
+				// LLControlGroup whose name is "Global".
+				if (getKey() == "Global")
+				{
+					LL_INFOS("LLControlGroup") << "preserving unrecognized " << getKey()
+											   << " settings variable " << name << LL_ENDL;
+				}
+			}
+
 			bool IsCOA = control_map.has("IsCOA") && !!control_map["IsCOA"].asInteger();
 			declareControl(name, 
 						   typeStringToEnum(control_map["Type"].asString()), 
@@ -1039,12 +1101,12 @@ U32 LLControlGroup::loadFromFile(const std::string& filename, bool set_default_v
 						   hidefromsettingseditor,
 						   IsCOA
 						   );
-
 		}
-		
+
 		++validitems;
 	}
 
+	LL_DEBUGS("Settings") << "Loaded " << validitems << " settings from " << filename << LL_ENDL;
 	return validitems;
 }
 
@@ -1071,36 +1133,35 @@ void LLControlGroup::applyToAll(ApplyFunctor* func)
 
 void LLControlGroup::connectCOAVars(LLControlGroup &OtherGroup)
 {
-	LLControlVariable *pCOAVar = NULL;
-	for (ctrl_name_table_t::iterator iter = mNameTable.begin();
-		 iter != mNameTable.end(); iter++)
+	LLControlVariable *pCOAVar = nullptr;
+	for (auto& pair : mNameTable)
 	{
-		if(iter->second->isCOA())
+		if (pair.second->isCOA())
 		{
-			LLControlVariable *pParent = iter->second;
+			LLControlVariable *pParent = pair.second;
 			LLControlVariable *pChild = OtherGroup.getControl(pParent->getName());
-			if(!pChild)
+			if (!pChild)
 			{
 				OtherGroup.declareControl(
 					pParent->getName(),
 					pParent->type(),
 					pParent->getDefault(),
 					pParent->getComment(),
-					pParent->isPersisted(),
+					pParent->mPersist,
 					true);
 
 				pChild = OtherGroup.getControl(pParent->getName());
 			}
-			if(pChild)
+			if (pChild)
 			{
 				pParent->setCOAConnect(pChild,true);
 				pChild->setCOAConnect(pParent,false);
 			}
 		}
-		else if(iter->second->getName() == "AscentStoreSettingsPerAccount")
-			pCOAVar = iter->second;
+		else if (pair.second->getName() == "AscentStoreSettingsPerAccount")
+			pCOAVar = pair.second;
 	}
-	if(pCOAVar)
+	if (pCOAVar)
 	{
 		pCOAVar->getSignal()->connect(boost::bind(&LLControlGroup::handleCOASettingChange, this, _2));
 		pCOAVar->firePropertyChanged();
@@ -1108,12 +1169,9 @@ void LLControlGroup::connectCOAVars(LLControlGroup &OtherGroup)
 }
 void LLControlGroup::updateCOASetting(bool coa_enabled)
 {
-	for (ctrl_name_table_t::iterator iter = mNameTable.begin();
-		 iter != mNameTable.end(); iter++)
-	{
-		if(iter->second->getCOAConnection())
-			iter->second->getCOAActive()->firePropertyChanged();
-	}
+	for (auto& pair : mNameTable)
+		if(pair.second->getCOAConnection())
+			pair.second->getCOAActive()->firePropertyChanged();
 }
 
 //============================================================================
@@ -1121,16 +1179,9 @@ void LLControlGroup::updateCOASetting(bool coa_enabled)
 
 static std::string get_warn_name(const std::string& name)
 {
-	std::string warnname = "Warn" + name;
-	for (std::string::iterator iter = warnname.begin(); iter != warnname.end(); ++iter)
-	{
-		char c = *iter;
-		if (!isalnum(c))
-		{
-			*iter = '_';
-		}
-	}
-	return warnname;
+	std::string warnname = name;
+	for (auto& chr : warnname) if (!isalnum(chr)) chr = '_';
+	return "Warn" + warnname;
 }
 
 LLControlVariable *LLControlGroup::addWarning(const std::string& name)
@@ -1147,23 +1198,18 @@ LLControlVariable *LLControlGroup::addWarning(const std::string& name)
 
 BOOL LLControlGroup::getWarning(const std::string& name)
 {
-	std::string warnname = get_warn_name(name);
-	return getBOOL(warnname);
+	return getBOOL(get_warn_name(name));
 }
 
 void LLControlGroup::setWarning(const std::string& name, BOOL val)
 {
-	std::string warnname = get_warn_name(name);
-	setBOOL(warnname, val);
+	setBOOL(get_warn_name(name), val);
 }
 
 void LLControlGroup::resetWarnings()
 {
-	for (std::set<std::string>::iterator iter = mWarnings.begin();
-		 iter != mWarnings.end(); ++iter)
-	{
-		setBOOL(*iter, TRUE);
-	}
+	for (const auto& name : mWarnings)
+		setBOOL(name, TRUE);
 }
 
 bool LLControlGroup::handleCOASettingChange(const LLSD& newvalue)
@@ -1184,7 +1230,7 @@ void main()
 	BOOL_CONTROL baz;
 
 	U32 count = gGlobals.loadFromFile("controls.ini");
-	LL_INFOS() << "Loaded " << count << " controls" << LL_ENDL;
+	LL_INFOS("Settings") << "Loaded " << count << " controls" << LL_ENDL;
 
 	// test insertion
 	foo = new LLControlVariable<F32>("gFoo", 5.f, 1.f, 20.f);
@@ -1341,7 +1387,7 @@ bool convert_from_llsd<bool>(const LLSD& sd, eControlType type, const std::strin
 		return sd.asBoolean();
 	else
 	{
-		CONTROL_ERRS << "Invalid BOOL value for " << control_name << ": " << sd << LL_ENDL;
+		CONTROL_ERRS << "Invalid BOOL value for " << control_name << ": " << LLControlGroup::typeEnumToString(type) << " " << sd << LL_ENDL;
 		return FALSE;
 	}
 }
@@ -1353,7 +1399,7 @@ S32 convert_from_llsd<S32>(const LLSD& sd, eControlType type, const std::string&
 		return sd.asInteger();
 	else
 	{
-		CONTROL_ERRS << "Invalid S32 value for " << control_name << ": " << sd << LL_ENDL;
+		CONTROL_ERRS << "Invalid S32 value for " << control_name << ": " << LLControlGroup::typeEnumToString(type) << " " << sd << LL_ENDL;
 		return 0;
 	}
 }
@@ -1365,7 +1411,7 @@ U32 convert_from_llsd<U32>(const LLSD& sd, eControlType type, const std::string&
 		return sd.asInteger();
 	else
 	{
-		CONTROL_ERRS << "Invalid U32 value for " << control_name << ": " << sd << LL_ENDL;
+		CONTROL_ERRS << "Invalid U32 value for " << control_name << ": " << LLControlGroup::typeEnumToString(type) << " " << sd << LL_ENDL;
 		return 0;
 	}
 }
@@ -1377,7 +1423,7 @@ F32 convert_from_llsd<F32>(const LLSD& sd, eControlType type, const std::string&
 		return (F32) sd.asReal();
 	else
 	{
-		CONTROL_ERRS << "Invalid F32 value for " << control_name << ": " << sd << LL_ENDL;
+		CONTROL_ERRS << "Invalid F32 value for " << control_name << ": " << LLControlGroup::typeEnumToString(type) << " " << sd << LL_ENDL;
 		return 0.0f;
 	}
 }
@@ -1389,7 +1435,7 @@ std::string convert_from_llsd<std::string>(const LLSD& sd, eControlType type, co
 		return sd.asString();
 	else
 	{
-		CONTROL_ERRS << "Invalid string value for " << control_name << ": " << sd << LL_ENDL;
+		CONTROL_ERRS << "Invalid string value for " << control_name << ": " << LLControlGroup::typeEnumToString(type) << " " << sd << LL_ENDL;
 		return LLStringUtil::null;
 	}
 }
@@ -1407,7 +1453,7 @@ LLVector3 convert_from_llsd<LLVector3>(const LLSD& sd, eControlType type, const 
 		return (LLVector3)sd;
 	else
 	{
-		CONTROL_ERRS << "Invalid LLVector3 value for " << control_name << ": " << sd << LL_ENDL;
+		CONTROL_ERRS << "Invalid LLVector3 value for " << control_name << ": " << LLControlGroup::typeEnumToString(type) << " " << sd << LL_ENDL;
 		return LLVector3::zero;
 	}
 }
@@ -1419,7 +1465,7 @@ LLVector3d convert_from_llsd<LLVector3d>(const LLSD& sd, eControlType type, cons
 		return (LLVector3d)sd;
 	else
 	{
-		CONTROL_ERRS << "Invalid LLVector3d value for " << control_name << ": " << sd << LL_ENDL;
+		CONTROL_ERRS << "Invalid LLVector3d value for " << control_name << ": " << LLControlGroup::typeEnumToString(type) << " " << sd << LL_ENDL;
 		return LLVector3d::zero;
 	}
 }
@@ -1431,7 +1477,7 @@ LLRect convert_from_llsd<LLRect>(const LLSD& sd, eControlType type, const std::s
 		return LLRect(sd);
 	else
 	{
-		CONTROL_ERRS << "Invalid rect value for " << control_name << ": " << sd << LL_ENDL;
+		CONTROL_ERRS << "Invalid rect value for " << control_name << ": " << LLControlGroup::typeEnumToString(type) << " " << sd << LL_ENDL;
 		return LLRect::null;
 	}
 }
@@ -1445,19 +1491,19 @@ LLColor4 convert_from_llsd<LLColor4>(const LLSD& sd, eControlType type, const st
 		LLColor4 color(sd);
 		if (color.mV[VRED] < 0.f || color.mV[VRED] > 1.f)
 		{
-			LL_WARNS() << "Color " << control_name << " red value out of range: " << color << LL_ENDL;
+			LL_WARNS("Settings") << "Color " << control_name << " red value out of range: " << color << LL_ENDL;
 		}
 		else if (color.mV[VGREEN] < 0.f || color.mV[VGREEN] > 1.f)
 		{
-			LL_WARNS() << "Color " << control_name << " green value out of range: " << color << LL_ENDL;
+			LL_WARNS("Settings") << "Color " << control_name << " green value out of range: " << color << LL_ENDL;
 		}
 		else if (color.mV[VBLUE] < 0.f || color.mV[VBLUE] > 1.f)
 		{
-			LL_WARNS() << "Color " << control_name << " blue value out of range: " << color << LL_ENDL;
+			LL_WARNS("Settings") << "Color " << control_name << " blue value out of range: " << color << LL_ENDL;
 		}
 		else if (color.mV[VALPHA] < 0.f || color.mV[VALPHA] > 1.f)
 		{
-			LL_WARNS() << "Color " << control_name << " alpha value out of range: " << color << LL_ENDL;
+			LL_WARNS("Settings") << "Color " << control_name << " alpha value out of range: " << color << LL_ENDL;
 		}
 
 		return LLColor4(sd);
@@ -1476,7 +1522,7 @@ LLColor3 convert_from_llsd<LLColor3>(const LLSD& sd, eControlType type, const st
 		return sd;
 	else
 	{
-		CONTROL_ERRS << "Invalid LLColor3 value for " << control_name << ": " << sd << LL_ENDL;
+		CONTROL_ERRS << "Invalid LLColor3 value for " << control_name << ": " << LLControlGroup::typeEnumToString(type) << " " << sd << LL_ENDL;
 		return LLColor3::white;
 	}
 }
@@ -1501,6 +1547,7 @@ DECL_LLCC(LLVector3d, LLVector3d(6.0f, 5.0f, 4.0f));
 DECL_LLCC(LLRect, LLRect(0, 0, 100, 500));
 DECL_LLCC(LLColor4, LLColor4(0.0f, 0.5f, 1.0f));
 DECL_LLCC(LLColor3, LLColor3(1.0f, 0.f, 0.5f));
+DECL_LLCC(LLColor4U, LLColor4U(255, 200, 100, 255));
 
 LLSD test_llsd = LLSD()["testing1"] = LLSD()["testing2"];
 DECL_LLCC(LLSD, test_llsd);
@@ -1525,6 +1572,7 @@ void test_cached_control()
 	TEST_LLCC(LLRect, LLRect(0, 0, 100, 500));
 	TEST_LLCC(LLColor4, LLColor4(0.0f, 0.5f, 1.0f));
 	TEST_LLCC(LLColor3, LLColor3(1.0f, 0.f, 0.5f));
+	TEST_LLCC(LLColor4U, LLColor4U(255, 200, 100, 255));
 //There's no LLSD comparsion for LLCC yet. TEST_LLCC(LLSD, test_llsd); 
 
 	if((std::string)test_BrowserHomePage != "http://www.singularityviewer.org") LL_ERRS() << "Fail BrowserHomePage" << LL_ENDL;

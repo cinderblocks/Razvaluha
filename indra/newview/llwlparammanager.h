@@ -332,9 +332,8 @@ private:
 	static std::string getSysDir();
 	static std::string getUserDir();
 
-	friend class LLSingleton<LLWLParamManager>;
+	LLSINGLETON(LLWLParamManager);
 	/*virtual*/ void initSingleton();
-	LLWLParamManager();
 	~LLWLParamManager();
 
 	// list of all the parameters, listed by name

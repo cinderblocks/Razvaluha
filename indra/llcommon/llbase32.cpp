@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llbase32.cpp
  * @brief base32 encoding that returns a std::string
@@ -62,8 +64,6 @@
 #include "linden_common.h"
 
 #include "llbase32.h"
-
-#include <string>
 
 // bitter - base32.c starts here
 

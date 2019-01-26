@@ -112,8 +112,8 @@ LLFloaterSearch::_Params::_Params()
 	changeDefault(id, "search"); // Don't include this in the count with "web_content"
 }
 
-LLFloaterSearch::LLFloaterSearch(const Params& key) :
-	LLFloaterWebContent(key)
+LLFloaterSearch::LLFloaterSearch(/*const Params& key*/) :
+	LLFloaterWebContent(Params())
 {
 	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_web_content.xml");
 }

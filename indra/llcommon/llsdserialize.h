@@ -7,7 +7,7 @@
  * $LicenseInfo:firstyear=2006&license=viewerlgpl$
  * Second Life Viewer Source Code
  * Copyright (C) 2010, Linden Research, Inc.
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation;
@@ -244,7 +244,7 @@ protected:
 	 * @return Returns the number of LLSD objects parsed into
 	 * data. Returns PARSE_FAILURE (-1) on parse failure.
 	 */
-	virtual S32 doParse(std::istream& istr, LLSD& data) const;
+	S32 doParse(std::istream& istr, LLSD& data) const override;
 
 private:
 	/** 
@@ -317,12 +317,12 @@ protected:
 	 * @return Returns the number of LLSD objects parsed into
 	 * data. Returns PARSE_FAILURE (-1) on parse failure.
 	 */
-	virtual S32 doParse(std::istream& istr, LLSD& data) const;
+	S32 doParse(std::istream& istr, LLSD& data) const override;
 
 	/** 
 	 * @brief Virtual default function for resetting the parser
 	 */
-	virtual void doReset();
+	void doReset() override;
 
 private:
 	class Impl;
@@ -365,7 +365,7 @@ protected:
 	 * @return Returns the number of LLSD objects parsed into
 	 * data. Returns -1 on parse failure.
 	 */
-	virtual S32 doParse(std::istream& istr, LLSD& data) const;
+	S32 doParse(std::istream& istr, LLSD& data) const override;
 
 private:
 	/** 
@@ -507,7 +507,7 @@ public:
 	 * @param ostr The destination stream for the data.
 	 * @return Returns The number of LLSD objects fomatted out
 	 */
-	virtual S32 format(const LLSD& data, std::ostream& ostr, U32 options = LLSDFormatter::OPTIONS_NONE) const;
+	S32 format(const LLSD& data, std::ostream& ostr, U32 options = LLSDFormatter::OPTIONS_NONE) const override;
 
 protected:
 
@@ -555,7 +555,7 @@ public:
 	 * @param ostr The destination stream for the data.
 	 * @return Returns The number of LLSD objects fomatted out
 	 */
-	virtual S32 format(const LLSD& data, std::ostream& ostr, U32 options = LLSDFormatter::OPTIONS_NONE) const;
+	S32 format(const LLSD& data, std::ostream& ostr, U32 options = LLSDFormatter::OPTIONS_NONE) const override;
 
 protected:
 
@@ -615,7 +615,7 @@ public:
 	 * @param ostr The destination stream for the data.
 	 * @return Returns The number of LLSD objects fomatted out
 	 */
-	virtual S32 format(const LLSD& data, std::ostream& ostr, U32 options = LLSDFormatter::OPTIONS_NONE) const;
+	S32 format(const LLSD& data, std::ostream& ostr, U32 options = LLSDFormatter::OPTIONS_NONE) const override;
 
 protected:
 	/** 
@@ -817,5 +817,11 @@ public:
 //dirty little zip functions -- yell at davep
 LL_COMMON_API std::string zip_llsd(LLSD& data);
 LL_COMMON_API bool unzip_llsd(LLSD& data, std::istream& is, S32 size);
+LL_COMMON_API bool unzip_llsd(LLSD& data, U8* in, S32 size);
 LL_COMMON_API U8* unzip_llsdNavMesh( bool& valid, unsigned int& outsize,std::istream& is, S32 size);
+LL_COMMON_API U8* unzip_llsdNavMesh(bool& valid, unsigned int& outsize, U8* in, S32 size);
+
+// <alchemy>
+// returns a pointer to the array or past the array if the deprecated header exists
+LL_COMMON_API char* strip_deprecated_header(char* in, U32& cur_size, U32* header_size = nullptr);
 #endif // LL_LLSDSERIALIZE_H

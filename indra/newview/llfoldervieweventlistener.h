@@ -30,6 +30,7 @@
 #include "llinventorytype.h"
 #include "llpermissionsflags.h"
 #include "llpointer.h"
+#include "llui.h"
 #include "llwearabletype.h"
 
 
@@ -75,7 +76,7 @@ public:
 	virtual void move( LLFolderViewEventListener* parent_listener ) = 0;
 	virtual BOOL isItemCopyable() const = 0;
 	virtual BOOL copyToClipboard() const = 0;
-	virtual void cutToClipboard() = 0;
+	virtual BOOL cutToClipboard() = 0;
 	virtual BOOL isClipboardPasteable() const = 0;
 	virtual void pasteFromClipboard(bool only_copies = false) = 0;
 	virtual void pasteLinkFromClipboard() = 0;

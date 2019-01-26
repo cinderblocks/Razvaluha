@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file httprequest.cpp
  * @brief Implementation of the HTTPRequest class
@@ -37,7 +39,7 @@
 #include "_httpopsetget.h"
 
 #include "lltimer.h"
-
+#include "httpstats.h"
 
 namespace
 {
@@ -45,6 +47,8 @@ namespace
 bool has_inited(false);
 
 }
+
+static const bool NO_LOG = false;
 
 namespace LLCore
 {
@@ -56,12 +60,14 @@ namespace LLCore
 
 HttpRequest::HttpRequest()
 	: mReplyQueue(),
-	  mRequestQueue(NULL)
+	  mRequestQueue(nullptr)
 {
 	mRequestQueue = HttpRequestQueue::instanceOf();
 	mRequestQueue->addRef();
 
 	mReplyQueue.reset( new HttpReplyQueue() );
+
+    HTTPStats::instance().recordHTTPRequest();
 }
 
 
@@ -70,7 +76,7 @@ HttpRequest::~HttpRequest()
 	if (mRequestQueue)
 	{
 		mRequestQueue->release();
-		mRequestQueue = NULL;
+		mRequestQueue = nullptr;
 	}
 
     mReplyQueue.reset();
@@ -135,7 +141,7 @@ HttpHandle HttpRequest::setPolicyOption(EPolicyOption opt, policy_t pclass,
         return LLCORE_HTTP_HANDLE_INVALID;
 	}
 	op->setReplyPath(mReplyQueue, handler);
-	if (! (status = mRequestQueue->addOp(op)))			// transfers refcount
+	if (! (status = mRequestQueue->addOp(op, false)))			// transfers refcount
 	{
 		mLastReqStatus = status;
         return LLCORE_HTTP_HANDLE_INVALID;
@@ -470,7 +476,7 @@ HttpHandle HttpRequest::requestCancel(HttpHandle request, HttpHandler::ptr_t use
 
 	HttpOperation::ptr_t op(new HttpOpCancel(request));
 	op->setReplyPath(mReplyQueue, user_handler);
-	if (! (status = mRequestQueue->addOp(op)))			// transfers refcount
+	if (! (status = mRequestQueue->addOp(op, NO_LOG)))			// transfers refcount
 	{
 		mLastReqStatus = status;
         return LLCORE_HTTP_HANDLE_INVALID;
@@ -551,7 +557,7 @@ HttpHandle HttpRequest::requestStopThread(HttpHandler::ptr_t user_handler)
 
 	HttpOperation::ptr_t op(new HttpOpStop());
 	op->setReplyPath(mReplyQueue, user_handler);
-	if (! (status = mRequestQueue->addOp(op)))			// transfers refcount
+	if (! (status = mRequestQueue->addOp(op, NO_LOG)))			// transfers refcount
 	{
 		mLastReqStatus = status;
 		return handle;
@@ -571,7 +577,7 @@ HttpHandle HttpRequest::requestSpin(int mode)
 
 	HttpOperation::ptr_t op(new HttpOpSpin(mode));
     op->setReplyPath(mReplyQueue, HttpHandler::ptr_t());
-	if (! (status = mRequestQueue->addOp(op)))			// transfers refcount
+	if (! (status = mRequestQueue->addOp(op, NO_LOG)))			// transfers refcount
 	{
 		mLastReqStatus = status;
 		return handle;

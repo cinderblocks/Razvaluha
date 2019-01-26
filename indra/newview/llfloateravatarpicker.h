@@ -38,6 +38,7 @@ class LLScrollListCtrl;
 
 class LLFloaterAvatarPicker : public LLFloater, public LLSingleton<LLFloaterAvatarPicker>
 {
+	LLSINGLETON(LLFloaterAvatarPicker);
 public:
 	typedef boost::signals2::signal<bool(const uuid_vec_t&), boost_boolean_combiner> validate_signal_t;
 	typedef validate_signal_t::slot_type validate_callback_t;
@@ -53,7 +54,6 @@ public:
 									   LLView * frustumOrigin = NULL);
 
 	// do not call these directly
-	LLFloaterAvatarPicker();
 	virtual ~LLFloaterAvatarPicker();
 
 	virtual	BOOL postBuild();

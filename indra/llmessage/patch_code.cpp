@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file patch_code.cpp
  * @brief Encode patch DCT data into bitcode.
@@ -31,7 +33,7 @@
 #include "v3math.h"
 #include "patch_dct.h"
 #include "patch_code.h"
-#include "bitpack.h"
+#include "llbitpack.h"
 
 U32 gPatchSize, gWordBits;
 
@@ -229,10 +231,7 @@ void	decode_patch_group_header(LLBitPack &bitpack, LLGroupHeader *gopp)
 	gPatchSize = gopp->patch_size; 
 }
 
-// <FS:CR> Aurora Sim
-//void	decode_patch_header(LLBitPack &bitpack, LLPatchHeader *ph)
 void	decode_patch_header(LLBitPack &bitpack, LLPatchHeader *ph, bool b_large_patch)
-// </FS:CR> Aurora Sim
 {
 	U8 retvalu8;
 
@@ -259,7 +258,7 @@ void	decode_patch_header(LLBitPack &bitpack, LLPatchHeader *ph, bool b_large_pat
 #else
 	bitpack.bitUnpack((U8 *)&retvalu32, 32);
 #endif
-	ph->dc_offset = *(F32 *)&retvalu32;
+	memcpy(&ph->dc_offset, &retvalu32, sizeof(ph->dc_offset));
 
 	U16 retvalu16 = 0;
 #ifdef LL_BIG_ENDIAN
@@ -271,13 +270,9 @@ void	decode_patch_header(LLBitPack &bitpack, LLPatchHeader *ph, bool b_large_pat
 #endif
 	ph->range = retvalu16;
 
-// <FS:CR> Aurora Sim
-	//retvalu16 = 0;
 	retvalu32 = 0;
 #ifdef LL_BIG_ENDIAN
-	//ret = (U8 *)&retvalu16;
 	ret = (U8*)&retvalu32;
-// </FS:CR> Aurora Sim
 	if (b_large_patch)
 	{
 		bitpack.bitUnpack(&(ret[3]), 8);
@@ -291,13 +286,9 @@ void	decode_patch_header(LLBitPack &bitpack, LLPatchHeader *ph, bool b_large_pat
 		bitpack.bitUnpack(&(ret[0]), 2);
 	}
 #else
-// <FS:CR> Aurora Sim
-	//bitpack.bitUnpack((U8 *)&retvalu16, 10);
 	bitpack.bitUnpack((U8*)&retvalu32, b_large_patch ? 32 : 10);
 #endif
-	//ph->patchids = retvalu16;
 	ph->patchids = retvalu32;
-// </FS:CR> Aurora Sim
 
 	gWordBits = (ph->quant_wbits & 0xf) + 2;
 }

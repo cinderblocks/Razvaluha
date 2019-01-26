@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llgesture.cpp
  *
@@ -191,8 +193,6 @@ void LLGestureList::deleteAll()
 // and (as a minor side effect) has multiple spaces in a row replaced by single spaces.
 BOOL LLGestureList::triggerAndReviseString(const std::string &string, std::string* revised_string)
 {
-	std::string tokenized = string;
-
 	BOOL found_gestures = FALSE;
 	BOOL first_token = TRUE;
 
@@ -203,7 +203,7 @@ BOOL LLGestureList::triggerAndReviseString(const std::string &string, std::strin
 
 	for( token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter)
 	{
-		LLGesture* gesture = NULL;
+		LLGesture* gesture = nullptr;
 
 		if( !found_gestures ) // Only pay attention to the first gesture in the string.
 		{
@@ -239,7 +239,7 @@ BOOL LLGestureList::triggerAndReviseString(const std::string &string, std::strin
 					found_gestures = TRUE;
 					break;
 				}
-				gesture = NULL;
+				gesture = nullptr;
 			}
 		}
 

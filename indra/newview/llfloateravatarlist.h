@@ -174,9 +174,7 @@ class LLFloaterAvatarList : public LLFloater, public LLSingleton<LLFloaterAvatar
 	 * @brief Creates and initializes the LLFloaterAvatarList
 	 * Here the interface is created, and callbacks are initialized.
 	 */
-	friend class LLSingleton<LLFloaterAvatarList>;
-private:
-	LLFloaterAvatarList();
+	LLSINGLETON(LLFloaterAvatarList);
 public:
 	~LLFloaterAvatarList();
 

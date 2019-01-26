@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file   lllinstancetracker.cpp
  * 
@@ -27,7 +29,6 @@
 #include "linden_common.h"
 // associated header
 #include "llinstancetracker.h"
-#include "llapr.h"
 
 // STL headers
 // std headers

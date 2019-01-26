@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfloatergodtools.cpp
  * @brief The on-screen rectangle with tool options.
@@ -103,7 +105,7 @@ void LLFloaterGodTools::onOpen()
 // static
 void LLFloaterGodTools::refreshAll()
 {
-	LLFloaterGodTools* god_tools = instanceExists() ? getInstance() : NULL;
+	LLFloaterGodTools* god_tools = instanceExists() ? getInstance() : nullptr;
 	if (god_tools)
 	{
 		if (gAgent.getRegionHost() != god_tools->mCurrentHost)
@@ -120,7 +122,7 @@ LLFloaterGodTools::LLFloaterGodTools()
 :	LLFloater(std::string("godtools floater")),
 	mPanelRegionTools(nullptr),
 	mPanelObjectTools(nullptr),
-	mCurrentHost(),
+	mCurrentHost(LLHost()),
 	mUpdateTimer()
 {
 	mFactoryMap["grid"] = LLCallbackMap(createPanelGrid, this);
@@ -217,7 +219,7 @@ void LLFloaterGodTools::hide()
 void LLFloaterGodTools::showPanel(const std::string& panel_name)
 {
 	getChild<LLTabContainer>("GodTools Tabs")->selectTabByName(panel_name);
-	open();	/*Flawfinder: ignore*/
+	open();
 	LLPanel *panel = getChild<LLTabContainer>("GodTools Tabs")->getCurrentPanel();
 	if (panel)
 		panel->setFocus(TRUE);
@@ -293,7 +295,7 @@ void LLFloaterGodTools::processRegionInfo(LLMessageSystem* msg)
 		regionp->setBillableFactor(billable_factor);
 	}
 
-	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : NULL;
+	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : nullptr;
 	if (!god_tools) return;
 
 	// push values to god tools, if available
@@ -358,7 +360,7 @@ void LLFloaterGodTools::sendRegionInfoRequest()
 
 void LLFloaterGodTools::sendGodUpdateRegionInfo()
 {
-	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : NULL;
+	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : nullptr;
 	if (!god_tools) return;
 
 	LLViewerRegion *regionp = gAgent.getRegion();
@@ -556,7 +558,7 @@ void LLPanelRegionTools::onSaveState(void* userdata)
 		gMessageSystem->addUUIDFast(_PREHASH_AgentID, gAgent.getID());
 		gMessageSystem->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID());
 		gMessageSystem->nextBlockFast(_PREHASH_DataBlock);
-		gMessageSystem->addStringFast(_PREHASH_Filename, NULL);
+		gMessageSystem->addStringFast(_PREHASH_Filename, nullptr);
 		gAgent.sendReliableMessage();
 	}
 }
@@ -782,7 +784,7 @@ void LLPanelRegionTools::onChangePrelude()
 
 void LLPanelRegionTools::onChangeSimName()
 {
-	if ( gAgent.isGodlike())
+	if (gAgent.isGodlike())
 	{
 		getChildView("Apply")->setEnabled(TRUE);
 	}
@@ -791,7 +793,7 @@ void LLPanelRegionTools::onChangeSimName()
 
 void LLPanelRegionTools::onRefresh()
 {
-	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : NULL;
+	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : nullptr;
 	if(!god_tools) return;
 	LLViewerRegion *region = gAgent.getRegion();
 	if (region && gAgent.isGodlike())
@@ -804,7 +806,7 @@ void LLPanelRegionTools::onRefresh()
 
 void LLPanelRegionTools::onApplyChanges()
 {
-	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : NULL;
+	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : nullptr;
 	if(!god_tools) return;
 	LLViewerRegion *region = gAgent.getRegion();
 	if (region && gAgent.isGodlike())
@@ -870,7 +872,7 @@ void LLPanelRegionTools::onSelectRegion()
 //      ^                                ^        ^
 //      LEFT                             R2       RIGHT
 
-const F32 HOURS_TO_RADIANS = (2.f*F_PI)/24.f;
+constexpr F32 HOURS_TO_RADIANS = (2.f*F_PI)/24.f;
 
 
 LLPanelGridTools::LLPanelGridTools() :
@@ -914,9 +916,7 @@ bool LLPanelGridTools::confirmKick(const LLSD& notification, const LLSD& respons
 // static
 bool LLPanelGridTools::finishKick(const LLSD& notification, const LLSD& response)
 {
-	S32 option = LLNotificationsUtil::getSelectedOption(notification, response);
-
-	if (option == 0)
+	if (!LLNotificationsUtil::getSelectedOption(notification, response))
 	{
 		LLMessageSystem* msg = gMessageSystem;
 
@@ -925,7 +925,7 @@ bool LLPanelGridTools::finishKick(const LLSD& notification, const LLSD& response
 		msg->addUUIDFast(_PREHASH_GodID, gAgent.getID());
 		msg->addUUIDFast(_PREHASH_GodSessionID, gAgent.getSessionID());
 		msg->addUUIDFast(_PREHASH_AgentID,   LL_UUID_ALL_AGENTS );
-		msg->addU32("KickFlags", KICK_FLAGS_DEFAULT );
+		msg->addU32("KickFlags", /*Default*/0x0);
 		msg->addStringFast(_PREHASH_Reason,    notification["payload"]["kick_message"].asString());
 		gAgent.sendReliableMessage();
 	}
@@ -1227,7 +1227,7 @@ void LLPanelObjectTools::onClickSetBySelection(void* data)
 	if (!panelp) return;
 
 	const BOOL non_root_ok = TRUE;
-	LLSelectNode* node = LLSelectMgr::getInstance()->getSelection()->getFirstRootNode(NULL, non_root_ok);
+	LLSelectNode* node = LLSelectMgr::getInstance()->getSelection()->getFirstRootNode(nullptr, non_root_ok);
 	if (!node) return;
 
 	std::string owner_name;
@@ -1260,7 +1260,7 @@ void LLPanelObjectTools::onChangeAnything()
 
 void LLPanelObjectTools::onApplyChanges()
 {
-	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : NULL;
+	LLFloaterGodTools* god_tools = LLFloaterGodTools::instanceExists() ? LLFloaterGodTools::getInstance() : nullptr;
 	if(!god_tools) return;
 	LLViewerRegion *region = gAgent.getRegion();
 	if (region && gAgent.isGodlike())
@@ -1354,7 +1354,7 @@ void LLPanelRequestTools::onClickRequest()
 	if(dest == SELECTION)
 	{
 		std::string req =getChild<LLUICtrl>("request")->getValue();
-		req = req.substr(0, req.find_first_of(" "));
+		req = req.substr(0, req.find_first_of(' '));
 		std::string param = getChild<LLUICtrl>("parameter")->getValue();
 		LLSelectMgr::getInstance()->sendGodlikeRequest(req, param);
 	}
@@ -1401,11 +1401,11 @@ void LLPanelRequestTools::sendRequest(const LLHost& host)
 								  host,
 								  FALSE,
 								  terrain_download_done,
-								  NULL);
+								  nullptr);
 	}
 	else
 	{
-		req = req.substr(0, req.find_first_of(" "));
+		req = req.substr(0, req.find_first_of(' '));
 		sendRequest(req, getChild<LLUICtrl>("parameter")->getValue().asString(), host);
 	}
 }

@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltrace.cpp
  *
@@ -26,8 +28,8 @@
 #include "linden_common.h"
 
 #include "lltrace.h"
-#include "lltracerecording.h"
-#include "lltracethreadrecorder.h"
+//#include "lltracerecording.h"
+//#include "lltracethreadrecorder.h"
 #include "llfasttimer.h"
 
 namespace LLTrace
@@ -40,10 +42,10 @@ StatBase::StatBase( const char* name, const char* description )
 	mDescription(description ? description : "")
 {
 #ifndef LL_RELEASE_FOR_DOWNLOAD
-	if (LLTrace::get_thread_recorder().notNull())
+/*	if (LLTrace::get_thread_recorder().notNull())
 	{
 		LL_ERRS() << "Attempting to declare trace object after program initialization.  Trace objects should be statically initialized." << LL_ENDL;
-	}
+	}*/
 #endif
 }
 
@@ -53,12 +55,13 @@ const char* StatBase::getUnitLabel() const
 }
 
 TimeBlockTreeNode::TimeBlockTreeNode() 
-:	mBlock(NULL),
-	mParent(NULL),
-	mNeedsSorting(false),
-	mCollapsed(true)
+:	mBlock(nullptr),
+	mParent(nullptr),
+	mCollapsed(true),
+    mNeedsSorting(false)
 {}
 
+/* Singu TODO
 void TimeBlockTreeNode::setParent( BlockTimerStatHandle* parent )
 {
 	llassert_always(parent != mBlock);
@@ -82,5 +85,6 @@ void TimeBlockTreeNode::setParent( BlockTimerStatHandle* parent )
 	parent_tree_node->mChildren.push_back(mBlock);
 	parent_tree_node->mNeedsSorting = true;
 }
+*/
 
 }

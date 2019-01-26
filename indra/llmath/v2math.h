@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
+ * 
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
@@ -84,8 +84,8 @@ class LLVector2
 		BOOL isNull();			// Returns TRUE if vector has a _very_small_ length
 		BOOL isExactlyZero() const		{ return !mV[VX] && !mV[VY]; }
 
-		F32 operator[](int idx) const { return mV[idx]; }
-		F32 &operator[](int idx) { return mV[idx]; }
+		F32 operator[](size_t idx) const { return mV[idx]; }
+		F32 &operator[](size_t idx) { return mV[idx]; }
 	
 		friend bool operator<(const LLVector2 &a, const LLVector2 &b);	// For sorting. x is "more significant" than y
 		friend LLVector2 operator+(const LLVector2 &a, const LLVector2 &b);	// Return vector a + b
@@ -250,7 +250,7 @@ inline F32		LLVector2::normalize(void)
 // checker
 inline bool LLVector2::isFinite() const
 {
-	return (std::isfinite(mV[VX]) && std::isfinite(mV[VY]));
+	return (llfinite(mV[VX]) && llfinite(mV[VY]));
 }
 
 // deprecated

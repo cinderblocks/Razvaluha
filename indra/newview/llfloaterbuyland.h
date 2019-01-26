@@ -33,6 +33,8 @@
 #ifndef LL_LLFLOATERBUYLAND_H
 #define LL_LLFLOATERBUYLAND_H
 
+#include "llsafehandle.h"
+
 class LLFloater;
 class LLViewerRegion;
 class LLParcelSelection;

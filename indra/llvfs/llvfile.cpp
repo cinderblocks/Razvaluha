@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llvfile.cpp
  * @brief Implementation of virtual file
@@ -35,15 +37,10 @@
 #include "llmemory.h"
 #include "llvfs.h"
 
-const S32 LLVFile::READ			= 0x00000001;
-const S32 LLVFile::WRITE		= 0x00000002;
-const S32 LLVFile::READ_WRITE	= 0x00000003;  // LLVFile::READ & LLVFile::WRITE
-const S32 LLVFile::APPEND		= 0x00000006;  // 0x00000004 & LLVFile::WRITE
-
 static LLTrace::BlockTimerStatHandle FTM_VFILE_WAIT("VFile Wait");
 
 //----------------------------------------------------------------------------
-LLVFSThread* LLVFile::sVFSThread = NULL;
+LLVFSThread* LLVFile::sVFSThread = nullptr;
 BOOL LLVFile::sAllocdVFSThread = FALSE;
 //----------------------------------------------------------------------------
 
@@ -133,17 +130,17 @@ U8* LLVFile::readFile(LLVFS *vfs, const LLUUID &uuid, LLAssetType::EType type, S
 	if (file_size == 0)
 	{
 		// File is empty.
-		data = NULL;
+		data = nullptr;
 	}
 	else
-	{
-		data = (U8*) ll_aligned_malloc<16>(file_size);
+	{		
+		data = (U8*) ll_aligned_malloc_16(file_size);
 		file.read(data, file_size);	/* Flawfinder: ignore */ 
 		
 		if (file.getLastBytesRead() != (S32)file_size)
 		{
-			ll_aligned_free<16>(data);
-			data = NULL;
+			ll_aligned_free_16(data);
+			data = nullptr;
 			file_size = 0;
 		}
 	}
@@ -170,7 +167,7 @@ BOOL LLVFile::isReadComplete()
 	{
 		LLVFSThread::Request* req = (LLVFSThread::Request*)sVFSThread->getRequest(mHandle);
 		LLVFSThread::status_t status = req->getStatus();
-		if (status == LLVFSThread::STATUS_COMPLETE && !(req->getFlags() & LLVFSThread::FLAG_LOCKED))
+		if (status == LLVFSThread::STATUS_COMPLETE)
 		{
 			mBytesRead = req->getBytesRead();
 			mPosition += mBytesRead;
@@ -326,7 +323,7 @@ BOOL LLVFile::setMaxSize(S32 size)
 			}
 			if (sVFSThread->isPaused())
 			{
-				sVFSThread->update(0);
+				count = sVFSThread->update(0);
 			}
 			ms_sleep(10);
 		}
@@ -394,7 +391,7 @@ void LLVFile::initClass(LLVFSThread* vfsthread)
 {
 	if (!vfsthread)
 	{
-		if (LLVFSThread::sLocal != NULL)
+		if (LLVFSThread::sLocal != nullptr)
 		{
 			vfsthread = LLVFSThread::sLocal;
 		}
@@ -414,7 +411,7 @@ void LLVFile::cleanupClass()
 	{
 		delete sVFSThread;
 	}
-	sVFSThread = NULL;
+	sVFSThread = nullptr;
 }
 
 bool LLVFile::isLocked(EVFSLock lock)

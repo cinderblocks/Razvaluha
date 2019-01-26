@@ -38,7 +38,6 @@
 #include "llfontgl.h"
 #include "llgl.h"
 #include "llui.h"
-#include "llresmgr.h"
 #include "llstring.h"
 #include "llscrollcontainer.h"
 #include "lluictrlfactory.h"
@@ -50,7 +49,7 @@ LLContainerView::LLContainerView(const LLContainerView::Params& p)
 	mDisplayChildren(p.display_children)
 {
 	mCollapsible = TRUE;
-	mScrollContainer = NULL;
+	mScrollContainer = nullptr;
 	mRectAlpha = 0.25;
 }
 
@@ -71,7 +70,7 @@ BOOL LLContainerView::handleMouseDown(S32 x, S32 y, MASK mask)
 	BOOL handled = FALSE;
 	if (mDisplayChildren)
 	{
-		handled = (LLView::childrenHandleMouseDown(x, y, mask) != NULL);
+		handled = (LLView::childrenHandleMouseDown(x, y, mask) != nullptr);
 	}
 	if (!handled)
 	{
@@ -90,7 +89,7 @@ BOOL LLContainerView::handleMouseUp(S32 x, S32 y, MASK mask)
 	BOOL handled = FALSE;
 	if (mDisplayChildren)
 	{
-		handled = (LLView::childrenHandleMouseUp(x, y, mask) != NULL);
+		handled = (LLView::childrenHandleMouseUp(x, y, mask) != nullptr);
 	}
 	return handled;
 }
@@ -107,7 +106,8 @@ void LLContainerView::draw()
 	// Draw the label
 	if (mShowLabel)
 	{
-		LLResMgr::getInstance()->getRes( LLFONT_OCRA )->renderUTF8(mLabel, 0, 2, getRect().getHeight() - 2, LLColor4(1,1,1,1), LLFontGL::LEFT, LLFontGL::TOP);
+		LLFontGL::getFontMonospace()->renderUTF8(
+			mLabel, 0, 2, getRect().getHeight() - 2, LLColor4(1,1,1,1), LLFontGL::LEFT, LLFontGL::TOP);
 	}
 
 	LLView::draw();
@@ -190,18 +190,18 @@ void LLContainerView::arrange(S32 width, S32 height, BOOL called_from_parent)
 	if (total_height < height)
 		total_height = height;
 	
+	LLRect my_rect = getRect();
 	if (followsTop())
 	{
-		// HACK: casting away const. Should use setRect or some helper function instead.
-		const_cast<LLRect&>(getRect()).mBottom = getRect().mTop - total_height;
+		my_rect.mBottom = my_rect.mTop - total_height;
 	}
 	else
 	{
-		// HACK: casting away const. Should use setRect or some helper function instead.
-		const_cast<LLRect&>(getRect()).mTop = getRect().mBottom + total_height;
+		my_rect.mTop = my_rect.mBottom + total_height;
 	}
-	// HACK: casting away const. Should use setRect or some helper function instead.
-		const_cast<LLRect&>(getRect()).mRight = getRect().mLeft + width;
+
+	my_rect.mRight = my_rect.mLeft + width;
+	setRect(my_rect);
 
 	top = total_height;
 	if (mShowLabel)
