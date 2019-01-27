@@ -438,7 +438,7 @@
       <key>curl</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 1996 - 2017, Daniel Stenberg,(daniel@haxx.se), and many contributors.</string>
+        <string>Copyright (c) 1996 - 2018, Daniel Stenberg,(daniel@haxx.se), and many contributors.</string>
         <key>description</key>
         <string>Library for transferring data specified with URL syntax</string>
         <key>license</key>
@@ -508,18 +508,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>7b56b59c56389a8943a04b24bb22ada4</string>
+              <string>567076de810bcfff359c4779a68bb758</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/curl-7.57.0-windows64-201712260745.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/curl-7.59.0-windows64-201804071723.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>7.57.0</string>
+        <string>7.59.0</string>
       </map>
       <key>dbus-glib</key>
       <map>
@@ -616,11 +616,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e5b0cf5bea4c3c0316ac1e795176b1a8</string>
+              <string>e164693721052f53382ab45435a990a8</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/dullahan-1.1.930-3.3239.1706.gcd33baa-darwin-201712262122.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/dullahan-1.1.930-3.3282.1733.g9091548-darwin-201806192145.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -644,11 +644,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>f00d72eeb1b4669004ccdea9e495fc92</string>
+              <string>c3e093d40e93ff242e9b9c953ae7316c</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/dullahan-1.1.888-3.3202.1686.gd665578-windows-201711211427.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc142/dullahan-1.1.930-3.3282.1733.g9091548-windows-201802202358.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -658,18 +658,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>c66ba6d26542a48aa12c63874bada4aa</string>
+              <string>9639303e82af852c12ad6c427098bc3a</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/dullahan-1.1.930-3.3239.1706.gcd33baa-windows64-201712260156.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/dullahan-1.1.930-3.3282.1733.g9091548-windows64-201802201942.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.1.930-3.3239.1706.gcd33baa</string>
+        <string>1.1.930-3.3282.1733.g9091548</string>
       </map>
       <key>expat</key>
       <map>
@@ -1416,11 +1416,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>5cf289747de86451b6a956adea468ac7</string>
+              <string>0c0f7552ba284bc58fb268da9bd58002</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/jpeglib-1.4.2-darwin-201511222055.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/jpeglib-1.5.3-darwin-201712262014.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -1442,11 +1442,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>256812a20a66081e05578f91bab5b3e4</string>
+              <string>5e18b3b4421079d09a2759d870c06157</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/jpeglib-1.4.2-linux64-201603240711.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/jpeglib-1.5.1-linux64-201609241330.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1456,11 +1456,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>581db1bb70a7f6b9a6718121d22597a9</string>
+              <string>a9a7af50c5c1b5319dfea82cd09fdd84</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/jpeglib-1.4.2-windows-201601151022.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/jpeglib-1.5.1-windows-201703090615.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2042,8 +2042,6 @@
             <string>linux</string>
           </map>
         </map>
-        <key>version</key>
-        <string>7.11.1.297294</string>
       </map>
       <key>modernjson</key>
       <map>
@@ -2486,11 +2484,9 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>3dd9bf4185bf2df413d890ca9eeab76c</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>b1b0134bc55f55a7c1a04ee78d70c64d</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/vivox_3p-slvoice/rev/302004/arch/Darwin/installer/slvoice-4.6.0017.22050.302004-darwin-302004.tar.bz2</string>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/12438/73598/slvoice-4.9.0002.27586.511884-darwin64-511884.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin</string>
@@ -2500,9 +2496,9 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>9f60e56aba35ec90b3045e9d049ac284</string>
+              <string>785c86999b56e1838cefb430f674cba7</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux/lib/slvoice-4.5.0009.17865-linux-20141214.tar.bz2</string>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/oz-426-slvoice/rev/330003/arch/Linux/installer/slvoice-3.2.0002.10426.330003-linux-330003.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux</string>
@@ -2526,18 +2522,28 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>47a3316dae47cc4e7c1ea7b74ba8dd1e</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>ec50c31efce74bdedee470b5388aeeec</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/vivox_3p-slvoice/rev/302004/arch/CYGWIN/installer/slvoice-4.6.0017.22050.302004-windows-302004.tar.bz2</string>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/12434/73576/slvoice-4.9.0002.27586.511884-windows-511884.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
           </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>4bf45d641bf5b2bd6b2cc39edcb01a6e</string>
+              <key>url</key>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/12433/73570/slvoice-4.9.0002.27586.511884-windows64-511884.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
         </map>
         <key>version</key>
-        <string>4.6.0017.22050</string>
+        <string>4.9.0002.27586.511884</string>
       </map>
       <key>tut</key>
       <map>
