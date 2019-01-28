@@ -700,7 +700,7 @@ void LLDir::walkSearchSkinDirs(const std::string& subdir,
 		std::string subdir_path(add(skindir, subdir));
 		for (std::string subsubdir : subsubdirs)
 		{
-			std::string full_path(add(add(subdir_path, subsubdir), filename));
+			std::string full_path(add(subdir_path, subsubdir, filename));
 			if (fileExists(full_path))
 			{
 				function(subsubdir, full_path);
