@@ -114,7 +114,7 @@ LLWindowMacOSX::LLWindowMacOSX(LLWindowCallbacks* callbacks,
 							   const std::string& title, const std::string& name, S32 x, S32 y, S32 width,
 							   S32 height, U32 flags,
 							   U32 window_mode, BOOL clearBg,
-							   U32 vsync_setting, BOOL use_gl,
+							   BOOL vsync_setting, BOOL use_gl,
 							   BOOL ignore_pixel_depth,
 							   U32 fsaa_samples)
 	: LLWindow(NULL, window_mode, flags)
@@ -659,7 +659,7 @@ BOOL LLWindowMacOSX::createContext(int x, int y, int width, int height, int bits
 
 // We only support OS X 10.7's fullscreen app mode which is literally a full screen window that fills a virtual desktop.
 // This makes this method obsolete.
-BOOL LLWindowMacOSX::switchContext(U32 window_mode, const LLCoordScreen &size, U32 vsync_setting, const LLCoordScreen * const posp)
+BOOL LLWindowMacOSX::switchContext(BOOL fullscreen, const LLCoordScreen &size, const S32 vsync_mode, const LLCoordScreen * const posp)
 {
 	return FALSE;
 }
@@ -1761,6 +1761,13 @@ void LLWindowMacOSX::spawnWebBrowser(const std::string& escaped_url, bool async)
 	{
 		LL_INFOS() << "Error: couldn't create URL." << LL_ENDL;
 	}
+}
+
+// Open a URL with the user's default web browser.
+// Must begin with protocol identifier.
+void LLWindowMacOSX::ShellEx(const std::string& command)
+{
+	std::system("open " + command);
 }
 
 LLSD LLWindowMacOSX::getNativeKeyData()

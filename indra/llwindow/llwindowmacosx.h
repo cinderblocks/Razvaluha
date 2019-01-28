@@ -61,7 +61,7 @@ public:
 	/*virtual*/ BOOL setPosition(LLCoordScreen position);
 	/*virtual*/ BOOL setSizeImpl(LLCoordScreen size);
 	/*virtual*/ BOOL setSizeImpl(LLCoordWindow size);
-	/*virtual*/ BOOL switchContext(U32 window_mode, const LLCoordScreen &size, U32 vsync_setting, const LLCoordScreen * const posp = NULL);
+	/*virtual*/ BOOL switchContext(BOOL fullscreen, const LLCoordScreen &size, const S32 vsync_mode, const LLCoordScreen * const posp = nullptr);
 	/*virtual*/ BOOL setCursorPosition(LLCoordWindow position);
 	/*virtual*/ BOOL getCursorPosition(LLCoordWindow *position);
 	/*virtual*/ void showCursor();
@@ -113,6 +113,7 @@ public:
 	/*virtual*/ void allowLanguageTextInput(LLPreeditor *preeditor, BOOL b);
 	/*virtual*/ void interruptLanguageTextInput();
 	/*virtual*/ void spawnWebBrowser(const std::string& escaped_url, bool async);
+	/*virtual*/ void ShellEx(const std::string& command);
 	/*virtual*/ F32 getScaleFactor();
 	/*virtual*/ void updateUnreadCount(S32 num_conversations);
 
@@ -135,7 +136,7 @@ public:
 protected:
 	LLWindowMacOSX(LLWindowCallbacks* callbacks,
 		const std::string& title, const std::string& name, int x, int y, int width, int height, U32 flags,
-		U32 window_mode, BOOL clearBg, U32 vsync_setting, BOOL use_gl,
+		BOOL window_mode, BOOL clearBg, U32 vsync_setting, BOOL use_gl,
 		BOOL ignore_pixel_depth,
 		U32 fsaa_samples);
 	~LLWindowMacOSX();
