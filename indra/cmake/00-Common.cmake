@@ -86,6 +86,7 @@ if (WINDOWS)
       /D_CRT_SECURE_NO_WARNINGS
 	  /D_CRT_NONSTDC_NO_DEPRECATE
       /D_WINSOCK_DEPRECATED_NO_WARNINGS
+      /DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
       )
 
   add_compile_options(
@@ -116,7 +117,11 @@ if (WINDOWS)
         )
   endif (USE_LTO)
 
-  if (WORD_SIZE EQUAL 32)
+  if (USE_AVX)
+    add_compile_options(/arch:AVX)
+  elseif (USE_AVX2)
+    add_compile_options(/arch:AVX2)
+  elseif (WORD_SIZE EQUAL 32)
     add_compile_options(/arch:SSE2)
   endif (WORD_SIZE EQUAL 32)
 
@@ -285,7 +290,8 @@ if (LINUX OR DARWIN)
     add_definitions(-DLL_CLANG=1)
     set(UNIX_WARNINGS "-Wall -Wno-sign-compare -Wno-trigraphs -Wno-tautological-compare -Wno-char-subscripts -Wno-gnu -Wno-logical-op-parentheses -Wno-logical-not-parentheses -Wno-non-virtual-dtor -Wno-deprecated")
     set(UNIX_WARNINGS "${UNIX_WARNINGS} -Woverloaded-virtual -Wno-parentheses-equality -Wno-reorder -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-private-field -Wno-parentheses")
-    set(UNIX_CXX_WARNINGS "${UNIX_WARNINGS}")
+    set(UNIX_CXX_WARNINGS "${UNIX_WARNINGS} -Wno-reorder -Wno-unused-local-typedef -Wempty-body -Wunreachable-code -Wundefined-bool-conversion -Wenum-conversion -Wassign-enum -Wint-conversion -Wconstant-conversion -Wnewline-eof -Wno-protocol -Wno-deprecated-declarations")
+    set(UNIX_WARNINGS "-w2 -diag-disable remark -wd68 -wd597 -wd780 -wd858 ${UNIX_WARNINGS} ")
   elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     add_definitions(-DLL_ICC=1)
   endif ()

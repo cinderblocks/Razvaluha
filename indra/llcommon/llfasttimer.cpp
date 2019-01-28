@@ -352,7 +352,7 @@ std::string LLFastTimer::sClockType = "QueryPerformanceCounter";
 //static
 U64 LLFastTimer::countsPerSecond() // counts per second for the *32-bit* timer
 {
-#if USE_RDTSC
+#if USE_RDTSC || !LL_WINDOWS
 	static U64 sCPUClockFrequency = U64(LLProcessorInfo().getCPUFrequency()*1000000.0);
 #else
 	static bool firstcall = true;
