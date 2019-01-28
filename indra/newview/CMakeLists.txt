@@ -1836,11 +1836,11 @@ if (DARWIN)
     RESOURCE "${viewer_RESOURCE_FILES}"
     OUTPUT_NAME "${VIEWER_BRANDING_NAME}"
     MACOSX_BUNDLE_INFO_PLIST
-    "${CMAKE_CURRENT_SOURCE_DIR}/Info-SecondLife.plist"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Info-Singularity.plist"
     )
 
   configure_file(
-     "${CMAKE_CURRENT_SOURCE_DIR}/Info-SecondLife.plist"
+     "${CMAKE_CURRENT_SOURCE_DIR}/Info-Singularity.plist"
      "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${product}.app/Contents/Info.plist"
     )
 
