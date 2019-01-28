@@ -1220,9 +1220,10 @@ if (DARWIN)
 
   # Add resource files to the project.
   set(viewer_RESOURCE_FILES
-    macview.r
+    res/singularity_icon.icns
+    Info-Singularity.plist
     gpu_table.txt
-    SecondLife.xib
+    Singularity.xib
     # CMake doesn't seem to support Xcode language variants well just yet
     English.lproj/InfoPlist.strings
     English.lproj/language.txt
@@ -1860,6 +1861,8 @@ if (DARWIN)
       --configuration=${CMAKE_CFG_INTDIR}
       --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${product}.app
       --grid=${GRID}
+      --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
+      --bundleid=${MACOSX_BUNDLE_GUI_IDENTIFIER}
       --source=${CMAKE_CURRENT_SOURCE_DIR}
       --extra_libraries="${MANIFEST_LIBRARIES}"
     DEPENDS

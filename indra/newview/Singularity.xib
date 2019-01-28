@@ -32,7 +32,7 @@
                                 <menu key="submenu" title="Services" systemMenu="services" id="130"/>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="144"/>
-                            <menuItem title="Hide Second Life" keyEquivalent="h" id="134">
+                            <menuItem title="Hide Singularity" keyEquivalent="h" id="134">
                                 <connections>
                                     <action selector="hide:" target="-1" id="369"/>
                                 </connections>

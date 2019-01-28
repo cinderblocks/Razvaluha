@@ -659,6 +659,12 @@ class Windows_x86_64_Manifest(WindowsManifest):
 
 
 class DarwinManifest(ViewerManifest):
+    build_data_json_platform = 'mac'
+
+    def finish_build_data_dict(self, build_data_dict):
+        build_data_dict.update({'Bundle Id':self.args['bundleid']})
+        return build_data_dict
+
     def is_packaging_viewer(self):
         # darwin requires full app bundle packaging even for debugging.
         return True
@@ -672,31 +678,35 @@ class DarwinManifest(ViewerManifest):
         debpkgdir = os.path.join(pkgdir, "lib", "debug")
         relbinpkgdir = os.path.join(pkgdir, "bin", "release")
 
-        if self.prefix(src="", dst="Contents"):  # everything goes in Contents
+        with self.prefix(src="", dst="Contents"):  # everything goes in Contents
             self.path("Info.plist", dst="Info.plist")
 
             # copy additional libs in <bundle>/Contents/MacOS/
             self.path(os.path.join(relpkgdir, "libndofdev.dylib"), dst="Resources/libndofdev.dylib")
 
-            if self.prefix(dst="MacOS"):
-                self.path2basename("../viewer_components/updater/scripts/darwin", "*.py")
-                self.end_prefix()
+            # Make a symlink to a nested app Frameworks directory that doesn't
+            # yet exist. We shouldn't need this; the only things that need
+            # Frameworks are nested apps under viewer_app, and they should
+            # simply find its Contents/Frameworks by relative pathnames. But
+            # empirically, we do: if we omit this symlink, CEF doesn't work --
+            # the login splash screen doesn't even display. SIIIIGH.
+            # We're passing a path that's already relative, hence symlinkf()
+            # rather than relsymlinkf().
+            self.symlinkf(os.path.join("Resources", "Frameworks"))
 
             # most everything goes in the Resources directory
-            if self.prefix(src="", dst="Resources"):
+            with self.prefix(src="", dst="Resources"):
                 super(DarwinManifest, self).construct()
 
-                if self.prefix("cursors_mac"):
+                with self.prefix("cursors_mac"):
                     self.path("*.tif")
-                    self.end_prefix("cursors_mac")
 
                 self.path("featuretable_mac.txt")
                 self.path("ca-bundle.crt")
 
                 icon_path = self.icon_path()
-                if self.prefix(src=icon_path, dst="") :
+                with self.prefix(src=icon_path, dst="") :
                     self.path("%s.icns" % self.viewer_branding_id())
-                    self.end_prefix(icon_path)
 
                 self.path("%s.nib" % self.viewer_branding_id())
 
@@ -730,10 +740,19 @@ class DarwinManifest(ViewerManifest):
                     or a list containing dst (present). Concatenate these
                     return values to get a list of all libs that are present.
                     """
-                    if self.path(src, dst):
-                        return [dst]
-                    print "Skipping %s" % dst
-                    return []
+                    # This was simple before we started needing to pass
+                    # wildcards. Fortunately, self.path() ends up appending a
+                    # (source, dest) pair to self.file_list for every expanded
+                    # file processed. Remember its size before the call.
+                    oldlen = len(self.file_list)
+                    self.path(src, dst)
+                    # The dest appended to self.file_list has been prepended
+                    # with self.get_dst_prefix(). Strip it off again.
+                    added = [os.path.relpath(d, self.get_dst_prefix())
+                             for s, d in self.file_list[oldlen:]]
+                    if not added:
+                        print "Skipping %s" % dst
+                    return added
 
                 # dylibs is a list of all the .dylib files we expect to need
                 # in our bundled sub-apps. For each of these we'll create a
@@ -752,12 +771,8 @@ class DarwinManifest(ViewerManifest):
                                 "libaprutil-1.0.dylib",
                                 "libexception_handler.dylib",
                                 "libGLOD.dylib",
-                            "libjpeg.8.0.2.dylib",
-                            "libopenjpeg.dylib",
-                            "libturbojpeg.0.0.0.dylib",
-                            "libopenal.dylib",
-                            "libalut.dylib",
-                            "libfreetype.6.dylib",
+                                "libopenjpeg.dylib",
+                                "libfreetype.6.dylib",
                                 ):
                     dylibs += path_optional(os.path.join(relpkgdir, libfile), libfile)
 
@@ -802,12 +817,12 @@ class DarwinManifest(ViewerManifest):
                         src = os.path.join(os.pardir, os.pardir, os.pardir, libfile)
                         dst = os.path.join(resource_path, libfile)
                         try:
-                            symlinkf(src, dst)
+                            self.symlinkf(src, dst)
                         except OSError as err:
                             print "Can't symlink %s -> %s: %s" % (src, dst, err)
 
                 # Dullahan helper apps go inside AlchemyPlugin.app
-                if self.prefix(src="", dst="AlchemyPlugin.app/Contents/Frameworks"):
+                with self.prefix(src="", dst="AlchemyPlugin.app/Contents/Frameworks"):
                     helperappfile = 'DullahanHelper.app'
                     self.path2basename(relbinpkgdir, helperappfile)
 
@@ -823,32 +838,41 @@ class DarwinManifest(ViewerManifest):
                         self.dst_path_of('DullahanHelper.app/Contents/MacOS/'
                                          'Frameworks/Chromium Embedded Framework.framework')
 
-                    self.end_prefix()
+                    helperexecutablepath = self.dst_path_of('DullahanHelper.app/Contents/MacOS/DullahanHelper')
+                    self.run_command(['install_name_tool', '-change',
+                                     '@rpath/Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework',
+                                     '@executable_path/Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework', helperexecutablepath])
 
-                    helperexecutablepath = self.dst_path_of('AlchemyPlugin.app/Contents/Frameworks/DullahanHelper.app/Contents/MacOS/DullahanHelper')
-                    self.run_command('install_name_tool -change '
-                                     '"@rpath/Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework" '
-                                     '"@executable_path/Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework" "%s"' % helperexecutablepath)
 
                 # SLPlugin plugins
-                if self.prefix(src="", dst="llplugin"):
+                with self.prefix(src="", dst="llplugin"):
                     self.path2basename("../media_plugins/cef/" + self.args['configuration'],
                                        "media_plugin_cef.dylib")
-                    self.end_prefix("llplugin")
+
+                    # copy LibVLC plugin itself
+                    self.path2basename("../media_plugins/libvlc/" + self.args['configuration'],
+                                       "media_plugin_libvlc.dylib")
+
+                    # copy LibVLC dynamic libraries
+                    with self.prefix(src=os.path.join(os.pardir, 'packages', 'lib', 'release' ), dst="lib"):
+                        self.path( "libvlc*.dylib*" )
+
+                    # copy LibVLC plugins folder
+                    with self.prefix(src=os.path.join(os.pardir, 'packages', 'lib', 'release', 'plugins' ), dst="lib"):
+                        self.path( "*.dylib" )
+                        self.path( "plugins.dat" )
 
                     # do this install_name_tool *after* media plugin is copied over
-                    dylibexecutablepath = self.dst_path_of('llplugin/media_plugin_cef.dylib')
-                    self.run_command('install_name_tool -change '
-                                     '"@rpath/Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework" '
-                                     '"@executable_path/../Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework" "%s"' % dylibexecutablepath)
+                    dylibexecutablepath = self.dst_path_of('media_plugin_cef.dylib')
+                    self.run_command(['install_name_tool', '-change',
+                                     '@rpath/Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework',
+                                     '@executable_path/../Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework', dylibexecutablepath])
 
-                self.end_prefix("Resources")
 
                 # CEF framework goes inside Alchemy.app/Contents/Frameworks
-                if self.prefix(src="", dst="Frameworks"):
+                with self.prefix(src="", dst="Frameworks"):
                     frameworkfile="Chromium Embedded Framework.framework"
                     self.path2basename(relbinpkgdir, frameworkfile)
-                    self.end_prefix("Frameworks")
 
                 # This code constructs a relative path from the
                 # target framework folder back to the location of the symlink.
@@ -878,7 +902,7 @@ class DarwinManifest(ViewerManifest):
                     # Framework.framework back to
                     # Alchemy.app/Contents/Frameworks/Chromium Embedded Framework.framework
                     origin, target = pluginframeworkpath, frameworkpath
-                    symlinkf(target, origin)
+                    self.symlinkf(target, origin)
                     # from AlchemyPlugin.app/Contents/Frameworks/Dullahan
                     # Helper.app/Contents/MacOS/Frameworks/Chromium Embedded
                     # Framework.framework back to
@@ -886,12 +910,11 @@ class DarwinManifest(ViewerManifest):
                     self.cmakedirs(os.path.dirname(helperframeworkpath))
                     origin = helperframeworkpath
                     target = os.path.join(os.pardir, frameworkpath)
-                    symlinkf(target, origin)
+                    self.symlinkf(target, origin)
                 except OSError as err:
                     print "Can't symlink %s -> %s: %s" % (origin, target, err)
                     raise
 
-            self.end_prefix("Contents")
 
         # NOTE: the -S argument to strip causes it to keep enough info for
         # annotated backtraces (i.e. function names in the crash log).  'strip' with no
@@ -905,72 +928,38 @@ class DarwinManifest(ViewerManifest):
     def copy_finish(self):
         # Force executable permissions to be set for scripts
         # see CHOP-223 and http://mercurial.selenic.com/bts/issue1802
-        for script in 'Contents/MacOS/update_install.py',:
-            self.run_command("chmod +x %r" % os.path.join(self.get_dst_prefix(), script))
+        pass
+        # for script in 'Contents/MacOS/update_install.py',:
+        #     self.run_command("chmod +x %r" % os.path.join(self.get_dst_prefix(), script))
 
     def app_name(self):
         return self.channel_oneword()
 
     def package_finish(self):
-        channel_standin = self.app_name()
-        if not self.default_channel_for_brand():
-            channel_standin = self.channel()
+        global CHANNEL_VENDOR_BASE
+        # MBW -- If the mounted volume name changes, it breaks the .DS_Store's background image and icon positioning.
+        #  If we really need differently named volumes, we'll need to create multiple DS_Store file images, or use some other trick.
 
-        # Sign the app if we have a key.
-        try:
-            signing_password = os.environ['VIEWER_SIGNING_PASSWORD']
-        except KeyError:
-            print "Skipping code signing"
-            pass
-        else:
-            home_path = os.environ['HOME']
+        volname=CHANNEL_VENDOR_BASE+" Installer"  # DO NOT CHANGE without understanding comment above
 
-            self.run_command('security unlock-keychain -p "%s" "%s/Library/Keychains/viewer.keychain"' % (signing_password, home_path))
-            signed=False
-            sign_attempts=3
-            sign_retry_wait=15
-            while (not signed) and (sign_attempts > 0):
-                try:
-                    sign_attempts-=1;
-                    self.run_command('codesign --verbose --force --timestamp --keychain "%(home_path)s/Library/Keychains/viewer.keychain" -s %(identity)r -f %(bundle)r' % {
-                            'home_path' : home_path,
-                            'identity': os.environ['VIEWER_SIGNING_KEY'],
-                            'bundle': self.get_dst_prefix()
-                    })
-                    signed=True
-                except:
-                    if sign_attempts:
-                        print >> sys.stderr, "codesign failed, waiting %d seconds before retrying" % sign_retry_wait
-                        time.sleep(sign_retry_wait)
-                        sign_retry_wait*=2
-                    else:
-                        print >> sys.stderr, "Maximum codesign attempts exceeded; giving up"
-                        raise
-
-        imagename=self.installer_prefix() + '_'.join(self.args['version'])
-
-        # See Ambroff's Hack comment further down if you want to create new bundles and dmg
-        volname=self.app_name() + " Installer"  # DO NOT CHANGE without checking Ambroff's Hack comment further down
-
-        if self.default_channel_for_brand():
-            if not self.default_grid():
-                # beta case
-                imagename = imagename + '_' + self.args['grid'].upper()
-        else:
-            # first look, etc
-            imagename = imagename + '_' + self.channel_oneword().upper()
+        imagename = self.installer_base_name()
 
         sparsename = imagename + ".sparseimage"
         finalname = imagename + ".dmg"
         # make sure we don't have stale files laying about
         self.remove(sparsename, finalname)
 
-        self.run_command('hdiutil create %(sparse)r -volname %(vol)r -fs HFS+ -type SPARSE -megabytes 1000 -layout SPUD' % {
-                'sparse':sparsename,
-                'vol':volname})
+        self.run_command(['hdiutil', 'create', sparsename,
+                          '-volname', volname, '-fs', 'HFS+',
+                          '-type', 'SPARSE', '-megabytes', '1300',
+                          '-layout', 'SPUD'])
 
         # mount the image and get the name of the mount point and device node
-        hdi_output = self.run_command('hdiutil attach -private %r' % sparsename)
+        try:
+            hdi_output = subprocess.check_output(['hdiutil', 'attach', '-private', sparsename])
+        except subprocess.CalledProcessError as err:
+            sys.exit("failed to mount image at '%s'" % sparsename)
+
         try:
             devfile = re.search("/dev/disk([0-9]+)[^s]", hdi_output).group(0).strip()
             volpath = re.search('HFS\s+(.+)', hdi_output).group(1).strip()
@@ -982,10 +971,7 @@ class DarwinManifest(ViewerManifest):
 
             # Copy everything in to the mounted .dmg
 
-            if self.default_channel_for_brand() and not self.default_grid():
-                app_name = self.app_name() + " " + self.args['grid']
-            else:
-                app_name = channel_standin.strip()
+            app_name = self.app_name()
 
             # Hack:
             # Because there is no easy way to coerce the Finder into positioning
@@ -1025,45 +1011,106 @@ class DarwinManifest(ViewerManifest):
                 # well, possibly we've mistaken the nature of the problem. In any
                 # case, don't hang up the whole build looping indefinitely, let
                 # the original problem manifest by executing the desired command.
-                self.run_command('SetFile -a V %r' % pathname)
+                self.run_command(['SetFile', '-a', 'V', pathname])
 
             # Create the alias file (which is a resource file) from the .r
-            self.run_command('Rez %r -o %r' %
-                             (self.src_path_of("installers/darwin/release-dmg/Applications-alias.r"),
-                              os.path.join(volpath, "Applications")))
+            self.run_command(
+                ['Rez', self.src_path_of("installers/darwin/release-dmg/Applications-alias.r"),
+                 '-o', os.path.join(volpath, "Applications")])
 
             # Set the alias file's alias and custom icon bits
-            self.run_command('SetFile -a AC %r' % os.path.join(volpath, "Applications"))
+            self.run_command(['SetFile', '-a', 'AC', os.path.join(volpath, "Applications")])
 
             # Set the disk image root's custom icon bit
-            self.run_command('SetFile -a C %r' % volpath)
+            self.run_command(['SetFile', '-a', 'C', volpath])
+
+            # Sign the app if requested; 
+            # do this in the copy that's in the .dmg so that the extended attributes used by 
+            # the signature are preserved; moving the files using python will leave them behind
+            # and invalidate the signatures.
+            if 'signature' in self.args:
+                app_in_dmg=os.path.join(volpath,self.app_name()+".app")
+                print "Attempting to sign '%s'" % app_in_dmg
+                identity = self.args['signature']
+                if identity == '':
+                    identity = 'Developer ID Application'
+
+                # Look for an environment variable set via build.sh when running in Team City.
+                try:
+                    build_secrets_checkout = os.environ['build_secrets_checkout']
+                except KeyError:
+                    pass
+                else:
+                    # variable found so use it to unlock keychain followed by codesign
+                    home_path = os.environ['HOME']
+                    keychain_pwd_path = os.path.join(build_secrets_checkout,'code-signing-osx','password.txt')
+                    keychain_pwd = open(keychain_pwd_path).read().rstrip()
+
+                    # Note: As of macOS Sierra, keychains are created with names postfixed with '-db' so for example, the
+                    #       SL Viewer keychain would by default be found in ~/Library/Keychains/viewer.keychain-db instead of
+                    #       just ~/Library/Keychains/viewer.keychain in earlier versions.
+                    #
+                    #       Because we have old OS files from previous versions of macOS on the build hosts, the configurations
+                    #       are different on each host. Some have viewer.keychain, some have viewer.keychain-db and some have both.
+                    #       As you can see in the line below, this script expects the Linden Developer cert/keys to be in viewer.keychain.
+                    #
+                    #       To correctly sign builds you need to make sure ~/Library/Keychains/viewer.keychain exists on the host
+                    #       and that it contains the correct cert/key. If a build host is set up with a clean version of macOS Sierra (or later)
+                    #       then you will need to change this line (and the one for 'codesign' command below) to point to right place or else
+                    #       pull in the cert/key into the default viewer keychain 'viewer.keychain-db' and export it to 'viewer.keychain'
+                    viewer_keychain = os.path.join(home_path, 'Library',
+                                                   'Keychains', 'viewer.keychain')
+                    self.run_command(['security', 'unlock-keychain',
+                                      '-p', keychain_pwd, viewer_keychain])
+                    signed=False
+                    sign_attempts=3
+                    sign_retry_wait=15
+                    while (not signed) and (sign_attempts > 0):
+                        try:
+                            sign_attempts-=1;
+                            self.run_command(
+                                # Note: See blurb above about names of keychains
+                               ['codesign', '--verbose', '--deep', '--force',
+                                '--keychain', viewer_keychain, '--sign', identity,
+                                app_in_dmg])
+                            signed=True # if no exception was raised, the codesign worked
+                        except ManifestError as err:
+                            if sign_attempts:
+                                print >> sys.stderr, "codesign failed, waiting %d seconds before retrying" % sign_retry_wait
+                                time.sleep(sign_retry_wait)
+                                sign_retry_wait*=2
+                            else:
+                                print >> sys.stderr, "Maximum codesign attempts exceeded; giving up"
+                                raise
+                    self.run_command(['spctl', '-a', '-texec', '-vv', app_in_dmg])
+
+            imagename= self.app_name() + "_" + '_'.join(self.args['version'])
 
 
         finally:
             # Unmount the image even if exceptions from any of the above 
-            self.run_command('hdiutil detach -force %r' % devfile)
+            self.run_command(['hdiutil', 'detach', '-force', devfile])
 
         print "Converting temp disk image to final disk image"
-        self.run_command('hdiutil convert %(sparse)r -format UDZO -imagekey zlib-level=9 -o %(final)r' % {'sparse':sparsename, 'final':finalname})
-        self.run_command('hdiutil internet-enable -yes %(final)r' % {'final':finalname})
+        self.run_command(['hdiutil', 'convert', sparsename, '-format', 'UDZO',
+                          '-imagekey', 'zlib-level=9', '-o', finalname])
+        self.run_command(['hdiutil', 'internet-enable', '-yes', finalname])
         # get rid of the temp file
         self.package_file = finalname
         self.remove(sparsename)
 
 
 class Darwin_i386_Manifest(DarwinManifest):
-    def construct(self):
-        super(Darwin_i386_Manifest, self).construct()
+    address_size = 32
 
 
-class Darwin_universal_Manifest(DarwinManifest):
-    def construct(self):
-        super(Darwin_universal_Manifest, self).construct()
+class Darwin_i686_Manifest(DarwinManifest):
+    """alias in case arch is passed as i686 instead of i386"""
+    pass
 
 
 class Darwin_x86_64_Manifest(DarwinManifest):
-    def construct(self):
-        super(Darwin_x86_64_Manifest, self).construct()
+    address_size = 64
 
 
 class LinuxManifest(ViewerManifest):
