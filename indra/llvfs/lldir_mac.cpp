@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <glob.h>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include "llvfs_objc.h"
 
@@ -170,6 +171,18 @@ void LLDir_Mac::initAppDirs(const std::string &app_name,
 		mSkinBaseDir = mAppRODataDir + mDirDelimiter + "skins";
 	}
 	mCAFile = getExpandedFilename(LL_PATH_APP_SETTINGS, "ca-bundle.crt");
+}
+
+virtual U32 countFilesInDir(const std::string &dirname, const std::string &mask)
+{
+    using namespace boost::filesystem;
+    using namespace boost::algorithm;
+
+    bool empty = mask.empty();
+	return std::count_if(directory_iterator(dirname), directory_iterator(), [&](auto it)
+    {
+        return is_regular_file(it) && (empty || starts_with(it.path().filename().string(), mask));
+    });
 }
 
 std::string LLDir_Mac::getCurPath()
