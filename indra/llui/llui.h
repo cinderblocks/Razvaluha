@@ -383,11 +383,12 @@ public:
 		return instance;
 	}
 
-	static void hideInstance(const LLSD& key = LLSD()) 
+	static T* hideInstance(const LLSD& key = LLSD()) 
 	{ 
 		T* instance = getInstance(key); 
 		if (instance != nullptr)
 			VISIBILITY_POLICY::hide(instance, key);
+		return instance;
 	}
 
 	static void toggleInstance(const LLSD& key = LLSD())

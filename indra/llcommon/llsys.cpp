@@ -201,12 +201,12 @@ LLOSInfo::LLOSInfo() :
 	///get native system info if available..
 	typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO); ///function pointer for loading GetNativeSystemInfo
 	SYSTEM_INFO si; //System Info object file contains architecture info
-	PGNSI pGNSI; //pointer object
+	//PGNSI pGNSI; //pointer object
 	ZeroMemory(&si, sizeof(SYSTEM_INFO)); //zero out the memory in information
-	pGNSI = (PGNSI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetNativeSystemInfo"); //load kernel32 get function
+	/*pGNSI = (PGNSI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetNativeSystemInfo"); //load kernel32 get function
 	if (nullptr != pGNSI) //check if it has failed
 		pGNSI(&si); //success
-	else
+	else*/
 		GetSystemInfo(&si); //if it fails get regular system info 
 	//(Warning: If GetSystemInfo it may result in incorrect information in a WOW64 machine, if the kernel fails to load)
 
@@ -829,8 +829,7 @@ void LLMemoryInfo::stream(std::ostream& s) const
 			s << std::setw(12) << value.asInteger();
 		else if (value.isReal())
 		{
-			std::streamsize old_precision = s.precision();
-			s << std::fixed << std::setprecision(1) << value.asReal() << std::setprecision(old_precision) << std::defaultfloat;
+			s << std::fixed << std::setprecision(1) << value.asReal();
 		}
 		else if (value.isDate())
 			value.asDate().toStream(s);
@@ -1222,11 +1221,13 @@ public:
                     << " seconds ";
         }
 
-		std::streamsize old_precision = LL_CONT.precision();
+		std::streamsize precision = LL_CONT.precision();
 
 		LL_CONT << std::fixed << std::setprecision(1) << framerate << '\n'
-			<< LLMemoryInfo() << std::setprecision(old_precision) << std::defaultfloat << LL_ENDL;
+			<< LLMemoryInfo();
 
+	LL_CONT.precision(precision);
+	LL_CONT << LL_ENDL;
 		return false;
 	}
 
