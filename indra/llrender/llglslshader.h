@@ -119,7 +119,7 @@ public:
 	template <typename T, int N>
 	S32 updateUniform(std::vector<std::pair<GLint, T> >& cache, S32 uniform, const F32* val)
 	{
-		if (mProgramObject > 0)
+		if (mProgramObject != (GLhandleARB)NULL)
 		{
 			if (uniform >= 0)
 			{
@@ -337,7 +337,7 @@ public:
 	GLint getUniformLocation(const LLStaticHashedString& uniform)
 	{
 		GLint ret = -1;
-		if (mProgramObject > 0)
+		if (mProgramObject != (GLhandleARB)NULL)
 		{
 			LLStaticStringTable<GLint>::iterator iter = mUniformMap.find(uniform);
 			if (iter != mUniformMap.end())
