@@ -86,7 +86,8 @@ LLDir::LLDir()
     mOSCacheDir(""),
 	mDirDelimiter("/"), // fallback to forward slash if not overridden
 	mLanguage("en"),
-	mUserName("undefined")
+	mUserName("undefined"),
+	mGrid("")
 {
 }
 
@@ -204,6 +205,7 @@ U32 LLDir::deleteDirAndContents(const std::string& dir_name)
 #else
 		boost::filesystem::path dir_path(dir_name);
 #endif
+
 	   if (boost::filesystem::exists (dir_path))
 	   {
 	      if (!boost::filesystem::is_empty (dir_path))
@@ -739,6 +741,7 @@ std::vector<std::string> LLDir::findSkinnedFilenames(const std::string& subdir,
 
 	// Build results vector.
 	std::vector<std::string> results;
+
 	// Disallow filenames that may escape subdir
 	if (filename.find("..") != std::string::npos)
 	{
@@ -903,19 +906,6 @@ std::string LLDir::getForbiddenFileChars()
 	return "\\/:*?\"<>|";
 }
 
-// static
-std::string LLDir::getGridSpecificDir( const std::string& in, const std::string& grid )
-{
-	std::string ret = in;
-	if (!grid.empty())
-	{
-		std::string gridlower(grid);
-		LLStringUtil::toLower(gridlower);
-		ret += '@' + gridlower;
-	}
-	return ret;
-}
-
 void LLDir::setLindenUserDir(const std::string &grid, const std::string &first, const std::string &last)
 {
 	// if both first and last aren't set, assume we're grabbing the cached dir
@@ -925,11 +915,18 @@ void LLDir::setLindenUserDir(const std::string &grid, const std::string &first, 
 		// utterly consistent with our firstname/lastname case.
 		std::string userlower(first+"_"+last);
 		LLStringUtil::toLower(userlower);
-		mLindenUserDir = getGridSpecificDir(add(getOSUserAppDir(), userlower), grid);
+		LLStringUtil::replaceChar(userlower, ' ', '_');
+		std::string gridlower(grid);
+		LLStringUtil::toLower(gridlower);
+		LLStringUtil::replaceChar(gridlower, ' ', '_');
+		const std::string& logname = (gridlower.empty())
+			? userlower : userlower.append("@").append(gridlower);
+
+		mLindenUserDir = add(getOSUserAppDir(), logname);
 	}
 	else
 	{
-		LL_ERRS() << "Invalid name for LLDir::setLindenUserDir" << LL_ENDL;
+		LL_ERRS() << "NULL name for LLDir::setLindenUserDir" << LL_ENDL;
 	}
 
 	dumpCurrentDirectories();	
@@ -974,12 +971,14 @@ void LLDir::setChatLogsDir( const std::string& path)
 	}
 }
 
-void LLDir::updatePerAccountChatLogsDir(const std::string &grid)
+void LLDir::updatePerAccountChatLogsDir()
 {
-	mPerAccountChatLogsDir = getGridSpecificDir(add(getChatLogsDir(), mUserName), grid);
+	const std::string& logname = (mGrid.empty())
+		? mUserName : mUserName.append("@").append(mGrid);
+	mPerAccountChatLogsDir = add(getChatLogsDir(), logname);
 }
 		
-void LLDir::setPerAccountChatLogsDir(const std::string &grid, const std::string &first, const std::string &last)
+void LLDir::setPerAccountChatLogsDir(const std::string &gridname, const std::string &first, const std::string &last)
 {
 	// if both first and last aren't set, assume we're grabbing the cached dir
 	if (!first.empty() && !last.empty())
@@ -988,9 +987,14 @@ void LLDir::setPerAccountChatLogsDir(const std::string &grid, const std::string 
 		// utterly consistent with our firstname/lastname case.
 		std::string userlower(first+"_"+last);
 		LLStringUtil::toLower(userlower);
+		LLStringUtil::replaceChar(userlower, ' ', '_');
+		std::string gridlower(gridname);
+		LLStringUtil::toLower(gridlower);
+		LLStringUtil::replaceChar(gridlower, ' ', '_');
 
 		mUserName = userlower;
-		updatePerAccountChatLogsDir(grid);
+		mGrid = gridlower;
+		updatePerAccountChatLogsDir();
 	}
 	else
 	{

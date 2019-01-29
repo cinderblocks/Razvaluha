@@ -184,8 +184,8 @@ class LLDir
 	// For producing safe download file names from potentially unsafe ones
 	static std::string getScrubbedFileName(const std::string& uncleanFileName);
 	static std::string getForbiddenFileChars();
-	static std::string getGridSpecificDir( const std::string& in, const std::string& grid );
     void setDumpDir( const std::string& path );
+
 
 	void makePortable();
 	virtual void setChatLogsDir(const std::string &path);		// Set the chat logs dir to this user's dir
@@ -195,7 +195,7 @@ class LLDir
 	virtual std::string getSkinFolder() const;
 	virtual std::string getLanguage() const;
 	virtual bool setCacheDir(const std::string &path);
-	virtual void updatePerAccountChatLogsDir(const std::string &grid);
+	virtual void updatePerAccountChatLogsDir();
 
 	virtual void dumpCurrentDirectories();
 
@@ -274,6 +274,7 @@ protected:
 	std::string mLLPluginDir;			// Location for plugins and plugin shell
     static std::string sDumpDir;            // Per-run crash report subdir of log directory.
 	std::string mUserName;				// Current user name
+	std::string mGrid;					// Current grid
 };
 
 void dir_exists_or_crash(const std::string &dir_name);
