@@ -379,8 +379,8 @@ protected:
 	mutable uuid_vec_t			m_LockedAttachmentRem;
 	mutable folderlock_map_t	m_LockedFolderMap;
 	mutable uuid_vec_t			m_LockedWearableRem;
-private:
-	friend class LLSingleton<RlvFolderLocks>;
+//private:
+//	friend class LLSingleton<RlvFolderLocks>;
 };
 
 // ============================================================================

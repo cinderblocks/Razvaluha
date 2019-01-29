@@ -230,7 +230,7 @@ public:
 	void onRegionSettingsApplyResponse(bool ok);
 
 private:
-	friend class LLSingleton<LLEnvManagerNew>;
+	//friend class LLSingleton<LLEnvManagerNew>;
 	/*virtual*/ void initSingleton();
 
 	void loadUserPrefs();

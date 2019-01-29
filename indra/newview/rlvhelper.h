@@ -308,7 +308,7 @@ protected:
 	pendingattachments_map_t         m_pendingAttachments;
 
 private:
-	friend class LLSingleton<RlvForceWear>;
+	//friend class LLSingleton<RlvForceWear>;
 };
 
 // ============================================================================
