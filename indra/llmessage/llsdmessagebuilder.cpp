@@ -97,13 +97,6 @@ void LLSDMessageBuilder::nextBlock(const char* blockname)
 	}
 }
 
-// TODO: Remove this horror...
-BOOL LLSDMessageBuilder::removeLastBlock()
-{
-	/* TODO: finish implementing this */
-	return FALSE;
-}
-
 void LLSDMessageBuilder::addBinaryData(
 	const char* varname, 
 	const void* data,
@@ -266,7 +259,7 @@ void LLSDMessageBuilder::copyFromMessageData(const LLMsgData& data)
 		
 		for(; dit != dend; ++dit)
 		{
-			const LLMsgVarData& mvci = *dit;
+			const LLMsgVarData& mvci = dit->second;
 			const char* varname = mvci.getName();
 
 			switch(mvci.getType())

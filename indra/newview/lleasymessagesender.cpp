@@ -188,8 +188,9 @@ bool LLEasyMessageSender::sendLLUDPMessage(const LLHost& region_host, const std:
 	for (LLMessageTemplate::message_block_map_t::iterator blocks_iter = temp->mMemberBlocks.begin();
 		 blocks_iter != blocks_end; )
 	{
-		LLMessageBlock* block = (*blocks_iter);
-		const char* block_name = block->mName;
+		const auto& block_pair = *blocks_iter;
+		LLMessageBlock* block = block_pair.second;
+		const char* block_name = block_pair.first;
 
 		//are we at the end of the block or does this block belongs at this spot in the message?
 		if(parts_iter == parts_end || (*parts_iter).name != block_name)
@@ -212,8 +213,9 @@ bool LLEasyMessageSender::sendLLUDPMessage(const LLHost& region_host, const std:
 		for (LLMessageBlock::message_variable_map_t::iterator var_iter = block->mMemberVariables.begin();
 			 var_iter != var_end; ++var_iter)
 		{
-			LLMessageVariable* variable = (*var_iter);
-			const char* var_name = variable->getName();
+			const auto& var_pair = *var_iter;
+			LLMessageVariable* variable = var_pair.second;
+			const char* var_name = var_pair.first;
 
 			//are there less keypairs in this block than there should be?
 			if(part_var_iter == part_var_end || (*part_var_iter).name != var_name)

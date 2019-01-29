@@ -47,7 +47,6 @@ public:
 	void newMessage(const char* name) override;
 
 	void nextBlock(const char* blockname) override;
-	BOOL removeLastBlock() override; // TODO: babbage: remove this horror...
 
 	/** All add* methods expect pointers to canonical varname strings. */
 	void addBinaryData(const char *varname, const void *data, 

@@ -1319,7 +1319,7 @@ void LLViewerFetchedTexture::addToCreateTexture()
 	if(isForSculptOnly())
 	{
 		//just update some variables, not to create a real GL texture.
-		createGLTexture(mRawDiscardLevel, mRawImage, 0, FALSE);
+		createGLTexture(mRawDiscardLevel, mRawImage, nullptr, FALSE);
 		mNeedsCreateTexture = FALSE;
 		destroyRawImage();
 	}
@@ -1382,7 +1382,7 @@ void LLViewerFetchedTexture::addToCreateTexture()
 }
 
 // ONLY called from LLViewerTextureList
-BOOL LLViewerFetchedTexture::createTexture(S32 usename/*= 0*/)
+BOOL LLViewerFetchedTexture::createTexture(LLImageGL::GLTextureName* usename)
 {
 	if (!mNeedsCreateTexture)
 	{
@@ -1392,8 +1392,7 @@ BOOL LLViewerFetchedTexture::createTexture(S32 usename/*= 0*/)
 	mNeedsCreateTexture = FALSE;
 	if (mRawImage.isNull())
 	{
-		LL_ERRS() << "LLViewerTexture trying to create texture with no Raw Image" << LL_ENDL;
-
+		LL_WARNS() << "LLViewerTexture trying to create texture with no Raw Image" << LL_ENDL;
 	}
 // 	LL_INFOS() << llformat("IMAGE Creating (%d) [%d x %d] Bytes: %d ",
 // 						mRawDiscardLevel, 

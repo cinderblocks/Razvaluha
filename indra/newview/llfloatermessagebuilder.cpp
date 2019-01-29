@@ -245,9 +245,10 @@ void LLFloaterMessageBuilder::onCommitPacketCombo(LLUICtrl* ctrl)
 	std::string text(llformat((*template_iter).second->getTrust() == MT_NOTRUST
 							  ? "out %s\n\n" : "in %s\n\n", message.c_str()));
 	LLMessageTemplate* temp = (*template_iter).second;
-	for (const auto& block : temp->mMemberBlocks)
+	for (const auto& block_pair : temp->mMemberBlocks)
 	{
-		std::string block_name = std::string(block->mName);
+		std::string block_name = std::string(block_pair.first);
+		const auto& block = block_pair.second;
 		S32 num_blocks = 1;
 		if(block->mType == MBT_MULTIPLE)
 			num_blocks = block->mNumber;
@@ -257,9 +258,10 @@ void LLFloaterMessageBuilder::onCommitPacketCombo(LLUICtrl* ctrl)
 		for(S32 i = 0; i < num_blocks; i++)
 		{
 			text.append(llformat("[%s]\n", block_name.c_str()));
-			for (const auto& variable : block->mMemberVariables)
+			for (const auto& var_pair : block->mMemberVariables)
 			{
-				std::string var_name = std::string(variable->getName());
+				std::string var_name = std::string(var_pair.first);
+				const auto& variable = var_pair.second;
 				text.append(llformat("    %s = ", var_name.c_str()));
 				std::string value(LLStringUtil::null);
 				S32 size = variable->getSize();

@@ -295,7 +295,7 @@ void LLDrawPoolAvatar::beginDeferredRiggedAlpha()
 	sVertexProgram = &gDeferredSkinnedAlphaProgram;
 	gPipeline.bindDeferredShader(*sVertexProgram);
 	sDiffuseChannel = sVertexProgram->enableTexture(LLViewerShaderMgr::DIFFUSE_MAP);
-	gPipeline.enableLightsDynamic();
+	gPipeline.enableLightsDynamic(*(LLGLState<GL_LIGHTING>*)gPipeline.pushRenderPassState<GL_LIGHTING>());
 }
 
 void LLDrawPoolAvatar::beginDeferredRiggedMaterialAlpha(S32 pass)
@@ -317,7 +317,7 @@ void LLDrawPoolAvatar::beginDeferredRiggedMaterialAlpha(S32 pass)
 	sDiffuseChannel = sVertexProgram->enableTexture(LLViewerShaderMgr::DIFFUSE_MAP);
 	normal_channel = sVertexProgram->enableTexture(LLViewerShaderMgr::BUMP_MAP);
 	specular_channel = sVertexProgram->enableTexture(LLViewerShaderMgr::SPECULAR_MAP);
-	gPipeline.enableLightsDynamic();
+	gPipeline.enableLightsDynamic(*(LLGLState<GL_LIGHTING>*)gPipeline.pushRenderPassState<GL_LIGHTING>());
 }
 void LLDrawPoolAvatar::endDeferredRiggedAlpha()
 {
@@ -634,7 +634,7 @@ void LLDrawPoolAvatar::beginImpostor()
 		gImpostorProgram.setMinimumAlpha(0.01f);
 	}
 
-	gPipeline.enableLightsFullbright(LLColor4(1,1,1,1));
+	gPipeline.enableLightsFullbright(*(LLGLState<GL_LIGHTING>*)gPipeline.pushRenderPassState<GL_LIGHTING>());
 	sDiffuseChannel = 0;
 }
 
@@ -644,7 +644,6 @@ void LLDrawPoolAvatar::endImpostor()
 	{
 		gImpostorProgram.unbind();
 	}
-	gPipeline.enableLightsDynamic();
 }
 
 void LLDrawPoolAvatar::beginRigid()
@@ -1280,7 +1279,7 @@ void LLDrawPoolAvatar::renderAvatars(LLVOAvatar* single_avatar, S32 pass)
 			renderRiggedAlpha(avatarp);
 			if (LLPipeline::sRenderDeferred && !is_post_deferred_render)
 			{ //render transparent materials under water
-				LLGLEnable blend(GL_BLEND);
+				LLGLEnable<GL_BLEND> blend;
 				gGL.setColorMask(true, true);
 				gGL.blendFunc(LLRender::BF_SOURCE_ALPHA,
 								LLRender::BF_ONE_MINUS_SOURCE_ALPHA,
@@ -1312,7 +1311,7 @@ void LLDrawPoolAvatar::renderAvatars(LLVOAvatar* single_avatar, S32 pass)
 			case 12: p = 13; break;
 			}
 			{
-				LLGLEnable blend(GL_BLEND);
+				LLGLEnable<GL_BLEND> blend;
 				renderDeferredRiggedMaterial(avatarp, p);
 			}
 			return;
@@ -1605,7 +1604,7 @@ void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 				gGL.getTexUnit(specular_channel)->bind(face->getTexture(LLRender::SPECULAR_MAP));
 
 				LLColor4 col = mat->getSpecularLightColor();
-				F32 spec = llmax(0.0001f, mat->getSpecularLightExponent() / 255.f);
+				F32 spec = llmax(0.0000f, mat->getSpecularLightExponent() / 255.f);
 
 				F32 env = mat->getEnvironmentIntensity()/255.f;
 
@@ -1777,7 +1776,7 @@ void LLDrawPoolAvatar::renderRiggedAlpha(LLVOAvatar* avatar)
 {
 	if (!mRiggedFace[RIGGED_ALPHA].empty())
 	{
-		LLGLEnable blend(GL_BLEND);
+		LLGLEnable<GL_BLEND> blend;
 
 		gGL.setColorMask(true, true);
 		gGL.blendFunc(LLRender::BF_SOURCE_ALPHA,
@@ -1795,7 +1794,7 @@ void LLDrawPoolAvatar::renderRiggedFullbrightAlpha(LLVOAvatar* avatar)
 {
 	if (!mRiggedFace[RIGGED_FULLBRIGHT_ALPHA].empty())
 	{
-		LLGLEnable blend(GL_BLEND);
+		LLGLEnable<GL_BLEND> blend;
 
 		gGL.setColorMask(true, true);
 		gGL.blendFunc(LLRender::BF_SOURCE_ALPHA,
@@ -1813,12 +1812,12 @@ void LLDrawPoolAvatar::renderRiggedGlow(LLVOAvatar* avatar)
 {
 	if (!mRiggedFace[RIGGED_GLOW].empty())
 	{
-		LLGLEnable blend(GL_BLEND);
-		LLGLDisable test(GL_ALPHA_TEST);
+		LLGLEnable<GL_BLEND> blend;
+		LLGLDisable<GL_ALPHA_TEST> test;
 		gGL.flush();
 
-		LLGLEnable polyOffset(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(-1.0f, -1.0f);
+		LLGLEnable<GL_POLYGON_OFFSET_FILL> polyOffset;
+		gGL.setPolygonOffset(-1.0f, -1.0f);
 		gGL.setSceneBlendType(LLRender::BT_ADD);
 
 		LLGLDepthTest depth(GL_TRUE, GL_FALSE);

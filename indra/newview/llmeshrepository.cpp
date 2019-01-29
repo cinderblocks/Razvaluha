@@ -874,7 +874,11 @@ void LLMeshRepoThread::run()
 		// Will likely need a correctly-implemented condition variable to do this.
 		// On the other hand, this may actually be an effective and efficient scheme...
 
-		mSignal->wait();
+		mSignal->unlock();
+		ms_sleep(1000 / 60);
+		mSignal->lock();
+
+		//mSignal->wait();
 
 		if (LLApp::isQuitting())
 		{
@@ -898,14 +902,14 @@ void LLMeshRepoThread::run()
 			}
 			mMutex->lock();
 			LODRequest req = mLODReqQ.front();
-			mLODReqQ.pop();
+			mLODReqQ.pop_front();
 			LLMeshRepository::sLODProcessing--;
 			mMutex->unlock();
 
 			if (!fetchMeshLOD(req.mMeshParams, req.mLOD))		// failed, resubmit
 			{
 				mMutex->lock();
-				mLODReqQ.push(req);
+				mLODReqQ.push_back(req);
 				++LLMeshRepository::sLODProcessing;
 				mMutex->unlock();
 			}
@@ -919,13 +923,16 @@ void LLMeshRepoThread::run()
 			}
 			mMutex->lock();
 			HeaderRequest req = mHeaderReqQ.front();
-			mHeaderReqQ.pop();
+			mHeaderReqQ.pop_front();
 			mMutex->unlock();
 			if (!fetchMeshHeader(req.mMeshParams))//failed, resubmit
 			{
 				mMutex->lock();
-				mHeaderReqQ.push(req) ;
+				mHeaderReqQ.push_back(req) ;
 				mMutex->unlock();
+			}
+			else {
+				//LL_INFOS() << req->mMeshParams.getSculptID() << " fetch request created. " << std::hex << &(req->mMeshParams) << std::dec << LL_ENDL;
 			}
 		}
 
@@ -1078,7 +1085,7 @@ void LLMeshRepoThread::loadMeshLOD(const LLVolumeParams& mesh_params, S32 lod)
 	{ //if we have the header, request LOD byte range
 		LODRequest req(mesh_params, lod);
 		{
-			mLODReqQ.push(req);
+			mLODReqQ.push_back(req);
 			LLMeshRepository::sLODProcessing++;
 		}
 	}
@@ -1095,7 +1102,7 @@ void LLMeshRepoThread::loadMeshLOD(const LLVolumeParams& mesh_params, S32 lod)
 		}
 		else
 		{	//if no header request is pending, fetch header
-			mHeaderReqQ.push(req);
+			mHeaderReqQ.push_back(req);
 			mPendingLOD[mesh_params].push_back(lod);
 		}
 	}
@@ -1235,9 +1242,11 @@ bool LLMeshRepoThread::fetchMeshSkinInfo(const LLUUID& mesh_id)
 	
 	if (header_size > 0)
 	{
-		S32 version = mMeshHeader[mesh_id]["version"].asInteger();
-		S32 offset = header_size + mMeshHeader[mesh_id]["skin"]["offset"].asInteger();
-		S32 size = mMeshHeader[mesh_id]["skin"]["size"].asInteger();
+		const LLSD& header = mMeshHeader[mesh_id];
+		const LLSD& block = header["skin"];
+		S32 version = header["version"].asInteger();
+		S32 offset = header_size + block["offset"].asInteger();
+		S32 size = block["size"].asInteger();
 
 		mHeaderMutex->unlock();
 
@@ -1327,9 +1336,11 @@ bool LLMeshRepoThread::fetchMeshDecomposition(const LLUUID& mesh_id)
 	
 	if (header_size > 0)
 	{
-		S32 version = mMeshHeader[mesh_id]["version"].asInteger();
-		S32 offset = header_size + mMeshHeader[mesh_id]["physics_convex"]["offset"].asInteger();
-		S32 size = mMeshHeader[mesh_id]["physics_convex"]["size"].asInteger();
+		const LLSD& header = mMeshHeader[mesh_id];
+		const LLSD& block = header["physics_convex"];
+		S32 version = header["version"].asInteger();
+		S32 offset = header_size + block["offset"].asInteger();
+		S32 size = block["size"].asInteger();
 
 		mHeaderMutex->unlock();
 
@@ -1420,9 +1431,11 @@ bool LLMeshRepoThread::fetchMeshPhysicsShape(const LLUUID& mesh_id)
 
 	if (header_size > 0)
 	{
-		S32 version = mMeshHeader[mesh_id]["version"].asInteger();
-		S32 offset = header_size + mMeshHeader[mesh_id]["physics_mesh"]["offset"].asInteger();
-		S32 size = mMeshHeader[mesh_id]["physics_mesh"]["size"].asInteger();
+		const LLSD& header = mMeshHeader[mesh_id];
+		const LLSD& block = header["physics_mesh"];
+		S32 version = header["version"].asInteger();
+		S32 offset = header_size + block["offset"].asInteger();
+		S32 size = block["size"].asInteger();
 
 		mHeaderMutex->unlock();
 
@@ -1601,9 +1614,11 @@ bool LLMeshRepoThread::fetchMeshLOD(const LLVolumeParams& mesh_params, S32 lod)
 
 	if (header_size > 0)
 	{
-		S32 version = mMeshHeader[mesh_id]["version"].asInteger();
-		S32 offset = header_size + mMeshHeader[mesh_id][header_lod[lod]]["offset"].asInteger();
-		S32 size = mMeshHeader[mesh_id][header_lod[lod]]["size"].asInteger();
+		const LLSD& header = mMeshHeader[mesh_id];
+		const LLSD& block = header[header_lod[lod]];
+		S32 version = header["version"].asInteger();
+		S32 offset = header_size + block["offset"].asInteger();
+		S32 size = block["size"].asInteger();
 		mHeaderMutex->unlock();
 				
 		if (version <= MAX_MESH_VERSION && offset >= 0 && size > 0)
@@ -1734,7 +1749,7 @@ bool LLMeshRepoThread::headerReceived(const LLVolumeParams& mesh_params, U8* dat
 			for (U32 i = 0; i < iter->second.size(); ++i)
 			{
 				LODRequest req(mesh_params, iter->second[i]);
-				mLODReqQ.push(req);
+				mLODReqQ.push_back(req);
 				LLMeshRepository::sLODProcessing++;
 			}
 			mPendingLOD.erase(iter);
@@ -2958,7 +2973,7 @@ LLMeshHeaderHandler::~LLMeshHeaderHandler()
 			LL_WARNS(LOG_MESH) << "Mesh header fetch canceled unexpectedly, retrying." << LL_ENDL;
 			LLMeshRepoThread::HeaderRequest req(mMeshParams);
 			LLMutexLock lock(gMeshRepo.mThread->mMutex);
-			gMeshRepo.mThread->mHeaderReqQ.push(req);
+			gMeshRepo.mThread->mHeaderReqQ.push_back(req);
 		}
 		LLMeshRepoThread::decActiveHeaderRequests();
 	}

@@ -191,6 +191,7 @@
 #include "llfloaternotificationsconsole.h"
 
 #include "llpanelnearbymedia.h"
+#include "llmessagetemplate.h"
 
 // [RLVa:KB]
 #include "rlvhandler.h"
@@ -517,7 +518,7 @@ public:
 
 			//show streaming cost/triangle count of known prims in current region OR selection
 			//Note: This is SUPER slow
-			{
+			/*{
 				F32 cost = 0.f;
 				S32 count = 0;
 				S32 vcount = 0;
@@ -566,7 +567,7 @@ public:
 										count/1000.f, vcount/1000.f, visible_bytes/1024.f, total_bytes/1024.f, object_count));
 				ypos += y_inc;
 			
-			}
+			}*/
 
 			addText(xpos, ypos, llformat("%d MB Index Data (%d MB Pooled, %d KIndices)", LLVertexBuffer::sAllocatedIndexBytes/(1024*1024), LLVBOPool::sIndexBytesPooled/(1024*1024), LLVertexBuffer::sIndexCount/1024));
 			ypos += y_inc;
@@ -702,10 +703,16 @@ public:
 				ypos += y_inc;
 			}
 
+			addText(xpos, ypos, llformat("%d/%d bytes allocted to messages", sMsgDataAllocSize, sMsgdataAllocCount));
+
 			LLVertexBuffer::sBindCount = LLImageGL::sBindCount = 
 				LLVertexBuffer::sSetCount = LLImageGL::sUniqueCount =
 				gPipeline.mNumVisibleNodes = LLPipeline::sVisibleLightCount = 0;
 		}
+
+		sMsgDataAllocSize = 0;
+		sMsgdataAllocCount = 0;
+
 		static const LLCachedControl<bool> debugShowAvatarRenderInfo("DebugShowRenderMatrices");
 		if (debugShowAvatarRenderInfo)
 		{
@@ -1388,6 +1395,9 @@ void LLViewerWindow::handleScanKey(KEY key, BOOL key_down, BOOL key_up, BOOL key
 
 BOOL LLViewerWindow::handleActivate(LLWindow *window, BOOL activated)
 {
+	if (mActive == (bool)activated) {
+		return TRUE;
+	}
 	if (activated)
 	{
 		mActive = true;
@@ -1395,7 +1405,8 @@ BOOL LLViewerWindow::handleActivate(LLWindow *window, BOOL activated)
 		gAgent.clearAFK();
 		if (mWindow->getFullscreen() && !mIgnoreActivate)
 		{
-			if (!LLApp::isExiting() )
+			// Opengl doesn't need torn down when alt tabbing.
+			/*if (!LLApp::isExiting() )
 			{
 				if (LLStartUp::getStartupState() >= STATE_STARTED)
 				{
@@ -1409,7 +1420,7 @@ BOOL LLViewerWindow::handleActivate(LLWindow *window, BOOL activated)
 					restoreGL();
 				}
 			}
-			else
+			else*/
 			{
 				LL_WARNS() << "Activating while quitting" << LL_ENDL;
 			}
@@ -1436,11 +1447,12 @@ BOOL LLViewerWindow::handleActivate(LLWindow *window, BOOL activated)
 		
 		send_agent_pause();
 		
-		if (mWindow->getFullscreen() && !mIgnoreActivate)
+		// Opengl doesn't need torn down when alt tabbing.
+		/*if (mWindow->getFullscreen() && !mIgnoreActivate)
 		{
 			LL_INFOS() << "Stopping GL during deactivation" << LL_ENDL;
 			stopGL();
-		}
+		}*/
 		// Mute audio
 		audio_update_volume(false);
 	}
@@ -2370,10 +2382,10 @@ void LLViewerWindow::reshape(S32 width, S32 height)
 	// reshape messages.  We don't care about these, and we
 	// don't want to send messages because the message system
 	// may have been destructed.
-	if (!LLApp::isExiting())
+	if (!LLApp::isExiting()/* && !gGLManager.mIsDisabled*/)
 	{
 		gWindowResized = TRUE;
-		glViewport(0, 0, width, height );
+		gGL.setViewport(0, 0, width, height );
 
 		if (height > 0)
 		{ 
@@ -2537,8 +2549,6 @@ void LLViewerWindow::draw()
 	LLView::sIsDrawing = TRUE;
 #endif
 	stop_glerror();
-	
-	LLUI::setLineWidth(1.f);
 
 	LLUI::setLineWidth(1.f);
 	// Reset any left-over transforms
@@ -3774,8 +3784,8 @@ void LLViewerWindow::renderSelections( BOOL for_gl_pick, BOOL pick_parcel_walls,
 		if (LLSelectMgr::sRenderLightRadius && LLToolMgr::getInstance()->inEdit())
 		{
 			gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
-			LLGLEnable gls_blend(GL_BLEND);
-			LLGLEnable gls_cull(GL_CULL_FACE);
+			LLGLEnable<GL_BLEND> gls_blend;
+			LLGLEnable<GL_CULL_FACE> gls_cull;
 			LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE);
 			gGL.matrixMode(LLRender::MM_MODELVIEW);
 			gGL.pushMatrix();
@@ -4548,14 +4558,14 @@ void LLViewerWindow::movieSize(S32 new_width, S32 new_height)
 
 		if (gViewerWindow->getWindow()->getFullscreen())
 		{
-			LLGLState::checkStates();
-			LLGLState::checkTextureChannels();
+			LLGLStateValidator::checkStates();
+			LLGLStateValidator::checkTextureChannels();
 			gViewerWindow->changeDisplaySettings(FALSE, 
 												new_size, 
 												vsync_mode, 
 												TRUE);
-			LLGLState::checkStates();
-			LLGLState::checkTextureChannels();
+			LLGLStateValidator::checkStates();
+			LLGLStateValidator::checkTextureChannels();
 		}
 		else
 		{
@@ -4637,6 +4647,7 @@ bool LLViewerWindow::rawRawSnapshot(LLImageRaw *raw,
 	// PRE SNAPSHOT
 	gDisplaySwapBuffers = FALSE;
 	
+	gGL.syncContextState();
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	setCursor(UI_CURSOR_WAIT);
 
@@ -5095,11 +5106,10 @@ void LLViewerWindow::setup2DRender()
 
 void LLViewerWindow::setup2DViewport(S32 x_offset, S32 y_offset)
 {
-	gGLViewport[0] = mWindowRectRaw.mLeft + x_offset;
-	gGLViewport[1] = mWindowRectRaw.mBottom + y_offset;
-	gGLViewport[2] = mWindowRectRaw.getWidth();
-	gGLViewport[3] = mWindowRectRaw.getHeight();
-	glViewport(gGLViewport[0], gGLViewport[1], gGLViewport[2], gGLViewport[3]);
+	gGLViewport = mWindowRectRaw;
+	gGLViewport.translate(x_offset, y_offset);
+	gGL.setViewport(gGLViewport);
+	gGL.setScissor(gGLViewport);
 }
 
 
@@ -5112,11 +5122,10 @@ void LLViewerWindow::setup3DRender()
 
 void LLViewerWindow::setup3DViewport(S32 x_offset, S32 y_offset)
 {
-	gGLViewport[0] = getWindowRectRaw().mLeft + x_offset;
-	gGLViewport[1] = getWindowRectRaw().mBottom + y_offset;
-	gGLViewport[2] = getWindowRectRaw().getWidth();
-	gGLViewport[3] = getWindowRectRaw().getHeight();
-	glViewport(gGLViewport[0], gGLViewport[1], gGLViewport[2], gGLViewport[3]);
+	gGLViewport = mWindowRectRaw;
+	gGLViewport.translate(x_offset, y_offset);
+	gGL.setViewport(gGLViewport);
+	gGL.setScissor(gGLViewport);
 }
 
 void LLViewerWindow::revealIntroPanel()
@@ -5196,6 +5205,7 @@ void LLViewerWindow::dumpState()
 
 void LLViewerWindow::stopGL(BOOL save_state)
 {
+	stop_glerror();
 	//Note: --bao
 	//if not necessary, do not change the order of the function calls in this function.
 	//if change something, make sure it will not break anything.
@@ -5225,6 +5235,7 @@ void LLViewerWindow::stopGL(BOOL save_state)
 		stop_glerror();
 
 		LLVOPartGroup::destroyGL();
+		stop_glerror();
 
 		LLViewerDynamicTexture::destroyGL();
 		stop_glerror();
@@ -5233,8 +5244,10 @@ void LLViewerWindow::stopGL(BOOL save_state)
 		{
 			gPipeline.destroyGL();
 		}
+		stop_glerror();
 		
 		gBox.cleanupGL();
+		stop_glerror();
 		
 		if(LLPostProcess::instanceExists())
 		{
@@ -5243,11 +5256,15 @@ void LLViewerWindow::stopGL(BOOL save_state)
 
 		gTextureList.destroyGL(save_state);
 		stop_glerror();
+		gGL.destroyGL();
+		stop_glerror();
 
 		gGLManager.mIsDisabled = TRUE;
 		stop_glerror();
 
-		gGL.resetVertexBuffers();
+		LLVertexBuffer::cleanupClass();
+
+		stop_glerror();
 		
 		LL_INFOS() << "Remaining allocated texture memory: " << LLImageGL::sGlobalTextureMemory << " bytes" << LL_ENDL;
 	}
@@ -5261,29 +5278,44 @@ void LLViewerWindow::restoreGL(const std::string& progress_message)
 	//especially, be careful to put something before gTextureList.restoreGL();
 	if (gGLManager.mIsDisabled)
 	{
+		stop_glerror();
 		LL_INFOS() << "Restoring GL..." << LL_ENDL;
 		gGLManager.mIsDisabled = FALSE;
 		
 		gGL.init();
+		stop_glerror();
 		initGLDefaults();
-		gGL.refreshState();
-		LLGLState::restoreGL();
 
+		stop_glerror();
+		gGL.refreshState();	//Singu Note: Call immediately. Cached states may have prevented initGLDefaults from actually applying changes.
+		stop_glerror();
+		LLGLStateValidator::restoreGL();
+		stop_glerror();
 		gTextureList.restoreGL();
+		stop_glerror();
 
 		// for future support of non-square pixels, and fonts that are properly stretched
 		//LLFontGL::destroyDefaultFonts();
 		initFonts();
+		stop_glerror();
 				
 		gSky.restoreGL();
+		stop_glerror();
 		gPipeline.restoreGL();
+		stop_glerror();
 		LLDrawPoolWater::restoreGL();
+		stop_glerror();
 		LLManipTranslate::restoreGL();
+		stop_glerror();
 		
 		gBumpImageList.restoreGL();
+		stop_glerror();
 		LLViewerDynamicTexture::restoreGL();
+		stop_glerror();
 		LLVOAvatar::restoreGL();
+		stop_glerror();
 		LLVOPartGroup::restoreGL();
+		stop_glerror();
 		
 		gResizeScreenTexture = TRUE;
 		gWindowResized = TRUE;
@@ -5305,8 +5337,9 @@ void LLViewerWindow::restoreGL(const std::string& progress_message)
 		{
 			LL_WARNS() << " Someone took over my signal/exception handler (post restoreGL)!" << LL_ENDL;
 		}
-
+		stop_glerror();
 	}
+
 }
 
 void LLViewerWindow::initFonts(F32 zoom_factor)
@@ -5366,7 +5399,7 @@ BOOL LLViewerWindow::checkSettings()
 {
 	//Singu Note: Don't do the following.
 	//setShaders is already called in restoreGL(), and gGL.refreshState() is too as to maintain blend states.
-	//This maintaining of blend states is needed for LLGLState::checkStates() to not error out.
+	//This maintaining of blend states is needed for LLGLStateValidator::checkStates() to not error out.
 	/*if (mStatesDirty)
 	{
 		gGL.refreshState();
@@ -5400,6 +5433,9 @@ BOOL LLViewerWindow::checkSettings()
 	BOOL is_fullscreen = mWindow->getFullscreen();
 	if(mWantFullscreen)
 	{
+		if (mWindow->getMinimized()) {
+			return FALSE;
+		}
 		LLCoordScreen screen_size;
 		LLCoordScreen desired_screen_size(gSavedSettings.getS32("FullScreenWidth"),
 								   gSavedSettings.getS32("FullScreenHeight"));
@@ -5413,8 +5449,8 @@ BOOL LLViewerWindow::checkSettings()
 				return FALSE;
 			}
 
-			LLGLState::checkStates();
-			LLGLState::checkTextureChannels();
+			LLGLStateValidator::checkStates();
+			LLGLStateValidator::checkTextureChannels();
 
 			S32 vsync_mode = gSavedSettings.getS32("SHRenderVsyncMode");
 			if(vsync_mode == -1 && !gGLManager.mHasAdaptiveVsync)
@@ -5426,8 +5462,8 @@ BOOL LLViewerWindow::checkSettings()
 								  desired_screen_size,
 								  vsync_mode,
 								  mShowFullscreenProgress);
-			LLGLState::checkStates();
-			LLGLState::checkTextureChannels();
+			LLGLStateValidator::checkStates();
+			LLGLStateValidator::checkTextureChannels();
 			return TRUE;
 		}
 	}
@@ -5436,15 +5472,15 @@ BOOL LLViewerWindow::checkSettings()
 		if(is_fullscreen)
 		{
 			// Changing to windowed mode.
-			LLGLState::checkStates();
-			LLGLState::checkTextureChannels();
+			LLGLStateValidator::checkStates();
+			LLGLStateValidator::checkTextureChannels();
 			changeDisplaySettings(FALSE, 
 								  LLCoordScreen(gSavedSettings.getS32("WindowWidth"),
 												gSavedSettings.getS32("WindowHeight")),
 								  TRUE,
 								  mShowFullscreenProgress);
-			LLGLState::checkStates();
-			LLGLState::checkTextureChannels();
+			LLGLStateValidator::checkStates();
+			LLGLStateValidator::checkTextureChannels();
 			return TRUE;
 		}
 	}

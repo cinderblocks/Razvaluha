@@ -259,10 +259,10 @@ public:
 	std::list<LLModel::Decomposition*> mDecompositionQ;
 
 	//queue of requested headers
-	std::queue<HeaderRequest> mHeaderReqQ;
+	std::deque<HeaderRequest> mHeaderReqQ;
 
 	//queue of requested LODs
-	std::queue<LODRequest> mLODReqQ;
+	std::deque<LODRequest> mLODReqQ;
 
 	//queue of unavailable LODs (either asset doesn't exist or asset doesn't have desired LOD)
 	std::queue<LODRequest> mUnavailableQ;

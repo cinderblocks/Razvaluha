@@ -136,31 +136,31 @@ std::string LLEasyMessageLogEntry::getFull(BOOL beautify, BOOL show_header) cons
                 full << llformat("LL_ACK_FLAG = %s\n\n", (mFlags & LL_ACK_FLAG) ? "True" : "False");
             }
 
-            for (auto *block : temp->mMemberBlocks)
+            for (const auto& block : temp->mMemberBlocks)
             {
-                const char* block_name = block->mName;
+                const char* block_name = block.first;
                 S32 num_blocks = mEasyMessageReader->getNumberOfBlocks(block_name);
                 for (S32 block_num = 0; block_num < num_blocks; block_num++)
                 {
-                    full << llformat("[%s]\n", block->mName);
-                    for (auto *variable : block->mMemberVariables)
+                    full << llformat("[%s]\n", block_name);
+                    for (const auto& variable : block.second->mMemberVariables)
                     {
-                        const char* var_name = variable->getName();
+                        const char* var_name = variable.first;
                         BOOL returned_hex;
-                        std::string value = mEasyMessageReader->var2Str(block_name, block_num, variable, returned_hex);
+                        std::string value = mEasyMessageReader->var2Str(block_name, block_num, variable.second, returned_hex);
                         if (returned_hex)
                             full << llformat("    %s =| ", var_name);
                         else
                             full << llformat("    %s = ", var_name);
 
-                        full << value << "\n";
+                        full << value << '\n';
                     }
                 }
             } // blocks_iter
         }
         else
         {
-            full << (isOutgoing() ? "out" : "in") << "\n";
+            full << (isOutgoing() ? "out" : "in") << '\n';
             for (S32 i = 0; i < mEntry->mDataSize; i++)
                 full << llformat("%02X ", mEntry->mData[i]);
         }
@@ -170,12 +170,12 @@ std::string LLEasyMessageLogEntry::getFull(BOOL beautify, BOOL show_header) cons
     case LLMessageLogEntry::HTTP_RESPONSE:
     {
         if (mEntry->mType == LLMessageLogEntry::HTTP_REQUEST)
-            full << httpMethodAsVerb(mEntry->mMethod) << " " << mEntry->mURL << "\n";
+            full << httpMethodAsVerb(mEntry->mMethod) << " " << mEntry->mURL << '\n';
         if (mEntry->mType == LLMessageLogEntry::HTTP_RESPONSE)
             full << llformat("%u\n", mEntry->mStatusCode);
         if (!mEntry->mContentType.empty())
         {
-            full << mEntry->mContentType << "\n";
+            full << mEntry->mContentType << '\n';
         }
         if (mEntry->mHeaders)
         {
@@ -185,10 +185,10 @@ std::string LLEasyMessageLogEntry::getFull(BOOL beautify, BOOL show_header) cons
             for (; iter != end; ++iter)
             {
                 const auto header = (*iter);
-                full << header.first << ": " << header.second << "\n";
+                full << header.first << ": " << header.second << '\n';
             }
         }
-        full << "\n";
+        full << '\n';
 
         if (mEntry->mDataSize)
         {

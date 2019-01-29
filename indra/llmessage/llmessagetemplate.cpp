@@ -32,8 +32,12 @@
 
 #include "message.h"
 
+U32 sMsgDataAllocSize = 0;
+U32 sMsgdataAllocCount = 0;
+
 void LLMsgVarData::addData(const void *data, S32 size, EMsgVariableType type, S32 data_size)
 {
+	sMsgDataAllocSize += size;
 	mSize = size;
 	mDataSize = data_size;
 	if ( (type != MVT_VARIABLE) && (type != MVT_FIXED) 
@@ -47,6 +51,7 @@ void LLMsgVarData::addData(const void *data, S32 size, EMsgVariableType type, S3
 	}
 	if(size)
 	{
+		++sMsgdataAllocCount;
 		delete[] mData; // Delete it if it already exists
 		mData = new U8[size];
 		htonmemcpy(mData, data, mType, size);
@@ -122,7 +127,7 @@ std::ostream& operator<<(std::ostream& s, LLMessageBlock &msg)
 	for (LLMessageBlock::message_variable_map_t::iterator iter = msg.mMemberVariables.begin();
 		 iter != msg.mMemberVariables.end(); iter++)
 	{
-		LLMessageVariable& ci = *(*iter);
+		LLMessageVariable& ci = *iter->second;
 		s << ci;
 	}
 
@@ -166,7 +171,7 @@ std::ostream& operator<<(std::ostream& s, LLMessageTemplate &msg)
 	for (LLMessageTemplate::message_block_map_t::iterator iter = msg.mMemberBlocks.begin();
 		 iter != msg.mMemberBlocks.end(); iter++)
 	{
-		LLMessageBlock* ci = *iter;
+		LLMessageBlock* ci = iter->second;
 		s << *ci;
 	}
 
