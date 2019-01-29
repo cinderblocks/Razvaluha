@@ -3008,12 +3008,47 @@
           <string>build-darwin-i386</string>
           <key>configurations</key>
           <map>
+            <key>Debug</key>
+            <map>
+              <key>build</key>
+              <map>
+                <key>command</key>
+                <string>xcodebuild</string>
+                <key>filters</key>
+                <array>
+                  <string>setenv</string>
+                </array>
+                <key>options</key>
+                <array>
+                  <string>-configuration Debug</string>
+                  <string>-project Singularity.xcodeproj</string>
+                </array>
+              </map>
+              <key>configure</key>
+              <map>
+                <key>arguments</key>
+                <array>
+                  <string>../indra</string>
+                </array>
+                <key>options</key>
+                <array>
+                  <string>-G</string>
+                  <string>'Xcode'</string>
+                </array>
+              </map>
+              <key>name</key>
+              <string>Debug</string>
+            </map>
             <key>RelWithDebInfo</key>
             <map>
               <key>build</key>
               <map>
                 <key>command</key>
                 <string>xcodebuild</string>
+                <key>filters</key>
+                <array>
+                  <string>setenv</string>
+                </array>
                 <key>options</key>
                 <array>
                   <string>-configuration RelWithDebInfo</string>
@@ -3022,6 +3057,10 @@
               </map>
               <key>configure</key>
               <map>
+                <key>arguments</key>
+                <array>
+                  <string>../indra</string>
+                </array>
                 <key>options</key>
                 <array>
                   <string>-G</string>
@@ -3039,16 +3078,22 @@
               <map>
                 <key>command</key>
                 <string>xcodebuild</string>
+                <key>filters</key>
+                <array>
+                  <string>setenv</string>
+                </array>
                 <key>options</key>
                 <array>
                   <string>-configuration Release</string>
                   <string>-project Singularity.xcodeproj</string>
-                  <string>-DENABLE_SIGNING:BOOL=YES</string>
-                  <string>-DSIGNING_IDENTITY:STRING="Developer ID Application: Linden Research, Inc."</string>
                 </array>
               </map>
               <key>configure</key>
               <map>
+                <key>arguments</key>
+                <array>
+                  <string>../indra</string>
+                </array>
                 <key>options</key>
                 <array>
                   <string>-G</string>
