@@ -390,7 +390,7 @@ LLPointer<LLControlVariable> LLControlGroup::getControl(const std::string& name)
 #ifdef PROF_CTRL_CALLS
 	updateLookupMap(iter);
 #endif //PROF_CTRL_CALLS
-	return iter == mNameTable.end() ? LLPointer<LLControlVariable>() : iter->second->getCOAActive();
+	return iter == mNameTable.end() ? nullptr : iter->second->getCOAActive();
 }
 
 LLPointer<const LLControlVariable> LLControlGroup::getControl(const std::string& name) const
