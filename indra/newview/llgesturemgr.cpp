@@ -31,7 +31,7 @@
 // system
 #include <functional>
 #include <algorithm>
-#include <boost\tokenizer.hpp>
+#include <boost/tokenizer.hpp>
 
 // library
 #include "llanimationstates.h"

@@ -42,7 +42,7 @@
 #include "lldir.h"
 #include "llfile.h"
 #include "llsdserialize.h"
-#include "boost/filesystem.hpp"
+#include <boost/filesystem.hpp>
 #include "llproxy.h"
 #include "llcorehttputil.h"
 #include "llhttpsdhandler.h"

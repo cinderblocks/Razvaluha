@@ -45,11 +45,11 @@ typedef U32 uint32_t;
 #include "llprocess.h"
 #endif
 
-#include "boost/range.hpp"
-#include "boost/function.hpp"
-#include "boost/bind.hpp"
-#include "boost/phoenix/bind/bind_function.hpp"
-#include "boost/phoenix/core/argument.hpp"
+#include <boost/range.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+#include <boost/phoenix/bind/bind_function.hpp>
+#include <boost/phoenix/core/argument.hpp>
 using namespace boost::phoenix;
 
 #include "../llsd.h"

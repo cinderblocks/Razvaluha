@@ -48,7 +48,7 @@
 // * Do not make any assumption as to how those classes or methods work (i.e. don't copy/paste code)
 // * A simulator for a class can be implemented here. Please comment and document thoroughly.
 
-#include "boost/intrusive_ptr.hpp"
+#include <boost/intrusive_ptr.hpp>
 void boost::intrusive_ptr_add_ref(LLCurl::Responder*){}
 void boost::intrusive_ptr_release(LLCurl::Responder* p){}
 const F32 HTTP_REQUEST_EXPIRY_SECS = 0.0f;

@@ -40,7 +40,7 @@
 #include "llstl.h"
 #include "lltexglobalcolor.h"
 #include "llwearabledata.h"
-#include "boost/tokenizer.hpp"
+#include <boost/tokenizer.hpp>
 
 using namespace LLAvatarAppearanceDefines;
 

@@ -22,8 +22,8 @@
 
 #include "rlvinventory.h"
 
-#include "boost/algorithm/string.hpp"
-#include "boost/tokenizer.hpp"
+#include <boost/algorithm/string.hpp>
+#include <boost/tokenizer.hpp>
 
 // ============================================================================
 // Static variable initialization
