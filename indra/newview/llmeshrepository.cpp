@@ -3265,8 +3265,8 @@ void LLMeshPhysicsShapeHandler::processData(LLCore::BufferArray * /* body */, S3
 						   << ", Unknown reason.  Not retrying."
 						   << LL_ENDL;
 		// *TODO:  Mark mesh unavailable on error
-		}
 	}
+}
 
 LLMeshRepository::LLMeshRepository()
 : mMeshMutex(nullptr),
@@ -3776,9 +3776,9 @@ void LLMeshRepository::notifyMeshLoaded(const LLVolumeParams& mesh_params, LLVol
 		}
 
 		//notify waiting LLVOVolume instances that their requested mesh is available
-		for (std::set<LLUUID>::iterator vobj_iter = obj_iter->second.begin(); vobj_iter != obj_iter->second.end(); ++vobj_iter)
+		for (auto& vobj_iter : obj_iter->second)
 		{
-			LLVOVolume* vobj = (LLVOVolume*) gObjectList.findObject(*vobj_iter);
+			LLVOVolume* vobj = (LLVOVolume*) gObjectList.findObject(vobj_iter);
 			if (vobj)
 			{
 				vobj->notifyMeshLoaded();
@@ -3798,9 +3798,9 @@ void LLMeshRepository::notifyMeshUnavailable(const LLVolumeParams& mesh_params, 
 
 	if (obj_iter != mLoadingMeshes[lod].end())
 	{
-		for (std::set<LLUUID>::iterator vobj_iter = obj_iter->second.begin(); vobj_iter != obj_iter->second.end(); ++vobj_iter)
+		for (auto& vobj_iter : obj_iter->second)
 		{
-			LLVOVolume* vobj = (LLVOVolume*) gObjectList.findObject(*vobj_iter);
+			LLVOVolume* vobj = (LLVOVolume*) gObjectList.findObject(vobj_iter);
 			if (vobj)
 			{
 				LLVolume* obj_volume = vobj->getVolume();
@@ -3809,7 +3809,7 @@ void LLMeshRepository::notifyMeshUnavailable(const LLVolumeParams& mesh_params, 
 					obj_volume->getDetail() == detail &&
 					obj_volume->getParams() == mesh_params)
 				{	//should force volume to find most appropriate LOD
-					vobj->setVolume(obj_volume->getParams(), lod);
+						vobj->setVolume(obj_volume->getParams(), lod);
 				}
 			}
 		}
@@ -3958,7 +3958,7 @@ LLSD& LLMeshRepoThread::getMeshHeader(const LLUUID& mesh_id)
 	{
 		LLMutexLock lock(mHeaderMutex);
 		mesh_header_map::iterator iter = mMeshHeader.find(mesh_id);
-		if (iter != mMeshHeader.end())
+		if (iter != mMeshHeader.end() && mMeshHeaderSize[mesh_id] > 0)
 		{
 			return iter->second;
 		}

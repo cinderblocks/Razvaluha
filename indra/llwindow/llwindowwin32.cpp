@@ -675,6 +675,9 @@ LLWindowWin32::LLWindowWin32(LLWindowCallbacks* callbacks,
 	LLCoordScreen windowPos(x,y);
 	LLCoordScreen windowSize(window_rect.right - window_rect.left,
 							 window_rect.bottom - window_rect.top);
+
+	initDPIAwareness();
+
 	if (!switchContext(mFullscreen, windowSize, vsync_mode, &windowPos))
 	{
 		return;
@@ -687,8 +690,6 @@ LLWindowWin32::LLWindowWin32(LLWindowCallbacks* callbacks,
 	// Initialize (boot strap) the Language text input management,
 	// based on the system's (or user's) default settings.
 	allowLanguageTextInput(NULL, FALSE);
-
-	initDPIAwareness();
 }
 
 
@@ -3056,7 +3057,7 @@ BOOL LLWindowWin32::setGamma(const F32 gamma)
 
 		mCurrentGammaRamp[0][i] =
 			mCurrentGammaRamp[1][i] =
-			mCurrentGammaRamp[2][i] = (WORD) value;
+				mCurrentGammaRamp[2][i] = (WORD) value;
 	};
 
 	return SetDeviceGammaRamp ( mhDC, mCurrentGammaRamp );

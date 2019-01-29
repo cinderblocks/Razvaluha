@@ -936,6 +936,23 @@ bool LLPipeline::isRenderDeferredDesired()
 }
 
 //static
+void LLPipeline::updateRenderDeferred()
+{
+	bool deferred = (bool(LLRenderTarget::sUseFBO &&
+					 LLFeatureManager::getInstance()->isFeatureAvailable("RenderDeferred") &&	 
+					 LLPipeline::sRenderBump &&
+					 isRenderDeferredDesired())) &&
+					!gUseWireframe;
+
+	sRenderDeferred = deferred;	
+	if (deferred)
+	{ //must render glow when rendering deferred since post effect pass is needed to present any lighting at all
+		sRenderGlow = true;
+	}
+}
+
+
+//static
 void LLPipeline::refreshCachedSettings()
 {
 	LLRenderTarget::sUseFBO = gSavedSettings.getBOOL("RenderUseFBO") || LLPipeline::sRenderDeferred;
@@ -7374,6 +7391,11 @@ static LLTrace::BlockTimerStatHandle FTM_BIND_DEFERRED("Bind Deferred");
 
 void LLPipeline::bindDeferredShader(LLGLSLShader& shader, LLRenderTarget* diffuse_source, LLRenderTarget* light_source)
 {
+	if (shader.mShaderClass != LLViewerShaderMgr::SHADER_DEFERRED && shader.mShaderClass != LLViewerShaderMgr::SHADER_INTERFACE)
+	{
+		shader.bind();
+		return;
+	}
 	LL_RECORD_BLOCK_TIME(FTM_BIND_DEFERRED);
 
 	static const LLCachedControl<F32> RenderDeferredSunWash("RenderDeferredSunWash",.5f);
@@ -8856,6 +8878,12 @@ void LLPipeline::setupSpotLight(LLGLSLShader& shader, LLDrawable* drawablep)
 
 void LLPipeline::unbindDeferredShader(LLGLSLShader &shader, LLRenderTarget* diffuse_source, LLRenderTarget* light_source)
 {
+	if (shader.mShaderClass != LLViewerShaderMgr::SHADER_DEFERRED && shader.mShaderClass != LLViewerShaderMgr::SHADER_INTERFACE)
+	{
+		shader.unbind();
+		return;
+	}
+
 	diffuse_source = diffuse_source ? diffuse_source : &mDeferredScreen;
 	light_source = light_source ? light_source : &mDeferredLight;
 

@@ -70,7 +70,8 @@ public:
 	/// get the next Url in an input string, starting at a given character offset
 	/// your callback is invoked if the matched Url's label changes in the future
 	bool findUrl(const std::string &text, LLUrlMatch &match,
-				 const LLUrlLabelCallback &cb = &LLUrlRegistryNullCallback);
+				 const LLUrlLabelCallback &cb = &LLUrlRegistryNullCallback,
+				 bool is_content_trusted = false);
 
 	/// a slightly less efficient version of findUrl for wide strings
 	bool findUrl(const LLWString &text, LLUrlMatch &match,
@@ -86,6 +87,11 @@ public:
 
 private:
 	std::vector<LLUrlEntryBase *> mUrlEntry;
+	LLUrlEntryBase*	mUrlEntryTrusted;
+	LLUrlEntryBase*	mUrlEntryIcon;
+	LLUrlEntryBase* mLLUrlEntryInvalidSLURL;
+	LLUrlEntryBase* mUrlEntryHTTPLabel;
+	LLUrlEntryBase* mUrlEntrySLLabel;
 };
 
 #endif

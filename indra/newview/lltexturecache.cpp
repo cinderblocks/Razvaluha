@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file lltexturecache.cpp
  * @brief Object which handles local texture caching
@@ -62,7 +64,7 @@ private:
 	public:
 		ReadResponder(LLTextureCache* cache, handle_t handle) : mCache(cache), mHandle(handle) {}
 		~ReadResponder() {}
-		void completed(S32 bytes)
+		void completed(S32 bytes) override
 		{
 			mCache->lockWorkers();
 			LLTextureCacheWorker* reader = mCache->getReader(mHandle);
@@ -78,7 +80,7 @@ private:
 	public:
 		WriteResponder(LLTextureCache* cache, handle_t handle) : mCache(cache), mHandle(handle) {}
 		~WriteResponder() {}
-		void completed(S32 bytes)
+		void completed(S32 bytes) override
 		{
 			mCache->lockWorkers();
 			LLTextureCacheWorker* writer = mCache->getWriter(mHandle);
@@ -122,7 +124,7 @@ public:
 	virtual bool doRead() = 0;
 	virtual bool doWrite() = 0;
 
-	virtual bool doWork(S32 param); // Called from LLWorkerThread::processRequest()
+    bool doWork(S32 param) override; // Called from LLWorkerThread::processRequest()
 
 	handle_t read() { addWork(0, LLWorkerThread::PRIORITY_HIGH | mPriority); return mRequestHandle; }
 	handle_t write() { addWork(1, LLWorkerThread::PRIORITY_HIGH | mPriority); return mRequestHandle; }
@@ -134,9 +136,9 @@ public:
 	}
 
 private:
-	virtual void startWork(S32 param); // called from addWork() (MAIN THREAD)
-	virtual void finishWork(S32 param, bool completed); // called from finishRequest() (WORK THREAD)
-	virtual void endWork(S32 param, bool aborted); // called from doWork() (MAIN THREAD)
+    void startWork(S32 param) override; // called from addWork() (MAIN THREAD)
+    void finishWork(S32 param, bool completed) override; // called from finishRequest() (WORK THREAD)
+    void endWork(S32 param, bool aborted) override; // called from doWork() (MAIN THREAD)
 
 protected:
 	LLTextureCache* mCache;
@@ -169,8 +171,8 @@ public:
 	{
 	}
 
-	virtual bool doRead();
-	virtual bool doWrite();
+    bool doRead() override;
+    bool doWrite() override;
 	
 private:
 	std::string	mFileName;
@@ -293,8 +295,8 @@ public:
 	{
 	}
 
-	virtual bool doRead();
-	virtual bool doWrite();
+    bool doRead() override;
+    bool doWrite() override;
 
 private:
 	enum e_state
@@ -385,22 +387,35 @@ bool LLTextureCacheRemoteWorker::doRead()
 		}
 		// Allocate read buffer
 		mReadData = (U8*) ll_aligned_malloc_16(mDataSize);
-		S32 bytes_read = LLFile::readEx(local_filename,
-											 mReadData, mOffset, mDataSize);
-		if (bytes_read != mDataSize)
+
+		if (mReadData)
 		{
- 			LL_WARNS() << "Error reading file from local cache: " << local_filename
- 					<< " Bytes: " << mDataSize << " Offset: " << mOffset
- 					<< " / " << mDataSize << LL_ENDL;
-			mDataSize = 0;
-			ll_aligned_free_16(mReadData);
-			mReadData = NULL;
+			S32 bytes_read = LLFile::readEx(local_filename,
+											mReadData,
+											mOffset,
+											mDataSize);
+
+			if (bytes_read != mDataSize)
+			{
+	 			LL_WARNS() << "Error reading file from local cache: " << local_filename
+	 					<< " Bytes: " << mDataSize << " Offset: " << mOffset
+	 					<< " / " << mDataSize << LL_ENDL;
+				mDataSize = 0;
+				ll_aligned_free_16(mReadData);
+				mReadData = NULL;
+			}
+			else
+			{
+				//LL_INFOS() << "texture " << mID.asString() << " found in local_assets" << LL_ENDL;
+				mImageSize = local_size;
+				mImageLocal = TRUE;
+			}
 		}
 		else
 		{
-			//LL_INFOS() << "texture " << mID.asString() << " found in local_assets" << LL_ENDL;
-			mImageSize = local_size;
-			mImageLocal = TRUE;
+ 			LL_WARNS() << "Error allocating memory for cache: " << local_filename
+ 					<< " of size: " << mDataSize << LL_ENDL;
+			mDataSize = 0;
 		}
 		// We're done...
 		done = true;
@@ -475,43 +490,54 @@ bool LLTextureCacheRemoteWorker::doRead()
 			
 			// Reserve the whole data buffer first
 			U8* data = (U8*) ll_aligned_malloc_16(mDataSize);
-
-			// Set the data file pointers taking the read offset into account. 2 cases:
-			if (mOffset < TEXTURE_CACHE_ENTRY_SIZE)
+			if (data)
 			{
-				// Offset within the header record. That means we read something from the header cache.
-				// Note: most common case is (mOffset = 0), so this is the "normal" code path.
-				data_offset = TEXTURE_CACHE_ENTRY_SIZE - mOffset;	// i.e. TEXTURE_CACHE_ENTRY_SIZE if mOffset nul (common case)
-				file_offset = 0;
-				file_size = mDataSize - data_offset;
-				// Copy the raw data we've been holding from the header cache into the new sized buffer
-				llassert_always(mReadData);
-				memcpy(data, mReadData, data_offset);
-				ll_aligned_free_16(mReadData);
-				mReadData = NULL;
+				// Set the data file pointers taking the read offset into account. 2 cases:
+				if (mOffset < TEXTURE_CACHE_ENTRY_SIZE)
+				{
+					// Offset within the header record. That means we read something from the header cache.
+					// Note: most common case is (mOffset = 0), so this is the "normal" code path.
+					data_offset = TEXTURE_CACHE_ENTRY_SIZE - mOffset;	// i.e. TEXTURE_CACHE_ENTRY_SIZE if mOffset nul (common case)
+					file_offset = 0;
+					file_size = mDataSize - data_offset;
+					// Copy the raw data we've been holding from the header cache into the new sized buffer
+					llassert_always(mReadData);
+					memcpy(data, mReadData, data_offset);
+					ll_aligned_free_16(mReadData);
+					mReadData = NULL;
+				}
+				else
+				{
+					// Offset bigger than the header record. That means we haven't read anything yet.
+					data_offset = 0;
+					file_offset = mOffset - TEXTURE_CACHE_ENTRY_SIZE;
+					file_size = mDataSize;
+					// No data from header cache to copy in that case, we skipped it all
+				}
+
+				// Now use that buffer as the object read buffer
+				llassert_always(mReadData == NULL);
+				mReadData = data;
+
+				// Read the data at last
+				S32 bytes_read = LLFile::readEx(filename,
+											 mReadData + data_offset,
+											 file_offset, file_size);
+				if (bytes_read != file_size)
+				{
+					LL_WARNS() << "LLTextureCacheWorker: "  << mID
+							<< " incorrect number of bytes read from body: " << bytes_read
+							<< " / " << file_size << LL_ENDL;
+					ll_aligned_free_16(mReadData);
+					mReadData = NULL;
+					mDataSize = -1; // failed
+					done = true;
+				}
 			}
 			else
 			{
-				// Offset bigger than the header record. That means we haven't read anything yet.
-				data_offset = 0;
-				file_offset = mOffset - TEXTURE_CACHE_ENTRY_SIZE;
-				file_size = mDataSize;
-				// No data from header cache to copy in that case, we skipped it all
-			}
-
-			// Now use that buffer as the object read buffer
-			llassert_always(mReadData == NULL);
-			mReadData = data;
-
-			// Read the data at last
-			S32 bytes_read = LLFile::readEx(filename,
-											 mReadData + data_offset,
-											 file_offset, file_size);
-			if (bytes_read != file_size)
-			{
 				LL_WARNS() << "LLTextureCacheWorker: "  << mID
-						<< " incorrect number of bytes read from body: " << bytes_read
-						<< " / " << file_size << LL_ENDL;
+					<< " failed to allocate memory for reading: " << mDataSize << LL_ENDL;
 				ll_aligned_free_16(mReadData);
 				mReadData = NULL;
 				mDataSize = -1; // failed
@@ -548,7 +574,17 @@ bool LLTextureCacheRemoteWorker::doWrite()
 		llassert_always(mOffset == 0);	// We currently do not support write offsets
 		llassert_always(mDataSize > 0); // Things will go badly wrong if mDataSize is nul or negative...
 		llassert_always(mImageSize >= mDataSize);
-		mState = CACHE;
+		if ((mRawDiscardLevel < 0)
+			|| (mRawImage->isBufferInvalid())) // decode failed or malfunctioned, don't write
+		{
+			LL_WARNS() << "INIT state check failed for image: " << mID << " Size: " << mImageSize << " DataSize: " << mDataSize << " Discard:" << mRawDiscardLevel << LL_ENDL;
+			mDataSize = -1; // failed
+			done = true;
+		}
+		else
+		{
+			mState = CACHE;
+		}
 	}
 	
 	// No LOCAL state for write(): because it doesn't make much sense to cache a local file...
@@ -569,7 +605,12 @@ bool LLTextureCacheRemoteWorker::doWrite()
 				// (almost always) write to the fast cache.
 				if (mRawImage->getDataSize())
 				{
-				llassert_always(mCache->writeToFastCache(idx, mRawImage, mRawDiscardLevel));
+					if (!mCache->writeToFastCache(idx, mRawImage, mRawDiscardLevel))
+					{
+						LL_WARNS() << "writeToFastCache failed" << LL_ENDL;
+						mDataSize = -1; // failed
+						done = true;
+					}
 				}
 			}
 		}
@@ -578,97 +619,117 @@ bool LLTextureCacheRemoteWorker::doWrite()
 			alreadyCached = mCache->updateEntry(idx, entry, mImageSize, mDataSize); // update the existing entry.
 		}
 
-		if (idx < 0)
+		if (!done)
 		{
-			LL_WARNS() << "LLTextureCacheWorker: "  << mID
-					<< " Unable to create header entry for writing!" << LL_ENDL;
-			mDataSize = -1; // failed
-			done = true;
-		}
-		else
-		{
-			if (alreadyCached && (mDataSize <= TEXTURE_CACHE_ENTRY_SIZE))
+			if (idx < 0)
 			{
-				// Small texture already cached case: we're done with writing
+				LL_WARNS() << "LLTextureCacheWorker: "  << mID
+						<< " Unable to create header entry for writing!" << LL_ENDL;
+				mDataSize = -1; // failed
 				done = true;
 			}
 			else
 			{
-				// If the texture has already been cached, we don't resave the header and go directly to the body part
-				mState = alreadyCached ? BODY : HEADER;
+				if (alreadyCached && (mDataSize <= TEXTURE_CACHE_ENTRY_SIZE))
+				{
+					// Small texture already cached case: we're done with writing
+					done = true;
+				}
+				else
+				{
+					// If the texture has already been cached, we don't resave the header and go directly to the body part
+					mState = alreadyCached ? BODY : HEADER;
+				}
 			}
 		}
 	}
 
+
 	// Third stage / state : write the header record in the header file (texture.cache)
 	if (!done && (mState == HEADER))
 	{
-		llassert_always(idx >= 0);	// we need an entry here or storing the header makes no sense
-		S32 offset = idx * TEXTURE_CACHE_ENTRY_SIZE;	// skip to the correct spot in the header file
-		S32 size = TEXTURE_CACHE_ENTRY_SIZE;			// record size is fixed for the header
-		S32 bytes_written;
-
-		if (mDataSize < TEXTURE_CACHE_ENTRY_SIZE)
+		if (idx < 0) // we need an entry here or storing the header makes no sense
 		{
-			// We need to write a full record in the header cache so, if the amount of data is smaller
-			// than a record, we need to transfer the data to a buffer padded with 0 and write that
-			U8* padBuffer = (U8*) ll_aligned_malloc_16(TEXTURE_CACHE_ENTRY_SIZE);
-			memset(padBuffer, 0, TEXTURE_CACHE_ENTRY_SIZE);		// Init with zeros
-			memcpy(padBuffer, mWriteData, mDataSize);			// Copy the write buffer
-			bytes_written = LLFile::writeEx(mCache->mHeaderDataFileName, padBuffer, offset, size);
-			ll_aligned_free_16(padBuffer);
-		}
-		else
-		{
-			// Write the header record (== first TEXTURE_CACHE_ENTRY_SIZE bytes of the raw file) in the header file
-			bytes_written = LLFile::writeEx(mCache->mHeaderDataFileName, mWriteData, offset, size);
-		}
-
-		if (bytes_written <= 0)
-		{
-			LL_WARNS() << "LLTextureCacheWorker: "  << mID
-					<< " Unable to write header entry!" << LL_ENDL;
+			LL_WARNS() << "index check failed" << LL_ENDL;
 			mDataSize = -1; // failed
 			done = true;
 		}
-
-		// If we wrote everything (may be more with padding) in the header cache, 
-		// we're done so we don't have a body to store
-		if (mDataSize <= bytes_written)
-		{
-			done = true;
-		}
 		else
 		{
-			mState = BODY;
+			S32 offset = idx * TEXTURE_CACHE_ENTRY_SIZE;	// skip to the correct spot in the header file
+			S32 size = TEXTURE_CACHE_ENTRY_SIZE;			// record size is fixed for the header
+			S32 bytes_written;
+
+			if (mDataSize < TEXTURE_CACHE_ENTRY_SIZE)
+			{
+				// We need to write a full record in the header cache so, if the amount of data is smaller
+				// than a record, we need to transfer the data to a buffer padded with 0 and write that
+				U8* padBuffer = (U8*) ll_aligned_malloc_16(TEXTURE_CACHE_ENTRY_SIZE);
+				memset(padBuffer, 0, TEXTURE_CACHE_ENTRY_SIZE);		// Init with zeros
+				memcpy(padBuffer, mWriteData, mDataSize);			// Copy the write buffer
+				bytes_written = LLFile::writeEx(mCache->mHeaderDataFileName, padBuffer, offset, size);
+				ll_aligned_free_16(padBuffer);
+			}
+			else
+			{
+				// Write the header record (== first TEXTURE_CACHE_ENTRY_SIZE bytes of the raw file) in the header file
+				bytes_written = LLFile::writeEx(mCache->mHeaderDataFileName, mWriteData, offset, size);
+			}
+
+			if (bytes_written <= 0)
+			{
+				LL_WARNS() << "LLTextureCacheWorker: "  << mID
+						<< " Unable to write header entry!" << LL_ENDL;
+				mDataSize = -1; // failed
+				done = true;
+			}
+
+			// If we wrote everything (may be more with padding) in the header cache, 
+			// we're done so we don't have a body to store
+			if (mDataSize <= bytes_written)
+			{
+				done = true;
+			}
+			else
+			{
+				mState = BODY;
+			}
 		}
 	}
 	
 	// Fourth stage / state : write the body file, i.e. the rest of the texture in a "UUID" file name
 	if (!done && (mState == BODY))
 	{
-		llassert(mDataSize > TEXTURE_CACHE_ENTRY_SIZE);	// wouldn't make sense to be here otherwise...
-		S32 file_size = mDataSize - TEXTURE_CACHE_ENTRY_SIZE;
-		
+		if (mDataSize <= TEXTURE_CACHE_ENTRY_SIZE) // wouldn't make sense to be here otherwise...
 		{
-			// build the cache file name from the UUID
-			std::string filename = mCache->getTextureFileName(mID);			
-// 			LL_INFOS() << "Writing Body: " << filename << " Bytes: " << file_offset+file_size << LL_ENDL;
-			S32 bytes_written = LLFile::writeEx(	filename, 
+			LL_WARNS() << "mDataSize check failed" << LL_ENDL;
+			mDataSize = -1; // failed
+			done = true;
+		}
+		else
+		{
+			S32 file_size = mDataSize - TEXTURE_CACHE_ENTRY_SIZE;
+		
+			{
+				// build the cache file name from the UUID
+				std::string filename = mCache->getTextureFileName(mID);			
+				// 			LL_INFOS() << "Writing Body: " << filename << " Bytes: " << file_offset+file_size << LL_ENDL;
+				S32 bytes_written = LLFile::writeEx(filename, 
 													mWriteData + TEXTURE_CACHE_ENTRY_SIZE,
 													0, file_size);
-			if (bytes_written <= 0)
-			{
-				LL_WARNS() << "LLTextureCacheWorker: "  << mID
-						<< " incorrect number of bytes written to body: " << bytes_written
-						<< " / " << file_size << LL_ENDL;
-				mDataSize = -1; // failed
-				done = true;
+				if (bytes_written <= 0)
+				{
+					LL_WARNS() << "LLTextureCacheWorker: "  << mID
+							<< " incorrect number of bytes written to body: " << bytes_written
+							<< " / " << file_size << LL_ENDL;
+					mDataSize = -1; // failed
+					done = true;
+				}
 			}
-		}
 		
-		// Nothing else to do at that point...
-		done = true;
+			// Nothing else to do at that point...
+			done = true;
+		}
 	}
 	mRawImage = NULL;
 
@@ -898,7 +959,7 @@ BOOL LLTextureCache::isInLocal(const LLUUID& id)
 //////////////////////////////////////////////////////////////////////////////
 
 //static
-F32 LLTextureCache::sHeaderCacheVersion = 1.7f;
+F32 LLTextureCache::sHeaderCacheVersion = 1.71f;
 U32 LLTextureCache::sCacheMaxEntries = 1024 * 1024; //~1 million textures.
 S64 LLTextureCache::sCacheMaxTexturesSize = 0; // no limit
 const char* entries_filename = "texture.entries";
@@ -910,8 +971,6 @@ const char* fast_cache_filename = "FastCache.cache";
 
 void LLTextureCache::setDirNames(ELLPath location)
 {
-	std::string delem = gDirUtilp->getDirDelimiter();
-
 	mHeaderEntriesFileName = gDirUtilp->getExpandedFilename(location, textures_dirname, entries_filename);
 	mHeaderDataFileName = gDirUtilp->getExpandedFilename(location, textures_dirname, cache_filename);
 	mTexturesDirName = gDirUtilp->getExpandedFilename(location, textures_dirname);

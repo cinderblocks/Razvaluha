@@ -191,7 +191,7 @@ namespace
 		{ return LLURI::escape(s, unreserved() + ":@!$'()*+,="); }	// sub_delims - "&;" + ":@"
 }
 
-//static
+// static
 std::string LLURI::escape(const std::string& str)
 {
 	static std::string default_allowed = unreserved();

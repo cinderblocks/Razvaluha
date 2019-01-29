@@ -167,7 +167,6 @@ struct MenuFloaterDict : public LLSingleton<MenuFloaterDict>
 		registerFloater("about", boost::bind(&LLFloaterAbout::show,nullptr));
 		registerFloater("always run", boost::bind(toggle_always_run), boost::bind(&LLAgent::getAlwaysRun, &gAgent));
 		registerFloater("anims_explorer", boost::bind(LLFloaterExploreAnimations::show));
-		registerFloater("ao", boost::bind(LLFloaterAO::show, nullptr));
 		registerFloater("appearance", boost::bind(LLFloaterCustomize::show));
 		registerFloater("asset_blacklist", boost::bind(LLFloaterBlacklist::toggle), boost::bind(LLFloaterBlacklist::visible));
 		registerFloater("build", boost::bind(toggle_build));
@@ -216,6 +215,7 @@ struct MenuFloaterDict : public LLSingleton<MenuFloaterDict>
 		registerFloater<LLFloaterLand>					("about land");
 		registerFloater<LLFloaterRegionInfo>			("about region");
 		registerFloater<LLFloaterActiveSpeakers>		("active speakers");
+		registerFloater<LLFloaterAO>					("ao");
 		registerFloater<JCFloaterAreaSearch>			("areasearch");
 		registerFloater<LLFloaterAutoReplaceSettings>	("autoreplace");
 		registerFloater<LLFloaterAvatar>				("avatar");

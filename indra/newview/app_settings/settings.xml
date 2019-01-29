@@ -439,6 +439,8 @@
     <string>Boolean</string>
     <key>Value</key>
     <integer>0</integer>
+    <key>IsCOA</key>
+    <integer>1</integer>
   </map>
   <key>AOAdvanced</key>
   <map>
@@ -460,6 +462,21 @@
     <key>Type</key>
     <string>Boolean</string>
     <key>Value</key>
+    <integer>1</integer>
+    <key>IsCOA</key>
+    <integer>1</integer>
+  </map>
+  <key>AOSwimEnabled</key>
+  <map>
+    <key>Comment</key>
+    <string>Overrides fly animations with swims when underwater.</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>1</integer>
+    <key>IsCOA</key>
     <integer>1</integer>
   </map>
   <key>AONoStandsInMouselook</key>
@@ -1144,17 +1161,6 @@ Found in Advanced->Rendering->Info Displays</string>
       <key>Value</key>
       <integer>0</integer>
     </map>
-    <key>FloaterUnfocusedBackgroundOpaque</key>
-    <map>
-      <key>Comment</key>
-      <string>Disables floaters going transparent when not in focus, may conflict with some skins, though.</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>Boolean</string>
-      <key>Value</key>
-      <integer>0</integer>
-    </map>
     <key>FSSynchronizeTextureMaps</key>
     <map>
       <key>Comment</key>
@@ -1257,6 +1263,17 @@ Found in Advanced->Rendering->Info Displays</string>
       <string>Boolean</string>
       <key>Value</key>
       <integer>1</integer>
+    </map>
+    <key>ShowMutedText</key>
+    <map>
+      <key>Comment</key>
+      <string>Whether or not to show chat from muted people in local chat.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
     </map>
     <key>OtherChatsTornOff</key>
     <map>
@@ -2544,6 +2561,17 @@ This should be as low as possible, but too low may break functionality</string>
       <string>F32</string>
       <key>Value</key>
       <real>0.1</real>
+    </map>
+    <key>ActiveFloaterTransparency</key>
+    <map>
+      <key>Comment</key>
+      <string>Transparency of active floaters (floaters that have focus)</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>1</real>
     </map>
     <key>AdvanceSnapshot</key>
     <map>
@@ -7748,6 +7776,28 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Value</key>
       <integer>1</integer>
     </map>
+    <key>RadarAlertFlood</key>
+    <map>
+      <key>Comment</key>
+      <string>Show the flood of people arriving and (if RadarAlertFloodLeaving) leaving when you login and when you open/close the Radar with RadarKeepOpen off.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
+    <key>RadarAlertFloodLeaving</key>
+    <map>
+      <key>Comment</key>
+      <string>When activated along with RadarAlertFlood shows the flood of people leaving when you close the Radar with RadarKeepOpen off.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>RadarAlertShowDist</key>
     <map>
       <key>Comment</key>
@@ -9149,6 +9199,50 @@ This should be as low as possible, but too low may break functionality</string>
         <integer>128</integer>
       </array>
     </map>
+  <key>ImporterDebug</key>
+  <map>
+    <key>Comment</key>
+    <string>Enable debug output to more precisely identify sources of import errors. Warning: the output can slow down import on many machines.</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>0</integer>
+  </map>
+  <key>ImporterLegacyMatching</key>
+  <map>
+    <key>Comment</key>
+    <string>Enable index based model matching.</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>0</integer>
+  </map>
+  <key>ImporterModelLimit</key>
+  <map>
+    <key>Comment</key>
+    <string>Limits amount of importer generated models for dae files</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>U32</string>
+    <key>Value</key>
+    <integer>768</integer>
+  </map>
+  <key>ImporterPreprocessDAE</key>
+  <map>
+    <key>Comment</key>
+    <string>Enable preprocessing for DAE files to fix some ColladaDOM related problems (like support for space characters within names and ids).</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>1</integer>
+  </map>
     <key>IMInChatConsole</key>
     <map>
       <key>Comment</key>
@@ -9203,6 +9297,17 @@ This should be as low as possible, but too low may break functionality</string>
       <string>Boolean</string>
       <key>Value</key>
       <integer>1</integer>
+    </map>
+    <key>InactiveFloaterTransparency</key>
+    <map>
+      <key>Comment</key>
+      <string>Transparency of inactive floaters (floaters that have no focus)</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>1</real>
     </map>
     <key>InBandwidth</key>
     <map>
@@ -13747,7 +13852,7 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Type</key>
       <string>Boolean</string>
       <key>Value</key>
-      <integer>1</integer>
+      <integer>0</integer>
     </map>
     <key>RenderHideGroupTitle</key>
     <map>

@@ -1627,7 +1627,7 @@ void LLSelectMgr::selectionSetImage(const LLUUID& imageid)
 		    {
 		        return false;
 		    }
-		    if (mItem)
+			if (mItem)
 			{
 				if (te == -1) // all faces
 				{
@@ -1657,7 +1657,9 @@ void LLSelectMgr::selectionSetImage(const LLUUID& imageid)
 			}
 			return true;
 		}
-	} setfunc(item, imageid);
+	};
+
+	f setfunc(item, imageid);
 	getSelection()->applyToTEs(&setfunc);
 
 	struct g : public LLSelectedObjectFunctor
@@ -1672,7 +1674,7 @@ void LLSelectMgr::selectionSetImage(const LLUUID& imageid)
 				object->sendTEUpdate();
 				if (!gSavedSettings.getBOOL("DisablePointAtAndBeam"))
 				{
-				// 1 particle effect per object
+					// 1 particle effect per object	
 					LLHUDEffectSpiral *effectp = (LLHUDEffectSpiral *)LLHUDManager::getInstance()->createViewerEffect(LLHUDObject::LL_HUD_EFFECT_BEAM, TRUE);
 					effectp->setSourceObject(gAgentAvatarp);
 					effectp->setTargetObject(object);
@@ -6449,13 +6451,13 @@ void LLSelectNode::renderOneWireframe(const LLColor4& color)
 	LLGLEnable cull_face(GL_CULL_FACE);
 	gGL.setSceneBlendType(LLRender::BT_ALPHA);
 
-	gGL.diffuseColor4f(color.mV[VRED]*2, color.mV[VGREEN]*2, color.mV[VBLUE]*2, LLSelectMgr::sHighlightAlpha*2);
-	
-	LLGLEnable offset(GL_POLYGON_OFFSET_LINE);
-	glPolygonOffset(3.f, 3.f);
-	glLineWidth(3.f);
-	pushWireframe(drawable);
-	glLineWidth(1.f);
+		gGL.setSceneBlendType(LLRender::BT_ALPHA);
+
+		gGL.diffuseColor4f(color.mV[VRED]*2, color.mV[VGREEN]*2, color.mV[VBLUE]*2, LLSelectMgr::sHighlightAlpha*2);
+		glPolygonOffset(3.f, 3.f);
+		glLineWidth(3.f);
+		pushWireframe(drawable);
+		glLineWidth(1.f);
 	}
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -6566,10 +6568,11 @@ void LLSelectNode::renderOneSilhouette(const LLColor4 &color)
 			gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT);
 			gGL.begin(LLRender::LINES);
 			{
+				gGL.color4f(color.mV[VRED], color.mV[VGREEN], color.mV[VBLUE], 0.4f);
+
 				for(S32 i = 0; i < (S32)mSilhouetteVertices.size(); i += 2)
 				{
 					u_coord += u_divisor * LLSelectMgr::sHighlightUScale;
-					gGL.color4f(color.mV[VRED], color.mV[VGREEN], color.mV[VBLUE], 0.4f);
 					gGL.texCoord2f( u_coord, v_coord );
 					gGL.vertex3fv( mSilhouetteVertices[i].mV);
 					u_coord += u_divisor * LLSelectMgr::sHighlightUScale;

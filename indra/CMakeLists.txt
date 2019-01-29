@@ -76,5 +76,8 @@ elseif (WINDOWS)
 endif (LINUX)
 
 add_subdirectory(${VIEWER_PREFIX}newview)
-add_dependencies(viewer singularity-bin)
+add_dependencies(viewer ${VIEWER_BRANDING_ID}-bin)
 
+if (WINDOWS)
+  set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${VIEWER_BRANDING_ID}-bin)
+endif (WINDOWS)

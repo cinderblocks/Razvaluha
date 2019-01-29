@@ -69,7 +69,7 @@ const S32& radar_namesystem()
 
 namespace
 {
-	void chat_avatar_status(const std::string& name, const LLUUID& key, ERadarStatType type, bool entering, const F32& dist)
+	void chat_avatar_status(const std::string& name, const LLUUID& key, ERadarStatType type, bool entering, const F32& dist, bool flood = false)
 	{
 		static LLCachedControl<bool> radar_chat_alerts(gSavedSettings, "RadarChatAlerts");
 		if (!radar_chat_alerts) return;
@@ -81,6 +81,8 @@ namespace
 		}
 		// </Alchemy>
 		if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMETAGS)) return; // RLVa:LF Don't announce people are around when blind, that cheats the system.
+		static LLCachedControl<bool> radar_alert_flood(gSavedSettings, "RadarAlertFlood");
+		if (flood && !radar_alert_flood) return;
 		static LLCachedControl<bool> radar_alert_sim(gSavedSettings, "RadarAlertSim");
 		static LLCachedControl<bool> radar_alert_draw(gSavedSettings, "RadarAlertDraw");
 		static LLCachedControl<bool> radar_alert_shout_range(gSavedSettings, "RadarAlertShoutRange");
@@ -99,7 +101,7 @@ namespace
 			default:					llassert(type);																											break;
 		}
 		args["[NAME]"] = name;
-		args["[ACTION]"] = LLTrans::getString(entering ? "has_entered" : "has_left");
+		args["[ACTION]"] = LLTrans::getString((entering ? "has_entered" : "has_left") + (flood ? "_flood" : LLStringUtil::null));
 		if (args.find("[RANGE]") != args.end())
 			chat.mText = LLTrans::getString("radar_alert_template", args);
 		else if (chat.mText.empty()) return;
@@ -143,7 +145,12 @@ LLAvatarListEntry::LLAvatarListEntry(const LLUUID& id, const std::string& name, 
 
 LLAvatarListEntry::~LLAvatarListEntry()
 {
-	setPosition(mPosition, F32_MIN, false); // Dead and gone
+	static LLCachedControl<bool> radar_alert_flood_leaving(gSavedSettings, "RadarAlertFloodLeaving");
+	bool cleanup = LLFloaterAvatarList::isCleanup();
+	if (radar_alert_flood_leaving || !cleanup)
+	{
+		setPosition(mPosition, F32_MIN, false, cleanup); // Dead and gone
+	}
 	LLAvatarPropertiesProcessor::instance().removeObserver(mID, this);
 }
 
@@ -184,17 +191,17 @@ void LLAvatarListEntry::processProperties(void* data, EAvatarProcessorType type)
 	}
 }
 
-void LLAvatarListEntry::setPosition(const LLVector3d& position, const F32& dist, bool drawn)
+void LLAvatarListEntry::setPosition(const LLVector3d& position, const F32& dist, bool drawn, bool flood)
 {
 	mPosition = position;
 	bool here(dist != F32_MIN); // F32_MIN only if dead
 	bool this_sim(here && (gAgent.getRegion()->pointInRegionGlobal(position) || !(LLWorld::getInstance()->positionRegionValidGlobal(position))));
-	if (this_sim != mStats[STAT_TYPE_SIM])			chat_avatar_status(mName, mID, STAT_TYPE_SIM, mStats[STAT_TYPE_SIM] = this_sim, dist);
-	if (drawn != mStats[STAT_TYPE_DRAW])			chat_avatar_status(mName, mID, STAT_TYPE_DRAW, mStats[STAT_TYPE_DRAW] = drawn, dist);
+	if (this_sim != mStats[STAT_TYPE_SIM])			chat_avatar_status(mName, mID, STAT_TYPE_SIM, mStats[STAT_TYPE_SIM] = this_sim, dist, flood);
+	if (drawn != mStats[STAT_TYPE_DRAW])			chat_avatar_status(mName, mID, STAT_TYPE_DRAW, mStats[STAT_TYPE_DRAW] = drawn, dist, flood);
 	bool shoutrange(here && dist < LFSimFeatureHandler::getInstance()->shoutRange());
-	if (shoutrange != mStats[STAT_TYPE_SHOUTRANGE])	chat_avatar_status(mName, mID, STAT_TYPE_SHOUTRANGE, mStats[STAT_TYPE_SHOUTRANGE] = shoutrange, dist);
+	if (shoutrange != mStats[STAT_TYPE_SHOUTRANGE])	chat_avatar_status(mName, mID, STAT_TYPE_SHOUTRANGE, mStats[STAT_TYPE_SHOUTRANGE] = shoutrange, dist, flood);
 	bool chatrange(here && dist < LFSimFeatureHandler::getInstance()->sayRange());
-	if (chatrange != mStats[STAT_TYPE_CHATRANGE])	chat_avatar_status(mName, mID, STAT_TYPE_CHATRANGE, mStats[STAT_TYPE_CHATRANGE] = chatrange, dist);
+	if (chatrange != mStats[STAT_TYPE_CHATRANGE])	chat_avatar_status(mName, mID, STAT_TYPE_CHATRANGE, mStats[STAT_TYPE_CHATRANGE] = chatrange, dist, flood);
 }
 
 void LLAvatarListEntry::resetName(const bool& hide_tags, const bool& anon_names, const std::string& hidden)
@@ -239,6 +246,8 @@ LLFloaterAvatarList::LLFloaterAvatarList() :  LLFloater(std::string("radar")),
 
 LLFloaterAvatarList::~LLFloaterAvatarList()
 {
+	mCleanup = true;
+	mAvatars.clear();
 }
 
 //static
@@ -314,7 +323,7 @@ namespace
 	{
 		bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 		{
-			LLFloaterAvatarList::instance().onClickFocus();
+			LLFloaterAvatarList::setFocusAvatar(get_focused_list_id_selected());
 			return true;
 		}
 	};
@@ -412,7 +421,7 @@ BOOL LLFloaterAvatarList::postBuild()
 	mAvatarList->setSortChangedCallback(boost::bind(&LLFloaterAvatarList::onAvatarSortingChanged,this));
 	for (LLViewerRegion* region : LLWorld::instance().getRegionList())
 	{
-		updateAvatarList(region);
+		updateAvatarList(region, true);
 	}
 
 	assessColumns();
@@ -514,7 +523,7 @@ const F32& radar_range_radius()
 	return radius;
 }
 
-void LLFloaterAvatarList::updateAvatarList(const LLViewerRegion* region)
+void LLFloaterAvatarList::updateAvatarList(const LLViewerRegion* region, bool first)
 {
 	// Check whether updates are enabled
 	if (!mUpdate)
@@ -560,7 +569,7 @@ void LLFloaterAvatarList::updateAvatarList(const LLViewerRegion* region)
 			}
 
 			// Announce position
-			entry->setPosition(position, (position - mypos).magVec(), avatarp);
+			entry->setPosition(position, (position - mypos).magVec(), avatarp, first);
 
 			// Mark as typing if they are typing
 			if (avatarp && avatarp->isTyping()) entry->setActivity(LLAvatarListEntry::ACTIVITY_TYPING);
@@ -1148,9 +1157,16 @@ void LLFloaterAvatarList::removeFocusFromAll()
 	}
 }
 
+// static
 void LLFloaterAvatarList::setFocusAvatar(const LLUUID& id)
 {
 	if (!gAgentCamera.lookAtObject(id, false) && !lookAtAvatar(id)) return;
+	if (instanceExists())
+		instance().setFocusAvatarInternal(id);
+}
+
+void LLFloaterAvatarList::setFocusAvatarInternal(const LLUUID& id)
+{
 	av_list_t::iterator iter = std::find_if(mAvatars.begin(),mAvatars.end(),LLAvatarListEntry::uuidMatch(id));
 	if (iter == mAvatars.end()) return;
 	removeFocusFromAll();

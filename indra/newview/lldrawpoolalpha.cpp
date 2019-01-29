@@ -460,7 +460,7 @@ void LLDrawPoolAlpha::renderAlpha(U32 mask, S32 pass)
 						{
 							if(current_shader)
 								gPipeline.unbindDeferredShader(*current_shader);
-							target_shader->bind();
+							gPipeline.bindDeferredShader(*target_shader);
 						}
 					}
 					current_shader = target_shader;

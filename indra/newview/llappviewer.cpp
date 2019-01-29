@@ -883,8 +883,11 @@ bool LLAppViewer::init()
 	LLUrlAction::setOpenURLInternalCallback(boost::bind(&LLWeb::loadURLInternal, _1, LLStringUtil::null, LLStringUtil::null));
 	LLUrlAction::setOpenURLExternalCallback(boost::bind(&LLWeb::loadURLExternal, _1, true, LLStringUtil::null));
 	LLUrlAction::setExecuteSLURLCallback(&LLURLDispatcher::dispatchFromTextEditor);
-	
+
 	LL_INFOS("InitInfo") << "UI initialization is done." << LL_ENDL ;
+
+	// Load translations for tooltips
+	LLFloater::initClass();
 
 	/////////////////////////////////////////////////
 
@@ -998,8 +1001,10 @@ bool LLAppViewer::init()
 	{
 		// can't use an alert here since we're exiting and
 		// all hell breaks lose.
+		std::string msg = LLNotificationTemplates::instance().getGlobalString("UnsupportedCPUSSE2");
+		LLStringUtil::format(msg,LLTrans::getDefaultArgs());
 		OSMessageBox(
-			LLNotificationTemplates::instance().getGlobalString("UnsupportedCPUSSE2"),
+			msg,
 			LLStringUtil::null,
 			OSMB_OK);
 		return false;

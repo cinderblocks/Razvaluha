@@ -3985,7 +3985,10 @@ void LLVOAvatar::idleUpdateBelowWater()
 	F32 avatar_height = (F32)(getPositionGlobal().mdV[VZ]);
 	F32 water_height = getRegion()->getWaterHeight();
 
+	BOOL old_below = mBelowWater;
 	mBelowWater =  avatar_height < water_height;
+	if (old_below != mBelowWater)
+		LLFloaterAO::toggleSwim(mBelowWater);
 }
 
 void LLVOAvatar::slamPosition()
@@ -5789,7 +5792,7 @@ void LLVOAvatar::processAnimationStateChanges()
 			{
 				if (AOEnabled && isSelf()) // AO is only for ME
 				{
-					LLFloaterAO::startMotion(anim_it->first, 0,FALSE); // AO overrides the anim if needed
+					LLFloaterAO::startMotion(anim_it->first, false); // AO overrides the anim if needed
 				}
 
 				mPlayingAnimations[anim_it->first] = anim_it->second;

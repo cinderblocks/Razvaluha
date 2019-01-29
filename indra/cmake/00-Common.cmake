@@ -123,7 +123,7 @@ if (WINDOWS)
     add_compile_options(/arch:AVX2)
   elseif (WORD_SIZE EQUAL 32)
     add_compile_options(/arch:SSE2)
-  endif (WORD_SIZE EQUAL 32)
+  endif (USE_AVX)
 
   if (NOT DISABLE_FATAL_WARNINGS)
     add_definitions(/WX)
@@ -158,7 +158,7 @@ if (LINUX)
   )
 
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14")
 
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2")
 

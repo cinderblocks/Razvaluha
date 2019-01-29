@@ -299,7 +299,7 @@ public:
 	
 	static bool isValidIndex(const string_type& string, size_type i)
 	{
-		return !string.empty() && (0 <= i) && (i <= string.size());
+		return !string.empty() && (i <= string.size());
 	}
 
 	static bool contains(const string_type& string, T c, size_type i=0)
@@ -1311,6 +1311,7 @@ void LLStringUtilBase<T>::removeCRLF(string_type& string)
 {
 	if (string.empty())
 		return;
+
 	const T CR = 13;
 
 	size_type cr_count = 0;

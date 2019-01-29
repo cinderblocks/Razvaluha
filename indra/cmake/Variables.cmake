@@ -207,6 +207,8 @@ set(VIEWER_CHANNEL "Singularity Test" CACHE STRING "Viewer Channel Name")
 string(REPLACE " " "" VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL})
 set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_NOSPACE} CACHE STRING "Prefix used for resulting artifacts.")
 
+set(VIEWER_BRANDING_ID "singularity" CACHE STRING "Viewer branding id")
+
 set(VERSION_BUILD "0" CACHE STRING "Revision number passed in from the outside")
 set(STANDALONE OFF CACHE BOOL "Use libraries from your system rather than prebuilt libraries.")
 

@@ -34,7 +34,6 @@
 #include "llextendedstatus.h"
 
 class LLAvatarName;
-class LLMessageSystem;
 class LLViewerTexture;
 class LLInventoryItem;
 class LLViewerObject;
@@ -100,9 +99,6 @@ public:
 	static void uploadDoneCallback(const LLUUID &uuid, void* user_data, S32 result, LLExtStat ext_status);
 	static void addDescription(const std::string& description, LLMeanCollisionData *mcd = NULL);
 	static void setDescription(const std::string& description, LLMeanCollisionData *mcd = NULL);
-	
-	// static
-	static void processRegionInfo(LLMessageSystem* msg);
 	
 	void setPickedObjectProperties(const std::string& object_name, const std::string& owner_name, const LLUUID owner_id);
 

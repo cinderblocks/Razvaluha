@@ -581,6 +581,7 @@ public:
 	void resetScrollPositionOnShow(bool reset_scroll_pos) { mResetScrollPositionOnShow = reset_scroll_pos; }
 	bool isScrollPositionOnShowReset() { return mResetScrollPositionOnShow; }
 protected:
+	friend class LLTextEditor;
 	void createSpilloverBranch();
 	void cleanupSpilloverBranch();
 	// Add the menu item to this menu.

@@ -135,6 +135,7 @@
 // <edit>
 #include "llcorehttputil.h"
 #include "llfloatermessagebuilder.h"
+#include "lltexteditor.h" // Initialize the text editor menu listeners in here
 #include "llfloatermessagelog.h"
 #include "llfloatermessagerewriter.h"
 #include "shfloatermediaticker.h"
@@ -773,8 +774,8 @@ void init_menus()
 	gMenuHolder->addChild(gLoginMenuBarView);
 
 	// Singu Note: Initialize common ScrollListMenus here
-	sScrollListMenus[0] = LLUICtrlFactory::getInstance()->buildMenu("menu_avs_list.xml", gMenuHolder);
-	//sScrollListMenus[1] = LLUICtrlFactory::getInstance()->buildMenu("menu_groups_list.xml"); // Singu TODO
+	LLScrollListCtrl::addCommonMenu(LLUICtrlFactory::getInstance()->buildMenu("menu_avs_list.xml", gMenuHolder)); // 0
+	//LLScrollListCtrl::addCommonMenu(LLUICtrlFactory::getInstance()->buildMenu("menu_groups_list.xml")); // 1 // Singu TODO
 
 	LLView* ins = gMenuBarView->getChildView("insert_world", true, false);
 	ins->setVisible(false);
@@ -1722,6 +1723,8 @@ class LLAdvancedToggleWireframe : public view_listener_t
 // [/RLVa:KB]
 //		gUseWireframe = !(gUseWireframe);
 //		gWindowResized = TRUE; // Singu Note: We don't use this (yet?)
+
+		LLPipeline::updateRenderDeferred();
 		gPipeline.resetVertexBuffers();
 //		return true;
 	}
@@ -3036,17 +3039,22 @@ class LLAvatarFreeze : public view_listener_t
 	}
 };
 
+void do_script_count(bool del, LLViewerObject* object = nullptr)
+{
+	if (object || (object = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject()))
+	{
+		if (ScriptCounter::getInstance(object->getID())) return;
+		ScriptCounter* sc = new ScriptCounter(del, object);
+		sc->requestInventories();
+		// sc will destroy itself
+	}
+}
+
 class LLScriptCount : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		if (LLViewerObject* object = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject())
-		{
-			if (ScriptCounter::getInstance(object->getID())) return true;
-			ScriptCounter* sc = new ScriptCounter(false, object);
-			sc->requestInventories();
-			// sc will destroy itself
-		}
+		do_script_count(false, userdata["data"].asString() == "agent" ? gAgentAvatarp : nullptr);
 		return true;
 	}
 };
@@ -3055,13 +3063,7 @@ class LLScriptDelete : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		if (LLViewerObject* object = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject())
-		{
-			if (ScriptCounter::getInstance(object->getID())) return true;
-			ScriptCounter* sc = new ScriptCounter(true, object);
-			sc->requestInventories();
-			// sc will destroy itself
-		}
+		do_script_count(true);
 		return true;
 	}
 };
@@ -3070,7 +3072,7 @@ class LLObjectVisibleScriptCount : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		LLViewerObject* object = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
+		LLViewerObject* object = userdata["data"].asString() == "agent" ? gAgentAvatarp : LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
 		bool new_value = (object != nullptr);
 		gMenuHolder->findControl(userdata["control"].asString())->setValue(new_value);
 		
@@ -3082,20 +3084,20 @@ class LLObjectEnableScriptDelete : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		LLViewerObject* object = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
+		auto objects = LLSelectMgr::getInstance()->getSelection();
+		LLViewerObject* object = objects->getPrimaryObject();
 		bool new_value = (object != nullptr);
 		if(new_value)
-		for (LLObjectSelection::root_iterator iter = LLSelectMgr::getInstance()->getSelection()->root_begin();
-			iter != LLSelectMgr::getInstance()->getSelection()->root_end(); iter++)
+		for (LLObjectSelection::root_iterator iter = objects->root_begin();
+			iter != objects->root_end(); iter++)
 		{
 			LLSelectNode* selectNode = *iter;
 			LLViewerObject* object = selectNode->getObject();
-			if(object)
-				if(!object->permModify())
-				{
-					new_value=false;
-					break;
-				}
+			if (object && !object->permModify())
+			{
+				new_value=false;
+				break;
+			}
 		}
 		gMenuHolder->findControl(userdata["control"].asString())->setValue(new_value);
 		
@@ -4130,7 +4132,8 @@ void reset_view_final( BOOL proceed )
 	}
 	gAgentCamera.resetView(TRUE, TRUE);
 	gAgentCamera.setLookAt(LOOKAT_TARGET_CLEAR);
-	gSavedSettings.setBOOL("SinguMotionResetsCamera", true);
+	if (gSavedSettings.getBOOL("SinguMotionResetsCameraReset"))
+		gSavedSettings.setBOOL("SinguMotionResetsCamera", true);
 
 	if(gAgentCamera.cameraCustomizeAvatar() && LLFloaterCustomize::instanceExists())
 		LLFloaterCustomize::getInstance()->close();
@@ -9566,6 +9569,11 @@ void initialize_menus()
 	addMenu(new ListToggleMute(), "List.ToggleMute");
 
 	add_radar_listeners();
+
+	// Text Editor menus
+	LLTextEditor::setIsObjectBlockedCallback(boost::bind(&LLMuteList::isMuted, LLMuteList::getInstance(), _1, _2, 0));
+	LLTextEditor::setIsFriendCallback(LLAvatarActions::isFriend);
+	LLTextEditor::addMenuListeners();
 
 	class LLViewBuildMode : public view_listener_t
 	{

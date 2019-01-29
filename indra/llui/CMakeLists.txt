@@ -54,6 +54,7 @@ set(llui_SOURCE_FILES
     llkeywords.cpp
     lllayoutstack.cpp
     lllineeditor.cpp
+    llloadingindicator.cpp
     lllocalcliprect.cpp
     llmenugl.cpp
     llmodaldialog.cpp
@@ -135,6 +136,7 @@ set(llui_HEADER_FILES
     llkeywords.h
     lllayoutstack.h
     lllineeditor.h
+    llloadingindicator.h
     lllocalcliprect.h
     llmemberlistener.h
     llmenugl.h

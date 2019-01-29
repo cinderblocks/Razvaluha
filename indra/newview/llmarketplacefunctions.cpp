@@ -48,6 +48,7 @@
 
 #include "llsdutil.h"
 #include "hippogridmanager.h"
+
 //
 // Helpers
 //
@@ -89,7 +90,7 @@ namespace {
 		else
 		{
 			// TODO: Find out if OpenSim, and Avination adopted any outbox stuffs, if so code HippoGridManager for this
-			// Aurora grid has not.
+			// WhiteCore has not.
 			// For now, set domain on other grids to the loginUri domain, so we don't harass LL web services.
 			domain = getLoginUriDomain(); //gHippoGridManager->getCurrentGrid()->getMarketPlaceDomain();
 		}

@@ -146,7 +146,7 @@ LLFloaterAbout::LLFloaterAbout()
 		__DATE__, __TIME__,
 		LLVersionInfo::getChannel().c_str()));
 	support_widget->appendColoredText(version, FALSE, FALSE, gColors.getColor("TextFgReadOnlyColor"));
-	support_widget->appendStyledText(LLTrans::getString("ReleaseNotes"), false, false, viewer_link_style);
+	support_widget->appendText(LLTrans::getString("ReleaseNotes"), false, false, viewer_link_style);
 
 	std::stringstream support;
 	support << "\n\n"
@@ -205,7 +205,7 @@ LLFloaterAbout::LLFloaterAbout()
 		{
 			LLStyleSP server_link_style(new LLStyle(*viewer_link_style));
 			server_link_style->setLinkHREF(url);
-			support_widget->appendStyledText(LLTrans::getString("ReleaseNotes"), false, false, server_link_style);
+			support_widget->appendText(LLTrans::getString("ReleaseNotes"), false, false, server_link_style);
 		}
 
 		support.str("\n\n");

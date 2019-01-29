@@ -5583,6 +5583,20 @@ Visit the [SECOND_LIFE] Support Web site?
    type="alertmodal">
 This grid has no link for support.
   </notification>
+
+  <notification
+   icon="alertmodal.tga"
+   name="ConfirmAddingChatParticipants"
+   type="alertmodal">
+    <unique/>
+When you add a person to an existing conversation, a new conversation will be created.  All participants will receive new conversation notifications.
+    <tag>confirm</tag>
+    <usetemplate
+     ignoretext="Confirm adding chat paticipants"
+     name="okcancelignore"
+     notext="Cancel"
+     yestext="Ok"/>
+  </notification>
   
   <notification
    icon="alertmodal.tga"
@@ -11092,7 +11106,7 @@ for information and download links for this new version.
    type="notify">
 Your version of Singularity[TYPE] is critically out of date!
 
-It is STRONGLY recommended to download a newer version of this viewer due to grid compatability and/or security concerns.
+It is STRONGLY recommended to download a newer version of this viewer due to grid compatibility and/or security concerns.
 
 Click [Visit Page] to open
 [URL]
@@ -11113,7 +11127,7 @@ for information and download links for newer versions.
    type="alertmodal">
 Your version of Singularity[TYPE] is critically out of date!
 
-It is STRONGLY recommended to download a newer version of this viewer due to grid compatability and/or security concerns.
+It is STRONGLY recommended to download a newer version of this viewer due to grid compatibility and/or security concerns.
 
 Click [Visit Page] to open
 [URL]

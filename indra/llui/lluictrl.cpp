@@ -39,6 +39,9 @@
 
 static LLRegisterWidget<LLUICtrl> r("ui_ctrl");
 
+F32 LLUICtrl::sActiveControlTransparency = 1.0f;
+F32 LLUICtrl::sInactiveControlTransparency = 1.0f;
+
 LLUICtrl::CallbackParam::CallbackParam()
 :	name("name"),
 	function_name("function"),
@@ -95,25 +98,26 @@ const LLUICtrl::Params& LLUICtrl::getDefaultParams()
 
 LLUICtrl::LLUICtrl(const LLUICtrl::Params& p, const LLViewModelPtr& viewmodel)
 :	LLView(p),
+	mCommitSignal(nullptr),
+	mValidateSignal(nullptr),
+	mMouseEnterSignal(nullptr),
+	mMouseLeaveSignal(nullptr),
+	mMouseDownSignal(nullptr),
+	mMouseUpSignal(nullptr),
+	mRightMouseDownSignal(nullptr),
+	mRightMouseUpSignal(nullptr),
+	mDoubleClickSignal(nullptr),
+	mViewModel(viewmodel),
+	mEnabledControlVariable(nullptr),
+	mDisabledControlVariable(nullptr),
+	mMakeVisibleControlVariable(nullptr),
+	mMakeInvisibleControlVariable(nullptr),
 	mIsChrome(FALSE),
 	mRequestsFront(p.requests_front),
 	mTabStop(TRUE),
 	mTentative(FALSE),
-	mViewModel(viewmodel),
-	mEnabledControlVariable(NULL),
-	mDisabledControlVariable(NULL),
-	mMakeVisibleControlVariable(NULL),
-	mMakeInvisibleControlVariable(NULL),
-	mCommitSignal(NULL),
-	mValidateSignal(NULL),
-	mMouseEnterSignal(NULL),
-	mMouseLeaveSignal(NULL),
-	mMouseDownSignal(NULL),
-	mMouseUpSignal(NULL),
-	mRightMouseDownSignal(NULL),
-	mRightMouseUpSignal(NULL),
-	mDoubleClickSignal(NULL),
-	mCommitOnReturn(FALSE)
+	mCommitOnReturn(FALSE),
+	mTransparencyType(TT_DEFAULT)
 {
 }
 
@@ -211,20 +215,21 @@ LLUICtrl::LLUICtrl(const std::string& name, const LLRect rect, BOOL mouse_opaque
 	mTabStop( TRUE ),
 	mTentative( FALSE ),
 	mViewModel(LLViewModelPtr(new LLViewModel)),
-	mEnabledControlVariable(NULL),
-	mDisabledControlVariable(NULL),
-	mMakeVisibleControlVariable(NULL),
-	mMakeInvisibleControlVariable(NULL),
-	mCommitSignal(NULL),
-	mValidateSignal(NULL),
-	mMouseEnterSignal(NULL),
-	mMouseLeaveSignal(NULL),
-	mMouseDownSignal(NULL),
-	mMouseUpSignal(NULL),
-	mRightMouseDownSignal(NULL),
-	mRightMouseUpSignal(NULL),
-	mDoubleClickSignal(NULL),
-	mCommitOnReturn(FALSE)
+	mEnabledControlVariable(nullptr),
+	mDisabledControlVariable(nullptr),
+	mMakeVisibleControlVariable(nullptr),
+	mMakeInvisibleControlVariable(nullptr),
+	mCommitSignal(nullptr),
+	mValidateSignal(nullptr),
+	mMouseEnterSignal(nullptr),
+	mMouseLeaveSignal(nullptr),
+	mMouseDownSignal(nullptr),
+	mMouseUpSignal(nullptr),
+	mRightMouseDownSignal(nullptr),
+	mRightMouseUpSignal(nullptr),
+	mDoubleClickSignal(nullptr),
+	mCommitOnReturn(FALSE),
+	mTransparencyType(TT_DEFAULT)
 {
 	if(commit_callback)
 		setCommitCallback(commit_callback);
@@ -478,7 +483,7 @@ void LLUICtrl::setEnabledControlVariable(LLControlVariable* control)
 	if (mEnabledControlVariable)
 	{
 		mEnabledControlConnection.disconnect(); // disconnect current signal
-		mEnabledControlVariable = NULL;
+		mEnabledControlVariable = nullptr;
 	}
 	if (control)
 	{
@@ -493,7 +498,7 @@ void LLUICtrl::setDisabledControlVariable(LLControlVariable* control)
 	if (mDisabledControlVariable)
 	{
 		mDisabledControlConnection.disconnect(); // disconnect current signal
-		mDisabledControlVariable = NULL;
+		mDisabledControlVariable = nullptr;
 	}
 	if (control)
 	{
@@ -508,7 +513,7 @@ void LLUICtrl::setMakeVisibleControlVariable(LLControlVariable* control)
 	if (mMakeVisibleControlVariable)
 	{
 		mMakeVisibleControlConnection.disconnect(); // disconnect current signal
-		mMakeVisibleControlVariable = NULL;
+		mMakeVisibleControlVariable = nullptr;
 	}
 	if (control)
 	{
@@ -523,7 +528,7 @@ void LLUICtrl::setMakeInvisibleControlVariable(LLControlVariable* control)
 	if (mMakeInvisibleControlVariable)
 	{
 		mMakeInvisibleControlConnection.disconnect(); // disconnect current signal
-		mMakeInvisibleControlVariable = NULL;
+		mMakeInvisibleControlVariable = nullptr;
 	}
 	if (control)
 	{
@@ -538,7 +543,12 @@ bool LLUICtrl::controlListener(const LLSD& newvalue, LLHandle<LLUICtrl> handle, 
 	LLUICtrl* ctrl = handle.get();
 	if (ctrl)
 	{
-		if (type == "enabled")
+		if (type == "value")
+		{
+			ctrl->setValue(newvalue);
+			return true;
+		}
+		else if (type == "enabled")
 		{
 			ctrl->setEnabled(newvalue.asBoolean());
 			return true;
@@ -577,19 +587,19 @@ BOOL LLUICtrl::setLabelArg( const std::string& key, const LLStringExplicit& text
 // virtual
 LLCtrlSelectionInterface* LLUICtrl::getSelectionInterface()	
 { 
-	return NULL; 
+	return nullptr;
 }
 
 // virtual
 LLCtrlListInterface* LLUICtrl::getListInterface()				
 { 
-	return NULL; 
+	return nullptr;
 }
 
 // virtual
 LLCtrlScrollInterface* LLUICtrl::getScrollInterface()			
 { 
-	return NULL; 
+	return nullptr;
 }
 
 BOOL LLUICtrl::hasFocus() const
@@ -615,7 +625,7 @@ void LLUICtrl::setFocus(BOOL b)
 	{
 		if( gFocusMgr.childHasKeyboardFocus(this))
 		{
-			gFocusMgr.setKeyboardFocus( NULL );
+			gFocusMgr.setKeyboardFocus(nullptr );
 		}
 	}
 }
@@ -1021,11 +1031,11 @@ LLUICtrl* LLUICtrl::getParentUICtrl() const
 }
 
 // *TODO: Deprecate; for backwards compatability only:
-boost::signals2::connection LLUICtrl::setCommitCallback( boost::function<void (LLUICtrl*,void*)> cb, void* data)
+boost::signals2::connection LLUICtrl::setCommitCallback( std::function<void (LLUICtrl*,void*)> cb, void* data)
 {
 	return setCommitCallback( boost::bind(cb, _1, data));
 }
-boost::signals2::connection LLUICtrl::setValidateBeforeCommit( boost::function<bool (const LLSD& data)> cb )
+boost::signals2::connection LLUICtrl::setValidateBeforeCommit( std::function<bool (const LLSD& data)> cb )
 {
 	if (!mValidateSignal) mValidateSignal = new enable_signal_t();
 	return mValidateSignal->connect(boost::bind(cb, _2));
@@ -1043,7 +1053,6 @@ BOOL LLUICtrl::getTentative() const
 	return mTentative; 
 }
 
-
 // virtual
 void LLUICtrl::setColor(const LLColor4& color)							
 { }
@@ -1059,6 +1068,37 @@ void LLUICtrl::setMinValue(LLSD min_value)
 // virtual
 void LLUICtrl::setMaxValue(LLSD max_value)								
 { }
+
+F32 LLUICtrl::getCurrentTransparency()
+{
+	F32 alpha = 0;
+
+	switch(mTransparencyType)
+	{
+	case TT_DEFAULT:
+		alpha = getDrawContext().mAlpha;
+		break;
+
+	case TT_ACTIVE:
+		alpha = sActiveControlTransparency;
+		break;
+
+	case TT_INACTIVE:
+		alpha = sInactiveControlTransparency;
+		break;
+
+	case TT_FADING:
+		alpha = sInactiveControlTransparency / 2.f;
+		break;
+	}
+
+	return alpha;
+}
+
+void LLUICtrl::setTransparencyType(ETypeTransparency type)
+{
+	mTransparencyType = type;
+}
 
 boost::signals2::connection LLUICtrl::setCommitCallback(const CommitCallbackParam& cb)
 {

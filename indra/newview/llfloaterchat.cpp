@@ -94,7 +94,6 @@ LLFloaterChat::LLFloaterChat(const LLSD& seed)
 
 	LLTextEditor* history_editor_with_mute = getChild<LLTextEditor>("Chat History Editor with mute");
 	getChild<LLUICtrl>("show mutes")->setCommitCallback(boost::bind(&LLFloaterChat::onClickToggleShowMute, this, _2, getChild<LLTextEditor>("Chat History Editor"), history_editor_with_mute));
-	history_editor_with_mute->setVisible(false);
 	getChild<LLUICtrl>("chat_history_open")->setCommitCallback(boost::bind(show_log_browser, "chat", "chat"));
 }
 
@@ -218,13 +217,13 @@ void add_timestamped_line(LLViewerTextEditor* edit, LLChat chat, const LLColor4&
 		line = line.substr(chat.mFromName.length() + 1);
 		LLStyleSP sourceStyle = LLStyleMap::instance().lookup(chat.mFromID, chat.mURL);
 		sourceStyle->mItalic = is_irc;
-		edit->appendStyledText(start_line, false, prepend_newline, sourceStyle);
+		edit->appendText(start_line, false, prepend_newline, sourceStyle);
 		prepend_newline = false;
 	}
 	LLStyleSP style(new LLStyle);
 	style->setColor(color);
 	style->mItalic = is_irc;
-	edit->appendStyledText(line, false, prepend_newline, style);
+	edit->appendText(line, false, prepend_newline, style);
 }
 
 void log_chat_text(const LLChat& chat)
@@ -339,8 +338,6 @@ void LLFloaterChat::setHistoryCursorAndScrollToEnd()
 //static
 void LLFloaterChat::onClickToggleShowMute(bool show_mute, LLTextEditor* history_editor, LLTextEditor* history_editor_with_mute)
 {
-	history_editor->setVisible(!show_mute);
-	history_editor_with_mute->setVisible(show_mute);
 	(show_mute ? history_editor_with_mute : history_editor)->setCursorAndScrollToEnd();
 }
 

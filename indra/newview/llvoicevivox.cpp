@@ -780,23 +780,12 @@ bool LLVivoxVoiceClient::startAndLaunchDaemon()
             params.executable = exe_path;
 
             std::string loglevel = gSavedSettings.getString("VivoxDebugLevel");
-// Singu Note: omit shutdown timeout for Linux, as we are using 2.x version of the SDK there
-// Singu TODO: Remove this when the Vivox SDK 4.x is working on Linux
-#ifndef LL_LINUX
-            std::string shutdown_timeout = gSavedSettings.getString("VivoxShutdownTimeout");
-#endif
             if (loglevel.empty())
             {
                 loglevel = "0";
             }
             params.args.add("-ll");
-// Singu Note: hard code log level to -1 for Linux, as we are using 2.x version of the SDK there
-// Singu TODO: Remove this when the Vivox SDK 4.x is working on Linux
-#if LL_LINUX
-			params.args.add("-1");
-#else
             params.args.add(loglevel);
-#endif
 
             std::string log_folder = gSavedSettings.getString("VivoxLogDirectory");
 
@@ -812,15 +801,12 @@ bool LLVivoxVoiceClient::startAndLaunchDaemon()
             params.args.add("-lf");
             params.args.add(log_folder);
 
-// Singu Note: omit shutdown timeout for Linux, as we are using 2.x version of the SDK there
-// Singu TODO: Remove this when the Vivox SDK 4.x is working on Linux
-#ifndef LL_LINUX
+            std::string shutdown_timeout = gSavedSettings.getString("VivoxShutdownTimeout");
             if (!shutdown_timeout.empty())
             {
                 params.args.add("-st");
                 params.args.add(shutdown_timeout);
             }
-#endif
 
 			// If we allow multiple instances of the viewer to start the voicedaemon
 			if (gSavedSettings.getBOOL("VoiceMultiInstance"))
@@ -2772,7 +2758,8 @@ void LLVivoxVoiceClient::sendPositionAndVolumeUpdate(void)
 				<< "<X>" << l.mV [VX] << "</X>"
 				<< "<Y>" << l.mV [VY] << "</Y>"
 				<< "<Z>" << l.mV [VZ] << "</Z>"
-			<< "</LeftOrientation>";
+  			<< "</LeftOrientation>"
+            ;
 
 		stream << "</SpeakerPosition>";
 
@@ -2868,7 +2855,7 @@ void LLVivoxVoiceClient::sendPositionAndVolumeUpdate(void)
 				if(!p->mIsSelf)
 				{
 					// scale from the range 0.0-1.0 to vivox volume in the range 0-100
-					S32 volume = ll_round(p->mVolume / VOLUME_SCALE_VIVOX);
+					S32 volume = ll_pos_round(p->mVolume / VOLUME_SCALE_VIVOX);
 					bool mute = p->mOnMuteList;
 					
 					if(mute)

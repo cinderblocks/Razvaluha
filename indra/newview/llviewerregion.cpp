@@ -58,6 +58,7 @@
 #include "lleventpoll.h"
 #include "llfloateravatarlist.h"
 #include "llfloatergodtools.h"
+#include "llfloaterperms.h"
 #include "llfloaterreporter.h"
 #include "llfloaterregioninfo.h"
 #include "llhttpnode.h"
@@ -1057,7 +1058,6 @@ void LLViewerRegion::processRegionInfo(LLMessageSystem* msg, void**)
 	LLRegionInfoModel::instance().update(msg);
 	LLFloaterGodTools::processRegionInfo(msg);
 	LLFloaterRegionInfo::processRegionInfo(msg);
-	LLFloaterReporter::processRegionInfo(msg);
 }
 
 void LLViewerRegion::setCacheID(const LLUUID& id)

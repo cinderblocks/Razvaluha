@@ -425,8 +425,8 @@ public:
 	BOOL canDoDelete() const override;
 	void doDelete() override;
 
-	virtual void selectAll();
-	virtual BOOL canSelectAll() const;
+	void selectAll() override;
+	BOOL canSelectAll() const override;
 
 	void deselect() override;
 	BOOL canDeselect() const override;

@@ -42,6 +42,7 @@
 #include "llagentui.h"
 #include "llavataractions.h"
 #include "llnotificationsutil.h"
+#include "llsdserialize.h"
 #include "llviewerregion.h"
 #include "llworld.h"
 #include "lleventtimer.h"
@@ -200,16 +201,15 @@ void invrepair()
 
 void resync_anims()
 {
-	for (S32 i = 0; i < gObjectList.getNumObjects(); ++i)
+	for (auto* character : LLCharacter::sInstances)
 	{
-		LLViewerObject* object = gObjectList.getObject(i);
-		if (object && object->isAvatar())
+		LLVOAvatar& avatar = *static_cast<LLVOAvatar*>(character);
+                if (!avatar.isDead())
 		{
-			LLVOAvatar& avatarp = *static_cast<LLVOAvatar*>(object);
-			for (const auto& playpair : avatarp.mPlayingAnimations)
+			for (const auto& playpair : avatar.mPlayingAnimations)
 			{
-				avatarp.stopMotion(playpair.first, TRUE);
-				avatarp.startMotion(playpair.first);
+				avatar.stopMotion(playpair.first, TRUE);
+				avatar.startMotion(playpair.first);
 			}
 		}
 	}
@@ -243,11 +243,11 @@ bool cmd_line_chat(std::string data, EChatType type)
 	static LLCachedControl<bool> enableChatCmd(gSavedSettings, "AscentCmdLine", true);
 	if (enableChatCmd)
 	{
-		data = utf8str_tolower(data);
 		std::istringstream input(data);
 		std::string cmd;
 
 		if (!(input >> cmd))	return true;
+		cmd = utf8str_tolower(cmd);
 
 		static LLCachedControl<std::string> sDrawDistanceCommand(gSavedSettings,  "AscentCmdLineDrawDistance");
 		static LLCachedControl<std::string> sHeightCommand(gSavedSettings,  "AscentCmdLineHeight");
@@ -267,6 +267,7 @@ bool cmd_line_chat(std::string data, EChatType type)
 		static LLCachedControl<std::string> sTP2Command(gSavedSettings,  "AscentCmdLineTP2");
 		static LLCachedControl<std::string> sAwayCommand(gSavedSettings,  "SinguCmdLineAway");
 		static LLCachedControl<std::string> sURLCommand(gSavedSettings,  "SinguCmdLineURL");
+		static LLCachedControl<std::string> sSettingCommand(gSavedSettings, "SinguCmdLineSetting");
 
 		if (cmd == utf8str_tolower(sDrawDistanceCommand)) // dd
 		{
@@ -397,7 +398,7 @@ bool cmd_line_chat(std::string data, EChatType type)
 					slurl = LLSLURL(slurl.getRegion(), LLVector3(fmod(agentPos.mdV[VX], (F64)REGION_WIDTH_METERS), fmod(agentPos.mdV[VY], (F64)REGION_WIDTH_METERS), agentPos.mdV[VZ]));
 				}
 
-				LLUrlAction::teleportToLocation(LLWeb::escapeURL(std::string("secondlife:///app/teleport/")+slurl.getLocationString()));
+				LLUrlAction::teleportToLocation(LLWeb::escapeURL("secondlife:///app/teleport/"+slurl.getLocationString()));
 			}
 			return false;
 		}
@@ -536,7 +537,55 @@ bool cmd_line_chat(std::string data, EChatType type)
 					LLAvatarActions::showProfile(id);
 					return false;
 				}
-				LLUrlAction::clickAction(sub);
+				LLUrlAction::clickAction(sub, true);
+			}
+			return false;
+		}
+		else if (cmd == utf8str_tolower(sSettingCommand))
+		{
+			std::string control_name;
+			if (input >> control_name)
+			{
+				// Find out if this control even exists.
+				auto control = gSavedSettings.getControl(control_name);
+				if (!control) gSavedPerAccountSettings.getControl(control_name);
+				if (!control) return false;
+
+				LLSD val;
+				// Toggle if we weren't given a value,
+				if (input.eof()) val = !control->get();
+				else // otherwise use what we were given.
+				{
+					switch (control->type()) // Convert to the right type, we can't be a string forever.
+					{
+					case TYPE_U32: // Integer is Integer, sucks but whatever
+					case TYPE_S32:
+					{
+						LLSD::Integer i;
+						input >> i;
+						val = i;
+						break;
+					}
+					case TYPE_F32:
+					{
+						LLSD::Float f;
+						input >> f;
+						val = f;
+						break;
+					}
+					case TYPE_STRING:
+					{
+						LLSD::String str;
+						std::getline(input, str, '\0'); // Read the entire rest of the stream into str
+						LLStringUtil::trim(str); // There's no setting where a space would be necessary here.
+						val = str;
+						break;
+					}
+					default: // Just parse it like JSON (or accept one of the many boolean value options!
+						LLSDSerialize::fromNotation(val, input, LLSDSerialize::SIZE_UNLIMITED);
+					}
+				}
+				control->set(val);
 			}
 			return false;
 		}
@@ -587,18 +636,19 @@ LLUUID cmdline_partial_name2key(std::string partial_name)
 	std::string av_name;
 	LLStringUtil::toLower(partial_name);
 	LLWorld::getInstance()->getAvatars(&avatars);
-	for(std::vector<LLUUID>::const_iterator i = avatars.begin(); i != avatars.end(); ++i)
+	auto radar = (LLFloaterAvatarList::instanceExists() ? LLFloaterAvatarList::getInstance() : nullptr);
+	for(const auto& id : avatars)
 	{
-		if (LLAvatarListEntry* entry = LLFloaterAvatarList::instanceExists() ? LLFloaterAvatarList::instance().getAvatarEntry(*i) : NULL)
+		if (LLAvatarListEntry* entry = radar ? radar->getAvatarEntry(id) : nullptr)
 			av_name = entry->getName();
-		else if (gCacheName->getFullName(*i, av_name));
-		else if (LLVOAvatar* avatarp = gObjectList.findAvatar(*i))
+		else if (gCacheName->getFullName(id, av_name));
+		else if (LLVOAvatar* avatarp = gObjectList.findAvatar(id))
 			av_name = avatarp->getFullname();
 		else
 			continue;
 		LLStringUtil::toLower(av_name);
 		if (av_name.find(partial_name) != std::string::npos)
-			return *i;
+			return id;
 	}
 	return LLUUID::null;
 }

@@ -33,9 +33,11 @@
 #include "llscrolllistctrl.h"
 #include "llscrolllistitem.h"
 #include "llspeakers.h"
+#include "lluictrlfactory.h" // Edit: For menu duality
+#include "llviewermenu.h" // Edit: For menu duality
 #include "llviewerregion.h"
 #include "llviewerwindow.h"
-#include "llvoiceclient.h"
+#include "llvoicechannel.h" // Edit: For menu duality
 #include "llworld.h" // Edit: For ghost detection
 // [RLVa:KB]
 #include "rlvhandler.h"
@@ -71,6 +73,16 @@ LLParticipantList::LLParticipantList(LLSpeakerMgr* data_source,
 	//mSpeakerMgr->addListener(mSpeakerModeratorListener, "update_moderator");
 }
 
+void LLParticipantList::setupContextMenu()
+{
+	if (mSpeakerMgr->getVoiceChannel() == LLVoiceChannelProximal::getInstance())
+	{
+		static LLMenuGL* menu = LLUICtrlFactory::getInstance()->buildMenu("menu_local_avs.xml", gMenuHolder);
+		mAvatarList->setContextMenu(menu);
+	}
+	else mAvatarList->setContextMenu(0);
+}
+
 BOOL LLParticipantList::postBuild()
 {
 	mAvatarList = getChild<LLScrollListCtrl>("speakers_list");
@@ -98,6 +110,7 @@ BOOL LLParticipantList::postBuild()
 
 	// update speaker UI
 	handleSpeakerSelect();
+	setupContextMenu();
 
 	return true;
 }
@@ -388,6 +401,7 @@ bool LLParticipantList::onRemoveItemEvent(LLPointer<LLOldEvents::LLEvent> event,
 bool LLParticipantList::onClearListEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata)
 {
 	mAvatarList->clearRows();
+	setupContextMenu();
 	return true;
 }
 

@@ -102,7 +102,7 @@ static bool nameSplit(const std::string& full, std::string& first, std::string& 
 		return false;
 	first = fragments[0];
 	last = (fragments.size() == 1) ?
-		gHippoGridManager->getCurrentGrid()->isAurora() ? "" : "Resident" :
+		gHippoGridManager->getCurrentGrid()->isWhiteCore() ? "" : "Resident" :
 		fragments[1];
 	return (fragments.size() <= 2);
 }
@@ -131,22 +131,87 @@ static std::string getDisplayString(const LLSavedLoginEntry& entry)
 	return getDisplayString(entry.getFirstName(), entry.getLastName(), entry.getGrid(), entry.isSecondLife());
 }
 
-class LLLoginRefreshHandler : public LLCommandHandler
+
+class LLLoginLocationAutoHandler : public LLCommandHandler
 {
 public:
 	// don't allow from external browsers
-	LLLoginRefreshHandler() : LLCommandHandler("login_refresh", UNTRUSTED_BLOCK) { }
+	LLLoginLocationAutoHandler() : LLCommandHandler("location_login", UNTRUSTED_BLOCK) { }
 	bool handle(const LLSD& tokens, const LLSD& query_map, LLMediaCtrl* web)
 	{	
 		if (LLStartUp::getStartupState() < STATE_LOGIN_CLEANUP)
 		{
-			LLPanelLogin::loadLoginPage();
+			if ( tokens.size() == 0 || tokens.size() > 4 )
+				return false;
+
+			// unescape is important - uris with spaces are escaped in this code path
+			// (e.g. space -> %20) and the code to log into a region doesn't support that.
+			const std::string region = LLURI::unescape( tokens[0].asString() );
+
+			// just region name as payload
+			if ( tokens.size() == 1 )
+			{
+				// region name only - slurl will end up as center of region
+				LLSLURL slurl(region);
+				LLPanelLogin::autologinToLocation(slurl);
+			}
+			else
+			// region name and x coord as payload
+			if ( tokens.size() == 2 )
+			{
+				// invalid to only specify region and x coordinate
+				// slurl code will revert to same as region only, so do this anyway
+				LLSLURL slurl(region);
+				LLPanelLogin::autologinToLocation(slurl);
+			}
+			else
+			// region name and x/y coord as payload
+			if ( tokens.size() == 3 )
+			{
+				// region and x/y specified - default z to 0
+				F32 xpos;
+				std::istringstream codec(tokens[1].asString());
+				codec >> xpos;
+
+				F32 ypos;
+				codec.clear();
+				codec.str(tokens[2].asString());
+				codec >> ypos;
+
+				const LLVector3 location(xpos, ypos, 0.0f);
+				LLSLURL slurl(region, location);
+
+				LLPanelLogin::autologinToLocation(slurl);
+			}
+			else
+			// region name and x/y/z coord as payload
+			if ( tokens.size() == 4 )
+			{
+				// region and x/y/z specified - ok
+				F32 xpos;
+				std::istringstream codec(tokens[1].asString());
+				codec >> xpos;
+
+				F32 ypos;
+				codec.clear();
+				codec.str(tokens[2].asString());
+				codec >> ypos;
+
+				F32 zpos;
+				codec.clear();
+				codec.str(tokens[3].asString());
+				codec >> zpos;
+
+				const LLVector3 location(xpos, ypos, zpos);
+				LLSLURL slurl(region, location);
+
+				LLPanelLogin::autologinToLocation(slurl);
+			};
 		}	
 		return true;
 	}
 };
-
-LLLoginRefreshHandler gLoginRefreshHandler;
+LLLoginLocationAutoHandler gLoginLocationAutoHandler;
 
 //---------------------------------------------------------------------------
 // Public methods
@@ -652,6 +717,18 @@ void LLPanelLogin::setLocation(const LLSLURL& slurl)
 	LLStartUp::setStartSLURL(slurl); // calls onUpdateStartSLURL, above
 }
 
+void LLPanelLogin::autologinToLocation(const LLSLURL& slurl)
+{
+	LL_DEBUGS("AppInit")<<"automatically logging into Location "<<slurl.asString()<<LL_ENDL;
+	LLStartUp::setStartSLURL(slurl); // calls onUpdateStartSLURL, above
+
+	if ( LLPanelLogin::sInstance != NULL )
+	{
+		LLPanelLogin::sInstance->onClickConnect();
+	}
+}
+
+
 // static
 void LLPanelLogin::close()
 {
@@ -765,7 +842,7 @@ void LLPanelLogin::loadLoginPage()
 	{
 		params["grid"] = gHippoGridManager->getCurrentGrid()->getGridNick();
 	}
-	else if (gHippoGridManager->getCurrentGrid()->getPlatform() == HippoGridInfo::PLATFORM_AURORA)
+	else if (gHippoGridManager->getCurrentGrid()->getPlatform() == HippoGridInfo::PLATFORM_WHITECORE)
 	{
 		params["grid"] = LLViewerLogin::getInstance()->getGridLabel();
 	}

@@ -403,7 +403,7 @@ BOOL LLGLSLShader::createShader(std::vector<LLStaticHashedString> * attributes,
 	{
 		GLhandleARB shaderhandle = LLShaderMgr::instance()->loadShaderFile((*fileIter).first, mShaderLevel, (*fileIter).second, &mDefines, mFeatures.mIndexedTextureChannels);
 		LL_DEBUGS("ShaderLoading") << "SHADER FILE: " << (*fileIter).first << " mShaderLevel=" << mShaderLevel << LL_ENDL;
-		if (shaderhandle != nullptr)
+		if (shaderhandle != (GLhandleARB)NULL)
 		{
 			attachObject(shaderhandle);
 		}
@@ -918,7 +918,7 @@ S32 LLGLSLShader::disableTexture(S32 uniform, LLTexUnit::eTextureType mode)
 GLint LLGLSLShader::getUniformLocation(U32 index)
 {
 	GLint ret = -1;
-	if (mProgramObject != nullptr)
+	if (mProgramObject != (GLint)NULL)
 	{
 		llassert(index < mUniform.size());
 		return mUniform[index];

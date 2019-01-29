@@ -274,7 +274,8 @@ LLNotificationForm::LLNotificationForm(const LLSD& sd)
 	}
 	else
 	{
-		LL_WARNS() << "Invalid form data " << sd << LL_ENDL;
+		if (!sd.isUndefined())
+			LL_WARNS() << "Invalid form data " << sd << LL_ENDL;
 		mFormData = LLSD::emptyArray();
 	}
 }

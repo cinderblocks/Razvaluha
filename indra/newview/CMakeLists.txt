@@ -1372,6 +1372,11 @@ if (WINDOWS)
         oleaut32
         shell32
         wer
+        user32
+        Vfw32
+        Wbemuuid
+        winspool
+        Normaliz
         )
 endif (WINDOWS)
 
