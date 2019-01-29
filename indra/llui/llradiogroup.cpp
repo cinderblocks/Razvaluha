@@ -43,7 +43,7 @@
 #include "llfocusmgr.h"
 #include "lluictrlfactory.h"
 #include "llsdutil.h"
-#include <boost\tokenizer.hpp>
+#include <boost/tokenizer.hpp>
 
 static LLRegisterWidget<LLRadioGroup> r("radio_group");
 

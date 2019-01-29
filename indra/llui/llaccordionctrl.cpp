@@ -34,7 +34,7 @@
 #include "llfocusmgr.h"
 #include "lllocalcliprect.h"
 
-#include "boost/bind.hpp"
+#include <boost/bind.hpp>
 
 static const S32 BORDER_MARGIN = 2;
 static const S32 PARENT_BORDER_MARGIN = 5;

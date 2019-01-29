@@ -454,7 +454,7 @@ void LLNetMap::draw()
                  ++itr)
 			{
 				LLViewerRegion* region = *itr;
-				LLColor4U overlay_color = region->isAlive() ? map_property_line.get() :  LLColor4U(255, 128, 128, 255);
+				LLColor4U overlay_color = region->isAlive() ? map_property_line.get() :  LLColor4(255, 128, 128, 255);
 				renderPropertyLinesForRegion(region, overlay_color);
 			}
 

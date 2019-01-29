@@ -35,7 +35,7 @@
 #include "llfloaterwater.h"
 
 // libs
-#include <boost\tokenizer.hpp>
+#include <boost/tokenizer.hpp>
 #include "llcheckboxctrl.h"
 #include "llcolorswatch.h"
 #include "llcombobox.h"

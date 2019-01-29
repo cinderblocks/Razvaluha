@@ -97,7 +97,6 @@ protected:
 private:
 	static const std::string cstrSharedRoot;
 	friend class RlvSharedInventoryFetcher;
-	friend class LLSingleton<RlvInventory>;
 };
 
 // ============================================================================

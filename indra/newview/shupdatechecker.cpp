@@ -16,7 +16,7 @@
 #include "llbufferstream.h"
 #include "llweb.h"
 
-#include <json\json.hpp>
+#include <json/json.hpp>
 
 
 void onNotifyButtonPress(const LLSD& notification, const LLSD& response, std::string name, std::string url)
