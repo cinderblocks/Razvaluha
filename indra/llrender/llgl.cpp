@@ -71,7 +71,13 @@ void* gl_get_proc_address(const char *pStr)
 	return pPtr;
 }
 #undef GLH_EXT_GET_PROC_ADDRESS
-#define GLH_EXT_GET_PROC_ADDRESS(p)   gl_get_proc_address(p) 
+#define GLH_EXT_GET_PROC_ADDRESS(p)   gl_get_proc_address(p)
+#undef GLH_EXT_GET_PROC_ADDRESS_CORE
+#define GLH_EXT_GET_PROC_ADDRESS_CORE(ver, p)   gl_get_proc_address((mGLVersion >= ver) ? p : p"ARB")
+#undef GLH_EXT_GET_PROC_ADDRESS_CORE_EXT
+#define GLH_EXT_GET_PROC_ADDRESS_CORE_EXT(ver, p)   gl_get_proc_address((mGLVersion >= ver) ? p : p"EXT")
+#undef GLH_EXT_GET_PROC_ADDRESS_CORE_OR_ARB
+#define GLH_EXT_GET_PROC_ADDRESS_CORE_OR_ARB(ver, p, arb)   gl_get_proc_address((mGLVersion >= ver) ? p : arb)
 #endif //!LL_DARWIN
 
 #if GL_ARB_debug_output
@@ -278,7 +284,7 @@ PFNGLDRAWBUFFERSARBPROC glDrawBuffersARB = NULL;
 //shader object prototypes
 PFNGLDELETEOBJECTARBPROC glDeleteObjectARB = NULL;
 PFNGLGETHANDLEARBPROC glGetHandleARB = NULL;
-PFNGLDETACHOBJECTARBPROC glDetachObjectARB = NULL;
+PFNGLDETACHOBJECTARBPROC glDetachShader = NULL;
 PFNGLCREATESHADEROBJECTARBPROC glCreateShaderObjectARB = NULL;
 PFNGLSHADERSOURCEARBPROC glShaderSourceARB = NULL;
 PFNGLCOMPILESHADERARBPROC glCompileShaderARB = NULL;
@@ -1296,7 +1302,7 @@ void LLGLManager::initExtensions()
 	{
 		glDeleteObjectARB = (PFNGLDELETEOBJECTARBPROC) GLH_EXT_GET_PROC_ADDRESS("glDeleteObjectARB");
 		glGetHandleARB = (PFNGLGETHANDLEARBPROC) GLH_EXT_GET_PROC_ADDRESS("glGetHandleARB");
-		glDetachObjectARB = (PFNGLDETACHOBJECTARBPROC) GLH_EXT_GET_PROC_ADDRESS("glDetachObjectARB");
+		glDetachShader = (PFNGLDETACHOBJECTARBPROC) GLH_EXT_GET_PROC_ADDRESS_CORE_OR_ARB(2.0, "glDetachShader", "glDetachObjectARB");
 		glCreateShaderObjectARB = (PFNGLCREATESHADEROBJECTARBPROC) GLH_EXT_GET_PROC_ADDRESS("glCreateShaderObjectARB");
 		glShaderSourceARB = (PFNGLSHADERSOURCEARBPROC) GLH_EXT_GET_PROC_ADDRESS("glShaderSourceARB");
 		glCompileShaderARB = (PFNGLCOMPILESHADERARBPROC) GLH_EXT_GET_PROC_ADDRESS("glCompileShaderARB");

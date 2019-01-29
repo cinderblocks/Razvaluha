@@ -986,7 +986,7 @@ void LLShaderMgr::cleanupShaderSources()
 						{
 							if ((*it).second.mHandle == shaders[i])
 							{
-								glDetachObjectARB(program, shaders[i]);
+								glDetachShader(program, shaders[i]);
 								break;
 							}
 						}
