@@ -173,7 +173,7 @@ void LLDir_Mac::initAppDirs(const std::string &app_name,
 	mCAFile = getExpandedFilename(LL_PATH_APP_SETTINGS, "ca-bundle.crt");
 }
 
-virtual U32 countFilesInDir(const std::string &dirname, const std::string &mask)
+U32 LLDir_Mac::countFilesInDir(const std::string &dirname, const std::string &mask)
 {
     using namespace boost::filesystem;
     using namespace boost::algorithm;
