@@ -1,5 +1,4 @@
 # -*- cmake -*-
-
 include(Prebuilt)
 
 if(WORD_SIZE EQUAL 64)

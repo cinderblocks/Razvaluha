@@ -12,35 +12,41 @@ if (NOT DEFINED VIEWER_SHORT_VERSION) # will be true in indra/, false in indra/n
 
         if (DEFINED ENV{revision})
            set(VIEWER_VERSION_REVISION $ENV{revision})
-           message("Revision (from environment): ${VIEWER_VERSION_REVISION}")
+           message(STATUS "Revision (from environment): ${VIEWER_VERSION_REVISION}")
 
         else (DEFINED ENV{revision})
-          execute_process(
-                       COMMAND git rev-list HEAD
-                       OUTPUT_VARIABLE GIT_REV_LIST_STR
-                       WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                       OUTPUT_STRIP_TRAILING_WHITESPACE
-                       )
+          find_package(Git)
 
-            if(GIT_REV_LIST_STR)
-              string(REPLACE "\n" ";" GIT_REV_LIST ${GIT_REV_LIST_STR})
-            else()
-              string(REPLACE "\n" ";" GIT_REV_LIST "")
-            endif()
-
-            if(GIT_REV_LIST)
-              list(LENGTH GIT_REV_LIST VIEWER_VERSION_REVISION)
-            else(GIT_REV_LIST)
-              set(VIEWER_VERSION_REVISION 99)
-            endif(GIT_REV_LIST)
+          if (Git_FOUND)
+            execute_process(COMMAND ${GIT_EXECUTABLE} rev-list --count HEAD
+                            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                            RESULT_VARIABLE git_revlist_result
+                            ERROR_VARIABLE git_revlist_error
+                            OUTPUT_VARIABLE VIEWER_VERSION_REVISION
+                            OUTPUT_STRIP_TRAILING_WHITESPACE)
+            if (NOT ${git_revlist_result} EQUAL 0)
+              message(SEND_ERROR "Revision number generation failed with output:\n${git_revlist_error}")
+            else (NOT ${git_revlist_result} EQUAL 0)
+              string(REGEX REPLACE "[^0-9a-f]" "" VIEWER_VERSION_REVISION ${VIEWER_VERSION_REVISION})
+            endif (NOT ${git_revlist_result} EQUAL 0)
+            if ("${VIEWER_VERSION_REVISION}" MATCHES "^[0-9]+$")
+              message(STATUS "Revision (from git) ${VIEWER_VERSION_REVISION}")
+            else ("${VIEWER_VERSION_REVISION}" MATCHES "^[0-9]+$")
+              message(STATUS "Revision not set (repository not found?); using 0")
+              set(VIEWER_VERSION_REVISION 0 )
+            endif ("${VIEWER_VERSION_REVISION}" MATCHES "^[0-9]+$")
+           else (Git_FOUND)
+              message(STATUS "Revision not set: git not found; using 0")
+              set(VIEWER_VERSION_REVISION 0)
+           endif (Git_FOUND)
         endif (DEFINED ENV{revision})
-        message("Building '${VIEWER_CHANNEL}' Version ${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}")
+        message(STATUS "Building '${VIEWER_CHANNEL}' Version ${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}")
     else ( EXISTS ${VIEWER_VERSION_BASE_FILE} )
         message(SEND_ERROR "Cannot get viewer version from '${VIEWER_VERSION_BASE_FILE}'") 
     endif ( EXISTS ${VIEWER_VERSION_BASE_FILE} )
 
     if ("${VIEWER_VERSION_REVISION}" STREQUAL "")
-      message("Ultimate fallback, revision was blank or not set: will use 0")
+      message(STATUS "Ultimate fallback, revision was blank or not set: will use 0")
       set(VIEWER_VERSION_REVISION 0)
     endif ("${VIEWER_VERSION_REVISION}" STREQUAL "")
 
