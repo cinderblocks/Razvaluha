@@ -152,6 +152,9 @@ class ViewerManifest(LLManifest):
     def grid(self):
         return self.args['grid']
 
+    def sdl2(self):
+        return self.args['sdl2'] == "ON"
+
     def viewer_branding_id(self):
         return self.args['branding_id']
 
@@ -399,6 +402,10 @@ class WindowsManifest(ViewerManifest):
                                         'llplugin', 'slplugin', self.args['configuration']),
                            "AlchemyPlugin.exe")
 
+        # Copy assets for sdl if needed
+        if self.sdl2():
+            self.path("res-sdl")
+
         # Get shared libs from the shared libs staging directory
         with self.prefix(src=os.path.join(os.pardir, 'sharedlibs', self.args['configuration']),
                        dst=""):
@@ -458,6 +465,10 @@ class WindowsManifest(ViewerManifest):
 
             # NGHttp2
             self.path("nghttp2.dll")
+
+            # SDL2
+            if self.sdl2():
+                self.path("SDL2.dll")
 
             # For google-perftools tcmalloc allocator.
             try:

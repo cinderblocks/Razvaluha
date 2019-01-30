@@ -1308,6 +1308,7 @@ if (WINDOWS)
         "${CMAKE_CURRENT_SOURCE_DIR}/res-sdl/viewer_icon.BMP"
       )
 
+    if (NOT LLWINDOW_SDL2)
     # Add resource files to the project.
     # viewerRes.rc is the only buildable file, but
     # the rest are all dependencies of it.
@@ -1349,6 +1350,7 @@ if (WINDOWS)
         res/toolpay.cur
         res/toolsit.cur
         )
+    endif (NOT LLWINDOW_SDL2)
 
     set_source_files_properties(${viewer_RESOURCE_FILES}
                                 PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1603,6 +1605,7 @@ if (WINDOWS)
         --configuration=${CMAKE_CFG_INTDIR}
         --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
         --grid=${GRID}
+        --sdl2=${LLWINDOW_SDL2}
         --channel=${VIEWER_CHANNEL}
         --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
         --source=${CMAKE_CURRENT_SOURCE_DIR}
@@ -1646,6 +1649,7 @@ if (WINDOWS)
           --configuration=${CMAKE_CFG_INTDIR}
           --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
           --grid=${GRID}
+          --sdl2=${LLWINDOW_SDL2}
           --source=${CMAKE_CURRENT_SOURCE_DIR}
           --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/touched.bat
         DEPENDS
@@ -1786,6 +1790,7 @@ if (LINUX)
         --configuration=${CMAKE_CFG_INTDIR}
         --dest=${CMAKE_CURRENT_BINARY_DIR}/packaged
         --grid=${GRID}
+        --sdl2=${LLWINDOW_SDL2}
         --source=${CMAKE_CURRENT_SOURCE_DIR}
         --standalone=${STANDALONE}
         --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.touched
@@ -1808,6 +1813,7 @@ if (LINUX)
         --configuration=${CMAKE_CFG_INTDIR}
         --dest=${CMAKE_CURRENT_BINARY_DIR}/packaged
         --grid=${GRID}
+        --sdl2=${LLWINDOW_SDL2}
         --channel=${VIEWER_CHANNEL}
         --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
         --source=${CMAKE_CURRENT_SOURCE_DIR}
@@ -1871,6 +1877,7 @@ if (DARWIN)
       --configuration=${CMAKE_CFG_INTDIR}
       --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${product}.app
       --grid=${GRID}
+        --sdl2=${LLWINDOW_SDL2}
       --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
       --bundleid=${MACOSX_BUNDLE_GUI_IDENTIFIER}
       --source=${CMAKE_CURRENT_SOURCE_DIR}
@@ -1905,6 +1912,7 @@ if (DARWIN)
           --configuration=${CMAKE_CFG_INTDIR}
           --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${product}.app
           --grid=${GRID}
+          --sdl2=${LLWINDOW_SDL2}
           --channel=${VIEWER_CHANNEL}
           --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
           --source=${CMAKE_CURRENT_SOURCE_DIR}

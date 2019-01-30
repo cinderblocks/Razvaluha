@@ -97,6 +97,11 @@ if(WINDOWS)
       list(APPEND release_files tbbmalloc.dll tbbmalloc_proxy.dll)
     endif(USE_TBBMALLOC)
 
+    if(LLWINDOW_SDL2)
+      list(APPEND debug_files SDL2.dll)
+      list(APPEND release_files SDL2.dll)
+    endif(LLWINDOW_SDL2)
+
     if(OPENAL)
       list(APPEND debug_files alut.dll OpenAL32.dll)
       list(APPEND release_files alut.dll OpenAL32.dll)
