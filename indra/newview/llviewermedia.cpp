@@ -2757,6 +2757,13 @@ bool LLViewerMediaImpl::handleKeyHere(KEY key, MASK mask)
 			}
 			break;
 		}
+		case MASK_SHIFT|MASK_CONTROL:
+			if (key == 'I')
+			{
+				mMediaSource->showWebInspector(true);
+				result = true;
+			}
+			break;
 		}
 
 		// Singu Note: At the very least, let's allow the login menu to function
