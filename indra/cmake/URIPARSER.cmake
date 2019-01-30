@@ -5,9 +5,9 @@ set(URIPARSER_FIND_REQUIRED ON)
 
 include(Prebuilt)
 
-if (USESYSTEMLIBS)
+if (STANDALONE)
   include(FindURIPARSER)
-else (USESYSTEMLIBS)
+else (STANDALONE)
   use_prebuilt_binary(uriparser)
   if (WINDOWS)
     set(URIPARSER_LIBRARY
@@ -17,4 +17,4 @@ else (USESYSTEMLIBS)
     set(URIPARSER_LIBRARY uriparser)
   endif (WINDOWS)
   set(URIPARSER_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include/uriparser)
-endif (USESYSTEMLIBS)
+endif (STANDALONE)

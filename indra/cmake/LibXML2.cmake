@@ -1,10 +1,10 @@
 # -*- cmake -*-
 include(Prebuilt)
 
-if (USESYSTEMLIBS)
+if (STANDALONE)
   include(FindPkgConfig)
   pkg_check_modules(LIBXML2_LIBRARIES REQUIRED xml2)
-else (USESYSTEMLIBS)
+else (STANDALONE)
   use_prebuilt_binary(libxml2)
   
   add_definitions(-DLIBXML_STATIC)
@@ -26,4 +26,4 @@ else (USESYSTEMLIBS)
 	    libxml2_a
 	    )
   endif()
-endif (USESYSTEMLIBS)
+endif (STANDALONE)

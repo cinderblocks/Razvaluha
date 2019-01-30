@@ -4,11 +4,11 @@ include(Prebuilt)
 include(Variables)
 
 if (LIBVLCPLUGIN)
-if (USESYSTEMLIBS)
-else (USESYSTEMLIBS)
+if (STANDALONE)
+else (STANDALONE)
     use_prebuilt_binary(vlc-bin)
     set(VLC_INCLUDE_DIR ${LIBS_PREBUILT_DIR}/include/vlc)
-endif (USESYSTEMLIBS)
+endif (STANDALONE)
 
 if (WINDOWS)
     set(VLC_PLUGIN_LIBRARIES
