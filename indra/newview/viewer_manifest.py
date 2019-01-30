@@ -444,7 +444,6 @@ class WindowsManifest(ViewerManifest):
                 self.path("ortp.dll")
             self.path("libsndfile-1.dll")
             self.path("vivoxoal.dll")
-            self.path("ca-bundle.crt")
 
             # Security
             if(self.address_size == 64):
@@ -471,7 +470,6 @@ class WindowsManifest(ViewerManifest):
 
         self.path(src="licenses-win32.txt", dst="licenses.txt")
         self.path("featuretable.txt")
-        self.path("ca-bundle.crt")
 
         # Media plugins - CEF
         with self.prefix(src='../media_plugins/cef/%s' % self.args['configuration'], dst="llplugin"):
@@ -928,7 +926,6 @@ class DarwinManifest(ViewerManifest):
                     self.path("*.tif")
 
                 self.path("featuretable_mac.txt")
-                self.path("ca-bundle.crt")
 
                 icon_path = self.icon_path()
                 with self.prefix(src=icon_path, dst="") :
@@ -1009,7 +1006,6 @@ class DarwinManifest(ViewerManifest):
                             'libvivoxoal.dylib',
                             'libvivoxsdk.dylib',
                             'libvivoxplatform.dylib',
-                            'ca-bundle.crt',
                             'SLVoice',
                             ):
                     self.path2basename(relpkgdir, libfile)
@@ -1482,7 +1478,6 @@ class LinuxManifest(ViewerManifest):
             print "Skipping llcommon.so (assuming llcommon was linked statically)"
 
         self.path("featuretable_linux.txt")
-        self.path("ca-bundle.crt")
 
     def package_finish(self):
 

@@ -18,6 +18,7 @@ include(LibXML2)
 include(LLAddBuildTest)
 include(LLAppearance)
 include(LLAudio)
+include(LLCA)
 include(LLCharacter)
 include(LLCommon)
 include(LLCoreHttp)
@@ -1361,7 +1362,7 @@ if (WINDOWS)
       PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}/res"
       )
 
-    SOURCE_GROUP("Resource Files" FILES ${viewer_RESOURCE_FILES})
+    source_group("Resource Files" FILES ${viewer_RESOURCE_FILES})
 
     list(APPEND viewer_SOURCE_FILES ${viewer_RESOURCE_FILES})
 
@@ -1431,7 +1432,7 @@ set(viewer_APPSETTINGS_FILES
     app_settings/viewerart.xml
     ${CMAKE_SOURCE_DIR}/../etc/message.xml
     ${CMAKE_SOURCE_DIR}/../scripts/messages/message_template.msg
-    ca-bundle.crt
+    ${AUTOBUILD_INSTALL_DIR}/ca-bundle.crt
     packages-info.txt
     )
 
