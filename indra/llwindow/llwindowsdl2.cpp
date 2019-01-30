@@ -1377,7 +1377,9 @@ static SDL_Cursor *makeSDLCursorFromBMP(const char *filename, int hotx, int hoty
 	bmpsurface = Load_BMP_Resource(filename);
 	if (bmpsurface && bmpsurface->w % 8 == 0)
 	{
-		
+		// Set the color (200, 200, 200) transparent
+		SDL_SetColorKey(bmpsurface, SDL_TRUE, SDL_MapRGB(bmpsurface->format, 200, 200, 200));
+
 		sdlcursor = SDL_CreateColorCursor(bmpsurface, hotx, hoty);
 		if (!sdlcursor)
 		{
