@@ -6,7 +6,6 @@
 # BIN_NAME= The full path the the binary to search for dependecies.
 # SEARCH_DIRS= The full paths to dirs to search for dependencies.
 # DST_PATH= The full path where the dependecies will be copied.
-get_filename_component(current_dir ${CMAKE_CURRENT_LIST_FILE} PATH)
 include(GetPrerequisites)
 
 message(STATUS "Getting recursive dependencies for file: ${BIN_NAME}")
@@ -67,4 +66,3 @@ if(FOUND_FILES)
       )
   endforeach(FILE ${FOUND_FILES})
 endif(FOUND_FILES)
-message("Success!")
