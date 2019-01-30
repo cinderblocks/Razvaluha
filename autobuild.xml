@@ -2853,7 +2853,7 @@
                 <key>options</key>
                 <array>
                   <string>-DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo</string>
-                  <string>-DWORD_SIZE:STRING=32</string>
+                  <string>-DADDRESS_SIZE:STRING=32</string>
                   <string>-DROOT_PROJECT_NAME:STRING=Singularity</string>
                   <string>-DINSTALL_PROPRIETARY=FALSE</string>
                 </array>
@@ -2874,7 +2874,7 @@
                 <key>options</key>
                 <array>
                   <string>-DCMAKE_BUILD_TYPE:STRING=Release</string>
-                  <string>-DWORD_SIZE:STRING=32</string>
+                  <string>-DADDRESS_SIZE:STRING=32</string>
                   <string>-DROOT_PROJECT_NAME:STRING=Singularity</string>
                   <string>-DINSTALL_PROPRIETARY=FALSE</string>
                 </array>
@@ -3070,7 +3070,7 @@
                 <array>
                   <string>-G</string>
                   <string>'Unix Makefiles'</string>
-                  <string>-DWORD_SIZE:STRING=64</string>
+                  <string>-DADDRESS_SIZE:STRING=64</string>
                 </array>
               </map>
               <key>default</key>
@@ -3095,7 +3095,7 @@
                 <array>
                   <string>-G</string>
                   <string>'Unix Makefiles'</string>
-                  <string>-DWORD_SIZE:STRING=64</string>
+                  <string>-DADDRESS_SIZE:STRING=64</string>
                 </array>
               </map>
               <key>name</key>
@@ -3228,7 +3228,7 @@
                   <string>-G</string>
                   <string>"Visual Studio 15 Win64"</string>
                   <string>-DCMAKE_SYSTEM_VERSION="10.0.16299.0"</string>
-                  <string>-DWORD_SIZE:STRING=64</string>
+                  <string>-DADDRESS_SIZE:STRING=64</string>
                   <string>-DINSTALL_PROPRIETARY=FALSE</string>
                 </array>
               </map>
@@ -3268,7 +3268,7 @@
                   <string>-G</string>
                   <string>"Visual Studio 15 Win64"</string>
                   <string>-DCMAKE_SYSTEM_VERSION="10.0.16299.0"</string>
-                  <string>-DWORD_SIZE:STRING=64</string>
+                  <string>-DADDRESS_SIZE:STRING=64</string>
                   <string>-DINSTALL_PROPRIETARY=FALSE</string>
                 </array>
               </map>

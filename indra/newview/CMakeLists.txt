@@ -1573,19 +1573,19 @@ if (WINDOWS)
 
 
     if (FMODSTUDIO)
-      if (WORD_SIZE EQUAL 32)
+      if (ADDRESS_SIZE EQUAL 32)
         list(APPEND COPY_INPUT_DEPENDENCIES
              ${SHARED_LIB_STAGING_DIR}/Release/fmod.dll
              ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod.dll
              ${SHARED_LIB_STAGING_DIR}/Debug/fmodL.dll
             )
-      elseif (WORD_SIZE EQUAL 64)
+      elseif (ADDRESS_SIZE EQUAL 64)
         list(APPEND COPY_INPUT_DEPENDENCIES
              ${SHARED_LIB_STAGING_DIR}/Release/fmod64.dll
              ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod64.dll
              ${SHARED_LIB_STAGING_DIR}/Debug/fmodL64.dll
             )
-      endif (WORD_SIZE EQUAL 32)
+      endif (ADDRESS_SIZE EQUAL 32)
     endif (FMODSTUDIO)
 
     add_custom_command(
