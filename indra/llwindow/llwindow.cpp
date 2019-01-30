@@ -357,11 +357,7 @@ void LLSplashScreen::show()
 {
 	if (!gSplashScreenp)
 	{
-#if LL_WINDOWS && !LL_MESA_HEADLESS
-		gSplashScreenp = new LLSplashScreenWin32;
-#elif LL_DARWIN
-		gSplashScreenp = new LLSplashScreenMacOSX;
-#endif
+		gSplashScreenp = LLSplashScreen::create();
 		if (gSplashScreenp)
 		{
 			gSplashScreenp->showImpl();

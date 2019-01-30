@@ -67,10 +67,10 @@ static LLWindowSDL2 *gWindowImplementation = nullptr;
 LLWindowSDL2::LLWindowSDL2(LLWindowCallbacks* callbacks,
 	const std::string& title, const std::string& name, S32 x, S32 y, S32 width,
 	S32 height, U32 flags,
-	U32 window_mode, BOOL clearBg,
-	U32 vsync_setting, BOOL use_gl,
+	BOOL fullscreen, BOOL clearBg,
+	const S32 vsync_setting, BOOL use_gl,
 	BOOL ignore_pixel_depth, U32 fsaa_samples)
-	: LLWindow(callbacks, window_mode, flags),
+	: LLWindow(callbacks, fullscreen, flags),
 	mGamma(1.0f)
 {
 	SDL_SetMainReady();
@@ -106,7 +106,7 @@ LLWindowSDL2::LLWindowSDL2(LLWindowCallbacks* callbacks,
 		mWindowTitle = title;
 
 	// Create the GL context and set it up for windowed or fullscreen, as appropriate.
-	if (createContext(x, y, width, height, 32, window_mode, vsync_setting))
+	if (createContext(x, y, width, height, 32, fullscreen, vsync_setting))
 	{
 		gGLManager.initGL();
 
@@ -149,16 +149,16 @@ static SDL_Surface *Load_BMP_Resource(const char *basename)
 	return SDL_LoadBMP(path.c_str());
 }
 
-BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, U32 window_mode, U32 vsync_setting)
+BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, BOOL fullscreen, const S32 vsync_setting)
 {
-	LL_INFOS() << "createContext, fullscreen=" << window_mode <<
+	LL_INFOS() << "createContext, fullscreen=" << fullscreen <<
 		" size=" << width << "x" << height << LL_ENDL;
 
 	// captures don't survive contexts
 	mGrabbyKeyFlags = 0;
 	mReallyCapturedCount = 0;
 
-	mWindowMode = window_mode;
+	mFullscreen = fullscreen;
 
 #if LL_WINDOWS
 	char* name_char = const_cast<char*>(mWindowName.c_str());
@@ -225,11 +225,12 @@ BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, 
 	if (getFullscreen())
 	{ 
 		Uint32 window_mode_flag = 0;
+		/*
 		if (window_mode == E_WINDOW_WINDOWED_FULLSCREEN)
 		{
 			window_mode_flag = SDL_WINDOW_FULLSCREEN_DESKTOP;
 		}
-		else if (window_mode == E_WINDOW_FULLSCREEN_EXCLUSIVE)
+		else*/ if (fullscreen) // (window_mode == E_WINDOW_FULLSCREEN_EXCLUSIVE)
 		{
 			window_mode_flag = SDL_WINDOW_FULLSCREEN;
 		}
@@ -238,11 +239,11 @@ BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, 
 		{
 			SDL_SetWindowResizable(mWindow, SDL_FALSE);
 			SDL_SetWindowPosition(mWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-			if (window_mode == E_WINDOW_WINDOWED_FULLSCREEN)
+			/*if (window_mode == E_WINDOW_WINDOWED_FULLSCREEN)
 			{
 				mWindowMode = E_WINDOW_WINDOWED_FULLSCREEN;
 			}
-			else if (window_mode == E_WINDOW_FULLSCREEN_EXCLUSIVE)
+			else*/ if (fullscreen) //(window_mode == E_WINDOW_FULLSCREEN_EXCLUSIVE)
 			{
 				LL_INFOS() << "Setting up fullscreen " << width << "x" << height << LL_ENDL;
 
@@ -305,7 +306,7 @@ BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, 
 				{
 					SDL_DisplayMode mode;
 					SDL_GetWindowDisplayMode(mWindow, &mode);
-					mWindowMode = E_WINDOW_FULLSCREEN_EXCLUSIVE;
+					mFullscreen = true; //mWindowMode = E_WINDOW_FULLSCREEN_EXCLUSIVE;
 					mFullscreenWidth = mode.w;
 					mFullscreenHeight = mode.h;
 					mFullscreenBits = SDL_BITSPERPIXEL(mode.format);
@@ -323,7 +324,7 @@ BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, 
 				{
 					LL_WARNS() << "Failed to set display mode for fullscreen. SDL: " << SDL_GetError() << LL_ENDL;
 					// No fullscreen support
-					mWindowMode = E_WINDOW_WINDOWED;
+					mFullscreen = false; //mWindowMode = E_WINDOW_WINDOWED;
 					mFullscreenWidth = -1;
 					mFullscreenHeight = -1;
 					mFullscreenBits = -1;
@@ -442,10 +443,10 @@ BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, 
 
 	switch (vsync_setting)
 	{
-	case E_VSYNC_DISABLED:
+	case 0: //E_VSYNC_DISABLED:
 		SDL_GL_SetSwapInterval(0);
 		break;
-	case E_VSYNC_NORMAL:
+	default: //case E_VSYNC_NORMAL:
 		if (SDL_GL_SetSwapInterval(1) == -1)
 		{
 			SDL_GL_SetSwapInterval(0);
@@ -455,7 +456,7 @@ BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, 
 			LL_INFOS() << "Enabled vsync" << LL_ENDL;
 		}
 		break;
-	case E_VSYNC_ADAPTIVE:
+	case -1: //E_VSYNC_ADAPTIVE:
 		if (SDL_GL_SetSwapInterval(-1) == -1)
 		{
 			if (SDL_GL_SetSwapInterval(1) == -1)
@@ -471,8 +472,6 @@ BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, 
 		{
 			LL_INFOS() << "Enabled adaptive vsync" << LL_ENDL;
 		}
-		break;
-	default:
 		break;
 	}
 
@@ -504,17 +503,17 @@ BOOL LLWindowSDL2::createContext(int x, int y, int width, int height, int bits, 
 }
 
 // changing fullscreen resolution, or switching between windowed and fullscreen mode.
-BOOL LLWindowSDL2::switchContext(U32 window_mode, const LLCoordScreen &size, U32 vsync_setting, const LLCoordScreen * const posp)
+BOOL LLWindowSDL2::switchContext(BOOL fullscreen, const LLCoordScreen &size, const S32 vsync_setting, const LLCoordScreen * const posp)
 {
 	const BOOL needsRebuild = TRUE;  // Just nuke the context and start over.
 	BOOL result = true;
 
-	LL_INFOS() << "switchContext, fullscreen=" << window_mode << LL_ENDL;
+	LL_INFOS() << "switchContext, fullscreen=" << fullscreen << LL_ENDL;
 	stop_glerror();
 	if (needsRebuild)
 	{
 		destroyContext();
-		result = createContext(0, 0, size.mX, size.mY, 32, window_mode, vsync_setting);
+		result = createContext(0, 0, size.mX, size.mY, 32, fullscreen, vsync_setting);
 		if (result)
 		{
 			gGLManager.initGL();
@@ -682,7 +681,7 @@ BOOL LLWindowSDL2::maximize()
 
 BOOL LLWindowSDL2::getFullscreen()
 {
-	return mWindowMode == E_WINDOW_FULLSCREEN_EXCLUSIVE || mWindowMode == E_WINDOW_WINDOWED_FULLSCREEN;
+	return mFullscreen; //mWindowMode == E_WINDOW_FULLSCREEN_EXCLUSIVE || mWindowMode == E_WINDOW_WINDOWED_FULLSCREEN;
 }
 
 BOOL LLWindowSDL2::getPosition(LLCoordScreen *position)
@@ -735,6 +734,7 @@ BOOL LLWindowSDL2::setSizeImpl(LLCoordScreen size)
 		S32 width = llmax(size.mX, (S32) mMinWindowWidth);
 		S32 height = llmax(size.mY, (S32) mMinWindowHeight);
 
+		/*
 		if (mWindowMode == E_WINDOW_FULLSCREEN_EXCLUSIVE)
 		{
 			SDL_DisplayMode target_mode;
@@ -762,7 +762,7 @@ BOOL LLWindowSDL2::setSizeImpl(LLCoordScreen size)
 					<< LL_ENDL;
 			}
 		}
-		else
+		else*/
 		{
 			SDL_SetWindowSize(mWindow, width, height);
 		}
@@ -779,6 +779,7 @@ BOOL LLWindowSDL2::setSizeImpl(LLCoordWindow size)
 		S32 width = llmax(size.mX, (S32) mMinWindowWidth);
 		S32 height = llmax(size.mY, (S32) mMinWindowHeight);
 
+		/*
 		if (mWindowMode == E_WINDOW_FULLSCREEN_EXCLUSIVE)
 		{
 			SDL_DisplayMode target_mode;
@@ -806,7 +807,7 @@ BOOL LLWindowSDL2::setSizeImpl(LLCoordWindow size)
 					<< LL_ENDL;
 			}
 		}
-		else
+		else*/
 		{
 			SDL_SetWindowSize(mWindow, width, height);
 		}
@@ -1462,12 +1463,13 @@ void LLWindowSDL2::initCursors()
 	mSDLCursors[UI_CURSOR_TOOLSIT] = makeSDLCursorFromBMP("toolsit.BMP", 20, 15);
 	mSDLCursors[UI_CURSOR_TOOLBUY] = makeSDLCursorFromBMP("toolbuy.BMP", 20, 15);
 	mSDLCursors[UI_CURSOR_TOOLOPEN] = makeSDLCursorFromBMP("toolopen.BMP", 20, 15);
-	mSDLCursors[UI_CURSOR_TOOLPATHFINDING] = makeSDLCursorFromBMP("lltoolpathfinding.BMP", 16, 16);
+/*	mSDLCursors[UI_CURSOR_TOOLPATHFINDING] = makeSDLCursorFromBMP("lltoolpathfinding.BMP", 16, 16);
 	mSDLCursors[UI_CURSOR_TOOLPATHFINDING_PATH_START] = makeSDLCursorFromBMP("lltoolpathfindingpathstart.BMP", 16, 16);
 	mSDLCursors[UI_CURSOR_TOOLPATHFINDING_PATH_START_ADD] = makeSDLCursorFromBMP("lltoolpathfindingpathstartadd.BMP", 16, 16);
 	mSDLCursors[UI_CURSOR_TOOLPATHFINDING_PATH_END] = makeSDLCursorFromBMP("lltoolpathfindingpathend.BMP", 16, 16);
 	mSDLCursors[UI_CURSOR_TOOLPATHFINDING_PATH_END_ADD] = makeSDLCursorFromBMP("lltoolpathfindingpathendadd.BMP", 16, 16);
 	mSDLCursors[UI_CURSOR_TOOLNO] = makeSDLCursorFromBMP("llno.BMP", 8, 8);
+	*/
 }
 
 void LLWindowSDL2::quitCursors()

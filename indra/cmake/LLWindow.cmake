@@ -26,6 +26,13 @@ if (SDL_FOUND)
   include_directories(${SDL_INCLUDE_DIR})
 endif (SDL_FOUND)
 
+if (LLWINDOW_SDL2)
+    use_prebuilt_binary(SDL2)
+    set (SDL2_INCLUDE_DIR ${LIBS_PREBUILT_DIR}/SDL2)
+    set (SDL2_LIBRARY SDL2)
+  include_directories(${SDL2_INCLUDE_DIR})
+endif (LLWINDOW_SDL2)
+
 set(LLWINDOW_INCLUDE_DIRS
     ${GLEXT_INCLUDE_DIR}
     ${LIBS_OPEN_DIR}/llwindow
