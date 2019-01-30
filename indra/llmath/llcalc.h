@@ -27,9 +27,6 @@
 #ifndef LL_CALC_H
 #define LL_CALC_H
 
-#include <map>
-#include <string>
-
 class LLCalc
 {
 public:
@@ -86,7 +83,6 @@ public:
 private:
 	std::string::size_type	mLastErrorPos;
 	
-	calc_map_t	mConstants;
 	calc_map_t	mVariables;
 
 	// "There shall be only one"
