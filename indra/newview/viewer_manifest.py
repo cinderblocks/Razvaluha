@@ -829,6 +829,8 @@ class WindowsManifest(ViewerManifest):
         self.created_path(self.dst_path_of(installer_file))
         self.package_file = installer_file
 
+    def escape_slashes(self, path):
+        return path.replace('\\', '\\\\\\\\')
 
 class Windows_i686_Manifest(WindowsManifest):
     # Although we aren't literally passed ADDRESS_SIZE, we can infer it from
@@ -1146,8 +1148,7 @@ class DarwinManifest(ViewerManifest):
         # This may be desirable for the final release.  Or not.
         if ("package" in self.args['actions'] or
             "unpacked" in self.args['actions']):
-            self.run_command('strip -S %(viewer_binary)r' %
-                             { 'viewer_binary' : self.dst_path_of('Contents/MacOS/%s' % self.viewer_branding_id())})
+            self.run_command(['strip', '-S', self.dst_path_of('Contents/MacOS/%s' % self.viewer_branding_id())])
 
     def copy_finish(self):
         # Force executable permissions to be set for scripts
@@ -1338,6 +1339,8 @@ class Darwin_x86_64_Manifest(DarwinManifest):
 
 
 class LinuxManifest(ViewerManifest):
+    build_data_json_platform = 'lnx'
+
     def is_packaging_viewer(self):
         super(LinuxManifest, self).is_packaging_viewer()
         return True # We always want a packaged viewer even without archive.
@@ -1379,10 +1382,8 @@ class LinuxManifest(ViewerManifest):
             self.path("../linux_crash_logger/linux-crash-logger","linux-crash-logger.bin")
             self.path2basename("../llplugin/slplugin", "AlchemyPlugin")
 
-        if self.prefix("res-sdl"):
-            self.path("*")
-            # recurse
-            self.end_prefix("res-sdl")
+        # recurses, packaged again
+        self.path("res-sdl")
 
         # Get the icons based on the channel type
         icon_path = self.icon_path()
@@ -1488,33 +1489,28 @@ class LinuxManifest(ViewerManifest):
         self.strip_binaries()
 
         # Fix access permissions
-        self.run_command("""
-                find %(dst)s -type d | xargs --no-run-if-empty chmod 755;
-                find %(dst)s -type f -perm 0700 | xargs --no-run-if-empty chmod 0755;
-                find %(dst)s -type f -perm 0500 | xargs --no-run-if-empty chmod 0555;
-                find %(dst)s -type f -perm 0600 | xargs --no-run-if-empty chmod 0644;
-                find %(dst)s -type f -perm 0400 | xargs --no-run-if-empty chmod 0444;
-                true""" %  {'dst':self.get_dst_prefix() })
+        self.run_command(['find', self.get_dst_prefix(),
+                          '-type', 'd', '-exec', 'chmod', '755', '{}', ';'])
+        for old, new in ('0700', '0755'), ('0500', '0555'), ('0600', '0644'), ('0400', '0444'):
+            self.run_command(['find', self.get_dst_prefix(),
+                              '-type', 'f', '-perm', old,
+                              '-exec', 'chmod', new, '{}', ';'])
 
     def create_archive(self):
         installer_name = self.installer_base_name()
         # temporarily move directory tree so that it has the right
         # name in the tarfile
-        self.run_command("mv %(dst)s %(inst)s" % {
-            'dst': self.get_dst_prefix(),
-            'inst': self.build_path_of(installer_name)})
+        realname = self.get_dst_prefix()
+        tempname = self.build_path_of(installer_name)
+        self.run_command(["mv", realname, tempname])
         try:
             # --numeric-owner hides the username of the builder for
             # security etc.
-            self.run_command('tar -C %(dir)s --numeric-owner -cJf '
-                             '%(inst_path)s.tar.xz %(inst_name)s' % {
-                    'dir': self.get_build_prefix(),
-                    'inst_name': installer_name,
-                    'inst_path':self.build_path_of(installer_name)})
+            self.run_command(['tar', '-C', self.get_build_prefix(),
+                              '--numeric-owner', '-cJf',
+                             tempname + '.tar.xz', installer_name])
         finally:
-            self.run_command("mv %(inst)s %(dst)s" % {
-                'dst': self.get_dst_prefix(),
-                'inst': self.build_path_of(installer_name)})
+            self.run_command(["mv", tempname, realname])
             self.package_file = installer_name + '.tar.xz'
 
     def strip_binaries(self):
@@ -1522,7 +1518,6 @@ class LinuxManifest(ViewerManifest):
         # makes some small assumptions about our packaged dir structure
         self.run_command(r"find %(d)r/lib %(d)r/lib32 %(d)r/lib64 -type f \! -name update_install | xargs --no-run-if-empty strip -S" % {'d': self.get_dst_prefix()} )
         self.run_command(r"find %(d)r/bin -executable -type f \! -name update_install | xargs --no-run-if-empty strip -S" % {'d': self.get_dst_prefix()} )
-
 
 class Linux_i686_Manifest(LinuxManifest):
     address_size = 32
@@ -1551,7 +1546,6 @@ class Linux_i686_Manifest(LinuxManifest):
 
             self.path("libtcmalloc_minimal.so.0")
             self.path("libtcmalloc_minimal.so.0.2.2")
-            self.end_prefix("lib")
 
         # Vivox runtimes
         with self.prefix(src=relpkgdir, dst="bin"):
