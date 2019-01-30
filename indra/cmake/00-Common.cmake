@@ -2,6 +2,17 @@
 #
 # Compilation options shared by all Second Life components.
 
+#*****************************************************************************
+#   It's important to realize that CMake implicitly concatenates
+#   CMAKE_CXX_FLAGS with (e.g.) CMAKE_CXX_FLAGS_RELEASE for Release builds. So
+#   set switches in CMAKE_CXX_FLAGS that should affect all builds, but in
+#   CMAKE_CXX_FLAGS_RELEASE or CMAKE_CXX_FLAGS_RELWITHDEBINFO for switches
+#   that should affect only that build variant.
+#
+#   Also realize that CMAKE_CXX_FLAGS may already be partially populated on
+#   entry to this file.
+#*****************************************************************************
+
 if(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)
 set(${CMAKE_CURRENT_LIST_FILE}_INCLUDED "YES")
 
@@ -44,11 +55,8 @@ if (WINDOWS)
       "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Od /Zi /MD /MP /Ob0 -D_ITERATOR_DEBUG_LEVEL=0"
       CACHE STRING "C++ compiler release-with-debug options" FORCE)
   set(CMAKE_CXX_FLAGS_RELEASE
-      "${CMAKE_CXX_FLAGS_RELEASE} ${LL_CXX_FLAGS} /O2 /Oi /Ot /Zi /Zo /MD /MP /Ob2 /Zc:inline /fp:fast -D_ITERATOR_DEBUG_LEVEL=0"
+      "${CMAKE_CXX_FLAGS_RELEASE} ${LL_CXX_FLAGS} /O2 /Oi /Ot /Gy /Gw /Zi /Zo /MD /MP /Ob2 /Zc:inline /fp:fast -D_ITERATOR_DEBUG_LEVEL=0"
       CACHE STRING "C++ compiler release options" FORCE)
-  set(CMAKE_C_FLAGS_RELEASE
-      "${CMAKE_C_FLAGS_RELEASE} ${LL_C_FLAGS} /O2 /Zi /MD /MP /fp:fast"
-      CACHE STRING "C compiler release options" FORCE)
 
   if (WORD_SIZE EQUAL 32)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
@@ -86,14 +94,21 @@ if (WINDOWS)
       /D_CRT_SECURE_NO_WARNINGS
 	  /D_CRT_NONSTDC_NO_DEPRECATE
       /D_WINSOCK_DEPRECATED_NO_WARNINGS
+      /D_SILENCE_FPOS_SEEKPOS_DEPRECATION_WARNING
+      /D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
+      /D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
       /DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
       )
 
   add_compile_options(
+      #/diagnostics:caret
+      /EHsc
       /GS
       /TP
       /W3
       /c
+      /permissive-
+      /Zc:__cplusplus
       /Zc:externConstexpr
       /Zc:forScope
       /Zc:referenceBinding
@@ -112,8 +127,6 @@ if (WINDOWS)
   if (USE_LTO)
     add_compile_options(
         /GL
-        /Gy
-        /Gw
         )
   endif (USE_LTO)
 
@@ -146,6 +159,7 @@ if (LINUX)
     -fno-math-errno
     -fno-strict-aliasing
     -fsigned-char
+    -std=gnu++14
     -g
     -pthread
     )
@@ -155,10 +169,11 @@ if (LINUX)
     -DAPPID=secondlife
     -DLL_IGNORE_SIGCHLD
     -D_REENTRANT
+    -DGDK_DISABLE_DEPRECATED 
+    -DGTK_DISABLE_DEPRECATED
+    -DGSEAL_ENABLE
+    -DGTK_DISABLE_SINGLE_INCLUDES
   )
-
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14")
 
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2")
 
@@ -312,10 +327,22 @@ if (LINUX OR DARWIN)
   endif (WORD_SIZE EQUAL 32)
 endif (LINUX OR DARWIN)
 
-
 if (STANDALONE)
   add_definitions(-DLL_STANDALONE=1)
+
+  if (LINUX AND ${ARCH} STREQUAL "i686")
+    add_compile_options(-march=pentiumpro)
+  endif (LINUX AND ${ARCH} STREQUAL "i686")
+
 else (STANDALONE)
+  #Define this here so it propagates on all systems to all targets
+  #add_definitions(-DBOOST_THREAD_VERSION=4)
+
+  #Uncomment this definition when we can build cleanly against OpenSSL 1.1
+  add_definitions(-DOPENSSL_API_COMPAT=0x10100000L)
+
+  add_definitions(-DGLM_FORCE_CTOR_INIT=1)  
+
   set(${ARCH}_linux_INCLUDES
       atk-1.0
       cairo
@@ -327,6 +354,14 @@ else (STANDALONE)
       pixman-1
       )
 endif (STANDALONE)
+
+option(RELEASE_SHOW_ASSERTS "Enable asserts in release builds" OFF)
+
+if(RELEASE_SHOW_ASSERTS)
+  add_definitions(-DRELEASE_SHOW_ASSERT=1)
+else()
+  add_definitions(-URELEASE_SHOW_ASSERT)
+endif()
 
 if(1 EQUAL 1)
   add_definitions(-DENABLE_CLASSIC_CLOUDS=1)
