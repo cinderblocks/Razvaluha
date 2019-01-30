@@ -322,10 +322,12 @@ BOOL LLMediaCtrl::handleRightMouseDown( S32 x, S32 y, MASK mask )
 	auto con_menu = (LLMenuGL*)mContextMenu.get();
 	if (con_menu)
 	{
+		/* Singu Note: Share your toys!!
 		// hide/show debugging options
 		bool media_plugin_debugging_enabled = gSavedSettings.getBOOL("MediaPluginDebugging");
 		con_menu->setItemVisible("open_webinspector", media_plugin_debugging_enabled );
 		con_menu->setItemVisible("debug_separator", media_plugin_debugging_enabled );
+		*/
 
 		con_menu->buildDrawLabels();
 		con_menu->updateParent(LLMenuGL::sMenuContainer);
