@@ -96,8 +96,6 @@ typedef enum MONITOR_DPI_TYPE {
 
 #endif
 
-LPWSTR gIconResource = IDI_APPLICATION;
-
 LLW32MsgCallback gAsyncMsgCallback = NULL;
 
 //
@@ -406,7 +404,7 @@ LLWindowWin32::LLWindowWin32(LLWindowCallbacks* callbacks,
 	LoadLibrary(L"opengl32.dll");
 
 	mFSAASamples = fsaa_samples;
-	mIconResource = gIconResource;
+	mIconResource = MAKEINTRESOURCE(IDI_LL_ICON);
 	mOverrideAspectRatio = 0.f;
 	mNativeAspectRatio = 0.f;
 	mMousePositionModified = FALSE;
