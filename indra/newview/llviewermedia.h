@@ -50,7 +50,6 @@ class LLViewerMediaTexture;
 class LLMediaEntry;
 class LLVOVolume;
 class LLMimeDiscoveryResponder;
-class LLPluginCookieStore;
 
 typedef LLPointer<LLViewerMediaImpl> viewer_media_t;
 ///////////////////////////////////////////////////////////////////////////////
@@ -150,13 +149,6 @@ public:
 	// Set the proxy config for all loaded plugins
 	static void setProxyConfig(bool enable, const std::string &host, int port);
 	
-	static LLPluginCookieStore *getCookieStore();
-	static void loadCookieFile();
-	static void saveCookieFile();
-	static void addCookie(const std::string &name, const std::string &value, const std::string &domain, const LLDate &expires, const std::string &path = std::string("/"), bool secure = false );
-	static void addSessionCookie(const std::string &name, const std::string &value, const std::string &domain, const std::string &path = std::string("/"), bool secure = false );
-	static void removeCookie(const std::string &name, const std::string &domain, const std::string &path = std::string("/") );
-	
 	static void openIDSetup(const std::string &openid_url, const std::string &openid_token);
 	static void openIDCookieResponse(const std::string& url, const std::string &cookie);
 	
@@ -179,7 +171,6 @@ private:
     static void openIDSetupCoro(std::string openidUrl, std::string openidToken);
     static void getOpenIDCookieCoro(std::string url);
 
-	static LLPluginCookieStore *sCookieStore;
 	static LLURL sOpenIDURL;
 	static std::string sOpenIDCookie;
 	static LLPluginClassMedia* sSpareBrowserMediaSource;
@@ -212,7 +203,7 @@ public:
 	bool initializeMedia(const std::string& mime_type);
 	bool initializePlugin(const std::string& media_type);
 	void loadURI();
-	LLPluginClassMedia* getMediaPlugin() { return mMediaSource; }
+	LLPluginClassMedia* getMediaPlugin() { return mMediaSource.get(); }
 	void setSize(int width, int height);
 
 	void showNotification(LLNotificationPtr notify);
@@ -226,6 +217,7 @@ public:
 	void skipBack(F32 step_scale);
 	void skipForward(F32 step_scale);
 	void setVolume(F32 volume);
+	void setMute(bool mute);
 	void updateVolume();
 	F32 getVolume();
 	void focus(bool focus);
@@ -339,9 +331,14 @@ public:
 
 	// Inherited from LLPluginClassMediaOwner
 	/*virtual*/ void handleMediaEvent(LLPluginClassMedia* plugin, LLPluginClassMediaOwner::EMediaEvent) override;
-	/*virtual*/ void handleCookieSet(LLPluginClassMedia* self, const std::string &cookie) override;
 
 	// LLEditMenuHandler overrides
+	/*virtual*/ void	undo() override;
+	/*virtual*/ BOOL	canUndo() const override;
+
+	/*virtual*/ void	redo() override;
+	/*virtual*/ BOOL	canRedo() const override;
+
 	/*virtual*/ void	cut() override;
 	/*virtual*/ BOOL	canCut() const override;
 
@@ -350,6 +347,12 @@ public:
 
 	/*virtual*/ void	paste() override;
 	/*virtual*/ BOOL	canPaste() const override;
+	
+	/*virtual*/ void	doDelete() override;
+	/*virtual*/ BOOL	canDoDelete() const override;
+
+	/*virtual*/ void	selectAll() override;
+	/*virtual*/ BOOL	canSelectAll() const override;
 	
 	void addObject(LLVOVolume* obj) ;
 	void removeObject(LLVOVolume* obj) ;
@@ -429,7 +432,7 @@ private:
 	
 private:
 	// a single media url with some data and an impl.
-	LLPluginClassMedia* mMediaSource;
+	boost::shared_ptr<LLPluginClassMedia> mMediaSource;
 	F64		mZoomFactor;
 	LLUUID mTextureId;
 	bool  mMovieImageHasMips;
@@ -460,6 +463,7 @@ private:
 	bool mNavigateServerRequest;
 	bool mMediaSourceFailed;
 	F32 mRequestedVolume;
+	F32 mPreviousVolume;
 	bool mIsMuted;
 	bool mNeedsMuteCheck;
 	int mPreviousMediaState;

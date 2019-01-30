@@ -24,6 +24,7 @@ else (STANDALONE)
   set(BOOST_VERSION "1.60")
 
   if (WINDOWS)
+    add_compile_definitions(_SILENCE_FPOS_SEEKPOS_DEPRECATION_WARNING)
     set(BOOST_CHRONO_LIBRARY
         optimized libboost_chrono-mt
         debug libboost_chrono-mt-gd)

@@ -9245,6 +9245,31 @@ class ListToggleMute : public view_listener_t
 	}
 };
 
+LLMediaCtrl* get_focused_media_ctrl()
+{
+	auto media_ctrl = dynamic_cast<LLMediaCtrl*>(gFocusMgr.getKeyboardFocus());
+	llassert(media_ctrl); // This listener only applies to media_ctrls
+	return media_ctrl;
+}
+
+class MediaCtrlWebInspector : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		get_focused_media_ctrl()->onOpenWebInspector();
+		return true;
+	}
+};
+
+class MediaCtrlViewSource : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		get_focused_media_ctrl()->onShowSource();
+		return true;
+	}
+};
+
 void addMenu(view_listener_t *menu, const std::string& name)
 {
 	sMenus.push_back(menu);
@@ -9574,6 +9599,10 @@ void initialize_menus()
 	LLTextEditor::setIsObjectBlockedCallback(boost::bind(&LLMuteList::isMuted, LLMuteList::getInstance(), _1, _2, 0));
 	LLTextEditor::setIsFriendCallback(LLAvatarActions::isFriend);
 	LLTextEditor::addMenuListeners();
+
+	// Media Ctrl menus
+	addMenu(new MediaCtrlWebInspector(), "Open.WebInspector");
+	addMenu(new MediaCtrlViewSource(), "Open.ViewSource");
 
 	class LLViewBuildMode : public view_listener_t
 	{

@@ -1085,8 +1085,6 @@ bool idle_startup()
 
 		// Load URL History File
 		LLURLHistory::loadFile("url_history.xml");
-		// Load media plugin cookies
-		LLViewerMedia::loadCookieFile();
 				
 		//-------------------------------------------------
 		// Handle startup progress screen

@@ -42,9 +42,9 @@ class LLViewerMediaFocus :
 	public LLSingleton<LLViewerMediaFocus>
 {
 	LLSINGLETON(LLViewerMediaFocus);
-public:
 	~LLViewerMediaFocus();
 	
+public:
 	// Set/clear the face that has media focus (takes keyboard input and has the full set of controls)
 	void setFocusFace(LLPointer<LLViewerObject> objectp, S32 face, viewer_media_t media_impl, LLVector3 pick_normal = LLVector3::zero);
 	void clearFocus();
@@ -55,9 +55,9 @@ public:
 	void clearHover();
 	
 	/*virtual*/ bool	getFocus();
-	/*virtual*/ BOOL	handleKey(KEY key, MASK mask, BOOL called_from_parent);
-	/*virtual*/ BOOL	handleKeyUp(KEY key, MASK mask, BOOL called_from_parent);
-	/*virtual*/ BOOL	handleUnicodeChar(llwchar uni_char, BOOL called_from_parent);
+	/*virtual*/ BOOL	handleKey(KEY key, MASK mask, BOOL called_from_parent) override;
+	/*virtual*/ BOOL	handleKeyUp(KEY key, MASK mask, BOOL called_from_parent) override;
+	/*virtual*/ BOOL	handleUnicodeChar(llwchar uni_char, BOOL called_from_parent) override;
 	BOOL handleScrollWheel(S32 x, S32 y, S32 clicks);
 
 	void update();
@@ -83,18 +83,19 @@ public:
 	void focusZoomOnMedia(LLUUID media_id);
 	// Are we zoomed in?
 	bool isZoomed() const;
+	bool isZoomedOnMedia(LLUUID media_id);
 	void unZoom();
 	
 	// Return the ID of the media instance the controls are currently attached to (either focus or hover).
 	LLUUID getControlsMediaID();
 
     // The MoaP object wants keyup and keydown events.  Overridden to return true.
-    virtual bool    wantsKeyUpKeyDown() const;
-    virtual bool    wantsReturnKey() const;
+	bool    wantsKeyUpKeyDown() const override;
+	bool    wantsReturnKey() const override;
 
 protected:
-	/*virtual*/ void	onFocusReceived();
-	/*virtual*/ void	onFocusLost();
+	/*virtual*/ void	onFocusReceived() override;
+	/*virtual*/ void	onFocusLost() override;
 
 private:
 	
@@ -104,6 +105,7 @@ private:
 	LLUUID mFocusedObjectID;
 	S32 mFocusedObjectFace;
 	LLUUID mFocusedImplID;
+	LLUUID mPrevFocusedImplID;
 	LLVector3 mFocusedObjectNormal;
 	
 	LLUUID mHoverObjectID;

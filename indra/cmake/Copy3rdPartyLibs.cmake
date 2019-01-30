@@ -40,16 +40,18 @@ if(WINDOWS)
 
     set(debug_src_dir "${ARCH_PREBUILT_DIRS_DEBUG}")
     set(debug_files
-        openjpegd.dll
         glod.dll    
+        nghttp2.dll
         libhunspell.dll
+        openjpegd.dll
         )
 
     set(release_src_dir "${ARCH_PREBUILT_DIRS_RELEASE}")
     set(release_files
-        openjpeg.dll
         glod.dll
+        nghttp2.dll
         libhunspell.dll
+        openjpeg.dll
         )
 
     if(WORD_SIZE STREQUAL 64)

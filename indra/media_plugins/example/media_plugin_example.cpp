@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file media_plugin_example.cpp
  * @brief Example plugin for LLMedia API plugin system
@@ -40,23 +38,22 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-class MediaPluginExample :
+class mediaPluginExample :
         public MediaPluginBase
 {
     public:
-        MediaPluginExample( LLPluginInstance::sendMessageFunction host_send_func, void *host_user_data );
-        ~MediaPluginExample();
+	mediaPluginExample(LLPluginInstance::sendMessageFunction host_send_func, void *host_user_data);
+	~mediaPluginExample();
 
         /*virtual*/ void receiveMessage( const char* message_string );
 
     private:
         bool init();
         void update( F64 milliseconds );
-        void write_pixel( int x, int y, unsigned char r, unsigned char g, unsigned char b );
         bool mFirstTime;
 
         time_t mLastUpdateTime;
-        enum Constants { ENumObjects = 10 };
+	enum Constants { ENumObjects = 64 };
         unsigned char* mBackgroundPixels;
         int mColorR[ ENumObjects ];
         int mColorG[ ENumObjects ];
@@ -66,35 +63,33 @@ class MediaPluginExample :
         int mXInc[ ENumObjects ];
         int mYInc[ ENumObjects ];
         int mBlockSize[ ENumObjects ];
-        bool mMouseButtonDown;
-        bool mStopAction;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-MediaPluginExample::MediaPluginExample( LLPluginInstance::sendMessageFunction host_send_func, void *host_user_data ) :
+mediaPluginExample::mediaPluginExample(LLPluginInstance::sendMessageFunction host_send_func, void *host_user_data) :
     MediaPluginBase( host_send_func, host_user_data )
 {
     mFirstTime = true;
+	mTextureWidth = 0;
+	mTextureHeight = 0;
     mWidth = 0;
     mHeight = 0;
     mDepth = 4;
     mPixels = 0;
-    mMouseButtonDown = false;
-    mStopAction = false;
     mLastUpdateTime = 0;
-    mBackgroundPixels = NULL;
+	mBackgroundPixels = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-MediaPluginExample::~MediaPluginExample()
+mediaPluginExample::~mediaPluginExample()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-void MediaPluginExample::receiveMessage( const char* message_string )
+void mediaPluginExample::receiveMessage(const char* message_string)
 {
 //  std::cerr << "MediaPluginWebKit::receiveMessage: received message: \"" << message_string << "\"" << std::endl;
     LLPluginMessage message_in;
@@ -114,7 +109,7 @@ void MediaPluginExample::receiveMessage( const char* message_string )
                 versions[LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER] = LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER_VERSION;
                 message.setValueLLSD("versions", versions);
 
-                std::string plugin_version = "Example plugin 1.0..0";
+				std::string plugin_version = "Example plugin 0.0.0";
                 message.setValue("plugin_version", plugin_version);
                 sendMessage(message);
             }
@@ -128,6 +123,10 @@ void MediaPluginExample::receiveMessage( const char* message_string )
             }
             else if(message_name == "cleanup")
             {
+				LLPluginMessage message("base", "goodbye");
+				sendMessage(message);
+
+				mDeleteMe = true;
             }
             else if(message_name == "shm_added")
             {
@@ -179,7 +178,7 @@ void MediaPluginExample::receiveMessage( const char* message_string )
                 message.setValueS32("default_width", 1024);
                 message.setValueS32("default_height", 1024);
                 message.setValueS32("depth", mDepth);
-                message.setValueU32("internalformat", GL_RGBA);
+				message.setValueU32("internalformat", GL_RGB);
                 message.setValueU32("format", GL_RGBA);
                 message.setValueU32("type", GL_UNSIGNED_BYTE);
                 message.setValueBoolean("coords_opengl", true);
@@ -216,6 +215,9 @@ void MediaPluginExample::receiveMessage( const char* message_string )
                 message.setValueS32("texture_height", texture_height);
                 sendMessage(message);
 
+				mFirstTime = true;
+				mLastUpdateTime = 0;
+
             }
             else if(message_name == "load_uri")
             {
@@ -237,35 +239,13 @@ void MediaPluginExample::receiveMessage( const char* message_string )
         }
         else
         {
-//          std::cerr << "MediaPluginWebKit::receiveMessage: unknown message class: " << message_class << std::endl;
         };
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-void MediaPluginExample::write_pixel( int x, int y, unsigned char r, unsigned char g, unsigned char b )
-{
-    // make sure we don't write outside the buffer
-    if ( ( x < 0 ) || ( x >= mWidth ) || ( y < 0 ) || ( y >= mHeight ) )
-        return;
-
-    if ( mBackgroundPixels != NULL )
-    {
-        unsigned char *pixel = mBackgroundPixels;
-        pixel += y * mWidth * mDepth;
-        pixel += ( x * mDepth );
-        pixel[ 0 ] = b;
-        pixel[ 1 ] = g;
-        pixel[ 2 ] = r;
-
-        setDirty( x, y, x + 1, y + 1 );
-    };
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-void MediaPluginExample::update( F64 milliseconds )
+void mediaPluginExample::update(F64 milliseconds)
 {
     if ( mWidth < 1 || mWidth > 2048 || mHeight < 1 || mHeight > 2048 )
         return;
@@ -301,9 +281,6 @@ void MediaPluginExample::update( F64 milliseconds )
 
         mFirstTime = false;
     };
-
-    if ( mStopAction )
-        return;
 
     if ( time( NULL ) > mLastUpdateTime + 3 )
     {
@@ -366,10 +343,10 @@ void MediaPluginExample::update( F64 milliseconds )
         };
 
         if ( mXpos[ n ] + mXInc[ n ] < 0 || mXpos[ n ] + mXInc[ n ] >= mWidth - mBlockSize[ n ] )
-            mXInc[ n ] -= mXInc[ n ];
+			mXInc[n] = -mXInc[n];
 
         if ( mYpos[ n ] + mYInc[ n ] < 0 || mYpos[ n ] + mYInc[ n ] >= mHeight - mBlockSize[ n ] )
-            mYInc[ n ] -= mYInc[ n ];
+			mYInc[n] = -mYInc[n];
 
         mXpos[ n ] += mXInc[ n ];
         mYpos[ n ] += mYInc[ n ];
@@ -390,7 +367,7 @@ void MediaPluginExample::update( F64 milliseconds )
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-bool MediaPluginExample::init()
+bool mediaPluginExample::init()
 {
     LLPluginMessage message( LLPLUGIN_MESSAGE_CLASS_MEDIA, "name_text" );
     message.setValue( "name", "Example Plugin" );
@@ -406,10 +383,9 @@ int init_media_plugin( LLPluginInstance::sendMessageFunction host_send_func,
                         LLPluginInstance::sendMessageFunction *plugin_send_func,
                         void **plugin_user_data )
 {
-    MediaPluginExample* self = new MediaPluginExample( host_send_func, host_user_data );
-    *plugin_send_func = MediaPluginExample::staticReceiveMessage;
+	mediaPluginExample* self = new mediaPluginExample(host_send_func, host_user_data);
+	*plugin_send_func = mediaPluginExample::staticReceiveMessage;
     *plugin_user_data = ( void* )self;
 
     return 0;
 }
-

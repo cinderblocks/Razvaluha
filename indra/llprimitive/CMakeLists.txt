@@ -3,7 +3,6 @@
 project(llprimitive)
 
 include(00-Common)
-include(Colladadom)
 include(LLCommon)
 include(LLMath)
 include(LLMessage)
@@ -17,13 +16,16 @@ include_directories(
     ${LLMATH_INCLUDE_DIRS}
     ${LLMESSAGE_INCLUDE_DIRS}
     ${LLXML_INCLUDE_DIRS}
-    ${COLLADADOM_INCLUDE_DIRS}
+    ${LIBS_PREBUILT_DIR}/include/collada
+    ${LIBS_PREBUILT_DIR}/include/collada/1.4
     ${LLCHARACTER_INCLUDE_DIRS}
     )
 include_directories(SYSTEM
     ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
     ${LLXML_SYSTEM_INCLUDE_DIRS}
     ${LLPHYSICSEXTENSIONS_INCLUDE_DIRS}
+    ${LIBS_PREBUILT_DIR}/include/collada
+    ${LIBS_PREBUILT_DIR}/include/collada/1.4
     )
 
 set(llprimitive_SOURCE_FILES

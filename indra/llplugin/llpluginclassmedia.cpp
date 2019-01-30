@@ -128,9 +128,13 @@ void LLPluginClassMedia::reset()
 	mLastMouseY = 0;
 	mStatus = LLPluginClassMediaOwner::MEDIA_NONE;
 	mSleepTime = 1.0f / 100.0f;
+	mCanUndo = false;
+	mCanRedo = false;
 	mCanCut = false;
 	mCanCopy = false;
 	mCanPaste = false;
+	mCanDoDelete = false;
+	mCanSelectAll = false;
 	mMediaName.clear();
 	mMediaDescription.clear();
 	mBackgroundColor = LLColor4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -821,6 +825,18 @@ void LLPluginClassMedia::sendAuthResponse(bool ok, const std::string &username, 
 	sendMessage(message);
 }
 
+void LLPluginClassMedia::undo()
+{
+	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "edit_undo");
+	sendMessage(message);
+}
+
+void LLPluginClassMedia::redo()
+{
+	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "edit_redo");
+	sendMessage(message);
+}
+
 void LLPluginClassMedia::cut()
 {
 	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "edit_cut");
@@ -839,12 +855,33 @@ void LLPluginClassMedia::paste()
 	sendMessage(message);
 }
 
-void LLPluginClassMedia::setUserDataPath(const std::string &user_data_path_cache, const std::string &user_data_path_cookies, const std::string &user_data_path_logs)
+void LLPluginClassMedia::doDelete()
+{
+	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "edit_delete");
+	sendMessage(message);
+}
+
+void LLPluginClassMedia::selectAll()
+{
+	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "edit_select_all");
+	sendMessage(message);
+}
+
+void LLPluginClassMedia::showPageSource()
+{
+	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "edit_show_source");
+	sendMessage(message);
+}
+
+void LLPluginClassMedia::setUserDataPath(const std::string &user_data_path_cache,
+										 const std::string &user_data_path_cookies,
+										 const std::string &user_data_path_cef_log)
 {
 	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "set_user_data_path");
 	message.setValue("cache_path", user_data_path_cache);
 	message.setValue("cookies_path", user_data_path_cookies);
-	message.setValue("logs_path", user_data_path_logs);
+	message.setValue("cef_log_file", user_data_path_cef_log);
+
 	sendMessage(message);
 }
 
@@ -1070,6 +1107,14 @@ void LLPluginClassMedia::receivePluginMessage(const LLPluginMessage &message)
 		}
 		else if(message_name == "edit_state")
 		{
+			if(message.hasValue("undo"))
+			{
+				mCanUndo = message.getValueBoolean("undo");
+			}
+			if(message.hasValue("redo"))
+			{
+				mCanRedo = message.getValueBoolean("redo");
+			}
 			if(message.hasValue("cut"))
 			{
 				mCanCut = message.getValueBoolean("cut");
@@ -1082,9 +1127,19 @@ void LLPluginClassMedia::receivePluginMessage(const LLPluginMessage &message)
 			{
 				mCanPaste = message.getValueBoolean("paste");
 			}
+			if (message.hasValue("delete"))
+			{
+				mCanDoDelete = message.getValueBoolean("delete");
+			}
+			if (message.hasValue("select_all"))
+			{
+				mCanSelectAll = message.getValueBoolean("select_all");
+			}
 		}
 		else if(message_name == "name_text")
 		{
+			mHistoryBackAvailable = message.getValueBoolean("history_back_available");
+			mHistoryForwardAvailable = message.getValueBoolean("history_forward_available");
 			mMediaName = message.getValue("name");
 			mediaEvent(LLPluginClassMediaOwner::MEDIA_EVENT_NAME_CHANGED);
 		}
@@ -1171,13 +1226,6 @@ void LLPluginClassMedia::receivePluginMessage(const LLPluginMessage &message)
 		{
 			mStatusCode = message.getValueS32("status_code");
 			mediaEvent(LLPluginClassMediaOwner::MEDIA_EVENT_NAVIGATE_ERROR_PAGE);
-		}
-		else if(message_name == "cookie_set")
-		{
-			if(mOwner)
-			{
-				mOwner->handleCookieSet(this, message.getValue("cookie"));
-			}
 		}
 		else if(message_name == "close_request")
 		{
@@ -1293,27 +1341,23 @@ void LLPluginClassMedia::clear_cookies()
 	sendMessage(message);
 }
 
-void LLPluginClassMedia::set_cookies(const std::string &cookies)
+void LLPluginClassMedia::cookies_enabled(bool enable)
 {
-	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER, "set_cookies");
-	message.setValue("cookies", cookies);
-	sendMessage(message);
-}
-
-void LLPluginClassMedia::enable_cookies(bool enable)
-{
-	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER, "enable_cookies");
+	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER, "cookies_enabled");
 	message.setValueBoolean("enable", enable);
 	sendMessage(message);
 }
 
-void LLPluginClassMedia::proxy_setup(bool enable, const std::string &host, int port)
+void LLPluginClassMedia::proxy_setup(bool enable, int type, const std::string &host, int port, const std::string &user, const std::string &pass)
 {
 	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER, "proxy_setup");
 
 	message.setValueBoolean("enable", enable);
+	message.setValueS32("proxy_type", type);
 	message.setValue("host", host);
 	message.setValueS32("port", port);
+	message.setValue("username", user);
+	message.setValue("password", pass);
 
 	sendMessage(message);
 }

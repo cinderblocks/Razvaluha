@@ -8,10 +8,11 @@ if (STANDALONE)
   include(FindCURL)
 else (STANDALONE)
   use_prebuilt_binary(curl)
+  use_prebuilt_binary(nghttp2)
   if (WINDOWS)
     set(CURL_LIBRARIES 
-    debug libcurl_a_debug.lib
-    optimized libcurl_a.lib)
+    debug libcurl_a_debug.lib nghttp2.lib Normaliz.lib
+    optimized libcurl_a.lib nghttp2.lib Normaliz.lib)
   elseif (LINUX)
     set(CURL_LIBRARIES curl)
   else (DARWIN)

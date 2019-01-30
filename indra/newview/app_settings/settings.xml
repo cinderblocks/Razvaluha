@@ -3455,7 +3455,7 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Type</key>
       <string>String</string>
       <key>Value</key>
-      <string/>
+      <string />
     </map>
     <key>BrowserProxyEnabled</key>
     <map>
@@ -3477,7 +3477,7 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Type</key>
       <string>String</string>
       <key>Value</key>
-      <string/>
+      <string />
     </map>
     <key>BrowserProxyPort</key>
     <map>
@@ -3489,6 +3489,39 @@ This should be as low as possible, but too low may break functionality</string>
       <string>S32</string>
       <key>Value</key>
       <integer>3128</integer>
+    </map>
+    <key>BrowserProxyType</key>
+    <map>
+      <key>Comment</key>
+      <string>Type of proxy for Web Browser</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
+    <key>BrowserProxyUsername</key>
+    <map>
+      <key>Comment</key>
+      <string>Username for Web Proxy authentication</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>String</string>
+      <key>Value</key>
+      <string />
+    </map>
+    <key>BrowserProxyPassword</key>
+    <map>
+      <key>Comment</key>
+      <string>Password for Web Proxy authentication</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>String</string>
+      <key>Value</key>
+      <string />
     </map>
     <key>BrowserProxySocks45</key>
     <map>

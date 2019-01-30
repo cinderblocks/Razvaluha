@@ -93,9 +93,13 @@ private:
 	std::string mAuthUsername;
 	std::string mAuthPassword;
 	bool mAuthOK;
+	bool mCanUndo;
+	bool mCanRedo;
 	bool mCanCut;
 	bool mCanCopy;
 	bool mCanPaste;
+	bool mCanDelete;
+	bool mCanSelectAll;
 	std::string mUserDataPath;
 	std::string mCachePath;
 	std::string mCookiePath;
@@ -132,9 +136,13 @@ MediaPluginBase(host_send_func, host_user_data)
 	mAuthUsername = "";
 	mAuthPassword = "";
 	mAuthOK = false;
+	mCanUndo = false;
+	mCanRedo = false;
 	mCanCut = false;
 	mCanCopy = false;
 	mCanPaste = false;
+	mCanDelete = false;
+	mCanSelectAll = false;
 	mUserDataPath = "";
 	mCachePath = "";
 	mCookiePath = "";
@@ -464,8 +472,6 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 			{
 				mCEFLib->update();
 
-						  
-
 				// this seems bad but unless the state changes (it won't until we figure out
 				// how to get CEF to tell us if copy/cut/paste is available) then this function
 				// will return immediately
@@ -539,7 +545,6 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 				settings.cache_path = mCachePath;
 				settings.cookie_store_path = mCookiePath;
 				settings.cookies_enabled = mCookiesEnabled;
-														
 				settings.disable_gpu = mDisableGPU;
 				settings.flash_enabled = mPluginsEnabled;
 				settings.flip_mouse_y = false;
@@ -551,7 +556,6 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 				settings.java_enabled = false;
 				settings.javascript_enabled = mJavascriptEnabled;
 				settings.locale = generate_cef_locale(mHostLanguage);
-								 
 				settings.media_stream_enabled = false; // MAINT-6060 - WebRTC media removed until we can add granualrity/query UI
 				settings.plugins_enabled = mPluginsEnabled;
 				settings.user_agent_substring = mCEFLib->makeCompatibleUserAgentString(mUserAgentSubtring);
@@ -623,8 +627,6 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 						mTextureWidth = texture_width;
 						mTextureHeight = texture_height;
 	   
-	  
-
 						mCEFLib->setSize(mWidth, mHeight);
 					};
 				};
@@ -767,6 +769,14 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 			{
 				authResponse(message_in);
 			}
+			if (message_name == "edit_undo")
+			{
+				mCEFLib->editUndo();
+			}
+			if (message_name == "edit_redo")
+			{
+				mCEFLib->editRedo();
+			}
 			if (message_name == "edit_cut")
 			{
 				mCEFLib->editCut();
@@ -778,6 +788,18 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 			if (message_name == "edit_paste")
 			{
 				mCEFLib->editPaste();
+			}
+			if (message_name == "edit_delete")
+			{
+				mCEFLib->editDelete();
+			}
+			if (message_name == "edit_select_all")
+			{
+				mCEFLib->editSelectAll();
+			}
+			if (message_name == "edit_show_source")
+			{
+				mCEFLib->viewSource();
 			}
 		}
 		else if (message_class == LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER)
@@ -928,13 +950,30 @@ void MediaPluginCEF::unicodeInput(std::string event, LLSD native_key_data = LLSD
 //
 void MediaPluginCEF::checkEditState()
 {
+	bool can_undo = mCEFLib->editCanUndo();
+	bool can_redo = mCEFLib->editCanRedo();
 	bool can_cut = mCEFLib->editCanCut();
 	bool can_copy = mCEFLib->editCanCopy();
 	bool can_paste = mCEFLib->editCanPaste();
+	bool can_delete = mCEFLib->editCanDelete();
+	bool can_select_all = mCEFLib->editCanSelectAll();
 
-	if ((can_cut != mCanCut) || (can_copy != mCanCopy) || (can_paste != mCanPaste))
+	if ((can_undo != mCanUndo) || (can_redo != mCanRedo) || (can_cut != mCanCut) || (can_copy != mCanCopy) 
+		|| (can_paste != mCanPaste) || (can_delete != mCanDelete) || (can_select_all != mCanSelectAll))
 	{
 		LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "edit_state");
+
+		if (can_undo != mCanUndo)
+		{
+			mCanUndo = can_undo;
+			message.setValueBoolean("undo", can_undo);
+		}
+
+		if (can_redo != mCanRedo)
+		{
+			mCanRedo = can_redo;
+			message.setValueBoolean("redo", can_redo);
+		}
 
 		if (can_cut != mCanCut)
 		{
@@ -952,6 +991,18 @@ void MediaPluginCEF::checkEditState()
 		{
 			mCanPaste = can_paste;
 			message.setValueBoolean("paste", can_paste);
+		}
+
+		if (can_delete != mCanDelete)
+		{
+			mCanDelete = can_delete;
+			message.setValueBoolean("delete", can_delete);
+		}
+
+		if (can_select_all != mCanSelectAll)
+		{
+			mCanSelectAll = can_select_all;
+			message.setValueBoolean("select_all", can_select_all);
 		}
 
 		sendMessage(message);

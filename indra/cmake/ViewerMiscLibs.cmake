@@ -2,10 +2,11 @@
 include(Prebuilt)
 
 if (NOT STANDALONE)
-  use_prebuilt_binary(slvoice)
   if(LINUX)
     use_prebuilt_binary(fontconfig)
   endif(LINUX)
+  use_prebuilt_binary(libhunspell)
+  use_prebuilt_binary(slvoice)
 else (NOT STANDALONE)
   # Download there even when using standalone.
   set(STANDALONE OFF)

@@ -16,7 +16,6 @@ set(cmake_SOURCE_FILES
     CEFPlugin.cmake
     CMakeCopyIfDifferent.cmake
     CURL.cmake
-    Colladadom.cmake
     ConfigurePkgConfig.cmake
     Copy3rdPartyLibs.cmake
     CXXFeatureDetection.cmake
@@ -28,7 +27,6 @@ set(cmake_SOURCE_FILES
     FMODSTUDIO.cmake
     FindAPR.cmake
     FindAutobuild.cmake
-    FindColladadom.cmake
     FindGLOD.cmake
     FindGoogleBreakpad.cmake
     FindGooglePerfTools.cmake
@@ -38,6 +36,7 @@ set(cmake_SOURCE_FILES
     FindTut.cmake
     FindURIPARSER.cmake
     FindXmlRpcEpi.cmake
+    FindZLIB.cmake
     FreeType.cmake
     GLOD.cmake
     GStreamer010Plugin.cmake
@@ -74,7 +73,6 @@ set(cmake_SOURCE_FILES
     Linking.cmake
     MediaPluginBase.cmake
     NDOF.cmake
-    NVAPI.cmake
     OPENAL.cmake
     OpenGL.cmake
     OpenJPEG.cmake

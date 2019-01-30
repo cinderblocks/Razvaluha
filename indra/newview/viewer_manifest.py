@@ -5,30 +5,25 @@
 @brief Description of all installer viewer files, and methods for packaging
        them into installers for all supported platforms.
 
-$LicenseInfo:firstyear=2006&license=viewergpl$
+$LicenseInfo:firstyear=2006&license=viewerlgpl$
 Second Life Viewer Source Code
-Copyright (c) 2006-2009, Linden Research, Inc.
+Copyright (C) 2006-2014, Linden Research, Inc.
 
-The source code in this file ("Source Code") is provided by Linden Lab
-to you under the terms of the GNU General Public License, version 2.0
-("GPL"), unless you have obtained a separate licensing agreement
-("Other License"), formally executed by you and Linden Lab.  Terms of
-the GPL can be found in doc/GPL-license.txt in this distribution, or
-online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation;
+version 2.1 of the License only.
 
-There are special exceptions to the terms and conditions of the GPL as
-it is applied to this Source Code. View the full text of the exception
-in the file doc/FLOSS-exception.txt in this software distribution, or
-online at
-http://secondlifegrid.net/programs/open_source/licensing/flossexception
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
 
-By copying, modifying or distributing this software, you acknowledge
-that you have read and understood your obligations described above,
-and agree to abide by those obligations.
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
-WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
-COMPLETENESS OR PERFORMANCE.
+Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
 $/LicenseInfo$
 """
 import sys
@@ -37,11 +32,14 @@ import os.path
 import shutil
 import errno
 import json
+import plistlib
+import random
 import re
+import stat
+import subprocess
 import tarfile
 import time
-import random
-import subprocess
+
 
 viewer_dir = os.path.dirname(__file__)
 # Add indra/lib/python to our path so we don't have to muck with PYTHONPATH.
@@ -67,7 +65,7 @@ class ViewerManifest(LLManifest):
         self.path(xml)
         self.path(skin_dir + "/*")
         # include the entire textures directory recursively
-        if self.prefix(src=skin_dir+"/textures"):
+        with self.prefix(src=skin_dir+"/textures"):
             self.path("*/*.tga")
             self.path("*/*.j2c")
             self.path("*/*.jpg")
@@ -77,7 +75,6 @@ class ViewerManifest(LLManifest):
             self.path("*.jpg")
             self.path("*.png")
             self.path("textures.xml")
-            self.end_prefix(skin_dir+"/textures")
 
     def construct(self):
         super(ViewerManifest, self).construct()
@@ -85,7 +82,7 @@ class ViewerManifest(LLManifest):
         self.path(src="../../etc/message.xml", dst="app_settings/message.xml")
 
         if True: #self.is_packaging_viewer():
-            if self.prefix(src="app_settings"):
+            with self.prefix(src="app_settings"):
                 self.exclude("logcontrol.xml")
                 self.exclude("logcontrol-dev.xml")
                 self.path("*.crt")
@@ -106,23 +103,18 @@ class ViewerManifest(LLManifest):
                 # include the extracted packages information (see BuildPackagesInfo.cmake)
                 self.path(src=os.path.join(self.args['build'],"packages-info.txt"), dst="packages-info.txt")
 
-
-                self.end_prefix("app_settings")
-
-            if self.prefix(src="character"):
+            with self.prefix(src="character"):
                 self.path("*.llm")
                 self.path("*.xml")
                 self.path("*.tga")
-                self.end_prefix("character")
 
             # Include our fonts
-            if self.prefix(src="fonts"):
+            with self.prefix(src="fonts"):
                 self.path("*.ttf")
                 self.path("*.txt")
-                self.end_prefix("fonts")
 
             # skins
-            if self.prefix(src="skins"):
+            with self.prefix(src="skins"):
                 self.path("paths.xml")
                 self.path("default/xui/*/*.xml")
                 self.package_skin("Default.xml", "default")
@@ -130,19 +122,16 @@ class ViewerManifest(LLManifest):
                 self.package_skin("Gemini.xml", "gemini")
 
                 # Local HTML files (e.g. loading screen)
-                if self.prefix(src="*/html"):
+                with self.prefix(src="*/html"):
                     self.path("*.png")
                     self.path("*/*/*.html")
                     self.path("*/*/*.gif")
-                    self.end_prefix("*/html")
 
-                self.end_prefix("skins")
 
             # local_assets dir (for pre-cached textures)
-            if self.prefix(src="local_assets"):
+            with self.prefix(src="local_assets"):
                 self.path("*.j2c")
                 self.path("*.tga")
-                self.end_prefix("local_assets")
 
             # File in the newview/ directory
             self.path("gpu_table.txt")
@@ -190,12 +179,14 @@ class ViewerManifest(LLManifest):
             channel_type='alpha'
         elif channel_qualifier.startswith('project'):
             channel_type='project'
+        elif channel_qualifier.startswith('canary'):
+            channel_type='canary'
         else:
             channel_type='test'
         return channel_type
 
     def channel_variant_app_suffix(self):
-        # get any part of the compiled channel name after the CHANNEL_VENDOR_BASE
+        # get any part of the channel name after the CHANNEL_VENDOR_BASE
         suffix=self.channel_variant()
         # by ancient convention, we don't use Release in the app name
         if self.channel_type() == 'release':
@@ -257,7 +248,135 @@ class ViewerManifest(LLManifest):
         random.shuffle(names)
         return ', '.join(names)
 
+    def relsymlinkf(self, src, dst=None, catch=True):
+        """
+        relsymlinkf() is just like symlinkf(), but instead of requiring the
+        caller to pass 'src' as a relative pathname, this method expects 'src'
+        to be absolute, and creates a symlink whose target is the relative
+        path from 'src' to dirname(dst).
+        """
+        dstdir, dst = self._symlinkf_prep_dst(src, dst)
+
+        # Determine the relative path starting from the directory containing
+        # dst to the intended src.
+        src = self.relpath(src, dstdir)
+
+        self._symlinkf(src, dst, catch)
+        return dst
+
+    def symlinkf(self, src, dst=None, catch=True):
+        """
+        Like ln -sf, but uses os.symlink() instead of running ln. This creates
+        a symlink at 'dst' that points to 'src' -- see:
+        https://docs.python.org/2/library/os.html#os.symlink
+
+        If you omit 'dst', this creates a symlink with basename(src) at
+        get_dst_prefix() -- in other words: put a symlink to this pathname
+        here at the current dst prefix.
+
+        'src' must specifically be a *relative* symlink. It makes no sense to
+        create an absolute symlink pointing to some path on the build machine!
+
+        Also:
+        - We prepend 'dst' with the current get_dst_prefix(), so it has similar
+          meaning to associated self.path() calls.
+        - We ensure that the containing directory os.path.dirname(dst) exists
+          before attempting the symlink.
+
+        If you pass catch=False, exceptions will be propagated instead of
+        caught.
+        """
+        dstdir, dst = self._symlinkf_prep_dst(src, dst)
+        self._symlinkf(src, dst, catch)
+        return dst
+
+    def _symlinkf_prep_dst(self, src, dst):
+        # helper for relsymlinkf() and symlinkf()
+        if dst is None:
+            dst = os.path.basename(src)
+        dst = os.path.join(self.get_dst_prefix(), dst)
+        # Seems silly to prepend get_dst_prefix() to dst only to call
+        # os.path.dirname() on it again, but this works even when the passed
+        # 'dst' is itself a pathname.
+        dstdir = os.path.dirname(dst)
+        self.cmakedirs(dstdir)
+        return (dstdir, dst)
+
+    def _symlinkf(self, src, dst, catch):
+        # helper for relsymlinkf() and symlinkf()
+        # the passed src must be relative
+        if os.path.isabs(src):
+            raise ManifestError("Do not symlinkf(absolute %r, asis=True)" % src)
+
+        # The outer catch is the one that reports failure even after attempted
+        # recovery.
+        try:
+            # At the inner layer, recovery may be possible.
+            try:
+                os.symlink(src, dst)
+            except OSError as err:
+                if err.errno != errno.EEXIST:
+                    raise
+                # We could just blithely attempt to remove and recreate the target
+                # file, but that strategy doesn't work so well if we don't have
+                # permissions to remove it. Check to see if it's already the
+                # symlink we want, which is the usual reason for EEXIST.
+                elif os.path.islink(dst):
+                    if os.readlink(dst) == src:
+                        # the requested link already exists
+                        pass
+                    else:
+                        # dst is the wrong symlink; attempt to remove and recreate it
+                        os.remove(dst)
+                        os.symlink(src, dst)
+                elif os.path.isdir(dst):
+                    print "Requested symlink (%s) exists but is a directory; replacing" % dst
+                    shutil.rmtree(dst)
+                    os.symlink(src, dst)
+                elif os.path.exists(dst):
+                    print "Requested symlink (%s) exists but is a file; replacing" % dst
+                    os.remove(dst)
+                    os.symlink(src, dst)
+                else:
+                    # out of ideas
+                    raise
+        except Exception as err:
+            # report
+            print "Can't symlink %r -> %r: %s: %s" % \
+                  (dst, src, err.__class__.__name__, err)
+            # if caller asked us not to catch, re-raise this exception
+            if not catch:
+                raise
+
+    def relpath(self, path, base=None, symlink=False):
+        """
+        Return the relative path from 'base' to the passed 'path'. If base is
+        omitted, self.get_dst_prefix() is assumed. In other words: make a
+        same-name symlink to this path right here in the current dest prefix.
+
+        Normally we resolve symlinks. To retain symlinks, pass symlink=True.
+        """
+        if base is None:
+            base = self.get_dst_prefix()
+
+        # Since we use os.path.relpath() for this, which is purely textual, we
+        # must ensure that both pathnames are absolute.
+        if symlink:
+            # symlink=True means: we know path is (or indirects through) a
+            # symlink, don't resolve, we want to use the symlink.
+            abspath = os.path.abspath
+        else:
+            # symlink=False means to resolve any symlinks we may find
+            abspath = os.path.realpath
+
+        return os.path.relpath(abspath(path), abspath(base))
+
+
 class WindowsManifest(ViewerManifest):
+    # We want the platform, per se, for every Windows build to be 'win'. The
+    # VMP will concatenate that with the address_size.
+    build_data_json_platform = 'win'
+
     def is_win64(self):
         return self.args.get('arch') == "x86_64"
 
@@ -281,7 +400,7 @@ class WindowsManifest(ViewerManifest):
                            "AlchemyPlugin.exe")
 
         # Get shared libs from the shared libs staging directory
-        if self.prefix(src=os.path.join(os.pardir, 'sharedlibs', self.args['configuration']),
+        with self.prefix(src=os.path.join(os.pardir, 'sharedlibs', self.args['configuration']),
                        dst=""):
 
             # Get llcommon and deps. If missing assume static linkage and continue.
@@ -291,18 +410,18 @@ class WindowsManifest(ViewerManifest):
                 self.path('libaprutil-1.dll')
                 self.path('libapriconv-1.dll')
 
-            except RuntimeError, err:
+            except RuntimeError as err:
                 print err.message
                 print "Skipping llcommon.dll (assuming llcommon was linked statically)"
 
             # Mesh 3rd party libs needed for auto LOD and collada reading
             try:
                 self.path("glod.dll")
-            except RuntimeError, err:
+            except RuntimeError as err:
                 print err.message
                 print "Skipping GLOD library (assumming linked statically)"
 
-            # Get fmodex dll, continue if missing
+            # Get fmodstudio dll, continue if missing
             try:
                 self.path("alut.dll")
                 self.path("OpenAL32.dll")
@@ -317,14 +436,29 @@ class WindowsManifest(ViewerManifest):
 
             # Vivox runtimes
             self.path("SLVoice.exe")
-            self.path("vivoxsdk.dll")
-            self.path("ortp.dll")
+            if (self.address_size == 64):
+                self.path("vivoxsdk_x64.dll")
+                self.path("ortp_x64.dll")
+            else:
+                self.path("vivoxsdk.dll")
+                self.path("ortp.dll")
             self.path("libsndfile-1.dll")
             self.path("vivoxoal.dll")
             self.path("ca-bundle.crt")
 
+            # Security
+            if(self.address_size == 64):
+                self.path("libcrypto-1_1-x64.dll")
+                self.path("libssl-1_1-x64.dll")
+            else:
+                self.path("libcrypto-1_1.dll")
+                self.path("libssl-1_1.dll")
+
             # Hunspell
             self.path("libhunspell.dll")
+
+            # NGHttp2
+            self.path("nghttp2.dll")
 
             # For google-perftools tcmalloc allocator.
             try:
@@ -335,39 +469,27 @@ class WindowsManifest(ViewerManifest):
             except:
                 print "Skipping libtcmalloc_minimal.dll"
 
-            self.end_prefix()
-
         self.path(src="licenses-win32.txt", dst="licenses.txt")
         self.path("featuretable.txt")
         self.path("ca-bundle.crt")
 
         # Media plugins - CEF
-        if self.prefix(src='../media_plugins/cef/%s' % self.args['configuration'], dst="llplugin"):
+        with self.prefix(src='../media_plugins/cef/%s' % self.args['configuration'], dst="llplugin"):
             self.path("media_plugin_cef.dll")
-            self.end_prefix()
 
         # Media plugins - LibVLC
-        if self.prefix(src='../media_plugins/libvlc/%s' % self.args['configuration'], dst="llplugin"):
+        with self.prefix(src='../media_plugins/libvlc/%s' % self.args['configuration'], dst="llplugin"):
             self.path("media_plugin_libvlc.dll")
-            self.end_prefix()
+
+        # Media plugins - Example (useful for debugging - not shipped with release viewer)
+        if self.channel_type() != 'release':
+            with self.prefix(src='../media_plugins/example/%s' % self.args['configuration'], dst="llplugin"):
+                self.path("media_plugin_example.dll")
 
         # CEF runtime files - debug
-        if self.args['configuration'].lower() == 'debug':
-            if self.prefix(src=os.path.join(os.pardir, 'packages', 'bin', 'debug'), dst="llplugin"):
-                self.path("chrome_elf.dll")
-                self.path("d3dcompiler_47.dll")
-                self.path("libcef.dll")
-                self.path("libEGL.dll")
-                self.path("libGLESv2.dll")
-                self.path("dullahan_host.exe")
-                self.path("natives_blob.bin")
-                self.path("snapshot_blob.bin")
-                self.path("v8_context_snapshot.bin")
-                self.path("widevinecdmadapter.dll")
-                self.end_prefix()
-        else:
         # CEF runtime files - not debug (release, relwithdebinfo etc.)
-            if self.prefix(src=os.path.join(os.pardir, 'packages', 'bin', 'release'), dst="llplugin"):
+        config = 'debug' if self.args['configuration'].lower() == 'debug' else 'release'
+        with self.prefix(src=os.path.join(pkgdir, 'bin', config), dst="llplugin"):
                 self.path("chrome_elf.dll")
                 self.path("d3dcompiler_47.dll")
                 self.path("libcef.dll")
@@ -378,19 +500,28 @@ class WindowsManifest(ViewerManifest):
                 self.path("snapshot_blob.bin")
                 self.path("v8_context_snapshot.bin")
                 self.path("widevinecdmadapter.dll")
-                self.end_prefix()
+
+        # CEF runtime files for software rendering - debug
+        if self.args['configuration'].lower() == 'debug':
+            with self.prefix(src=os.path.join(pkgdir, 'bin', 'debug', 'swiftshader'), dst=os.path.join("llplugin", 'swiftshader')):
+                self.path("libEGL.dll")
+                self.path("libGLESv2.dll")
+        else:
+        # CEF runtime files for software rendering - not debug (release, relwithdebinfo etc.)
+            with self.prefix(src=os.path.join(pkgdir, 'bin', 'release', 'swiftshader'), dst=os.path.join("llplugin", 'swiftshader')):
+                self.path("libEGL.dll")
+                self.path("libGLESv2.dll")
 
         # CEF files common to all configurations
-        if self.prefix(src=os.path.join(os.pardir, 'packages', 'resources'), dst="llplugin"):
+        with self.prefix(src=os.path.join(pkgdir, 'resources'), dst="llplugin"):
             self.path("cef.pak")
             self.path("cef_100_percent.pak")
             self.path("cef_200_percent.pak")
             self.path("cef_extensions.pak")
             self.path("devtools_resources.pak")
             self.path("icudtl.dat")
-            self.end_prefix()
 
-        if self.prefix(src=os.path.join(os.pardir, 'packages', 'resources', 'locales'), dst=os.path.join('llplugin', 'locales')):
+        with self.prefix(src=os.path.join(pkgdir, 'resources', 'locales'), dst=os.path.join('llplugin', 'locales')):
             self.path("am.pak")
             self.path("ar.pak")
             self.path("bg.pak")
@@ -444,13 +575,110 @@ class WindowsManifest(ViewerManifest):
             self.path("vi.pak")
             self.path("zh-CN.pak")
             self.path("zh-TW.pak")
-            self.end_prefix()
 
-        if self.prefix(src=os.path.join(os.pardir, 'packages', 'bin', 'release'), dst="llplugin"):
+        with self.prefix(src=os.path.join(pkgdir, 'bin', 'release'), dst="llplugin"):
             self.path("libvlc.dll")
             self.path("libvlccore.dll")
             self.path("plugins/")
-            self.end_prefix()
+
+        if (self.address_size == 64):
+            with self.prefix(src=os.path.join(pkgdir, 'bin', 'x64'), dst=""):
+                self.path("api-ms-win-core-console-l1-1-0.dll")
+                self.path("api-ms-win-core-datetime-l1-1-0.dll")
+                self.path("api-ms-win-core-debug-l1-1-0.dll")
+                self.path("api-ms-win-core-errorhandling-l1-1-0.dll")
+                self.path("api-ms-win-core-file-l1-1-0.dll")
+                self.path("api-ms-win-core-file-l1-2-0.dll")
+                self.path("api-ms-win-core-file-l2-1-0.dll")
+                self.path("api-ms-win-core-handle-l1-1-0.dll")
+                self.path("api-ms-win-core-heap-l1-1-0.dll")
+                self.path("api-ms-win-core-interlocked-l1-1-0.dll")
+                self.path("api-ms-win-core-libraryloader-l1-1-0.dll")
+                self.path("api-ms-win-core-localization-l1-2-0.dll")
+                self.path("api-ms-win-core-memory-l1-1-0.dll")
+                self.path("api-ms-win-core-namedpipe-l1-1-0.dll")
+                self.path("api-ms-win-core-processenvironment-l1-1-0.dll")
+                self.path("api-ms-win-core-processthreads-l1-1-0.dll")
+                self.path("api-ms-win-core-processthreads-l1-1-1.dll")
+                self.path("api-ms-win-core-profile-l1-1-0.dll")
+                self.path("api-ms-win-core-rtlsupport-l1-1-0.dll")
+                self.path("api-ms-win-core-string-l1-1-0.dll")
+                self.path("api-ms-win-core-synch-l1-1-0.dll")
+                self.path("api-ms-win-core-synch-l1-2-0.dll")
+                self.path("api-ms-win-core-sysinfo-l1-1-0.dll")
+                self.path("api-ms-win-core-timezone-l1-1-0.dll")
+                self.path("api-ms-win-core-util-l1-1-0.dll")
+                self.path("api-ms-win-crt-conio-l1-1-0.dll")
+                self.path("api-ms-win-crt-convert-l1-1-0.dll")
+                self.path("api-ms-win-crt-environment-l1-1-0.dll")
+                self.path("api-ms-win-crt-filesystem-l1-1-0.dll")
+                self.path("api-ms-win-crt-heap-l1-1-0.dll")
+                self.path("api-ms-win-crt-locale-l1-1-0.dll")
+                self.path("api-ms-win-crt-math-l1-1-0.dll")
+                self.path("api-ms-win-crt-multibyte-l1-1-0.dll")
+                self.path("api-ms-win-crt-private-l1-1-0.dll")
+                self.path("api-ms-win-crt-process-l1-1-0.dll")
+                self.path("api-ms-win-crt-runtime-l1-1-0.dll")
+                self.path("api-ms-win-crt-stdio-l1-1-0.dll")
+                self.path("api-ms-win-crt-string-l1-1-0.dll")
+                self.path("api-ms-win-crt-time-l1-1-0.dll")
+                self.path("api-ms-win-crt-utility-l1-1-0.dll")
+                self.path("concrt140.dll")
+                self.path("msvcp140.dll")
+                self.path("msvcp140_1.dll")
+                self.path("msvcp140_2.dll")
+                self.path("ucrtbase.dll")
+                self.path("vccorlib140.dll")
+                self.path("vcruntime140.dll")
+        else:
+            with self.prefix(src=os.path.join(pkgdir, 'bin', 'x86'), dst=""):
+                self.path("api-ms-win-core-console-l1-1-0.dll")
+                self.path("api-ms-win-core-datetime-l1-1-0.dll")
+                self.path("api-ms-win-core-debug-l1-1-0.dll")
+                self.path("api-ms-win-core-errorhandling-l1-1-0.dll")
+                self.path("api-ms-win-core-file-l1-1-0.dll")
+                self.path("api-ms-win-core-file-l1-2-0.dll")
+                self.path("api-ms-win-core-file-l2-1-0.dll")
+                self.path("api-ms-win-core-handle-l1-1-0.dll")
+                self.path("api-ms-win-core-heap-l1-1-0.dll")
+                self.path("api-ms-win-core-interlocked-l1-1-0.dll")
+                self.path("api-ms-win-core-libraryloader-l1-1-0.dll")
+                self.path("api-ms-win-core-localization-l1-2-0.dll")
+                self.path("api-ms-win-core-memory-l1-1-0.dll")
+                self.path("api-ms-win-core-namedpipe-l1-1-0.dll")
+                self.path("api-ms-win-core-processenvironment-l1-1-0.dll")
+                self.path("api-ms-win-core-processthreads-l1-1-0.dll")
+                self.path("api-ms-win-core-processthreads-l1-1-1.dll")
+                self.path("api-ms-win-core-profile-l1-1-0.dll")
+                self.path("api-ms-win-core-rtlsupport-l1-1-0.dll")
+                self.path("api-ms-win-core-string-l1-1-0.dll")
+                self.path("api-ms-win-core-synch-l1-1-0.dll")
+                self.path("api-ms-win-core-synch-l1-2-0.dll")
+                self.path("api-ms-win-core-sysinfo-l1-1-0.dll")
+                self.path("api-ms-win-core-timezone-l1-1-0.dll")
+                self.path("api-ms-win-core-util-l1-1-0.dll")
+                self.path("api-ms-win-crt-conio-l1-1-0.dll")
+                self.path("api-ms-win-crt-convert-l1-1-0.dll")
+                self.path("api-ms-win-crt-environment-l1-1-0.dll")
+                self.path("api-ms-win-crt-filesystem-l1-1-0.dll")
+                self.path("api-ms-win-crt-heap-l1-1-0.dll")
+                self.path("api-ms-win-crt-locale-l1-1-0.dll")
+                self.path("api-ms-win-crt-math-l1-1-0.dll")
+                self.path("api-ms-win-crt-multibyte-l1-1-0.dll")
+                self.path("api-ms-win-crt-private-l1-1-0.dll")
+                self.path("api-ms-win-crt-process-l1-1-0.dll")
+                self.path("api-ms-win-crt-runtime-l1-1-0.dll")
+                self.path("api-ms-win-crt-stdio-l1-1-0.dll")
+                self.path("api-ms-win-crt-string-l1-1-0.dll")
+                self.path("api-ms-win-crt-time-l1-1-0.dll")
+                self.path("api-ms-win-crt-utility-l1-1-0.dll")
+                self.path("concrt140.dll")
+                self.path("msvcp140.dll")
+                self.path("msvcp140_1.dll")
+                self.path("msvcp140_2.dll")
+                self.path("ucrtbase.dll")
+                self.path("vccorlib140.dll")
+                self.path("vcruntime140.dll")
 
         # pull in the crash logger and updater from other projects
         # tag:"crash-logger" here as a cue to the exporter
@@ -603,16 +831,15 @@ class WindowsManifest(ViewerManifest):
 
 
 class Windows_i686_Manifest(WindowsManifest):
+    # Although we aren't literally passed ADDRESS_SIZE, we can infer it from
+    # the passed 'arch', which is used to select the specific subclass.
+    address_size = 32
     def construct(self):
         super(Windows_i686_Manifest, self).construct()
 
         # Get shared libs from the shared libs staging directory
         if self.prefix(src=os.path.join(os.pardir, 'sharedlibs', self.args['configuration']),
                        dst=""):
-
-            # Security
-            self.path("libcrypto-1_1.dll")
-            self.path("libssl-1_1.dll")
 
             # Get fmod studio dll, continue if missing
             try:
@@ -631,16 +858,13 @@ class Windows_i686_Manifest(WindowsManifest):
 
 
 class Windows_x86_64_Manifest(WindowsManifest):
+    address_size = 64
     def construct(self):
         super(Windows_x86_64_Manifest, self).construct()
 
         # Get shared libs from the shared libs staging directory
         if self.prefix(src=os.path.join(os.pardir, 'sharedlibs', self.args['configuration']),
                        dst=""):
-
-            # Security
-            self.path("libcrypto-1_1-x64.dll")
-            self.path("libssl-1_1-x64.dll")
 
             # Get fmodstudio dll, continue if missing
             try:
@@ -1138,25 +1362,22 @@ class LinuxManifest(ViewerManifest):
         relpkgdir = os.path.join(pkgdir, "lib", "release")
         debpkgdir = os.path.join(pkgdir, "lib", "debug")
 
-        if self.prefix("linux_tools", dst=""):
+        with self.prefix("linux_tools", dst=""):
             self.path("client-readme.txt","README-linux.txt")
             self.path("client-readme-voice.txt","README-linux-voice.txt")
             self.path("client-readme-joystick.txt","README-linux-joystick.txt")
             self.path("wrapper.sh",self.viewer_branding_id())
-            if self.prefix(src="", dst="etc"):
+            with self.prefix(src="", dst="etc"):
                 self.path("handle_secondlifeprotocol.sh")
                 self.path("register_secondlifeprotocol.sh")
                 self.path("refresh_desktop_app_entry.sh")
                 self.path("launch_url.sh")
-                self.end_prefix("etc")
             self.path("install.sh")
-            self.end_prefix("linux_tools")
 
-        if self.prefix(src="", dst="bin"):
+        with self.prefix(src="", dst="bin"):
             self.path("%s-bin"%self.viewer_branding_id(),"do-not-directly-run-%s-bin"%self.viewer_branding_id())
             self.path("../linux_crash_logger/linux-crash-logger","linux-crash-logger.bin")
             self.path2basename("../llplugin/slplugin", "AlchemyPlugin")
-            self.end_prefix("bin")
 
         if self.prefix("res-sdl"):
             self.path("*")
@@ -1166,48 +1387,41 @@ class LinuxManifest(ViewerManifest):
         # Get the icons based on the channel type
         icon_path = self.icon_path()
         print "DEBUG: icon_path '%s'" % icon_path
-        if self.prefix(src=icon_path, dst="") :
+        with self.prefix(src=icon_path, dst="") :
             self.path("viewer.png","viewer_icon.png")
-            if self.prefix(src="",dst="res-sdl") :
+            with self.prefix(src="",dst="res-sdl") :
                 self.path("viewer_256.BMP","viewer_icon.BMP")
-                self.end_prefix("res-sdl")
-            self.end_prefix(icon_path)
 
         # plugins
-        if self.prefix(src="", dst="bin/llplugin"):
+        with self.prefix(src="", dst="bin/llplugin"):
             self.path("../media_plugins/gstreamer010/libmedia_plugin_gstreamer010.so", "libmedia_plugin_gstreamer.so")
             self.path("../media_plugins/libvlc/libmedia_plugin_libvlc.so", "libmedia_plugin_libvlc.so")
             self.path("../media_plugins/cef/libmedia_plugin_cef.so", "libmedia_plugin_cef.so")
-            self.end_prefix("bin/llplugin")
 
-        if self.prefix(src=os.path.join(os.pardir, 'packages', 'lib', 'vlc', 'plugins'), dst="bin/llplugin/vlc/plugins"):
+        with self.prefix(src=os.path.join(os.pardir, 'packages', 'lib', 'vlc', 'plugins'), dst="bin/llplugin/vlc/plugins"):
             self.path( "plugins.dat" )
             self.path( "*/*.so" )
-            self.end_prefix()
 
-        if self.prefix(src=os.path.join(os.pardir, 'packages', 'lib' ), dst="lib"):
+        with self.prefix(src=os.path.join(os.pardir, 'packages', 'lib' ), dst="lib"):
             self.path( "libvlc*.so*" )
-            self.end_prefix()
 
         # CEF files 
-        if self.prefix(src=os.path.join(pkgdir, 'bin', 'release'), dst="bin"):
+        with self.prefix(src=os.path.join(pkgdir, 'bin', 'release'), dst="bin"):
             self.path("chrome-sandbox")
             self.path("dullahan_host")
             self.path("natives_blob.bin")
             self.path("snapshot_blob.bin")
             self.path("v8_context_snapshot.bin")
-            self.end_prefix()
 
-        if self.prefix(src=os.path.join(pkgdir, 'resources'), dst="bin"):
+        with self.prefix(src=os.path.join(pkgdir, 'resources'), dst="bin"):
             self.path("cef.pak")
             self.path("cef_extensions.pak")
             self.path("cef_100_percent.pak")
             self.path("cef_200_percent.pak")
             self.path("devtools_resources.pak")
             self.path("icudtl.dat")
-            self.end_prefix()
 
-        if self.prefix(src=os.path.join(pkgdir, 'resources', 'locales'), dst=os.path.join('bin', 'locales')):
+        with self.prefix(src=os.path.join(pkgdir, 'resources', 'locales'), dst=os.path.join('bin', 'locales')):
             self.path("am.pak")
             self.path("ar.pak")
             self.path("bg.pak")
@@ -1261,7 +1475,6 @@ class LinuxManifest(ViewerManifest):
             self.path("vi.pak")
             self.path("zh-CN.pak")
             self.path("zh-TW.pak")
-            self.end_prefix()
 
         # llcommon
         if not self.path("../llcommon/libllcommon.so", "lib/libllcommon.so"):
@@ -1312,6 +1525,8 @@ class LinuxManifest(ViewerManifest):
 
 
 class Linux_i686_Manifest(LinuxManifest):
+    address_size = 32
+
     def construct(self):
         super(Linux_i686_Manifest, self).construct()
 
@@ -1319,7 +1534,7 @@ class Linux_i686_Manifest(LinuxManifest):
         relpkgdir = os.path.join(pkgdir, "lib", "release")
         debpkgdir = os.path.join(pkgdir, "lib", "debug")
 
-        if (not self.standalone()) and self.prefix(src=relpkgdir, dst="lib"):
+        with self.prefix(relpkgdir, dst="lib"):
             self.path("libapr-1.so")
             self.path("libapr-1.so.0")
             self.path("libapr-1.so.0.5.2")
@@ -1339,19 +1554,20 @@ class Linux_i686_Manifest(LinuxManifest):
             self.end_prefix("lib")
 
         # Vivox runtimes
-        if self.prefix(src=relpkgdir, dst="bin"):
+        with self.prefix(src=relpkgdir, dst="bin"):
             self.path("SLVoice")
-            self.end_prefix("bin")
-        if self.prefix(src=relpkgdir, dst="lib"):
+        with self.prefix(src=relpkgdir, dst="lib"):
             self.path("libortp.so")
             self.path("libsndfile.so.1")
             self.path("libvivoxoal.so.1")
             self.path("libvivoxsdk.so")
             self.path("libvivoxplatform.so")
-            self.end_prefix("lib")
+
 
 
 class Linux_x86_64_Manifest(LinuxManifest):
+    address_size = 64
+
     def construct(self):
         super(Linux_x86_64_Manifest, self).construct()
 
@@ -1388,65 +1604,22 @@ class Linux_x86_64_Manifest(LinuxManifest):
             self.end_prefix("lib64")
 
         # Vivox runtimes
-        if self.prefix(src=relpkgdir, dst="bin"):
+        with self.prefix(src=relpkgdir, dst="bin"):
             self.path("SLVoice")
-            self.end_prefix("bin")
-        if self.prefix(src=relpkgdir, dst="lib32"):
+
+        with self.prefix(src=relpkgdir, dst="lib32"):
             self.path("libortp.so")
             self.path("libsndfile.so.1")
             self.path("libvivoxoal.so.1")
             self.path("libvivoxsdk.so")
             self.path("libvivoxplatform.so")
-            self.end_prefix("lib32")
 
         # plugin runtime
-        if self.prefix(src=relpkgdir, dst="lib64"):
+        with self.prefix(src=relpkgdir, dst="lib64"):
             self.path("libcef.so")
-            self.end_prefix("lib64")
 
 
 ################################################################
-
-def symlinkf(src, dst):
-    """
-    Like ln -sf, but uses os.symlink() instead of running ln.
-    """
-    try:
-        os.symlink(src, dst)
-    except OSError, err:
-        if err.errno != errno.EEXIST:
-            raise
-        # We could just blithely attempt to remove and recreate the target
-        # file, but that strategy doesn't work so well if we don't have
-        # permissions to remove it. Check to see if it's already the
-        # symlink we want, which is the usual reason for EEXIST.
-        elif os.path.islink(dst):
-            if os.readlink(dst) == src:
-                # the requested link already exists
-                pass
-            else:
-                # dst is the wrong symlink; attempt to remove and recreate it
-                os.remove(dst)
-                os.symlink(src, dst)
-        elif os.path.isdir(dst):
-            print "Requested symlink (%s) exists but is a directory; replacing" % dst
-            shutil.rmtree(dst)
-            os.symlink(src, dst)
-        elif os.path.exists(dst):
-            print "Requested symlink (%s) exists but is a file; replacing" % dst
-            os.remove(dst)
-            os.symlink(src, dst)
-        else:
-            # see if the problem is that the parent directory does not exist
-            # and try to explain what is missing
-            (parent, tail) = os.path.split(dst)
-            while not os.path.exists(parent):
-                (parent, tail) = os.path.split(parent)
-            if tail:
-                raise Exception("Requested symlink (%s) cannot be created because %s does not exist"
-                                % os.path.join(parent, tail))
-            else:
-                raise
 
 if __name__ == "__main__":
     main()

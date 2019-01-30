@@ -39,6 +39,11 @@
 #include "vlc/vlc.h"
 #include "vlc/libvlc_version.h"
 
+#if LL_WINDOWS
+// needed for waveOut call - see below for description
+#include <mmsystem.h>
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 class MediaPluginLibVLC :
@@ -57,7 +62,9 @@ private:
 	void playMedia();
 	void resetVLC();
 	void setVolume(const F64 volume);
+	void setVolumeVLC();
 	void updateTitle(const char* title);
+	void postLogMessage(const std::string& level, const std::string& msg);
 
 	static void* lock(void* data, void** p_pixels);
 	static void unlock(void* data, void* id, void* const* raw_pixels);
@@ -67,6 +74,8 @@ private:
 	/* override, but that is not supported in gcc 4.6 */;
 
 	static void eventCallbacks(const libvlc_event_t* event, void* ptr);
+
+	static void logCallback(void *data, int level, const libvlc_log_t *ctx, const char *fmt, va_list args);
 
 	libvlc_instance_t* mLibVLC;
 	libvlc_media_t* mLibVLCMedia;
@@ -89,6 +98,8 @@ private:
 	float mCurTime;
 	float mDuration;
 	EStatus mVlcStatus;
+
+	bool mEnableMediaPluginLogging;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,6 +127,8 @@ MediaPluginBase(host_send_func, host_user_data)
 
 	mURL = std::string();
 
+	mEnableMediaPluginLogging = false;
+
 	mVlcStatus = STATUS_NONE;
 	setStatus(STATUS_NONE);
 }
@@ -124,6 +137,22 @@ MediaPluginBase(host_send_func, host_user_data)
 //
 MediaPluginLibVLC::~MediaPluginLibVLC()
 {
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+void MediaPluginLibVLC::postLogMessage(const std::string& level, const std::string& msg)
+{
+	if (mEnableMediaPluginLogging)
+	{
+		std::stringstream str;
+		str << "VLC Msg> " << msg;
+
+		LLPluginMessage debug_message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "debug_message");
+		debug_message.setValue("message_text", str.str());
+		debug_message.setValue("message_level", level);
+		sendMessage(debug_message);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -174,9 +203,13 @@ void MediaPluginLibVLC::initVLC()
 
 	if (!mLibVLC)
 	{
+		postLogMessage("warn", "Failed to initialize VLC");
+		setStatus(STATUS_ERROR);
+		return;
 		// for the moment, if this fails, the plugin will fail and 
 		// the media sub-system will tell the viewer something went wrong.
 	}
+	libvlc_log_set(mLibVLC, logCallback, this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -219,12 +252,15 @@ void MediaPluginLibVLC::eventCallbacks(const libvlc_event_t* event, void* ptr)
 	switch (event->type)
 	{
 	case libvlc_MediaPlayerOpening:
+		parent->postLogMessage("info", "Media loading");
 		parent->mVlcStatus = STATUS_LOADING;
 		break;
 
 	case libvlc_MediaPlayerPlaying:
+		parent->postLogMessage("info", "Media playing");
 		parent->mDuration = (float)(libvlc_media_get_duration(parent->mLibVLCMedia)) / 1000.0f;
 		parent->mVlcStatus = STATUS_PLAYING;
+		parent->setVolumeVLC();
 		break;
 
 	case libvlc_MediaPlayerPaused:
@@ -244,6 +280,7 @@ void MediaPluginLibVLC::eventCallbacks(const libvlc_event_t* event, void* ptr)
 		break;
 
 	case libvlc_MediaPlayerTimeChanged:
+		parent->postLogMessage("info", "Media time changed");
 		parent->mCurTime = (float)libvlc_media_player_get_time(parent->mLibVLCMediaPlayer) / 1000.0f;
 		break;
 
@@ -251,11 +288,13 @@ void MediaPluginLibVLC::eventCallbacks(const libvlc_event_t* event, void* ptr)
 		break;
 
 	case libvlc_MediaPlayerLengthChanged:
+		parent->postLogMessage("info", "Media length changed");
 		parent->mDuration = (float)libvlc_media_get_duration(parent->mLibVLCMedia) / 1000.0f;
 		break;
 
 	case libvlc_MediaPlayerTitleChanged:
 	{
+		parent->postLogMessage("info", "Media title getting metadata");
 		char* title = libvlc_media_get_meta(parent->mLibVLCMedia, libvlc_meta_Title);
 		if (title)
 		{
@@ -264,6 +303,17 @@ void MediaPluginLibVLC::eventCallbacks(const libvlc_event_t* event, void* ptr)
 	}
 	break;
 	}
+}
+
+void MediaPluginLibVLC::logCallback(void *data, int level, const libvlc_log_t *ctx, const char *fmt, va_list args)
+{
+	MediaPluginLibVLC* parent = (MediaPluginLibVLC*) data;
+
+	char tstr[4096];
+	std::vsnprintf(tstr, 4096, fmt, args);
+	std::stringstream out;
+	out << tstr;
+	parent->postLogMessage("info", out.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -398,26 +448,56 @@ void MediaPluginLibVLC::updateTitle(const char* title)
 	sendMessage(message);
 }
 
+void MediaPluginLibVLC::setVolumeVLC()
+{
+	if (mLibVLCMediaPlayer)
+	{
+		int vlc_vol = (int)(mCurVolume * 100);
+
+		int result = libvlc_audio_set_volume(mLibVLCMediaPlayer, vlc_vol);
+		if (result == 0)
+		{
+			// volume change was accepted by LibVLC
+		}
+		else
+		{
+			// volume change was NOT accepted by LibVLC and not actioned
+		}
+
+#if LL_WINDOWS
+		// https ://jira.secondlife.com/browse/MAINT-8119
+		// CEF media plugin uses code in media_plugins/cef/windows_volume_catcher.cpp to
+		// set the actual output volume of the plugin process since there is no API in 
+		// CEF to otherwise do this.
+		// There are explicit calls to change the volume in LibVLC but sometimes they
+		// are ignored SLPlugin.exe process volume is set to 0 so you never heard audio
+		// from the VLC media stream.
+		// The right way to solve this is to move the volume catcher stuff out of 
+		// the CEF plugin and into it's own folder under media_plugins and have it referenced
+		// by both CEF and VLC. That's for later. The code there boils down to this so for 
+                // now, as we approach a release, the less risky option is to do it directly vs
+                // calls to volume catcher code.
+		DWORD left_channel = (DWORD)(mCurVolume * 65535.0f);
+		DWORD right_channel = (DWORD)(mCurVolume * 65535.0f);
+		DWORD hw_volume = left_channel << 16 | right_channel;
+		waveOutSetVolume(NULL, hw_volume);
+#endif
+	}
+	else
+	{
+		// volume change was requested but VLC wasn't ready.
+		// that's okay though because we saved the value in mCurVolume and 
+		// the next volume change after the VLC system is initilzied  will set it
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 void MediaPluginLibVLC::setVolume(const F64 volume)
 {
 	mCurVolume = volume;
 
-	if (mLibVLCMediaPlayer)
-	{
-		int result = libvlc_audio_set_volume(mLibVLCMediaPlayer, (int)(volume * 100));
-		if (result != 0)
-		{
-			// volume wasn't set but not much to be done here
-		}
-	}
-	else
-	{
-		// volume change was requested but VLC wasn't ready.
-		// that's okay thought because we saved the value in mCurVolume and 
-		// the next volume change after the VLC system is initilzied  will set it
-	}
+	setVolumeVLC();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -555,6 +635,10 @@ void MediaPluginLibVLC::receiveMessage(const char* message_string)
 			{
 				mURL = message_in.getValue("uri");
 				playMedia();
+			}
+			else if (message_name == "enable_media_plugin_debugging")
+			{
+				mEnableMediaPluginLogging = message_in.getValueBoolean("enable");
 			}
 		}
 		else

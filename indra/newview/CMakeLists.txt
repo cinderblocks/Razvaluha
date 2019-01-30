@@ -72,7 +72,9 @@ include_directories(
     ${LLVFS_INCLUDE_DIRS}
     ${LLWINDOW_INCLUDE_DIRS}
     ${LLXML_INCLUDE_DIRS}
+    ${LIBS_PREBUILT_DIR}/include/collada
     ${HUNSPELL_INCLUDE_DIR}
+    ${LIBS_PREBUILT_DIR}/include/collada/1.4
     ${LLAPPEARANCE_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
     )
@@ -80,6 +82,8 @@ include_directories(
 include_directories(SYSTEM
     ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
     ${LLXML_SYSTEM_INCLUDE_DIRS}
+    ${LIBS_PREBUILT_DIR}/include/collada
+    ${LIBS_PREBUILT_DIR}/include/collada/1.4
      )
 
 set(viewer_SOURCE_FILES
