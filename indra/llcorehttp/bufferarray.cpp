@@ -50,48 +50,79 @@ namespace LLCore
 // ==================================
 // BufferArray::Block Declaration
 // ==================================
-
-class BufferArray::Block
+template <std::size_t _size>
+struct BufferArray::MemoryBlock
 {
-public:
-	~Block();
+	typedef char			value_type;
+	typedef char*			pointer;
+	typedef const char*		const_pointer;
+	typedef char*			iterator;
+	typedef const char*		const_iterator;
+	typedef char&			reference;
+	typedef const char&		const_reference;
+	typedef std::size_t		size_type;
+	typedef std::ptrdiff_t	difference_type;
+	//typedef std::reverse_iterator<iterator> reverse_iterator;
+	//typedef std::reverse_iterator<const_iterator> const_reverse_interator;
 
-	void operator delete(void *);
-	void operator delete(void *, size_t len);
+	MemoryBlock() = default;
+	~MemoryBlock() = default;
 
-protected:
-	Block(size_t len);
+	MemoryBlock(const_pointer data, size_type length) {
+		if (length > _size) {
+			throw std::out_of_range("initialized with a length past container size");
+		}
 
-	Block(const Block &) = delete;						// Not defined
-	Block& operator=(const Block &) = delete;				// Not defined
+		memcpy(&(_data[0]), data, length);
+		_pos = length;
+	}
 
-	// Allocate the block with the additional space for the
-	// buffered data at the end of the object.
-	void * operator new(size_t len, size_t addl_len);
-	
-public:
-	// Only public entry to get a block.
-	static Block * alloc(size_t len);
+	MemoryBlock(const MemoryBlock<_size> &&other) noexcept {
+		memcpy(&(_data[0]), &(other._data[0]), other._pos);
+		_pos = other._pos;
+	}
 
-public:
-	size_t mUsed;
-	size_t mAlloced;
+	MemoryBlock(const MemoryBlock<_size> &) = delete;
+	MemoryBlock<_size>& operator=(const MemoryBlock<_size> &) = delete;
 
-	// *NOTE:  Must be last member of the object.  We'll
-	// overallocate as requested via operator new and index
-	// into the array at will.
-	char mData[1];		
+	void append(const_pointer data, size_type length) {
+		if (_pos + length > _size) {
+			throw std::out_of_range("append would go past array");
+		}
+
+		memcpy(&(_data[_pos]), data, length);
+		_pos += length;
+	}
+
+	iterator begin() { return iterator(std::addressof(_data[0])); }
+	const_iterator begin() const { return const_iterator(std::addressof(_data[0])); }
+
+	pointer end() { return iterator(std::addressof(_data[_size])); }
+	const_iterator end() const { return const_iterator(std::addressof(_data[_size])); }
+
+	iterator data_end() { return iterator(std::addressof(_data[_pos])); }
+	const_iterator data_end() const { return const_iterator(std::addressof(_data[_pos])); }
+
+	reference operator[](size_type n) { return _data[n]; }
+	const_reference operator[](size_type n) const { return _data[n]; }
+
+	pointer data() { return std::addressof(_data[0]); }
+	const_pointer data() const { return std::addressof(_data[0]); }
+
+	size_type size() const { return _size; }
+
+	size_type pos() { return _pos; }
+
+	bool space_available() { return _pos < _size; }
+private:
+	char _data[_size ? _size : 1];
+	size_t _pos;
 };
 
 
 // ==================================
 // BufferArray Definitions
 // ==================================
-
-
-#if	! LL_WINDOWS
-const size_t BufferArray::BLOCK_ALLOC_SIZE;
-#endif	// ! LL_WINDOWS
 
 BufferArray::BufferArray()
 	: LLCoreInt::RefCounted(true),
@@ -101,122 +132,93 @@ BufferArray::BufferArray()
 
 BufferArray::~BufferArray()
 {
-	for (container_t::iterator it(mBlocks.begin());
-		 it != mBlocks.end();
-		 ++it)
-	{
-		delete *it;
-		*it = nullptr;
-	}
 	mBlocks.clear();
 }
 
 
 size_t BufferArray::append(const void * src, size_t len)
 {
-	const size_t ret(len);
-	const char * c_src(static_cast<const char *>(src));
+	size_t result = 0;
+	const char * c_src = static_cast<const char *>(src);
 					  
-	// First, try to copy into the last block
-	if (len && ! mBlocks.empty())
+	// check last block first
+	if (len && !mBlocks.empty())
 	{
-		Block & last(*mBlocks.back());
-		if (last.mUsed < last.mAlloced)
+		block_t& last = mBlocks.back();
+		if (last.space_available())
 		{
-			// Some will fit...
-			const size_t copy_len((std::min)(len, (last.mAlloced - last.mUsed)));
+			const size_t copy_len = std::min(len, (last.size() - last.pos()));
 
-			memcpy(&last.mData[last.mUsed], c_src, copy_len);
-			last.mUsed += copy_len;
-			llassert_always(last.mUsed <= last.mAlloced);
+			last.append(c_src, copy_len);
 			mLen += copy_len;
+			result += copy_len;
+
 			c_src += copy_len;
 			len -= copy_len;
 		}
 	}
 
-	// Then get new blocks as needed
-	while (len)
+	while (len > 0)
 	{
 		const size_t copy_len((std::min)(len, BLOCK_ALLOC_SIZE));
-		
-		if (mBlocks.size() >= mBlocks.capacity())
-		{
-			mBlocks.reserve(mBlocks.size() + 5);
-		}
-        Block * block;
+
         try
         {
-            block = Block::alloc(BLOCK_ALLOC_SIZE);
+			if (mBlocks.size() >= mBlocks.capacity())
+			{
+				mBlocks.reserve(mBlocks.size() + 5);
+			}
         }
-        catch (std::bad_alloc)
+        catch (const std::bad_alloc&)
         {
             LLMemory::logMemoryInfo(TRUE);
 
             //output possible call stacks to log file.
             LLError::LLCallStacks::print();
 
-            LL_WARNS() << "Bad memory allocation in thrown by Block::alloc in read!" << LL_ENDL;
+            LL_WARNS() << "Bad memory allocation in thrown by mBlock.reserve!" << LL_ENDL;
             break;
         }
-        memcpy(block->mData, c_src, copy_len);
-		block->mUsed = copy_len;
-		llassert_always(block->mUsed <= block->mAlloced);
-		mBlocks.push_back(block);
+		
+		mBlocks.emplace_back(c_src, copy_len);
 		mLen += copy_len;
+		result += copy_len;
+
 		c_src += copy_len;
 		len -= copy_len;
 	}
-	return ret - len;
-}
 
-
-void * BufferArray::appendBufferAlloc(size_t len)
-{
-	// If someone asks for zero-length, we give them a valid pointer.
-	if (mBlocks.size() >= mBlocks.capacity())
-	{
-		mBlocks.reserve(mBlocks.size() + 5);
-	}
-	Block * block = Block::alloc((std::max)(BLOCK_ALLOC_SIZE, len));
-	block->mUsed = len;
-	mBlocks.push_back(block);
-	mLen += len;
-	return block->mData;
+	return result;
 }
 
 
 size_t BufferArray::read(size_t pos, void * dst, size_t len)
 {
-	char * c_dst(static_cast<char *>(dst));
-	
-	if (pos >= mLen)
-		return 0;
-	size_t len_limit(mLen - pos);
-	len = (std::min)(len, len_limit);
-	if (0 == len)
-		return 0;
-	
-	size_t result(0), offset(0);
-	const int block_limit(mBlocks.size());
-	int block_start(findBlock(pos, &offset));
-	if (block_start < 0)
+	char *c_dst = static_cast<char *>(dst);
+	if (pos >= mLen || len == 0)
 		return 0;
 
-	do
+	// limit the length
+	len = std::min(len, mLen - pos);
+	
+	size_t result = 0, offset = 0;
+	const int block_limit(mBlocks.size());
+
+	for (int i = findBlock(pos, &offset); len && i < block_limit; ++i)
 	{
-		Block & block(*mBlocks[block_start]);
-		size_t block_limit_offset(block.mUsed - offset);
-		size_t block_len((std::min)(block_limit_offset, len));
-		
-		memcpy(c_dst, &block.mData[offset], block_len);
+		block_t& block = mBlocks[i];
+
+		size_t block_limit_offset = block.pos() - offset;
+		size_t block_len(std::min(block_limit_offset, len));
+
+		memcpy(c_dst, &block[offset], block_len);
 		result += block_len;
-		len -= block_len;
+
 		c_dst += block_len;
+		len -= block_len;
+
 		offset = 0;
-		++block_start;
 	}
-	while (len && block_start < block_limit);
 
 	return result;
 }
@@ -224,53 +226,27 @@ size_t BufferArray::read(size_t pos, void * dst, size_t len)
 
 size_t BufferArray::write(size_t pos, const void * src, size_t len)
 {
-	const char * c_src(static_cast<const char *>(src));
-	
+	const char *c_src = static_cast<const char *>(src);
 	if (pos > mLen || 0 == len)
 		return 0;
 	
-	size_t result(0), offset(0);
-	const int block_limit(mBlocks.size());
-	int block_start(findBlock(pos, &offset));
+	size_t result = 0, offset = 0;
+	const size_t block_limit = mBlocks.size();
 
-	if (block_start >= 0)
+	for (int i = findBlock(pos, &offset); len && i < block_limit; ++i)
 	{
-		// Some or all of the write will be on top of
-		// existing data.
-		do
-		{
-			Block & block(*mBlocks[block_start]);
-			size_t block_limit_offset(block.mUsed - offset);
-			size_t block_len((std::min)(block_limit_offset, len));
-		
-			memcpy(&block.mData[offset], c_src, block_len);
-			result += block_len;
-			c_src += block_len;
-			len -= block_len;
-			offset = 0;
-			++block_start;
-		}
-		while (len && block_start < block_limit);
-	}
+		block_t& block = mBlocks[i];
+		size_t block_limit_offset = block.pos() - offset;
+		size_t block_len = std::min(block_limit_offset, len);
 
-	// Something left, see if it will fit in the free
-	// space of the last block.
-	if (len && ! mBlocks.empty())
-	{
-		Block & last(*mBlocks.back());
-		if (last.mUsed < last.mAlloced)
-		{
-			// Some will fit...
-			const size_t copy_len((std::min)(len, (last.mAlloced - last.mUsed)));
+		block.append(c_src, block_len);
+		mLen += block_len;
+		result += block_len;
 
-			memcpy(&last.mData[last.mUsed], c_src, copy_len);
-			last.mUsed += copy_len;
-			result += copy_len;
-			llassert_always(last.mUsed <= last.mAlloced);
-			mLen += copy_len;
-			c_src += copy_len;
-			len -= copy_len;
-		}
+		c_src += block_len;
+		len -= block_len;
+
+		offset = 0;
 	}
 	
 	if (len)
@@ -288,20 +264,15 @@ int BufferArray::findBlock(size_t pos, size_t * ret_offset)
 {
 	*ret_offset = 0;
 	if (pos >= mLen)
-		return -1;		// Doesn't exist
+		return -1;
 
-	const int block_limit(mBlocks.size());
-	for (int i(0); i < block_limit; ++i)
+	const int block_n = pos / BLOCK_ALLOC_SIZE;
+	if (block_n < mBlocks.size())
 	{
-		if (pos < mBlocks[i]->mUsed)
-		{
-			*ret_offset = pos;
-			return i;
-		}
-		pos -= mBlocks[i]->mUsed;
+		*ret_offset = pos % BLOCK_ALLOC_SIZE;
+		return block_n;
 	}
 
-	// Shouldn't get here but...
 	return -1;
 }
 
@@ -309,61 +280,12 @@ int BufferArray::findBlock(size_t pos, size_t * ret_offset)
 bool BufferArray::getBlockStartEnd(int block, const char ** start, const char ** end)
 {
 	if (block < 0 || block >= mBlocks.size())
-	{
 		return false;
-	}
 
-	const Block & b(*mBlocks[block]);
-	*start = &b.mData[0];
-	*end = &b.mData[b.mUsed];
+	const block_t& b(mBlocks[block]);
+	*start = b.begin();
+	*end = b.data_end();
 	return true;
-}
-
-
-// ==================================
-// BufferArray::Block Definitions
-// ==================================
-
-
-BufferArray::Block::Block(size_t len)
-	: mUsed(0),
-	  mAlloced(len)
-{
-	memset(mData, 0, len);
-}
-			
-
-BufferArray::Block::~Block()
-{
-	mUsed = 0;
-	mAlloced = 0;
-}
-
-
-void * BufferArray::Block::operator new(size_t len, size_t addl_len)
-{
-	void * mem = new char[len + addl_len + sizeof(void *)];
-	return mem;
-}
-
-
-void BufferArray::Block::operator delete(void * mem)
-{
-	char * cmem = static_cast<char *>(mem);
-	delete [] cmem;
-}
-
-
-void BufferArray::Block::operator delete(void * mem, size_t)
-{
-	operator delete(mem);
-}
-
-
-BufferArray::Block * BufferArray::Block::alloc(size_t len)
-{
-	Block * block = new (len) Block(len);
-	return block;
 }
 	
 

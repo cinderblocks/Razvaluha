@@ -201,14 +201,8 @@ LLOSInfo::LLOSInfo() :
 	///get native system info if available..
 	typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO); ///function pointer for loading GetNativeSystemInfo
 	SYSTEM_INFO si; //System Info object file contains architecture info
-	PGNSI pGNSI; //pointer object
 	ZeroMemory(&si, sizeof(SYSTEM_INFO)); //zero out the memory in information
-	pGNSI = (PGNSI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetNativeSystemInfo"); //load kernel32 get function
-	if (nullptr != pGNSI) //check if it has failed
-		pGNSI(&si); //success
-	else
-		GetSystemInfo(&si); //if it fails get regular system info 
-	//(Warning: If GetSystemInfo it may result in incorrect information in a WOW64 machine, if the kernel fails to load)
+	GetNativeSystemInfo(&si); //if it fails get regular system info 
 
 	//msdn microsoft finds 32 bit and 64 bit flavors this way..
 	//http://msdn.microsoft.com/en-us/library/ms724429(VS.85).aspx (example code that contains quite a few more flavors

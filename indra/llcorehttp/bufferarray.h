@@ -94,16 +94,6 @@ public:
 	/// @return			Count of bytes copied to BufferArray
 	size_t append(const void * src, size_t len);
 
-	/// Similar to @see append(), this call guarantees a
-	/// contiguous block of memory of requested size placed
-	/// at the current end of the BufferArray.  On return,
-	/// the data in the memory is considered valid whether
-	/// the caller writes to it or not.
-	///
-	/// @return			Pointer to contiguous region at end
-	///					of BufferArray of 'len' size.
-	void * appendBufferAlloc(size_t len);
-
 	/// Current count of bytes in BufferArray instance.
 	size_t size() const
 		{
@@ -127,8 +117,11 @@ protected:
 	bool getBlockStartEnd(int block, const char ** start, const char ** end);
 	
 protected:
-	class Block;
-	typedef std::vector<Block *> container_t;
+	template <std::size_t>
+	struct MemoryBlock;
+
+	typedef MemoryBlock<BLOCK_ALLOC_SIZE> block_t;
+	typedef std::vector<block_t> container_t;
 
 	container_t			mBlocks;
 	size_t				mLen;
