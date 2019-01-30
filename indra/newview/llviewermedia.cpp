@@ -2738,36 +2738,30 @@ bool LLViewerMediaImpl::handleKeyHere(KEY key, MASK mask)
 	
 	if (mMediaSource)
 	{
-		// FIXME: THIS IS SO WRONG.
-		// Menu keys should be handled by the menu system and not passed to UI elements, but this is how LLTextEditor and LLLineEditor do it...
-		if (MASK_CONTROL & mask && key != KEY_LEFT && key != KEY_RIGHT && key != KEY_HOME && key != KEY_END)
+		switch (mask)
 		{
-			result = true;
-		}
+		case MASK_CONTROL:
+		{
+			result = true; // Avoid redundant code, set false for default.
+			switch(key)
+			{
+			// FIXME: THIS IS SO WRONG.
+			// Menu keys should be handled by the menu system and not passed to UI elements, but this is how LLTextEditor and LLLineEditor do it...
+			case KEY_LEFT: case KEY_RIGHT: case KEY_HOME: case KEY_END: break;
 
-		if( MASK_CONTROL & mask )
-		{
-			if('C' == key)
-			{
-				mMediaSource->copy();
-				result = true;
+			case 'C': mMediaSource->copy(); break;
+			case 'V': mMediaSource->paste(); break;
+			case 'X': mMediaSource->cut(); break;
+
+			default: result = false; break;
 			}
-			else if('V' == key)
-			{
-				mMediaSource->paste();
-				result = true;
-			}
-			else if('X' == key)
-			{
-				mMediaSource->cut();
-				result = true;
-			}
+			break;
+		}
 		}
 
 		// Singu Note: At the very least, let's allow the login menu to function
 		extern LLMenuBarGL* gLoginMenuBarView;
-		if (gLoginMenuBarView && gLoginMenuBarView->getVisible() && gLoginMenuBarView->handleAcceleratorKey(key, mask))
-			return true;
+		result = result || (gLoginMenuBarView && gLoginMenuBarView->getVisible() && gLoginMenuBarView->handleAcceleratorKey(key, mask));
 
 		if (!result)
 		{
