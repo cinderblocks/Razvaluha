@@ -117,6 +117,7 @@ LLWindow::LLWindow(LLWindowCallbacks* callbacks, BOOL fullscreen, U32 flags)
 	  mFullscreenHeight(0),
 	  mFullscreenBits(0),
 	  mFullscreenRefresh(0),
+	  mVsyncMode(0),
 	  mSupportedResolutions(nullptr),
 	  mNumSupportedResolutions(0),
 	  mCurrentCursor(UI_CURSOR_ARROW),
