@@ -10,14 +10,14 @@ else (LINUX)
 endif (LINUX)
 
 if (OPENAL)
-  if (STANDALONE)
+  if (USESYSTEMLIBS)
     include(FindPkgConfig)
     include(FindOpenAL)
     pkg_check_modules(OPENAL_LIB REQUIRED openal)
     pkg_check_modules(FREEALUT_LIB REQUIRED freealut)
-  else (STANDALONE)
+  else (USESYSTEMLIBS)
     use_prebuilt_binary(openal)
-  endif (STANDALONE)
+  endif (USESYSTEMLIBS)
   set(OPENAL_LIBRARIES 
     openal
     alut

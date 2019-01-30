@@ -2,15 +2,15 @@
 include(Linking)
 include(Prebuilt)
 
-if (STANDALONE)
+if (USESYSTEMLIBS)
     set(CEFPLUGIN OFF CACHE BOOL
         "CEFPLUGIN support for the llplugin/llmedia test apps.")
-else (STANDALONE)
+else (USESYSTEMLIBS)
     use_prebuilt_binary(dullahan)
     set(CEFPLUGIN ON CACHE BOOL
         "CEFPLUGIN support for the llplugin/llmedia test apps.")
         set(CEF_INCLUDE_DIR ${LIBS_PREBUILT_DIR}/include/cef)
-endif (STANDALONE)
+endif (USESYSTEMLIBS)
 
 if (WINDOWS)
     set(CEF_PLUGIN_LIBRARIES

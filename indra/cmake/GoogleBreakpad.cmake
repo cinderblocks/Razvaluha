@@ -1,10 +1,10 @@
 # -*- cmake -*-
 include(Prebuilt)
 
-if (STANDALONE)
+if (USESYSTEMLIBS)
   set(BREAKPAD_EXCEPTION_HANDLER_FIND_REQUIRED ON)
   include(FindGoogleBreakpad)
-else (STANDALONE)
+else (USESYSTEMLIBS)
   use_prebuilt_binary(google_breakpad)
   if (DARWIN)
     set(BREAKPAD_EXCEPTION_HANDLER_LIBRARIES exception_handler)
@@ -23,4 +23,4 @@ else (STANDALONE)
     ${LIBS_PREBUILT_DIR}/include/google_breakpad/google_breakpad
     ${LIBS_PREBUILT_LEGACY_DIR}/include/google_breakpad/google_breakpad
     )
-endif (STANDALONE)
+endif (USESYSTEMLIBS)

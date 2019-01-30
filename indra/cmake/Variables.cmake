@@ -25,9 +25,15 @@ set(INTEGRATION_TESTS_PREFIX)
 option(LL_TESTS "Build and run unit and integration tests (disable for build timing runs to reduce variation" OFF)
 
 # Compiler and toolchain options
-set(DISABLE_TCMALLOC OFF CACHE BOOL "Disable linkage of TCMalloc. (64bit builds automatically disable TCMalloc)")
-set(DISABLE_FATAL_WARNINGS TRUE CACHE BOOL "Set this to FALSE to enable fatal warnings.")
-option(INCREMENTAL_LINK "Use incremental linking or incremental LTCG for LTO on win32 builds (enable for faster links on some machines)" OFF)
+option(USESYSTEMLIBS "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
+option(STANDALONE "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
+if (USESYSTEMLIBS)
+    set(STANDALONE ON)
+elseif (STANDALONE)
+    set(USESYSTEMLIBS ON)
+endif (USESYSTEMLIBS)
+option(INCREMENTAL_LINK "Use incremental linking on win32 builds (enable for faster links on some machines)" OFF)
+option(USE_PRECOMPILED_HEADERS "Enable use of precompiled header directives where supported." ON)
 option(USE_LTO "Enable Whole Program Optimization and related folding and binary reduction routines" OFF)
 option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
 
@@ -38,6 +44,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin
   set(LIBVLCPLUGIN OFF)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
+# Mallocs
+set(DISABLE_TCMALLOC OFF CACHE BOOL "Disable linkage of TCMalloc. (64bit builds automatically disable TCMalloc)")
+set(DISABLE_FATAL_WARNINGS TRUE CACHE BOOL "Set this to FALSE to enable fatal warnings.")
 # Audio Engines
 option(FMODSTUDIO "Build with support for the FMOD Studio audio engine" OFF)
 
@@ -72,7 +81,7 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/Server.cmake)
   set(INSTALL_PROPRIETARY ON CACHE BOOL "Install proprietary binaries")
 endif (EXISTS ${CMAKE_SOURCE_DIR}/Server.cmake)
 set(TEMPLATE_VERIFIER_OPTIONS "" CACHE STRING "Options for scripts/template_verifier.py")
-set(TEMPLATE_VERIFIER_MASTER_URL "https://bitbucket.org/alchemyviewer/master-message-template/raw/tip/message_template.msg" CACHE STRING "Location of the master message template")
+set(TEMPLATE_VERIFIER_MASTER_URL "https://forge.alchemyviewer.org/alchemy/tools/Master-Message-Template/raw/master/message_template.msg" CACHE STRING "Location of the master message template")
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
@@ -210,9 +219,6 @@ set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_NOSPACE} CACHE STRING "Prefix used f
 set(VIEWER_BRANDING_ID "singularity" CACHE STRING "Viewer branding id")
 
 set(VERSION_BUILD "0" CACHE STRING "Revision number passed in from the outside")
-set(STANDALONE OFF CACHE BOOL "Use libraries from your system rather than prebuilt libraries.")
-
-set(USE_PRECOMPILED_HEADERS ON CACHE BOOL "Enable use of precompiled header directives where supported.")
 
 option(ENABLE_SIGNING "Enable signing the viewer" OFF)
 set(SIGNING_IDENTITY "" CACHE STRING "Specifies the signing identity to use, if necessary.")
