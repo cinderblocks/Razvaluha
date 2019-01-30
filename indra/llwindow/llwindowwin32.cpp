@@ -3074,16 +3074,6 @@ U32 LLWindowWin32::getFSAASamples()
 	return mFSAASamples;
 }
 
-S32 LLWindowWin32::getVsyncMode()
-{
-	return mVsyncMode;
-}
-
-void LLWindowWin32::setVsyncMode(const S32 vsync_mode)
-{
-	mVsyncMode = vsync_mode;
-}
-
 LLWindow::LLWindowResolution* LLWindowWin32::getSupportedResolutions(S32 &num_resolutions)
 {
 	if (!mSupportedResolutions)

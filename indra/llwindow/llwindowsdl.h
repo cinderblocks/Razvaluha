@@ -92,8 +92,6 @@ public:
 	/*virtual*/ BOOL setGamma(const F32 gamma); // Set the gamma
 	/*virtual*/ U32 getFSAASamples();
 	/*virtual*/ void setFSAASamples(const U32 samples);
-	/*virtual*/ void setVsyncMode(const S32 vsync_mode);
-	/*virtual*/ S32	 getVsyncMode();
 	/*virtual*/ BOOL restoreGamma();			// Restore original gamma table (before updating gamma)
 	/*virtual*/ ESwapMethod getSwapMethod() { return mSwapMethod; }
 	/*virtual*/ void processMiscNativeEvents();
@@ -194,7 +192,6 @@ protected:
 	F32			mOverrideAspectRatio;
 	F32		mGamma;
 	U32		mFSAASamples;
-	S32		mVsyncMode;
 
 	int		mSDLFlags;
 

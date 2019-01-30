@@ -981,16 +981,6 @@ void LLWindowSDL::setFSAASamples(const U32 samples)
 	mFSAASamples = samples;
 }
 
-S32 LLWindowSDL::getVsyncMode()
-{
-	return mVsyncMode;
-}
-
-void LLWindowSDL::setVsyncMode(const S32 vsync_mode)
-{
-	mVsyncMode = vsync_mode;
-}
-
 F32 LLWindowSDL::getGamma()
 {
 	return 1/mGamma;

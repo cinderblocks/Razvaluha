@@ -121,8 +121,8 @@ public:
 	virtual BOOL setGamma(const F32 gamma) = 0; // Set the gamma
 	virtual void setFSAASamples(const U32 fsaa_samples) = 0; //set number of FSAA samples
 	virtual U32	 getFSAASamples() = 0;
-	virtual void setVsyncMode(const S32 vsync_mode) = 0;
-	virtual S32	 getVsyncMode() = 0;
+	void setVsyncMode(const S32 vsync_mode) { mVsyncMode = vsync_mode; }
+	S32	 getVsyncMode() const { return mVsyncMode; }
 	virtual BOOL restoreGamma() = 0;			// Restore original gamma table (before updating gamma)
 	virtual ESwapMethod getSwapMethod() { return mSwapMethod; }
 	virtual void processMiscNativeEvents();
@@ -198,6 +198,7 @@ protected:
 	S32			mFullscreenHeight;
 	S32			mFullscreenBits;
 	S32			mFullscreenRefresh;
+	S32			mVsyncMode;
 	LLWindowResolution* mSupportedResolutions;
 	S32			mNumSupportedResolutions;
 	ECursorType	mCurrentCursor;
