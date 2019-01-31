@@ -1181,9 +1181,9 @@ void LLNotificationTemplates::clearTemplates()
 
 void LLNotifications::forceResponse(const LLNotification::Params& params, S32 option)
 {
-	LLNotificationPtr temp_notify(new LLNotification(params));
-	LLSD response = temp_notify->getResponseTemplate();
-	LLSD selected_item = temp_notify->getForm()->getElement(option);
+	LLNotification temp_notify(params);
+	LLSD response = temp_notify.getResponseTemplate();
+	LLSD selected_item = temp_notify.getForm()->getElement(option);
 	
 	if (selected_item.isUndefined())
 	{
@@ -1192,7 +1192,7 @@ void LLNotifications::forceResponse(const LLNotification::Params& params, S32 op
 	}
 	response[selected_item["name"].asString()] = true;
 
-	temp_notify->respond(response);
+	temp_notify.respond(response);
 }
 
 LLNotificationTemplates::TemplateNames LLNotificationTemplates::getTemplateNames() const
@@ -1584,7 +1584,7 @@ LLNotificationPtr LLNotifications::find(const LLUUID& uuid)
 	if (it == mItems.end())
 	{
 		LL_DEBUGS("Notifications") << "Tried to dereference uuid '" << uuid << "' as a notification key but didn't find it." << LL_ENDL;
-		return LLNotificationPtr((LLNotification*)nullptr);
+		return nullptr;
 	}
 	else
 	{
