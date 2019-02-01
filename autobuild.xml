@@ -2937,6 +2937,7 @@
                 <array>
                   <string>-configuration Debug</string>
                   <string>-project Singularity.xcodeproj</string>
+                  <string>-DADDRESS_SIZE=64</string>
                 </array>
               </map>
               <key>configure</key>
@@ -2968,6 +2969,7 @@
                 <array>
                   <string>-configuration RelWithDebInfo</string>
                   <string>-project Singularity.xcodeproj</string>
+                  <string>-DADDRESS_SIZE=64</string>
                 </array>
               </map>
               <key>configure</key>
@@ -3001,6 +3003,7 @@
                 <array>
                   <string>-configuration Release</string>
                   <string>-project Singularity.xcodeproj</string>
+                  <string>-DADDRESS_SIZE=64</string>
                 </array>
               </map>
               <key>configure</key>
