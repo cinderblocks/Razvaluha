@@ -40,7 +40,7 @@
 #include "llfasttimer.h"
 
 const F32 NORMAL_SOFTEN_FACTOR = 0.65f;
-const F32 SIGNIFICANT_DELTA    = 0.0001f;
+constexpr F32 SIGNIFICANT_DELTA    = 0.0001f;
 
 //-----------------------------------------------------------------------------
 // LLPolyMorphData()

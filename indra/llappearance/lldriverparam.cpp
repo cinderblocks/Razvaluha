@@ -613,7 +613,7 @@ F32 LLDriverParam::getDrivenWeight(const LLDrivenEntry* driven, F32 input_weight
 	return driven_weight;
 }
 
-void LLDriverParam::setDrivenWeight(LLDrivenEntry *driven, F32 driven_weight, BOOL upload_bake)
+void LLDriverParam::setDrivenWeight(LLDrivenEntry *driven, F32 driven_weight, bool upload_bake)
 {
 	bool use_self = false;
 	if(mWearablep &&

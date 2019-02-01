@@ -185,7 +185,7 @@ void LLWearable::createLayers(S32 te, LLAvatarAppearance *avatarp)
 {
 	LLTexLayerSet *layer_set = nullptr;
 	const LLAvatarAppearanceDictionary::TextureEntry *texture_dict = LLAvatarAppearanceDictionary::getInstance()->getTexture((ETextureIndex)te);
-	if (texture_dict->mIsUsedByBakedTexture)
+	if (texture_dict && texture_dict->mIsUsedByBakedTexture)
 	{
 		const EBakedTextureIndex baked_index = texture_dict->mBakedTextureIndex;
 		
@@ -439,6 +439,12 @@ LLWearable::EImportResult LLWearable::importStream( std::istream& input_stream, 
 				return LLWearable::FAILURE;
 		}
 	
+		if (te >= ETextureIndex::TEX_NUM_INDICES) //createLayers() converts to ETextureIndex
+		{
+			LL_WARNS() << "Bad Wearable asset: bad texture index: " << te << LL_ENDL;
+			return LLWearable::FAILURE;
+		}
+
 		if( !LLUUID::validate( uuid_buffer ) )
 		{
 				LL_WARNS() << "Bad Wearable asset: bad texture uuid: " 

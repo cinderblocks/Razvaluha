@@ -141,7 +141,7 @@ public:
 protected:
 	LLDriverParam(const LLDriverParam& pOther);
 	F32 getDrivenWeight(const LLDrivenEntry* driven, F32 input_weight);
-	void setDrivenWeight(LLDrivenEntry *driven, F32 driven_weight, BOOL upload_bake = false);
+	void setDrivenWeight(LLDrivenEntry *driven, F32 driven_weight, bool upload_bake = false);
 
 
 	LL_ALIGN_16(LLVector4a	mDefaultVec); // temp holder
