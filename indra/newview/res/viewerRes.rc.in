@@ -157,7 +157,7 @@ BEGIN
             VALUE "FileDescription", "${VIEWER_CHANNEL} Viewer"
             VALUE "FileVersion", "${VIEWER_VERSION_MAJOR}.${VIEWER_VERSION_MINOR}.${VIEWER_VERSION_PATCH}.${VIEWER_VERSION_REVISION}"
             VALUE "InternalName", "Second Life"
-            VALUE "LegalCopyright", "Copyright © 2001-2010, Linden Research, Inc., Copyright 2010 Siana Gearz"
+            VALUE "LegalCopyright", "Copyright © 2001-2010, Linden Research, Inc., Copyright 2010-2019 Siana Gearz, Singularity Viewer Team"
             VALUE "OriginalFilename", "SingularityViewer.exe"
             VALUE "ProductName", "${VIEWER_CHANNEL} Viewer"
             VALUE "ProductVersion", "${VIEWER_VERSION_MAJOR}.${VIEWER_VERSION_MINOR}.${VIEWER_VERSION_PATCH}.${VIEWER_VERSION_REVISION}"
