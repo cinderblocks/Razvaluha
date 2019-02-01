@@ -75,7 +75,7 @@ private:
 	mutable boost::thread::id			mLockingThread;
 	
 #if MUTEX_DEBUG
-	std::map<uintptr_t, BOOL> mIsLocked;
+	std::map<boost::thread::id, bool> mIsLocked;
 #endif
 };
 
