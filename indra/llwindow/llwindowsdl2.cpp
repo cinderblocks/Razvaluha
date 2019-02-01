@@ -1646,12 +1646,14 @@ S32 OSMessageBoxSDL2(const std::string& text, const std::string& caption, U32 ty
 	};
 
 	const SDL_MessageBoxButtonData* buttons;
+	int numbuttons = 2;
 
 	switch (type)
 	{
 	default:
 	case OSMB_OK:
 		buttons = buttons_ok;
+		numbuttons = 1;
 		break;
 	case OSMB_OKCANCEL:
 		buttons = buttons_okcancel;
@@ -1666,7 +1668,7 @@ S32 OSMessageBoxSDL2(const std::string& text, const std::string& caption, U32 ty
 		gWindowImplementation->getSDLWindow(), /* .window */
 		caption.c_str(), /* .title */
 		text.c_str(), /* .message */
-		SDL_arraysize(buttons), /* .numbuttons */
+		numbuttons, /* .numbuttons */
 		buttons, /* .buttons */
 		NULL /* .colorScheme */
 	};
