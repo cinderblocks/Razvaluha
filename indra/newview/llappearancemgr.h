@@ -296,7 +296,7 @@ private:
 	LLTimer mInFlightTimer;
 	static bool mActive;
 
-	std::auto_ptr<LLOutfitUnLockTimer> mUnlockOutfitTimer;
+	boost::scoped_ptr<LLOutfitUnLockTimer> mUnlockOutfitTimer;
 
 	// Set of temp attachment UUIDs that should be removed
 	typedef std::set<LLUUID> doomed_temp_attachments_t;
