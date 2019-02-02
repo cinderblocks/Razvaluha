@@ -34,7 +34,7 @@ public:
 	static void show(const LLUUID& cat_id, LLInventoryModel* model, const std::string& name); // Show the floater for cat_id (create with other params if necessary)
 	static void closeAll(); // Called when not allowed to have inventory open
 
-	/*virtual*/ BOOL handleKeyHere(KEY key, MASK mask);
+	BOOL handleKeyHere(KEY key, MASK mask) override;
 
 private:
 	class LLInventoryPanel* mPanel;

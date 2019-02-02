@@ -403,7 +403,7 @@ LLButton* LLNotifyBox::addButton(const std::string& name, const std::string& lab
 		btn_width - 2*ignore_pad,
 		btn_height);
 
-	LLButton* btn = new LLButton(name, btn_rect, "", boost::bind(&LLNotifyBox::onClickButton, this, is_option ? name : ""));
+	LLButton* btn = new LLButton(name, btn_rect, LLStringUtil::null, boost::bind(&LLNotifyBox::onClickButton, this, is_option ? name : LLStringUtil::null));
 	btn->setLabel(label);
 	btn->setFont(font);
 

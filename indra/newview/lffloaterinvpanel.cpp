@@ -49,7 +49,7 @@ LFFloaterInvPanel::~LFFloaterInvPanel()
 // static
 void LFFloaterInvPanel::show(const LLUUID& cat_id, LLInventoryModel* model, const std::string& name)
 {
-	LFFloaterInvPanel* floater = LFFloaterInvPanel::getInstance(cat_id);
+	auto floater = getInstance(cat_id);
 	if (!floater) floater = new LFFloaterInvPanel(cat_id, model, name);
 	floater->open();
 }
@@ -58,16 +58,11 @@ void LFFloaterInvPanel::show(const LLUUID& cat_id, LLInventoryModel* model, cons
 void LFFloaterInvPanel::closeAll()
 {
 	// We must make a copy first, because LLInstanceTracker doesn't allow destruction while having iterators to it.
-	std::vector<LFFloaterInvPanel*> cache;
+	std::vector<LFFloaterInvPanel*> cache(instanceCount());
 	for (instance_iter i = beginInstances(), end(endInstances()); i != end; ++i)
-	{
 		cache.push_back(&*i);
-	}
 	// Now close all panels, without using instance_iter iterators.
-	for (std::vector<LFFloaterInvPanel*>::iterator i = cache.begin(); i != cache.end(); ++i)
-	{
-		(*i)->close();
-	}
+	for (auto& floater : cache) floater->close();
 }
 
 // virtual
