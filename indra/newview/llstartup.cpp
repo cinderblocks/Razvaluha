@@ -2827,7 +2827,8 @@ void set_startup_status(const F32 frac, const std::string& string, const std::st
 			chat.mSourceType = (EChatSourceType)(CHAT_SOURCE_OBJECT+1);
 			if(gConsole)
 				gConsole->addConsoleLine(chat.mText, gSavedSettings.getColor4("SystemChatColor"));
-			LLFloaterChat::addChatHistory(chat,false);
+			if (gMenuHolder) // Don't initialize the chat floater until the menu holder has arrived
+				LLFloaterChat::addChatHistory(chat,false);
 
 			if(new_d == LLTrans::getString("LoginWaitingForRegionHandshake"))
 			{
@@ -2835,7 +2836,8 @@ void set_startup_status(const F32 frac, const std::string& string, const std::st
 				chat.mSourceType = (EChatSourceType)(CHAT_SOURCE_OBJECT+1);
 				if(gConsole)
 					gConsole->addConsoleLine(chat.mText, gSavedSettings.getColor4("SystemChatColor"));
-				LLFloaterChat::addChatHistory(chat,false);
+				if (gMenuHolder) // Don't initialize the chat floater until the menu holder has arrived
+					LLFloaterChat::addChatHistory(chat,false);
 			}
 		}
 	}
