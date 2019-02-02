@@ -79,6 +79,14 @@ LLDirPicker::LLDirPicker() :
 	mFileName(nullptr),
 	mLocked(false)
 {
+	bi.hwndOwner = NULL;
+	bi.pidlRoot = NULL;
+	bi.pszDisplayName = NULL;
+	bi.lpszTitle = NULL;
+	bi.ulFlags = BIF_USENEWUI;
+	bi.lpfn = NULL;
+	bi.lParam = NULL;
+	bi.iImage = 0;
 }
 
 LLDirPicker::~LLDirPicker()
@@ -86,7 +94,7 @@ LLDirPicker::~LLDirPicker()
 	// nothing
 }
 
-BOOL LLDirPicker::getDir(std::string* filename)
+BOOL LLDirPicker::getDir(std::string* filename, bool blocking)
 {
 	if( mLocked )
 	{
@@ -101,19 +109,17 @@ BOOL LLDirPicker::getDir(std::string* filename)
 
 	BOOL success = FALSE;
 
-	// Modal, so pause agent
-	send_agent_pause();
 
-   BROWSEINFO bi;
-   memset(&bi, 0, sizeof(bi));
+	if (blocking)
+	{
+		// Modal, so pause agent
+		send_agent_pause();
+	}
 
-   bi.ulFlags   = BIF_USENEWUI;
-   bi.hwndOwner = (HWND)gViewerWindow->getPlatformWindow();
-   bi.lpszTitle = nullptr;
+	bi.hwndOwner = (HWND)gViewerWindow->getPlatformWindow();
 
-   ::OleInitialize(nullptr);
-
-   LPITEMIDLIST pIDL = ::SHBrowseForFolder(&bi);
+	::OleInitialize(NULL);
+	LPITEMIDLIST pIDL = ::SHBrowseForFolder(&bi);
 
    if(pIDL != nullptr)
    {
@@ -126,17 +132,20 @@ BOOL LLDirPicker::getDir(std::string* filename)
    			mDir = utf16str_to_utf8str(llutf16string(buffer));
 	         success = TRUE;
       }
-
       // free the item id list
       CoTaskMemFree(pIDL);
    }
 
    ::OleUninitialize();
 
-	send_agent_resume();
+	if (blocking)
+	{
+		send_agent_resume();
 
-	// Account for the fact that the app has been stalled.
-	LLFrameTimer::updateFrameTime();
+		// Account for the fact that the app has been stalled.
+		LLFrameTimer::updateFrameTime();
+	}
+
 	return success;
 }
 
@@ -169,7 +178,7 @@ void LLDirPicker::reset()
 
 
 //static
-BOOL LLDirPicker::getDir(std::string* filename)
+BOOL LLDirPicker::getDir(std::string* filename, bool blocking)
 {
     LLFilePicker::ELoadFilter filter=LLFilePicker::FFLOAD_DIRECTORY;
     
@@ -203,7 +212,7 @@ void LLDirPicker::reset()
 		mFilePicker->reset();
 }
 
-BOOL LLDirPicker::getDir(std::string* filename)
+BOOL LLDirPicker::getDir(std::string* filename, bool blocking)
 {
 	reset();
 
@@ -258,7 +267,7 @@ void LLDirPicker::reset()
 {
 }
 
-BOOL LLDirPicker::getDir(std::string* filename)
+BOOL LLDirPicker::getDir(std::string* filename, bool blocking)
 {
 	return FALSE;
 }
@@ -269,3 +278,91 @@ std::string LLDirPicker::getDirName()
 }
 
 #endif
+
+
+std::unique_ptr<LLMutex> LLDirPickerThread::sMutex = NULL;
+std::queue<LLDirPickerThread*> LLDirPickerThread::sDeadQ;
+
+void LLDirPickerThread::getFile()
+{
+#if LL_WINDOWS
+	start();
+#else
+	run();
+#endif
+}
+
+//virtual
+void LLDirPickerThread::run()
+{
+#if LL_WINDOWS
+	bool blocking = false;
+#else
+	bool blocking = true; // modal
+#endif
+
+	LLDirPicker picker;
+
+	if (picker.getDir(&mProposedName, blocking))
+	{
+		mResponses.push_back(picker.getDirName());
+	}
+
+	{
+		LLMutexLock lock(sMutex.get());
+		sDeadQ.push(this);
+	}
+
+}
+
+//static
+void LLDirPickerThread::initClass()
+{
+	sMutex = std::make_unique<LLMutex>();
+}
+
+//static
+void LLDirPickerThread::cleanupClass()
+{
+	clearDead();
+
+	sMutex.reset();
+}
+
+//static
+void LLDirPickerThread::clearDead()
+{
+	if (!sDeadQ.empty())
+	{
+		LLMutexLock lock(sMutex.get());
+		while (!sDeadQ.empty())
+		{
+			LLDirPickerThread* thread = sDeadQ.front();
+			thread->notify(thread->mResponses);
+			delete thread;
+			sDeadQ.pop();
+		}
+	}
+}
+
+LLDirPickerThread::LLDirPickerThread(const dir_picked_signal_t::slot_type& cb, const std::string &proposed_name)
+	: LLThread("dir picker")
+{
+	mFilePickedSignal = std::make_unique<dir_picked_signal_t>();
+	mFilePickedSignal->connect(cb);
+}
+
+LLDirPickerThread::~LLDirPickerThread()
+{
+}
+
+void LLDirPickerThread::notify(const std::vector<std::string>& filenames)
+{
+	if (!filenames.empty())
+	{
+		if (mFilePickedSignal)
+		{
+			(*mFilePickedSignal)(filenames, mProposedName);
+		}
+	}
+}

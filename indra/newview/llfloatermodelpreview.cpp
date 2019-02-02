@@ -91,7 +91,6 @@
 
 //static
 S32 LLFloaterModelPreview::sUploadAmount = 10;
-LLFloaterModelPreview* LLFloaterModelPreview::sInstance = nullptr;
 
 bool LLModelPreview::sIgnoreLoadedCallback = false;
 
@@ -218,9 +217,17 @@ LLMeshFilePicker::LLMeshFilePicker(LLModelPreview* mp, S32 lod)
 		mLOD = lod;
 	}
 
-void LLMeshFilePicker::notify(const std::string& filename)
+void LLMeshFilePicker::notify(const std::vector<std::string>& filenames)
 {
-	mMP->loadModel(mFile, mLOD);
+	if (filenames.size() > 0)
+	{
+		mMP->loadModel(filenames[0], mLOD);
+	}
+	else
+	{
+		//closes floater
+		mMP->loadModel(LLStringUtil::null, mLOD);
+	}
 }
 
 void FindModel(LLModelLoader::scene& scene, const std::string& name_to_match, LLModel*& baseModelOut, LLMatrix4& matOut)
@@ -250,12 +257,11 @@ void FindModel(LLModelLoader::scene& scene, const std::string& name_to_match, LL
 //-----------------------------------------------------------------------------
 // LLFloaterModelPreview()
 //-----------------------------------------------------------------------------
-LLFloaterModelPreview::LLFloaterModelPreview(const std::string& name):
-LLFloaterModelUploadBase(name),
+LLFloaterModelPreview::LLFloaterModelPreview():
+LLFloaterModelUploadBase("Model Preview"),
 mUploadBtn(nullptr),
 mCalculateBtn(nullptr)
 {
-	sInstance = this;
 	mLastMouseX = 0;
 	mLastMouseY = 0;
 	mStatusLock = new LLMutex();
@@ -266,6 +272,14 @@ mCalculateBtn(nullptr)
 	{
 		mLODMode[i] = 1;
 	}
+	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_model_preview.xml");
+}
+
+LLFloaterModelPreview* LLFloaterModelPreview::show()
+{
+	auto& inst = instance();
+	inst.open();
+	return &inst;
 }
 
 //-----------------------------------------------------------------------------
@@ -406,8 +420,6 @@ BOOL LLFloaterModelPreview::postBuild()
 //-----------------------------------------------------------------------------
 LLFloaterModelPreview::~LLFloaterModelPreview()
 {
-	sInstance = nullptr;
-
 	if (mModelPreview)
 	{
 		delete mModelPreview;
@@ -617,7 +629,7 @@ void LLFloaterModelPreview::toggleGenarateNormals()
 //static
 void LLFloaterModelPreview::onExplodeCommit(LLUICtrl* ctrl, void* userdata)
 {
-	LLFloaterModelPreview* fp = LLFloaterModelPreview::sInstance;
+	LLFloaterModelPreview* fp = LLFloaterModelPreview::getInstance();
 
 	fp->mModelPreview->refresh();
 }
@@ -846,8 +858,9 @@ void LLFloaterModelPreview::onPhysicsParamCommit(LLUICtrl* ctrl, void* data)
 		return;
 	}
 
-	if (sInstance)
+	if (instanceExists())
 	{
+		auto sInstance = getInstance();
 		LLCDParam* param = (LLCDParam*) data;
 		std::string name(param->mName);
 
@@ -886,8 +899,9 @@ void LLFloaterModelPreview::onPhysicsStageExecute(LLUICtrl* ctrl, void* data)
 	LLCDStageData* stage_data = (LLCDStageData*) data;
 	std::string stage = stage_data->mName;
 
-	if (sInstance)
+	if (instanceExists())
 	{
+		auto sInstance = getInstance();
 		if (!sInstance->mCurRequest.empty())
 		{
 			LL_INFOS() << "Decomposition request still pending." << LL_ENDL;
@@ -925,7 +939,7 @@ void LLFloaterModelPreview::onPhysicsStageExecute(LLUICtrl* ctrl, void* data)
 //static
 void LLFloaterModelPreview::onPhysicsBrowse(LLUICtrl* ctrl, void* userdata)
 {
-	sInstance->loadModel(LLModel::LOD_PHYSICS);
+	instance().loadModel(LLModel::LOD_PHYSICS);
 }
 
 //static
@@ -934,6 +948,7 @@ void LLFloaterModelPreview::onPhysicsUseLOD(LLUICtrl* ctrl, void* userdata)
 	S32 num_lods = 4;
 	S32 which_mode;
 
+	auto sInstance(getInstance());
 	LLCtrlSelectionInterface* iface = sInstance->childGetSelectionInterface("physics_lod_combo");
 	if (iface)
 	{
@@ -968,17 +983,18 @@ void LLFloaterModelPreview::onPhysicsUseLOD(LLUICtrl* ctrl, void* userdata)
 //static 
 void LLFloaterModelPreview::onCancel(LLUICtrl* ctrl, void* data)
 {
-	if (sInstance)
+	if (instanceExists())
 	{
-		sInstance->close();
+		instance().close();
 	}
 }
 
 //static
 void LLFloaterModelPreview::onPhysicsStageCancel(LLUICtrl* ctrl, void*data)
 {
-	if (sInstance)
+	if (instanceExists())
 	{
+		auto sInstance = getInstance();
 		for (std::set<LLPointer<DecompRequest> >::iterator iter = sInstance->mCurRequest.begin();
 			iter != sInstance->mCurRequest.end(); ++iter)
 		{
@@ -1643,8 +1659,8 @@ void LLModelPreview::rebuildUploadData()
 			}
 		}
 	}
-	const F32 DEFAULT_MAX_PRIM_SCALE(gHippoLimits->getMaxPrimScale());
-	F32 max_import_scale = (DEFAULT_MAX_PRIM_SCALE-0.1f)/max_scale;
+
+	F32 max_import_scale = (gHippoLimits->getMaxPrimScale()-0.1f)/max_scale;
 
 	F32 max_axis = llmax(mPreviewScale.mV[0], mPreviewScale.mV[1]);
 	max_axis = llmax(max_axis, mPreviewScale.mV[2]);
@@ -2565,7 +2581,7 @@ void LLModelPreview::genLODs(S32 which_lod, U32 decimation, bool enforce_tri_lim
 
 				if (sizes[i*2 + 1] > 0 && sizes[i*2] > 0)
 				{
-					buff->allocateBuffer(sizes[i*2 + 1], sizes[i*2], true);
+					buff->allocateBuffer(sizes[i * 2 + 1], sizes[i * 2], true);
 					buff->setBuffer(type_mask);
 					glodFillElements(mObject[base], names[i], GL_UNSIGNED_SHORT, (U8*) buff->getIndicesPointer());
 					stop_gloderror();
@@ -3126,7 +3142,7 @@ void LLModelPreview::updateStatusMessages()
 		mFMP->childSetTextArg("physics_points", "[POINTS]", mesh_status_na);
 	}
 
-	LLFloaterModelPreview* fmp = LLFloaterModelPreview::sInstance;
+	LLFloaterModelPreview* fmp = LLFloaterModelPreview::getIfExists();
 	if (fmp)
 	{
 		if (phys_tris > 0 || phys_hulls > 0)
@@ -3257,7 +3273,7 @@ void LLModelPreview::updateLodControls(S32 lod)
 	};
 	const U32 num_file_controls = sizeof(file_controls)/sizeof(char*);
 
-	LLFloaterModelPreview* fmp = LLFloaterModelPreview::sInstance;
+	LLFloaterModelPreview* fmp = LLFloaterModelPreview::getIfExists();
 	if (!fmp) return;
 
 	LLComboBox* lod_combo = mFMP->findChild<LLComboBox>("lod_source_" + lod_name[lod]);
@@ -3733,7 +3749,7 @@ BOOL LLModelPreview::render()
 		}
 	}
 
-	LLFloaterModelPreview* fmp = LLFloaterModelPreview::sInstance;
+	LLFloaterModelPreview* fmp = LLFloaterModelPreview::getIfExists();
 
 	bool has_skin_weights = false;
 	bool upload_skin = mFMP->childGetValue("upload_skin").asBoolean();
@@ -4194,7 +4210,7 @@ BOOL LLModelPreview::render()
 
 					if (!model->mSkinWeights.empty())
 					{
-						for (U32 i = 0; i < mVertexBuffer[mPreviewLOD][model].size(); ++i)
+						for (U32 i = 0, e = mVertexBuffer[mPreviewLOD][model].size(); i < e; ++i)
 						{
 							LLVertexBuffer* buffer = mVertexBuffer[mPreviewLOD][model][i];
 
@@ -4387,8 +4403,8 @@ void LLFloaterModelPreview::onUpload(void* user_data)
 
 void LLFloaterModelPreview::refresh()
 {
-	sInstance->toggleCalculateButton(true);
-	sInstance->mModelPreview->mDirty = true;
+	toggleCalculateButton(true);
+	mModelPreview->mDirty = true;
 }
 
 //static
@@ -4418,7 +4434,7 @@ bool LLModelPreview::lodQueryCallback()
 {
     // not the best solution, but model preview belongs to floater
     // so it is an easy way to check that preview still exists.
-    LLFloaterModelPreview* fmp = LLFloaterModelPreview::sInstance;
+    LLFloaterModelPreview* fmp = LLFloaterModelPreview::getIfExists();
     if (fmp && fmp->mModelPreview)
     {
         LLModelPreview* preview = fmp->mModelPreview;
@@ -4458,7 +4474,7 @@ LLFloaterModelPreview::DecompRequest::DecompRequest(const std::string& stage, LL
 	mContinue = 1;
 	mModel = mdl;
 	mDecompID = &mdl->mDecompID;
-	mParams = sInstance->mDecompParams;
+	mParams = getInstance()->mDecompParams;
 
 	//copy out positions and indices
 	assignData(mdl);
@@ -4596,9 +4612,9 @@ S32 LLFloaterModelPreview::DecompRequest::statusCallback(const char* status, S32
 	if (mContinue)
 	{
 		setStatusMessage(llformat("%s: %d/%d", status, p1, p2));
-		if (LLFloaterModelPreview::sInstance)
+		if (instanceExists())
 		{
-			LLFloaterModelPreview::sInstance->setStatusMessage(mStatusMessage);
+			instance().setStatusMessage(mStatusMessage);
 		}
 	}
 
@@ -4611,24 +4627,28 @@ void LLFloaterModelPreview::DecompRequest::completed()
 	{
 		mModel->setConvexHullDecomposition(mHull);
 
-		if (sInstance)
+		if (instanceExists())
 		{
+			auto sInstance(getInstance());
 			if (mContinue)
 			{
 				if (sInstance->mModelPreview)
 				{
 					sInstance->mModelPreview->mDirty = true;
-					LLFloaterModelPreview::sInstance->mModelPreview->refresh();
+					sInstance->mModelPreview->refresh();
 				}
 			}
 
 			sInstance->mCurRequest.erase(this);
 		}
 	}
-	else if (sInstance)
+#ifdef SHOW_ASSERT
+	else if (instanceExists())
 	{
+		auto sInstance(getInstance());
 		llassert(sInstance->mCurRequest.find(this) == sInstance->mCurRequest.end());
 	}
+#endif
 }
 
 void dump_llsd_to_file(const LLSD& content, std::string filename);

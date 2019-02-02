@@ -1,3 +1,5 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfilepicker.cpp
  * @brief OS-specific file picker
@@ -38,6 +40,18 @@
 
 #if LL_SDL
 #include "llwindowsdl.h" // for some X/GTK utils to help with filepickers
+
+#if LL_GTK
+extern "C" {
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
+#if GTK_CHECK_VERSION(2, 24, 0)
+#include <gdk/gdkx.h>
+#endif
+}
+#include <locale.h>
+#endif // LL_GTK
+
 #endif // LL_SDL
 
 #if LL_LINUX || LL_SOLARIS
@@ -58,17 +72,19 @@ LLFilePicker LLFilePicker::sInstance;
 #define AO_FILTER L"Animation Override (*.ao)\0*.ao\0"
 #define BLACKLIST_FILTER L"Asset Blacklist (*.blacklist)\0*.blacklist\0"
 // </edit>
-#define ANIM_FILTER L"Animations (*.bvh; *.anim)\0*.bvh;*.anim\0"
-#define COLLADA_FILTER L"Scene (*.dae)\0*.dae\0"
+#define ANIM_FILTER L"Animations (*.bvh; *.anim; *.animatn)\0*.bvh;*.anim;*.animatn\0"
+#define COLLADA_FILTER L"Collada Scene (*.dae)\0*.dae\0"
+#define FBX_FILTER L"FBX Scene (*.fbx)\0*.fbx\0"
 #ifdef _CORY_TESTING
 #define GEOMETRY_FILTER L"SL Geometry (*.slg)\0*.slg\0"
 #endif
 #define XML_FILTER L"XML files (*.xml)\0*.xml\0"
 #define SLOBJECT_FILTER L"Objects (*.slobject)\0*.slobject\0"
 #define RAW_FILTER L"RAW files (*.raw)\0*.raw\0"
-#define MODEL_FILTER L"Model files (*.dae)\0*.dae\0"
-#define SCRIPT_FILTER L"Script files (*.lsl)\0*.lsl\0"
+#define MODEL_FILTER L"Model files (*.dae; *.fbx)\0*.dae;*.fbx\0"
+#define SCRIPT_FILTER L"Script files (*.lsl; *.lsltext)\0*;*.lsltext\0"
 #define DICTIONARY_FILTER L"Dictionary files (*.dic; *.xcu)\0*.dic;*.xcu\0"
+#define ZIP_FILTER L"ZIP files (*.zip)\0*.zip\0"
 #endif
 
 #ifdef LL_DARWIN
@@ -200,6 +216,10 @@ BOOL LLFilePicker::setupFilter(ELoadFilter filter)
 		mOFN.lpstrFilter = COLLADA_FILTER \
 			L"\0";
 		break;
+	case FFLOAD_FBX:
+		mOFN.lpstrFilter = FBX_FILTER \
+			L"\0";
+		break;
 #ifdef _CORY_TESTING
 	case FFLOAD_GEOMETRY:
 		mOFN.lpstrFilter = GEOMETRY_FILTER \
@@ -228,6 +248,10 @@ BOOL LLFilePicker::setupFilter(ELoadFilter filter)
 		break;
 	case FFLOAD_DICTIONARY:
 		mOFN.lpstrFilter = DICTIONARY_FILTER \
+			L"\0";
+		break;
+	case FFLOAD_ZIP:
+		mOFN.lpstrFilter = ZIP_FILTER \
 			L"\0";
 		break;
 	// <edit>
@@ -306,7 +330,7 @@ BOOL LLFilePicker::getOpenFile(ELoadFilter filter, bool blocking)
 	return success;
 }
 
-BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter)
+BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter, bool blocking)
 {
 	if( mLocked )
 	{
@@ -334,8 +358,12 @@ BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter)
 
 	reset();
 	
-	// Modal, so pause agent
-	send_agent_pause();
+	if (blocking)
+	{
+		// Modal, so pause agent
+		send_agent_pause();
+	}
+
 	gViewerWindow->getWindow()->beforeDialog();
 	// NOTA BENE: hitting the file dialog triggers a window focus event, destroying the selection manager!!
 	success = GetOpenFileName(&mOFN); // pauses until ok or cancel.
@@ -370,14 +398,19 @@ BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter)
 		}
 	}
 	gViewerWindow->getWindow()->afterDialog();
-	send_agent_resume();
 
-	// Account for the fact that the app has been stalled.
-	LLFrameTimer::updateFrameTime();
+	if (blocking)
+	{
+		send_agent_resume();
+
+		// Account for the fact that the app has been stalled.
+		LLFrameTimer::updateFrameTime();
+	}
+
 	return success;
 }
 
-BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
+BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename, bool blocking)
 {
 	if( mLocked )
 	{
@@ -409,8 +442,9 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 		mOFN.lpstrDefExt = nullptr;
 		mOFN.lpstrFilter =
 			L"All Files (*.*)\0*.*\0" \
-			L"WAV Sounds (*.wav)\0*.wav\0" \
-			L"Targa, Bitmap Images (*.tga; *.bmp)\0*.tga;*.bmp\0" \
+			SOUND_FILTER \
+			IMAGE_FILTER \
+			ANIM_FILTER \
 			L"\0";
 		break;
 	case FFSAVE_WAV:
@@ -522,6 +556,17 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 			L"XML File (*.xml)\0*.xml\0" \
 			L"\0";
 		break;
+	case FFSAVE_CSV:
+		if (filename.empty())
+		{
+			wcsncpy( mFilesW,L"untitled.csv", FILENAME_BUFFER_SIZE);	/*Flawfinder: ignore*/
+		}
+
+		mOFN.lpstrDefExt = L"csv";
+		mOFN.lpstrFilter =
+			L"Comma seperated values (*.csv)\0*.csv\0" \
+			L"\0";
+		break;
 	case FFSAVE_COLLADA:
 		if (filename.empty())
 		{
@@ -531,6 +576,16 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 		mOFN.lpstrFilter =
 			L"COLLADA Scene (*.dae)\0*.dae\0" \
 			L"\0";
+		break;
+	case FFSAVE_FBX:
+		if (filename.empty())
+		{
+			wcsncpy( mFilesW,L"untitled.fbx", FILENAME_BUFFER_SIZE);	/*Flawfinder: ignore*/
+		}
+		mOFN.lpstrDefExt = L"fbx";
+		mOFN.lpstrFilter =
+		L"FBX Scene (*.fbx)\0*.fbx\0" \
+		L"\0";
 		break;
 	case FFSAVE_RAW:
 		if (filename.empty())
@@ -803,8 +858,12 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 
 	reset();
 
-	// Modal, so pause agent
-	send_agent_pause();
+	if (blocking)
+	{
+		// Modal, so pause agent
+		send_agent_pause();
+	}
+
 	{
 		gViewerWindow->getWindow()->beforeDialog();
 		// NOTA BENE: hitting the file dialog triggers a window focus event, destroying the selection manager!!
@@ -824,10 +883,15 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 		gViewerWindow->getWindow()->afterDialog();
 		gKeyboard->resetKeys();
 	}
-	send_agent_resume();
 
-	// Account for the fact that the app has been stalled.
-	LLFrameTimer::updateFrameTime();
+	if (blocking)
+	{
+		send_agent_resume();
+
+		// Account for the fact that the app has been stalled.
+		LLFrameTimer::updateFrameTime();
+	}
+
 	return success;
 }
 
@@ -839,55 +903,63 @@ std::vector<std::string> LLFilePicker::navOpenFilterProc(ELoadFilter filter) //(
     switch(filter)
     {
         case FFLOAD_ALL:
-            allowedv->push_back("wav");
-            allowedv->push_back("bvh");
-            allowedv->push_back("anim");
-            allowedv->push_back("dae");
-            allowedv->push_back("raw");
-            allowedv->push_back("lsl");
-            allowedv->push_back("dic");
-            allowedv->push_back("xcu");
-            allowedv->push_back("gif");
+            allowedv.push_back("wav");
+            allowedv.push_back("bvh");
+            allowedv.push_back("anim");
+            allowedv.push_back("animatn");
+            allowedv.push_back("dae");
+            allowedv.push_back("raw");
+            allowedv.push_back("lsl");
+            allowedv.push_back("dic");
+            allowedv.push_back("xcu");
         case FFLOAD_IMAGE:
-            allowedv->push_back("jpg");
-            allowedv->push_back("jpeg");
-            allowedv->push_back("bmp");
-            allowedv->push_back("tga");
-            allowedv->push_back("bmpf");
-            allowedv->push_back("tpic");
-            allowedv->push_back("png");
+            allowedv.push_back("jpg");
+            allowedv.push_back("jpeg");
+            allowedv.push_back("bmp");
+            allowedv.push_back("tga");
+            allowedv.push_back("bmpf");
+            allowedv.push_back("tpic");
+            allowedv.push_back("png");
+            allowedv.push_back("gif");
             break;
         case FFLOAD_EXE:
-            allowedv->push_back("app");
-            allowedv->push_back("exe");
+            allowedv.push_back("app");
+            allowedv.push_back("exe");
             break;
         case FFLOAD_WAV:
-            allowedv->push_back("wav");
+            allowedv.push_back("wav");
             break;
         case FFLOAD_ANIM:
-            allowedv->push_back("bvh");
-            allowedv->push_back("anim");
+            allowedv.push_back("bvh");
+            allowedv.push_back("anim");
+            allowedv.push_back("animatn");
             break;
         case FFLOAD_COLLADA:
-            allowedv->push_back("dae");
+            allowedv.push_back("dae");
+            break;
+        case FFLOAD_FBX:
+            allowedv.push_back("fbx");
             break;
 #ifdef _CORY_TESTING
         case FFLOAD_GEOMETRY:
-            allowedv->push_back("slg");
+            allowedv.push_back("slg");
             break;
 #endif
         case FFLOAD_XML:
-            allowedv->push_back("xml");
+            allowedv.push_back("xml");
             break;
         case FFLOAD_RAW:
-            allowedv->push_back("raw");
+            allowedv.push_back("raw");
             break;
         case FFLOAD_SCRIPT:
-            allowedv->push_back("lsl");
+            allowedv.push_back("lsl");
             break;
         case FFLOAD_DICTIONARY:
-            allowedv->push_back("dic");
-            allowedv->push_back("xcu");
+            allowedv.push_back("dic");
+            allowedv.push_back("xcu");
+            break;
+        case FFLOAD_ZIP:
+            allowedv.push_back("zip");
             break;
         case FFLOAD_DIRECTORY:
             break;
@@ -928,90 +1000,64 @@ bool	LLFilePicker::doNavChooseDialog(ELoadFilter filter)
 bool	LLFilePicker::doNavSaveDialog(ESaveFilter filter, const std::string& filename)
 {
 	
-	// Setup the type, creator, and extension
-    std::string		extension, type, creator;
+	// Setup the extension
+    std::string extension;
     
 	switch (filter)
 	{
 		case FFSAVE_WAV:
-			type = "WAVE";
-			creator = "TVOD";
 			extension = "wav";
 			break;
 		case FFSAVE_TGA:
-			type = "TPIC";
-			creator = "prvw";
 			extension = "tga";
 			break;
 		case FFSAVE_TGAPNG:
-			type = "PNG";
-			creator = "prvw";
-			extension = "png,tga";
+			extension = "png,tga,jpg,jpeg,j2c,bmp,bmpf";
 			break;
 		case FFSAVE_BMP:
-			type = "BMPf";
-			creator = "prvw";
-			extension = "bmp";
+			extension = "bmp,bmpf";
 			break;
 		case FFSAVE_JPEG:
-			type = "JPEG";
-			creator = "prvw";
 			extension = "jpeg";
 			break;
 		case FFSAVE_PNG:
-			type = "PNG ";
-			creator = "prvw";
 			extension = "png";
 			break;
 		case FFSAVE_AVI:
-			type = "\?\?\?\?";
-			creator = "\?\?\?\?";
 			extension = "mov";
 			break;
-
 		case FFSAVE_ANIM:
-			type = "\?\?\?\?";
-			creator = "\?\?\?\?";
 			extension = "xaf";
 			break;
-
+		case FFSAVE_COLLADA:
+			extension = "dae";
+			break;
+		case FFSAVE_FBX:
+			extension = "fbx";
+			break;
 #ifdef _CORY_TESTING
 		case FFSAVE_GEOMETRY:
-			type = "\?\?\?\?";
-			creator = "\?\?\?\?";
 			extension = "slg";
 			break;
-#endif	
-			
+#endif
 		case FFSAVE_XML:
-			type = "\?\?\?\?";
-			creator = "\?\?\?\?";
 			extension = "xml";
 			break;
-			
+		case FFSAVE_CSV:
+			extension = "csv";
+			break;
 		case FFSAVE_RAW:
-			type = "\?\?\?\?";
-			creator = "\?\?\?\?";
 			extension = "raw";
 			break;
-
 		case FFSAVE_J2C:
-			type = "\?\?\?\?";
-			creator = "prvw";
 			extension = "j2c";
 			break;
-		
 		case FFSAVE_SCRIPT:
-			type = "LSL ";
-			creator = "\?\?\?\?";
 			extension = "lsl";
 			break;
-		
 		case FFSAVE_ALL:
 		default:
-			type = "\?\?\?\?";
-			creator = "\?\?\?\?";
-			extension = "";
+			extension = LLStringUtil::null;
 			break;
 	}
 	
@@ -1020,10 +1066,8 @@ bool	LLFilePicker::doNavSaveDialog(ESaveFilter filter, const std::string& filena
 	gViewerWindow->getWindow()->beforeDialog();
 
 	// Run the dialog
-    std::string* filev = doSaveDialog(&namestring, 
-                 &type,
-                 &creator,
-                 &extension,
+    std::string* filev = doSaveDialog(namestring,
+                 extension,
                  mPickOptions);
 
 	gViewerWindow->getWindow()->afterDialog();
@@ -1092,7 +1136,7 @@ BOOL LLFilePicker::getOpenFile(ELoadFilter filter, bool blocking)
 	return success;
 }
 
-BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter)
+BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter, bool blocking)
 {
 	if( mLocked )
 		return FALSE;
@@ -1110,12 +1154,19 @@ BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter)
     mPickOptions |= F_FILE;
 
     mPickOptions |= F_MULTIPLE;
-	// Modal, so pause agent
-	send_agent_pause();
+
+	if (blocking) // always true for linux/mac
+	{
+		// Modal, so pause agent
+		send_agent_pause();
+	}
     
 	success = doNavChooseDialog(filter);
     
-    send_agent_resume();
+	if (blocking)
+	{
+	    send_agent_resume();
+	}
     
 	if (success)
 	{
@@ -1130,7 +1181,7 @@ BOOL LLFilePicker::getMultipleOpenFiles(ELoadFilter filter)
 	return success;
 }
 
-BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
+BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename, bool blocking)
 {
 
 	if( mLocked )
@@ -1147,8 +1198,11 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 	
     mPickOptions &= ~F_MULTIPLE;
 
-	// Modal, so pause agent
-	send_agent_pause();
+	if (blocking)
+	{
+		// Modal, so pause agent
+		send_agent_pause();
+	}
 
     success = doNavSaveDialog(filter, filename);
 
@@ -1158,7 +1212,10 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 			success = false;
 	}
 
-	send_agent_resume();
+	if (blocking)
+	{
+		send_agent_resume();
+	}
 
 	// Account for the fact that the app has been stalled.
 	LLFrameTimer::updateFrameTime();
@@ -1297,8 +1354,14 @@ GtkWindow* LLFilePicker::buildFilePicker(bool is_save, bool is_folder, std::stri
 		if (None != XWindowID)
 		{
 			gtk_widget_realize(GTK_WIDGET(win)); // so we can get its gdkwin
-			GdkWindow *gdkwin = gdk_window_foreign_new(XWindowID);
-			gdk_window_set_transient_for(GTK_WIDGET(win)->window,
+
+#if GTK_CHECK_VERSION(2, 24, 0)
+            GdkWindow* gdkwin = gdk_x11_window_foreign_new_for_display(gdk_display_get_default(), static_cast<Window>(XWindowID));
+#else
+			GdkWindow* gdkwin = gdk_window_foreign_new(static_cast<GdkNativeWindow>(XWindowID));
+#endif
+
+			gdk_window_set_transient_for(gtk_widget_get_window(GTK_WIDGET(win)),
 						     gdkwin);
 		}
 		else
@@ -1398,8 +1461,7 @@ static std::string add_imageload_filter_to_gtkchooser(GtkWindow *picker)
 	gtk_file_filter_add_mime_type(gfilter, HTTP_CONTENT_IMAGE_JPEG.c_str());
 	gtk_file_filter_add_mime_type(gfilter, HTTP_CONTENT_IMAGE_PNG.c_str());
 	gtk_file_filter_add_mime_type(gfilter, HTTP_CONTENT_IMAGE_BMP.c_str());
-	gtk_file_filter_add_mime_type(gfilter, "image/jp2");
-	std::string filtername = LLTrans::getString("image_files") + " (*.tga; *.bmp; *.jpg; *.png; *.jp2; *.j2k; *.j2c)";
+	std::string filtername = LLTrans::getString("image_files") + " (*.tga; *.bmp; *.jpg; *.png)";
 	add_common_filters_to_gtkchooser(gfilter, picker, filtername);
 	return filtername;
 }
@@ -1416,19 +1478,40 @@ static std::string add_dictionary_filter_to_gtkchooser(GtkWindow *picker)
 							LLTrans::getString("dictionary_files") + " (*.dic; *.xcu)");
 }
 
+static std::string add_zip_filter_to_gtkchooser(GtkWindow *picker)
+{
+	return add_simple_mime_filter_to_gtkchooser(picker, HTTP_CONTENT_TEXT_PLAIN,
+												LLTrans::getString("zip_files") + " (*.zip)");
+}
+
 static std::string add_save_texture_filter_to_gtkchooser(GtkWindow *picker)
 {
-	GtkFileFilter *gfilter = gtk_file_filter_new();
-	gtk_file_filter_add_mime_type(gfilter, "image/bmp");
-	gtk_file_filter_add_pattern(gfilter, "*.dxt");
-	gtk_file_filter_add_mime_type(gfilter, "image/jpeg");
-	gtk_file_filter_add_pattern(gfilter, "*.j2c");
-	gtk_file_filter_add_pattern(gfilter, "*.mip");
-	gtk_file_filter_add_mime_type(gfilter, "image/png");
-	gtk_file_filter_add_pattern(gfilter, "*.tga");
-	std::string filtername = LLTrans::getString("image_files") + "(*.bmp; *.dxt; *.jpg; *.jpeg; *.j2c; *.mip; *.png; *.tga)";
-	add_common_filters_to_gtkchooser(gfilter, picker, filtername);
-	return filtername;
+	GtkFileFilter *gfilter_tga = gtk_file_filter_new();
+	GtkFileFilter *gfilter_png = gtk_file_filter_new();
+	GtkFileFilter *gfilter_jpg = gtk_file_filter_new();
+	GtkFileFilter *gfilter_j2c = gtk_file_filter_new();
+	GtkFileFilter *gfilter_bmp = gtk_file_filter_new();
+
+	gtk_file_filter_add_pattern(gfilter_tga, "*.tga");
+	gtk_file_filter_add_mime_type(gfilter_png, "image/png");
+	gtk_file_filter_add_mime_type(gfilter_jpg, "image/jpeg");
+	gtk_file_filter_add_mime_type(gfilter_j2c, "image/j2c");
+	gtk_file_filter_add_mime_type(gfilter_bmp, "image/bmp");
+
+	std::string caption = LLTrans::getString("save_texture_image_files") + " (*.tga; *.png; *.jpg; *.jpeg; *,j2c; *.bmp)";
+	gtk_file_filter_set_name(gfilter_tga, LLTrans::getString("targa_image_files").c_str());
+	gtk_file_filter_set_name(gfilter_png, LLTrans::getString("png_image_files").c_str());
+	gtk_file_filter_set_name(gfilter_jpg, LLTrans::getString("jpg_image_files").c_str());
+	gtk_file_filter_set_name(gfilter_j2c, LLTrans::getString("j2c_image_files").c_str());
+	gtk_file_filter_set_name(gfilter_bmp, LLTrans::getString("bitmap_image_files").c_str());
+
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(picker), gfilter_png);
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(picker), gfilter_tga);
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(picker), gfilter_jpg);
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(picker), gfilter_j2c);
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(picker), gfilter_bmp);
+
+	return caption;
 }
 
 BOOL LLFilePicker::getSaveFile( ESaveFilter filter, const std::string& filename )
@@ -1493,6 +1576,20 @@ BOOL LLFilePicker::getSaveFile( ESaveFilter filter, const std::string& filename 
 				(picker, "*.xml", LLTrans::getString("xml_file") + " (*.xml)");
 			suggest_ext = ".xml";
 			break;
+		case FFSAVE_CSV:
+			caption += add_simple_pattern_filter_to_gtkchooser
+				(picker, "*.csv", LLTrans::getString("csv_files") + " (*.csv)");
+			break;
+		case FFSAVE_COLLADA:
+			caption += add_simple_pattern_filter_to_gtkchooser
+				(picker, "*.dae", LLTrans::getString("collada_file") + " (*.dae");
+			suggest_ext = ".dae";
+			break;
+		case FFSAVE_FBX:
+			caption += add_simple_pattern_filter_to_gtkchooser
+				(picker, "*.fbx", LLTrans::getString("fbx_file") + " (*.fbx");
+			suggest_ext = ".fbx";
+			break;
 		case FFSAVE_RAW:
 			caption += add_simple_pattern_filter_to_gtkchooser
 				(picker, "*.raw", LLTrans::getString("raw_file") + " (*.raw)");
@@ -1552,39 +1649,6 @@ BOOL LLFilePicker::getSaveFile( ESaveFilter filter, const std::string& filename 
 	return rtn;
 }
 
-std::string setup_filter(GtkWindow* picker, const LLFilePicker::ELoadFilter& filter)
-{
-	std::string filtername = "";
-
-	switch (filter)
-	{
-	case LLFilePicker::FFLOAD_WAV:
-		filtername = add_wav_filter_to_gtkchooser(picker);
-		break;
-	case LLFilePicker::FFLOAD_ANIM:
-		filtername = add_anim_filter_to_gtkchooser(picker);
-		break;
-	case LLFilePicker::FFLOAD_XML:
-		filtername = add_xml_filter_to_gtkchooser(picker);
-		break;
-	case LLFilePicker::FFLOAD_COLLADA:
-		filtername = add_collada_filter_to_gtkchooser(picker);
-		break;
-	case LLFilePicker::FFLOAD_IMAGE:
-		filtername = add_imageload_filter_to_gtkchooser(picker);
-		break;
-	case LLFilePicker::FFLOAD_SCRIPT:
-		filtername = add_script_filter_to_gtkchooser(picker);
-		break;
-	case LLFilePicker::FFLOAD_DICTIONARY:
-		filtername = add_dictionary_filter_to_gtkchooser(picker);
-		break;
-	default:;
-		break;
-	}
-	return filtername;
-}
-
 BOOL LLFilePicker::getOpenFile( ELoadFilter filter, bool blocking )
 {
 	BOOL rtn = FALSE;
@@ -1604,7 +1668,38 @@ BOOL LLFilePicker::getOpenFile( ELoadFilter filter, bool blocking )
 	if (picker)
 	{
 		std::string caption = LLTrans::getString("load_file_verb") + " ";
-		caption += setup_filter(picker, filter);
+		std::string filtername = "";
+		switch (filter)
+		{
+		case FFLOAD_WAV:
+			filtername = add_wav_filter_to_gtkchooser(picker);
+			break;
+		case FFLOAD_ANIM:
+			filtername = add_anim_filter_to_gtkchooser(picker);
+			break;
+		case FFLOAD_XML:
+			filtername = add_xml_filter_to_gtkchooser(picker);
+			break;
+		case FFLOAD_COLLADA:
+			filtername = add_collada_filter_to_gtkchooser(picker);
+			break;
+		case FFLOAD_IMAGE:
+			filtername = add_imageload_filter_to_gtkchooser(picker);
+			break;
+		case FFLOAD_SCRIPT:
+			filtername = add_script_filter_to_gtkchooser(picker);
+			break;
+		case FFLOAD_DICTIONARY:
+			filtername = add_dictionary_filter_to_gtkchooser(picker);
+			break;
+		case FFLOAD_ZIP:
+			filtername = add_zip_filter_to_gtkchooser(picker);
+			break;
+		default:;
+			break;
+		}
+
+		caption += filtername;
 
 		gtk_window_set_title(GTK_WINDOW(picker), caption.c_str());
 
@@ -1619,7 +1714,7 @@ BOOL LLFilePicker::getOpenFile( ELoadFilter filter, bool blocking )
 	return rtn;
 }
 
-BOOL LLFilePicker::getMultipleOpenFiles( ELoadFilter filter )
+BOOL LLFilePicker::getMultipleOpenFiles( ELoadFilter filter, bool blocking)
 {
 	BOOL rtn = FALSE;
 
@@ -1640,9 +1735,7 @@ BOOL LLFilePicker::getMultipleOpenFiles( ELoadFilter filter )
 		gtk_file_chooser_set_select_multiple (GTK_FILE_CHOOSER(picker),
 						      TRUE);
 
-		std::string caption = LLTrans::getString("load_files") + ' ';
-		caption += setup_filter(picker, filter);
-		gtk_window_set_title(GTK_WINDOW(picker), caption.c_str());
+		gtk_window_set_title(GTK_WINDOW(picker), LLTrans::getString("load_files").c_str());
 
 		gtk_widget_show_all(GTK_WIDGET(picker));
 		gtk_main();
@@ -1705,7 +1798,7 @@ BOOL LLFilePicker::getOpenFile( ELoadFilter filter, bool blocking )
 	return TRUE;
 }
 
-BOOL LLFilePicker::getMultipleOpenFiles( ELoadFilter filter )
+BOOL LLFilePicker::getMultipleOpenFiles( ELoadFilter filter, bool blocking)
 {
 	// if local file browsing is turned off, return without opening dialog
 	// (Even though this is a stub, I think we still should not return anything at all)
@@ -1734,7 +1827,7 @@ BOOL LLFilePicker::getOpenFile( ELoadFilter filter )
 	return FALSE;
 }
 
-BOOL LLFilePicker::getMultipleOpenFiles( ELoadFilter filter )
+BOOL LLFilePicker::getMultipleOpenFiles( ELoadFilter filter, bool blocking)
 {
 	reset();
 	return FALSE;

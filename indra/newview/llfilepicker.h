@@ -70,24 +70,26 @@ public:
 		FFLOAD_WAV = 2,
 		FFLOAD_IMAGE = 3,
 		FFLOAD_ANIM = 4,
-#ifdef _CORY_TESTING
-		FFLOAD_GEOMETRY = 5,
-#endif
-		FFLOAD_XML = 6,
-		FFLOAD_SLOBJECT = 7,
-		FFLOAD_RAW = 8,
-		FFLOAD_MODEL = 9,
-		FFLOAD_COLLADA = 10,
-		FFLOAD_SCRIPT = 11,
-		FFLOAD_DICTIONARY = 12,
-        FFLOAD_DIRECTORY = 13,   // To call from lldirpicker.
-
+		FFLOAD_XML = 5,
+		FFLOAD_RAW = 6,
+		FFLOAD_MODEL = 7,
+		FFLOAD_COLLADA = 8,
+		FFLOAD_FBX = 9,
+		FFLOAD_SCRIPT = 10,
+		FFLOAD_DICTIONARY = 11,
+		FFLOAD_DIRECTORY = 12,   //To call from lldirpicker.
+		FFLOAD_EXE = 13,
+		FFLOAD_ZIP = 14,
 		// <edit>
-		FFLOAD_INVGZ = 14,
-		FFLOAD_AO = 15,
-		FFLOAD_BLACKLIST = 16,
+		FFLOAD_SLOBJECT,
+		FFLOAD_INVGZ,
+		FFLOAD_AO,
+		FFLOAD_BLACKLIST,
 		// </edit>
-        FFLOAD_EXE = 17          // Note: EXE will be treated as ALL on Windows and Linux but not on Darwin
+
+#ifdef _CORY_TESTING
+		FFLOAD_GEOMETRY
+#endif
 	};
 
 	enum ESaveFilter
@@ -98,49 +100,52 @@ public:
 		FFSAVE_BMP = 5,
 		FFSAVE_AVI = 6,
 		FFSAVE_ANIM = 7,
-#ifdef _CORY_TESTING
-		FFSAVE_GEOMETRY = 8,
-#endif
+		FFSAVE_BVH = 8,
 		FFSAVE_XML = 9,
-		FFSAVE_COLLADA = 10,
-		FFSAVE_RAW = 11,
-		FFSAVE_J2C = 12,
-		FFSAVE_PNG = 13,
-		FFSAVE_JPEG = 14,
-		FFSAVE_SCRIPT = 15,
-		FFSAVE_TGAPNG = 16,
+		FFSAVE_CSV = 10,
+		FFSAVE_COLLADA = 11,
+		FFSAVE_FBX = 12,
+		FFSAVE_RAW = 13,
+		FFSAVE_J2C = 14,
+		FFSAVE_PNG = 15,
+		FFSAVE_JPEG = 16,
+		FFSAVE_SCRIPT = 17,
+		FFSAVE_TGAPNG = 18,
 		// <edit>
-		FFSAVE_ANIMATN = 17,
-		FFSAVE_OGG = 18,
-		FFSAVE_NOTECARD = 19,
-		FFSAVE_GESTURE = 20,
+		FFSAVE_ANIMATN,
+		FFSAVE_OGG,
+		FFSAVE_NOTECARD,
+		FFSAVE_GESTURE,
 		// good grief
-		FFSAVE_SHAPE = 21,
-		FFSAVE_SKIN = 22,
-		FFSAVE_HAIR = 23,
-		FFSAVE_EYES = 24,
-		FFSAVE_SHIRT = 25,
-		FFSAVE_PANTS = 26,
-		FFSAVE_SHOES = 27,
-		FFSAVE_SOCKS = 28,
-		FFSAVE_JACKET = 29,
-		FFSAVE_GLOVES = 30,
-		FFSAVE_UNDERSHIRT = 31,
-		FFSAVE_UNDERPANTS = 32,
-		FFSAVE_SKIRT = 33,
-		FFSAVE_INVGZ = 34,
-		FFSAVE_LANDMARK = 35,
-		FFSAVE_AO = 36,
-		FFSAVE_BLACKLIST = 37,
-		FFSAVE_PHYSICS = 38,
-		FFSAVE_IMAGE = 39,
+		FFSAVE_SHAPE,
+		FFSAVE_SKIN,
+		FFSAVE_HAIR,
+		FFSAVE_EYES,
+		FFSAVE_SHIRT,
+		FFSAVE_PANTS,
+		FFSAVE_SHOES,
+		FFSAVE_SOCKS,
+		FFSAVE_JACKET,
+		FFSAVE_GLOVES,
+		FFSAVE_UNDERSHIRT,
+		FFSAVE_UNDERPANTS,
+		FFSAVE_SKIRT,
+		FFSAVE_INVGZ,
+		FFSAVE_LANDMARK,
+		FFSAVE_AO,
+		FFSAVE_BLACKLIST,
+		FFSAVE_PHYSICS,
+		FFSAVE_IMAGE,
 		// </edit>
+#ifdef _CORY_TESTING
+		FFSAVE_GEOMETRY
+#endif
 	};
 
 	// open the dialog. This is a modal operation
-	BOOL getSaveFile( ESaveFilter filter = FFSAVE_ALL, const std::string& filename = LLStringUtil::null );
+	BOOL getSaveFile( ESaveFilter filter = FFSAVE_ALL, const std::string& filename = LLStringUtil::null, bool blocking = true);
 	BOOL getOpenFile( ELoadFilter filter = FFLOAD_ALL, bool blocking = true  );
-	BOOL getMultipleOpenFiles( ELoadFilter filter = FFLOAD_ALL );
+	BOOL getMultipleOpenFiles( ELoadFilter filter = FFLOAD_ALL, bool blocking = true );
 
 	// <edit>
 	// Get the vector of filenames found, how dare LL not include this

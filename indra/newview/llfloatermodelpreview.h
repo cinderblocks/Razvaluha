@@ -33,6 +33,7 @@
 #include "llquaternion.h"
 #include "llmeshrepository.h"
 #include "llmodel.h"
+#include "llsingleton.h"
 #include "llthread.h"
 #include "llviewermenufile.h"
 #include "llfloatermodeluploadbase.h"
@@ -56,8 +57,10 @@ class domController;
 class domSkin;
 class domMesh;
 
-class LLFloaterModelPreview : public LLFloaterModelUploadBase
+class LLFloaterModelPreview : public LLFloaterModelUploadBase, public LLSingleton<LLFloaterModelPreview>
 {
+	LLSINGLETON(LLFloaterModelPreview);
+	virtual ~LLFloaterModelPreview();
 public:
 
 	class DecompRequest : public LLPhysicsDecomp::Request
@@ -71,10 +74,9 @@ public:
 		void completed() override;
 
 	};
-	static LLFloaterModelPreview* sInstance;
 
-	LLFloaterModelPreview(const std::string& name);
-	virtual ~LLFloaterModelPreview();
+	static LLFloaterModelPreview* show();
+	static LLFloaterModelPreview* getIfExists() { return instanceExists() ? getInstance() : nullptr; }
 
 	BOOL postBuild() override;
 
@@ -216,7 +218,7 @@ class LLMeshFilePicker : public LLFilePickerThread
 {
 public:
 	LLMeshFilePicker(LLModelPreview* mp, S32 lod);
-	void notify(const std::string& filename) override;
+	void notify(const std::vector<std::string>& filenames) override;
 
 private:
 	LLModelPreview* mMP;
