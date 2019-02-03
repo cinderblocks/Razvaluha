@@ -3,6 +3,7 @@
 project(llrender)
 
 include(00-Common)
+include(OpenGL)
 include(FreeType)
 include(LLCommon)
 include(LLImage)
@@ -80,11 +81,25 @@ set(llrender_HEADER_FILES
 set_source_files_properties(${llrender_HEADER_FILES}
                             PROPERTIES HEADER_FILE_ONLY TRUE)
 
-# Workaround hack for clang bugs
-if (DARWIN)
-    set_property(SOURCE llgl.cpp PROPERTY COMPILE_FLAGS -O1)
-endif (DARWIN)
-
 list(APPEND llrender_SOURCE_FILES ${llrender_HEADER_FILES})
 
 add_library (llrender ${llrender_SOURCE_FILES})
+
+if (SDL_FOUND)
+  set_property(TARGET llrender
+    PROPERTY COMPILE_DEFINITIONS LL_SDL=1
+    )
+endif (SDL_FOUND)
+
+# Libraries on which this library depends, needed for Linux builds
+# Sort by high-level to low-level
+target_link_libraries(llrender
+    ${LLCOMMON_LIBRARIES}
+    ${LLIMAGE_LIBRARIES}
+    ${LLMATH_LIBRARIES}
+    ${LLVFS_LIBRARIES}
+    ${LLXML_LIBRARIES}
+    ${LLVFS_LIBRARIES}
+    ${LLWINDOW_LIBRARIES}
+    ${FREETYPE_LIBRARIES}
+    ${OPENGL_LIBRARIES})
