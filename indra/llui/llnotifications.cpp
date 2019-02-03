@@ -456,7 +456,7 @@ LLSD LLNotification::asLLSD()
 
 void LLNotification::update()
 {
-	LLNotifications::instance().update(LLNotificationPtr(this));
+	LLNotifications::instance().update(shared_from_this());
 }
 
 void LLNotification::updateFrom(LLNotificationPtr other)
