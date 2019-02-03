@@ -310,7 +310,7 @@ BOOL LLFloaterWorldMap::postBuild()
 	mAdultEventsCheck = getChild<LLCheckBoxCtrl>("events_adult_chk");
 	mLandSaleCheck = getChild<LLCheckBoxCtrl>("land_for_sale_chk");
 	mInfoHubCheck = getChild<LLCheckBoxCtrl>("infohub_chk");
-	mTeleHubCheck = getChild<LLCheckBoxCtrl>("telehub_chk");
+	mTeleHubCheck = getChild<LLCheckBoxCtrl>("telehubchk");
 	mPeopleCheck = getChild<LLCheckBoxCtrl>("people_chk");
 	mFriendsIcon = getChild<LLIconCtrl>("avatar_icon");
 	mLandmarkIcon = getChild<LLIconCtrl>("landmark_icon");

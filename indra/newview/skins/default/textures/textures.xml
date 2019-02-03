@@ -353,8 +353,6 @@ with the same filename but different name
   <texture name="minimize_pressed.tga"	preload="true"/>
   <texture name="music_icon.tga" file_name="icn_label_music.tga" />
   <texture name="mute_icon.tga"/>
-  <texture name="noentrylines.j2c" use_mips="true"/>
-  <texture name="noentrypasslines.j2c" use_mips="true"/>
   <texture name="notify_box_icon.tga"/>
   <texture name="notify_next.png" preload="true"/>
   <texture name="notify_tip_icon.tga"/>

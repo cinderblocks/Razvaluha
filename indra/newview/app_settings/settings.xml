@@ -15743,8 +15743,8 @@ This should be as low as possible, but too low may break functionality</string>
       <string>Color3</string>
       <key>Value</key>
       <array>
-        <real>0.699999988079</real>
-        <real>0.699999988079</real>
+        <real>0.67</real>
+        <real>0.67</real>
         <real>1.0</real>
       </array>
     </map>
@@ -18305,6 +18305,15 @@ This should be as low as possible, but too low may break functionality</string>
             <string>U32</string>
         <key>Value</key>
             <real>1</real>
+        </map>
+    <key>PoolSizeAssetStorage</key>
+        <map>
+        <key>Comment</key>
+            <string>Coroutine Pool size for AssetStorage requests</string>
+        <key>Type</key>
+            <string>U32</string>
+        <key>Value</key>
+            <real>12</real>
         </map>
     <key>OutfitOperationsTimeout</key>
     <map>
