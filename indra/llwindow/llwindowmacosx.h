@@ -166,7 +166,7 @@ protected:
 	//
 
 	// create or re-create the GL context/window.  Called from the constructor and switchContext().
-	BOOL createContext(int x, int y, int width, int height, int bits, BOOL fullscreen, U32 vsync_setting);
+	BOOL createContext(int x, int y, int width, int height, int bits, BOOL fullscreen, S32 vsync_setting);
 	void destroyContext();
 	void setupFailure(const std::string& text, const std::string& caption, U32 type);
 	void adjustCursorDecouple(bool warpingMouse = false);
