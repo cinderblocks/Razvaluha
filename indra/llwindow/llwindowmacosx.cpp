@@ -1587,13 +1587,14 @@ void LLWindowMacOSX::initCursors()
 	initPixmapCursor(UI_CURSOR_TOOLMEDIAOPEN, 1, 1);
 	initPixmapCursor(UI_CURSOR_TOOLSIT, 20, 15);
 	initPixmapCursor(UI_CURSOR_TOOLBUY, 20, 15);
+	initPixmapCursor(UI_CURSOR_TOOLPAY, 20, 15);
 	initPixmapCursor(UI_CURSOR_TOOLOPEN, 20, 15);
-	initPixmapCursor(UI_CURSOR_TOOLPATHFINDING, 16, 16);
+	/*initPixmapCursor(UI_CURSOR_TOOLPATHFINDING, 16, 16);
 	initPixmapCursor(UI_CURSOR_TOOLPATHFINDING_PATH_START, 16, 16);
 	initPixmapCursor(UI_CURSOR_TOOLPATHFINDING_PATH_START_ADD, 16, 16);
 	initPixmapCursor(UI_CURSOR_TOOLPATHFINDING_PATH_END, 16, 16);
 	initPixmapCursor(UI_CURSOR_TOOLPATHFINDING_PATH_END_ADD, 16, 16);
-	initPixmapCursor(UI_CURSOR_TOOLNO, 8, 8);
+	initPixmapCursor(UI_CURSOR_TOOLNO, 8, 8);*/
 
 	initPixmapCursor(UI_CURSOR_SIZENWSE, 10, 10);
 	initPixmapCursor(UI_CURSOR_SIZENESW, 10, 10);
