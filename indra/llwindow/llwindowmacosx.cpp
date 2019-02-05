@@ -113,11 +113,11 @@ static LLWindowMacOSX *gWindowImplementation = NULL;
 LLWindowMacOSX::LLWindowMacOSX(LLWindowCallbacks* callbacks,
 							   const std::string& title, const std::string& name, S32 x, S32 y, S32 width,
 							   S32 height, U32 flags,
-							   U32 window_mode, BOOL clearBg,
-							   BOOL vsync_setting, BOOL use_gl,
+							   BOOL fullscreen, BOOL clearBg,
+							   S32 vsync_setting, BOOL use_gl,
 							   BOOL ignore_pixel_depth,
 							   U32 fsaa_samples)
-	: LLWindow(NULL, window_mode, flags)
+	: LLWindow(NULL, fullscreen, flags)
 {
 	// *HACK: During window construction we get lots of OS events for window
 	// reshape, activate, etc. that the viewer isn't ready to handle.
@@ -168,7 +168,7 @@ LLWindowMacOSX::LLWindowMacOSX(LLWindowCallbacks* callbacks,
 	// Stash an object pointer for OSMessageBox()
 	gWindowImplementation = this;
 	// Create the GL context and set it up for windowed or fullscreen, as appropriate.
-	if(createContext(x, y, width, height, 32, window_mode, vsync_setting))
+	if(createContext(x, y, width, height, 32, fullscreen, vsync_setting))
 	{
 		if(mWindow != NULL)
 		{
@@ -573,9 +573,9 @@ void LLWindowMacOSX::getMouseDeltas(S32* delta)
 	delta[1] = mCursorLastEventDeltaY;
 }
 
-BOOL LLWindowMacOSX::createContext(int x, int y, int width, int height, int bits, U32 window_mode, U32 vsync_setting)
+BOOL LLWindowMacOSX::createContext(int x, int y, int width, int height, int bits, BOOL fullscreen, S32 vsync_setting)
 {
-	mWindowMode = window_mode;
+	mFullscreen = fullscreen;
 	
 	if (mWindow == NULL)
 	{
@@ -587,16 +587,16 @@ BOOL LLWindowMacOSX::createContext(int x, int y, int width, int height, int bits
 	GLint frames_per_swap;
 	switch (vsync_setting)
 	{
-	default:
-	case E_VSYNC_DISABLED:
+	//default:
+	case 0: //E_VSYNC_DISABLED:
 	{
 		LL_INFOS("Window") << "Disabling vertical sync" << LL_ENDL;
 		vsync_enabled = false;
 		frames_per_swap = 0;
 		break;
 	}
-	case E_VSYNC_ADAPTIVE:
-	case E_VSYNC_NORMAL:
+	case -1: //E_VSYNC_ADAPTIVE:
+	default: //case E_VSYNC_NORMAL:
 	{
 		LL_INFOS("Window") << "Enabling vertical sync" << LL_ENDL;
 		vsync_enabled = true;
@@ -767,7 +767,7 @@ void LLWindowMacOSX::close()
 
 BOOL LLWindowMacOSX::isValid()
 {
-	if (mWindowMode != E_WINDOW_WINDOWED)
+	if (mFullscreen)
 	{
 		return(TRUE);
 	}
@@ -779,7 +779,7 @@ BOOL LLWindowMacOSX::getVisible()
 {
 	BOOL result = FALSE;
 
-	if (mWindowMode != E_WINDOW_WINDOWED)
+	if (mFullscreen)
 	{
 		result = TRUE;
 	}
@@ -812,7 +812,7 @@ BOOL LLWindowMacOSX::maximize()
 
 BOOL LLWindowMacOSX::getFullscreen()
 {
-	return mWindowMode != E_WINDOW_WINDOWED;
+	return mFullscreen;
 }
 
 void LLWindowMacOSX::gatherInput()
@@ -825,7 +825,7 @@ BOOL LLWindowMacOSX::getPosition(LLCoordScreen *position)
 	float rect[4];
 	S32 err = -1;
 
-	if (mWindowMode != E_WINDOW_WINDOWED)
+	if (mFullscreen)
 	{
 		position->mX = 0;
 		position->mY = 0;
@@ -851,7 +851,7 @@ BOOL LLWindowMacOSX::getSize(LLCoordScreen *size)
 	float rect[4];
 	S32 err = -1;
 
-	if (mWindowMode != E_WINDOW_WINDOWED)
+	if (mFullscreen)
 	{
 		size->mX = mFullscreenWidth;
 		size->mY = mFullscreenHeight;
@@ -877,7 +877,7 @@ BOOL LLWindowMacOSX::getSize(LLCoordWindow *size)
 	float rect[4];
 	S32 err = -1;
 	
-	if (mWindowMode != E_WINDOW_WINDOWED)
+	if (mFullscreen)
 	{
 		size->mX = mFullscreenWidth;
 		size->mY = mFullscreenHeight;
@@ -1166,7 +1166,7 @@ void LLWindowMacOSX::adjustCursorDecouple(bool warpingMouse)
 
 F32 LLWindowMacOSX::getNativeAspectRatio()
 {
-	if (mWindowMode != E_WINDOW_WINDOWED)
+	if (mFullscreen)
 	{
 		return (F32)mFullscreenWidth / (F32)mFullscreenHeight;
 	}

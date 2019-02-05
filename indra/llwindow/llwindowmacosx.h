@@ -136,7 +136,7 @@ public:
 protected:
 	LLWindowMacOSX(LLWindowCallbacks* callbacks,
 		const std::string& title, const std::string& name, int x, int y, int width, int height, U32 flags,
-		BOOL window_mode, BOOL clearBg, U32 vsync_setting, BOOL use_gl,
+		BOOL fullscreen, BOOL clearBg, S32 vsync_setting, BOOL use_gl,
 		BOOL ignore_pixel_depth,
 		U32 fsaa_samples);
 	~LLWindowMacOSX();
@@ -166,7 +166,7 @@ protected:
 	//
 
 	// create or re-create the GL context/window.  Called from the constructor and switchContext().
-	BOOL createContext(int x, int y, int width, int height, int bits, U32 window_mode, U32 vsync_setting);
+	BOOL createContext(int x, int y, int width, int height, int bits, BOOL fullscreen, U32 vsync_setting);
 	void destroyContext();
 	void setupFailure(const std::string& text, const std::string& caption, U32 type);
 	void adjustCursorDecouple(bool warpingMouse = false);
