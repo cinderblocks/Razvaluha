@@ -725,7 +725,7 @@ LLWindowMacOSX::~LLWindowMacOSX()
 }
 
 
-void LLWindowMacOSX::show()
+void LLWindowMacOSX::show(bool)
 {
 }
 

@@ -564,7 +564,7 @@ LLWindowSDL2::~LLWindowSDL2()
 	gWindowImplementation = nullptr;
 }
 
-void LLWindowSDL2::show()
+void LLWindowSDL2::show(bool)
 {
 	if (mWindow)
 	{

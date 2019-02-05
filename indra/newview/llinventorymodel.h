@@ -439,7 +439,6 @@ public:
 	// Returns end() of the vector if not found.
 	static LLInventoryModel::item_array_t::iterator findItemIterByUUID(LLInventoryModel::item_array_t& items, const LLUUID& id);
 
-
 	// Rearranges Landmarks inside Favorites folder.
 	// Moves source landmark before target one.
 	void rearrangeFavoriteLandmarks(const LLUUID& source_item_id, const LLUUID& target_item_id);

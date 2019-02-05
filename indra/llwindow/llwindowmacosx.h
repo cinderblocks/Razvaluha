@@ -45,7 +45,7 @@
 class LLWindowMacOSX : public LLWindow
 {
 public:
-	/*virtual*/ void show();
+	/*virtual*/ void show(bool focus = true);
 	/*virtual*/ void hide();
 	/*virtual*/ void close();
 	/*virtual*/ BOOL getVisible();

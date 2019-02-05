@@ -32,7 +32,7 @@
 class LLWindowHeadless : public LLWindow
 {
 public:
-	/*virtual*/ void show() override {};
+	/*virtual*/ void show(bool focus = true) override {};
 	/*virtual*/ void hide() override {};
 	/*virtual*/ void close() override {};
 	/*virtual*/ BOOL getVisible() override {return FALSE;};
