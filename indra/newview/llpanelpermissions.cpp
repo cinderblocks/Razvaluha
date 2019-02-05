@@ -697,7 +697,7 @@ void LLPanelPermissions::refresh()
 		{
 			std::string perm_string = mask_to_string(base_mask_on);
 			if (!supports_export && base_mask_on & PERM_EXPORT) // Hide Export when not available
-				perm_string.erase(perm_string.find_last_of("E"));
+				perm_string.erase(perm_string.find_last_of('X'));
 			if (U32 diff_mask = base_mask_on ^ owner_mask_on) // When different, show the user's potential permissions lowercase.
 			{
 				if (diff_mask & PERM_MOVE)
@@ -709,7 +709,7 @@ void LLPanelPermissions::refresh()
 				if (diff_mask & PERM_TRANSFER)
 					LLStringUtil::replaceChar(perm_string, 'T', 't');
 				if (diff_mask & PERM_EXPORT)
-					LLStringUtil::replaceChar(perm_string, 'E', 'e');
+					LLStringUtil::replaceChar(perm_string, 'X', 'x');
 			}
 			getChild<LLUICtrl>("B:")->setValue("B: " + perm_string);
 			getChildView("B:")->setVisible(							TRUE);
@@ -717,7 +717,7 @@ void LLPanelPermissions::refresh()
 			/*
 			perm_string = mask_to_string(owner_mask_on);
 			if (!supports_export && owner_mask_on & PERM_EXPORT) // Hide Export when not available
-				perm_string.erase(perm_string.find_last_of("E"));
+				perm_string.erase(perm_string.find_last_of('X'));
 			getChild<LLUICtrl>("O:")->setValue("O: " + perm_string);
 			getChildView("O:")->setVisible(							TRUE);
 			*/
@@ -727,7 +727,7 @@ void LLPanelPermissions::refresh()
 			
 			perm_string = mask_to_string(everyone_mask_on);
 			if (!supports_export && everyone_mask_on & PERM_EXPORT) // Hide Export when not available
-				perm_string.erase(perm_string.find_last_of("E"));
+				perm_string.erase(perm_string.find_last_of('X'));
 			getChild<LLUICtrl>("E:")->setValue("E: " + perm_string);
 			getChildView("E:")->setVisible(							TRUE);
 			
