@@ -136,7 +136,7 @@ public:
 protected:
 	LLWindowMacOSX(LLWindowCallbacks* callbacks,
 		const std::string& title, const std::string& name, int x, int y, int width, int height, U32 flags,
-		BOOL fullscreen, BOOL clearBg, S32 vsync_setting, BOOL use_gl,
+		BOOL fullscreen, BOOL clearBg, S32 vsync_setting,
 		BOOL ignore_pixel_depth,
 		U32 fsaa_samples);
 	~LLWindowMacOSX();
