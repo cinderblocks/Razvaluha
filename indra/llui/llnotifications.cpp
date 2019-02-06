@@ -297,7 +297,7 @@ LLSD LLNotificationForm::getElement(const std::string& element_name)
 }
 
 
-bool LLNotificationForm::hasElement(const std::string& element_name)
+bool LLNotificationForm::hasElement(const std::string& element_name) const
 {
 	for (LLSD::array_const_iterator it = mFormData.beginArray();
 		it != mFormData.endArray();
@@ -565,7 +565,7 @@ void LLNotification::respond(const LLSD& response)
 	if (mTemporaryResponder)
 	{
 		LLNotificationFunctorRegistry::instance().unregisterFunctor(mResponseFunctorName);
-		mResponseFunctorName = "";
+		mResponseFunctorName.clear();
 		mTemporaryResponder = false;
 	}
 
@@ -583,21 +583,20 @@ void LLNotification::respond(const LLSD& response)
 
 const std::string& LLNotification::getName() const
 {
-	return (mTemplatep ? mTemplatep->mName : LLStringUtil::null);
+	return mTemplatep->mName;
 }
 
 const std::string& LLNotification::getIcon() const
 {
-	return (mTemplatep ? mTemplatep->mIcon : LLStringUtil::null);
+	return mTemplatep->mIcon;
 }
 
 
 bool LLNotification::isPersistent() const
 {
-	LL_INFOS() << "WOOF WOOF WOOF mTemplatep is " << mTemplatep << LL_ENDL;
-	LL_INFOS() << "\nand mPersist is " << (mTemplatep && mTemplatep->mPersist) << LL_ENDL;
-	return mTemplatep && mTemplatep->mPersist;
+	return mTemplatep->mPersist;
 }
+
 std::string LLNotification::getType() const
 {
 	return (mTemplatep ? mTemplatep->mType : LLStringUtil::null);
@@ -677,7 +676,7 @@ void LLNotification::init(const std::string& template_name, const LLSD& form_ele
 	// TODO: something like this so that a missing alert is sensible:
 	//mSubstitutions["_ARGS"] = get_all_arguments_as_text(mSubstitutions);
 
-	mForm = LLNotificationFormPtr(new LLNotificationForm(*mTemplatep->mForm));
+	mForm = std::make_shared<LLNotificationForm>(*mTemplatep->mForm);
 	mForm->append(form_elements);
 
 	// apply substitution to form labels
@@ -725,7 +724,7 @@ std::string LLNotification::getLabel() const
 	if(!mTemplatep)
 		return std::string();
 	
-	std::string label = mTemplatep->mLabel;
+	std::string label = mTemplatep ? mTemplatep->mLabel : LLStringUtil::null;
 	LLStringUtil::format(label, mSubstitutions);
 	return label;
 }
@@ -797,7 +796,7 @@ bool LLNotificationChannelBase::updateItem(const LLSD& payload, LLNotificationPt
 	std::string cmd = payload["sigtype"];
 	LLNotificationSet::iterator foundItem = mItems.find(pNotification);
 	bool wasFound = (foundItem != mItems.end());
-	bool passesFilter = mFilter(pNotification);
+	bool passesFilter = mFilter ? mFilter(pNotification) : true;
 	
 	// first, we offer the result of the filter test to the simple
 	// signals for pass/fail. One of these is guaranteed to be called.
@@ -827,8 +826,8 @@ bool LLNotificationChannelBase::updateItem(const LLSD& payload, LLNotificationPt
 		{
 			// not in our list, add it and say so
 			mItems.insert(pNotification);
-			abortProcessing = mChanged(payload);
 			onLoad(pNotification);
+			abortProcessing = mChanged(payload);
 		}
 	}
 	else if (cmd == "change")
@@ -879,11 +878,10 @@ bool LLNotificationChannelBase::updateItem(const LLSD& payload, LLNotificationPt
 		assert(!wasFound);
 		if (passesFilter)
 		{
-			//LL_INFOS() << "Inserting " << pNotification->getName() << LL_ENDL;
 			// not in our list, add it and say so
 			mItems.insert(pNotification);
-			abortProcessing = mChanged(payload);
 			onAdd(pNotification);
+			abortProcessing = mChanged(payload);
 		}
 	}
 	else if (cmd == "delete")
@@ -891,9 +889,9 @@ bool LLNotificationChannelBase::updateItem(const LLSD& payload, LLNotificationPt
 		// if we have it in our list, pass on the delete, then delete it, else do nothing
 		if (wasFound)
 		{
-			mItems.erase(pNotification);
-			abortProcessing = mChanged(payload);
 			onDelete(pNotification);
+			abortProcessing = mChanged(payload);
+			mItems.erase(pNotification);
 		}
 	}
 	return abortProcessing;
@@ -933,7 +931,6 @@ mName(name)
 		p->connectChanged(boost::bind(&LLNotificationChannelBase::updateItem, this, _1));
 	}
 }
-
 
 bool LLNotificationChannel::isEmpty() const
 {
@@ -1181,9 +1178,9 @@ void LLNotificationTemplates::clearTemplates()
 
 void LLNotifications::forceResponse(const LLNotification::Params& params, S32 option)
 {
-	LLNotification temp_notify(params);
-	LLSD response = temp_notify.getResponseTemplate();
-	LLSD selected_item = temp_notify.getForm()->getElement(option);
+	LLNotificationPtr temp_notify(new LLNotification(params));
+	LLSD response = temp_notify->getResponseTemplate();
+	LLSD selected_item = temp_notify->getForm()->getElement(option);
 	
 	if (selected_item.isUndefined())
 	{
@@ -1192,7 +1189,7 @@ void LLNotifications::forceResponse(const LLNotification::Params& params, S32 op
 	}
 	response[selected_item["name"].asString()] = true;
 
-	temp_notify.respond(response);
+	temp_notify->respond(response);
 }
 
 LLNotificationTemplates::TemplateNames LLNotificationTemplates::getTemplateNames() const
@@ -1579,7 +1576,7 @@ void LLNotifications::update(const LLNotificationPtr pNotif)
 
 LLNotificationPtr LLNotifications::find(const LLUUID& uuid)
 {
-	LLNotificationPtr target = LLNotificationPtr(new LLNotification(uuid));
+	LLNotificationPtr target = std::make_shared<LLNotification>(uuid);
 	LLNotificationSet::iterator it=mItems.find(target);
 	if (it == mItems.end())
 	{

@@ -81,32 +81,20 @@
  *
  */
 
-#include <string>
-#include <list>
-#include <vector>
-#include <map>
-#include <set>
 #include <iomanip>
-#include <sstream>
-
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/type_traits.hpp>
-#include <boost/signals2.hpp>
-#include <boost/range.hpp>
-// we want to minimize external dependencies, but this one is important
-#include "llsd.h"
-#include "llinstancetracker.h"
 
 // and we need this to manage the notification callbacks
 #include "llavatarname.h"
 #include "llevents.h"
 #include "llfunctorregistry.h"
 #include "llinitparam.h"
+#include "llinstancetracker.h"
 #include "llui.h"
 #include "llxmlnode.h"
 #include "llnotificationptr.h"
+#include "llpointer.h"
+#include "llrefcount.h"
+#include "llsdparam.h"
 
 namespace AIAlert { class Error; }
 
@@ -253,7 +241,7 @@ public:
 	S32 getNumElements() { return mFormData.size(); }
 	LLSD getElement(S32 index) { return mFormData.get(index); }
 	LLSD getElement(const std::string& element_name);
-	bool hasElement(const std::string& element_name);
+	bool hasElement(const std::string& element_name) const;
 	void addElement(const std::string& type, const std::string& name, const LLSD& value = LLSD());
 	void formatElements(const LLSD& substitutions);
 	// appends form elements from another form serialized as LLSD
@@ -383,6 +371,7 @@ private:
 
 	void init(const std::string& template_name, const LLSD& form_elements);
 
+public:
 	LLNotification(const Params& p);
 
 	// this is just for making it easy to look things up in a set organized by UUID -- DON'T USE IT
@@ -390,8 +379,6 @@ private:
 	LLNotification(LLUUID uuid) : mId(uuid), mCancelled(false), mRespondedTo(false), mIgnored(false), mPriority(NOTIFICATION_PRIORITY_UNSPECIFIED), mTemporaryResponder(false) {}
 
 	void cancel();
-
-public:
 
 	// constructor from a saved notification
 	LLNotification(const LLSD& sd);
