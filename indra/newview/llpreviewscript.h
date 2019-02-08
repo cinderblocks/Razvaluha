@@ -74,16 +74,19 @@ protected:
 		void (*save_callback)(void* userdata, BOOL close_after_save),
 		void (*search_replace_callback)(void* userdata),
 		void* userdata,
+		bool live,
 		S32 bottom_pad = 0);	// pad below bottom row of buttons
 public:
 	~LLScriptEdCore();
 	
 	void			initMenu();
+	void			processKeywords();
 
 	void			draw() override;
 	BOOL			postBuild() override;
 	BOOL			canClose();
 	void			setEnableEditing(bool enable);
+	bool			canLoadOrSaveToFile( void* userdata );
 
 	void            setScriptText(const std::string& text, BOOL is_valid);
 	std::string		getScriptText();
@@ -105,7 +108,6 @@ public:
 	static void		onClickForward(void* userdata);
 	static void		onBtnInsertSample(void*);
 	static void		onBtnInsertFunction(LLUICtrl*, void*);
-
 	// Singu TODO: modernize the menu callbacks and get rid of/update this giant block of static functions
 	static BOOL		hasChanged(void* userdata);
 	static void		onBtnSave(void*);
@@ -128,11 +130,22 @@ public:
 	static BOOL		enableSelectAllMenu(void* userdata);
 	static BOOL		enableDeselectMenu(void* userdata);
 
+	static void		onBtnLoadFromFile(void*);
+	static void		onBtnSaveToFile(void*);
+
+	static void		loadScriptFromFile(const std::vector<std::string>& filenames, void* data);
+	static void		saveScriptToFile(const std::vector<std::string>& filenames, void* data);
+
+	static bool		enableSaveToFileMenu(void* userdata);
+	static bool		enableLoadFromFileMenu(void* userdata);
+
 	bool			hasAccelerators() const override { return true; }
 	LLUUID 			getAssociatedExperience()const;
 	void            setAssociatedExperience( const LLUUID& experience_id );
 
 	void 			setScriptName(const std::string& name){mScriptName = name;};
+
+	void 			setItemRemoved(bool script_removed){mScriptRemoved = script_removed;};
 
 private:
 	static bool		onHelpWebDialog(const LLSD& notification, const LLSD& response);
@@ -156,6 +169,8 @@ protected:
 	void addHelpItemToHistory(const std::string& help_string);
 	static void onErrorList(LLUICtrl*, void* user_data);
 
+	bool			mLive;
+
 private:
 	std::string		mSampleText;
 	std::string		mScriptName;
@@ -177,6 +192,7 @@ private:
 	BOOL			mHasScriptData;
 	LLLiveLSLFile*	mLiveFile;
 	LLUUID			mAssociatedExperience;
+	BOOL			mScriptRemoved;
 	BOOL			mSaveDialogShown;
 
 	LLScriptEdContainer* mContainer; // parent view
@@ -223,8 +239,12 @@ public:
 
 	/*virtual*/ BOOL postBuild() override;
 
+// [SL:KB] - Patch: UI-FloaterSearchReplace | Checked: 2010-11-05 (Catznip-3.0.0) | Added: Catznip-2.3.0
+	LLTextEditor* getEditor();
+// [/SL:KB]
 
 protected:
+	void draw() override;
 	BOOL canClose() override;
 	void closeIfNeeded();
 
@@ -269,6 +289,10 @@ public:
 	/*virtual*/ BOOL postBuild() override;
 
 	void setIsNew() { mIsNew = TRUE; }
+
+// [SL:KB] - Patch: UI-FloaterSearchReplace | Checked: 2010-11-05 (Catznip-3.0.0) | Added: Catznip-2.3.0
+	LLTextEditor* getEditor();
+// [/SL:KB]
 
 	static void setAssociatedExperience( LLHandle<LLLiveLSLEditor> editor, const LLSD& experience );
 	static void onToggleExperience(LLUICtrl *ui, void* userdata);
@@ -324,6 +348,8 @@ private:
 	BOOL mCloseAfterSave;
 	// need to save both text and script, so need to decide when done
 	S32 mPendingUploads;
+
+	BOOL                mIsSaving;
 
 	BOOL getIsModifiable() const { return mIsModifiable; } // Evaluated on load assert
 	
