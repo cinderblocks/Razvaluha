@@ -65,7 +65,8 @@ LLPanelExperiences* LLFloaterExperiences::addTab(const std::string& name, bool s
 
 BOOL LLFloaterExperiences::postBuild()
 {
-	getChild<LLTabContainer>("xp_tabs")->addTabPanel(new LLPanelExperiencePicker(), LLTrans::getString("Search_Experiences_Tab"));
+	LLPanel* panel = new LLPanelExperiencePicker();
+	getChild<LLTabContainer>("xp_tabs")->addTabPanel(panel, panel->getLabel());
 	addTab("Allowed_Experiences_Tab", true);
 	addTab("Blocked_Experiences_Tab", false);
 	addTab("Admin_Experiences_Tab", false);
@@ -76,7 +77,8 @@ BOOL LLFloaterExperiences::postBuild()
 #if SHOW_RECENT_TAB
 	addTab("Recent_Experiences_Tab", false);
 #endif //SHOW_RECENT_TAB
-	getChild<LLTabContainer>("xp_tabs")->addTabPanel(new LLPanelExperienceLog(), LLTrans::getString("Events_Experiences_Tab"));
+	panel = new LLPanelExperienceLog();
+	getChild<LLTabContainer>("xp_tabs")->addTabPanel(panel, panel->getLabel());
 	resizeToTabs();
 
 
