@@ -2557,6 +2557,353 @@ void LLView::parseFollowsFlags(const LLView::Params& params)
 		setFollows(params.follows.flags);
 	}
 }
+// Return the rectangle of the last-constructed child,
+// if present and a first-class widget (eg, not a close box or drag handle)
+// Returns true if found
+static bool get_last_child_rect(LLView* parent, LLRect *rect)
+{
+	if (!parent) return false;
+
+	LLView::child_list_t::const_iterator itor = 
+		parent->getChildList()->begin();
+	for (;itor != parent->getChildList()->end(); ++itor)
+	{
+		LLView *last_view = (*itor);
+		//if (last_view->getFromXUI())
+		{
+			*rect = last_view->getRect();
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+//static
+void LLView::applyXUILayout(LLView::Params& p, LLView* parent, LLRect layout_rect)
+{
+	if (!parent) return;
+
+	const S32 VPAD = 4;
+	const S32 MIN_WIDGET_HEIGHT = 10;
+	
+	// *NOTE:  This will confuse export of floater/panel coordinates unless
+	// the default is also "topleft".  JC
+	if (p.layout().empty())
+	{
+		p.layout = parent->getLayout();
+	}
+
+	if (layout_rect.isEmpty())
+	{
+		layout_rect = parent->getLocalRect();
+	}
+
+	// overwrite uninitialized rect params, using context
+	LLRect default_rect = parent->getLocalRect();
+
+	bool layout_topleft = (p.layout() == "topleft");
+
+	// convert negative or centered coordinates to parent relative values
+	// Note: some of this logic matches the logic in TypedParam<LLRect>::setValueFromBlock()
+	if (p.rect.left.isProvided()) 
+	{
+		p.rect.left = p.rect.left + ((p.rect.left >= 0) ? layout_rect.mLeft : layout_rect.mRight);
+	}
+	if (p.rect.right.isProvided())
+	{
+		p.rect.right = p.rect.right + ((p.rect.right >= 0) ? layout_rect.mLeft : layout_rect.mRight);
+	}
+	if (p.rect.bottom.isProvided()) 
+	{
+		p.rect.bottom = p.rect.bottom + ((p.rect.bottom >= 0) ? layout_rect.mBottom : layout_rect.mTop);
+		if (layout_topleft)
+		{
+			//invert top to bottom
+			p.rect.bottom = layout_rect.mBottom + layout_rect.mTop - p.rect.bottom;
+		}
+	}
+	if (p.rect.top.isProvided())
+	{
+		p.rect.top = p.rect.top + ((p.rect.top >= 0) ? layout_rect.mBottom : layout_rect.mTop);
+		if (layout_topleft)
+		{
+			//invert top to bottom
+			p.rect.top = layout_rect.mBottom + layout_rect.mTop - p.rect.top;
+		}
+	}
+
+	// DEPRECATE: automatically fall back to height of MIN_WIDGET_HEIGHT pixels
+	if (!p.rect.height.isProvided() && !p.rect.top.isProvided() && p.rect.height == 0)
+	{
+		p.rect.height = MIN_WIDGET_HEIGHT;
+	}
+
+	default_rect.translate(0, default_rect.getHeight());
+
+	// If there was a recently constructed child, use its rectangle
+	get_last_child_rect(parent, &default_rect);
+
+	if (layout_topleft)
+	{
+		// Invert the sense of bottom_delta for topleft layout
+		if (p.bottom_delta.isProvided())
+		{
+			p.bottom_delta = -p.bottom_delta;
+		}
+		else if (p.top_pad.isProvided()) 
+		{
+			p.bottom_delta = -(p.rect.height + p.top_pad);
+		}
+		else if (p.top_delta.isProvided())
+		{
+			p.bottom_delta =
+				-(p.top_delta + p.rect.height - default_rect.getHeight());
+		}
+		else if (!p.left_delta.isProvided()
+					&& !p.left_pad.isProvided())
+		{
+			// set default position is just below last rect
+			p.bottom_delta.set(-(p.rect.height + VPAD), false);
+		}
+		else
+		{
+			p.bottom_delta.set(0, false);
+		}
+	
+		// default to same left edge
+		if (!p.left_delta.isProvided())
+		{
+			p.left_delta.set(0, false);
+		}
+		if (p.left_pad.isProvided())
+		{
+			// left_pad is based on prior widget's right edge
+			p.left_delta.set(p.left_pad + default_rect.getWidth(), false);
+		}
+			
+		default_rect.translate(p.left_delta, p.bottom_delta);				
+	}
+	else
+	{	
+		// set default position is just below last rect
+		if (!p.bottom_delta.isProvided())
+		{
+			p.bottom_delta.set(-(p.rect.height + VPAD), false);
+		}
+		if (!p.left_delta.isProvided())
+		{
+			p.left_delta.set(0, false);
+		}
+		default_rect.translate(p.left_delta, p.bottom_delta);
+	}
+
+	// this handles case where *both* x and x_delta are provided
+	// ignore x in favor of default x + x_delta
+	if (p.bottom_delta.isProvided()) p.rect.bottom.set(0, false);
+	if (p.left_delta.isProvided()) p.rect.left.set(0, false);
+
+	// selectively apply rectangle defaults, making sure that
+	// params are not flagged as having been "provided"
+	// as rect params are overconstrained and rely on provided flags
+	if (!p.rect.left.isProvided())
+	{
+		p.rect.left.set(default_rect.mLeft, false);
+		//HACK: get around the fact that setting a rect param component value won't invalidate the existing rect object value
+		p.rect.paramChanged(p.rect.left, true);
+	}
+	if (!p.rect.bottom.isProvided())
+	{
+		p.rect.bottom.set(default_rect.mBottom, false);
+		p.rect.paramChanged(p.rect.bottom, true);
+	}
+	if (!p.rect.top.isProvided())
+	{
+		p.rect.top.set(default_rect.mTop, false);
+		p.rect.paramChanged(p.rect.top, true);
+	}
+	if (!p.rect.right.isProvided())
+	{
+		p.rect.right.set(default_rect.mRight, false);
+		p.rect.paramChanged(p.rect.right, true);
+
+	}
+	if (!p.rect.width.isProvided())
+	{
+		p.rect.width.set(default_rect.getWidth(), false);
+		p.rect.paramChanged(p.rect.width, true);
+	}
+	if (!p.rect.height.isProvided())
+	{
+		p.rect.height.set(default_rect.getHeight(), false);
+		p.rect.paramChanged(p.rect.height, true);
+	}
+}
+
+static S32 invert_vertical(S32 y, LLView* parent)
+{
+	if (y < 0)
+	{
+		// already based on top-left, just invert
+		return -y;
+	}
+	else if (parent)
+	{
+		// use parent to flip coordinate
+		S32 parent_height = parent->getRect().getHeight();
+		return parent_height - y;
+	}
+	else
+	{
+		LL_WARNS() << "Attempting to convert layout to top-left with no parent" << LL_ENDL;
+		return y;
+	}
+}
+
+// Assumes that input is in bottom-left coordinates, hence must call
+// _before_ convert_coords_to_top_left().
+static void convert_to_relative_layout(LLView::Params& p, LLView* parent)
+{
+	// Use setupParams to get the final widget rectangle
+	// according to our wacky layout rules.
+	LLView::Params final = p;
+	LLView::applyXUILayout(final, parent);
+	// Must actually extract the rectangle to get consistent
+	// right = left+width, top = bottom+height
+	LLRect final_rect = final.rect;
+
+	// We prefer to write out top edge instead of bottom, regardless
+	// of whether we use relative positioning
+	bool converted_top = false;
+
+	// Look for a last rectangle
+	LLRect last_rect;
+	if (get_last_child_rect(parent, &last_rect))
+	{
+		// ...we have a previous widget to compare to
+		const S32 EDGE_THRESHOLD_PIXELS = 4;
+		S32 left_pad = final_rect.mLeft - last_rect.mRight;
+		S32 left_delta = final_rect.mLeft - last_rect.mLeft;
+		S32 top_pad = final_rect.mTop - last_rect.mBottom;
+		S32 top_delta = final_rect.mTop - last_rect.mTop;
+		// If my left edge is almost the same, or my top edge is
+		// almost the same...
+		if (llabs(left_delta) <= EDGE_THRESHOLD_PIXELS
+			|| llabs(top_delta) <= EDGE_THRESHOLD_PIXELS)
+		{
+			// ...use relative positioning
+			// prefer top_pad if widgets are stacking vertically
+			// (coordinate system is still bottom-left here)
+			if (top_pad < 0)
+			{
+				p.top_pad = top_pad;
+				p.top_delta.setProvided(false);
+			}
+			else
+			{
+				p.top_pad.setProvided(false);
+				p.top_delta = top_delta;
+			}
+			// null out other vertical specifiers
+			p.rect.top.setProvided(false);
+			p.rect.bottom.setProvided(false);
+			p.bottom_delta.setProvided(false);
+			converted_top = true;
+
+			// prefer left_pad if widgets are stacking horizontally
+			if (left_pad > 0)
+			{
+				p.left_pad = left_pad;
+				p.left_delta.setProvided(false);
+			}
+			else
+			{
+				p.left_pad.setProvided(false);
+				p.left_delta = left_delta;
+			}
+			p.rect.left.setProvided(false);
+			p.rect.right.setProvided(false);
+		}
+	}
+
+	if (!converted_top)
+	{
+		// ...this is the first widget, or one that wasn't aligned
+		// prefer top/left specification
+		p.rect.top = final_rect.mTop;
+		p.rect.bottom.setProvided(false);
+		p.bottom_delta.setProvided(false);
+		p.top_pad.setProvided(false);
+		p.top_delta.setProvided(false);
+	}
+}
+
+static void convert_coords_to_top_left(LLView::Params& p, LLView* parent)
+{
+	// Convert the coordinate system to be top-left based.
+	if (p.rect.top.isProvided())
+	{
+		p.rect.top = invert_vertical(p.rect.top, parent);
+	}
+	if (p.rect.bottom.isProvided())
+	{
+		p.rect.bottom = invert_vertical(p.rect.bottom, parent);
+	}
+	if (p.top_pad.isProvided())
+	{
+		p.top_pad = -p.top_pad;
+	}
+	if (p.top_delta.isProvided())
+	{
+		p.top_delta = -p.top_delta;
+	}
+	if (p.bottom_delta.isProvided())
+	{
+		p.bottom_delta = -p.bottom_delta;
+	}
+	p.layout = "topleft";
+}
+
+//static
+void LLView::setupParamsForExport(Params& p, LLView* parent)
+{
+	// Don't convert if already top-left based
+	if (p.layout() == "topleft") 
+	{
+		return;
+	}
+
+	// heuristic:  Many of our floaters and panels were bulk-exported.
+	// These specify exactly bottom/left and height/width.
+	// Others were done by hand using bottom_delta and/or left_delta.
+	// Some rely on not specifying left to mean align with left edge.
+	// Try to convert both to use relative layout, but using top-left
+	// coordinates.
+	// Avoid rectangles where top/bottom/left/right was specified.
+	if (p.rect.height.isProvided() && p.rect.width.isProvided())
+	{
+		if (p.rect.bottom.isProvided() && p.rect.left.isProvided())
+		{
+			// standard bulk export, convert it
+			convert_to_relative_layout(p, parent);
+		}
+		else if (p.rect.bottom.isProvided() && p.left_delta.isProvided())
+		{
+			// hand layout with left_delta
+			convert_to_relative_layout(p, parent);
+		}
+		else if (p.bottom_delta.isProvided())
+		{
+			// hand layout with bottom_delta
+			// don't check for p.rect.left or p.left_delta because sometimes
+			// this layout doesn't set it for widgets that are left-aligned
+			convert_to_relative_layout(p, parent);
+		}
+	}
+
+	convert_coords_to_top_left(p, parent);
+}
+*/
 
 LLView::tree_iterator_t LLView::beginTreeDFS() 
 { 
@@ -2617,22 +2964,11 @@ U32 LLView::createRect(LLXMLNodePtr node, LLRect &rect, LLView* parent_view, con
 	S32 w = rect.getWidth();
 	S32 h = rect.getHeight();
 
-	U32 last_x = 0;
-	U32 last_y = 0;
-	if (parent_view)
-	{
-		last_y = parent_view->getRect().getHeight();
-		child_list_t::const_iterator itor = parent_view->getChildList()->begin();
-		if (itor != parent_view->getChildList()->end())
-		{
-			LLView *last_view = (*itor);
-			if (last_view->getSaveToXML())
-			{
-				last_x = last_view->getRect().mLeft;
-				last_y = last_view->getRect().mBottom;
-			}
-		}
-	}
+	LLRect default_rect;
+	if (!get_last_child_rect(parent_view, &default_rect) && parent_view)
+		default_rect.mBottom = parent_view->getRect().getHeight();
+	U32 last_x = default_rect.mLeft;
+	U32 last_y = default_rect.mBottom;
 
 	std::string rect_control;
 	node->getAttributeString("rect_control", rect_control);
@@ -2644,7 +2980,7 @@ U32 LLView::createRect(LLXMLNodePtr node, LLRect &rect, LLView* parent_view, con
 		w = rect.getWidth();
 		h = rect.getHeight();
 	}
-	
+
 	if (node->hasAttribute("left"))
 	{
 		node->getAttributeS32("left", x);
@@ -2725,6 +3061,50 @@ U32 LLView::createRect(LLXMLNodePtr node, LLRect &rect, LLView* parent_view, con
 			x = last_x;
 		}
 
+		std::string layout;
+		bool layout_topleft = node->hasAttribute("layout") && (node->getAttributeString("layout", layout), layout == "topleft");
+		if (layout_topleft)
+		{
+			default_rect.translate(0, default_rect.getHeight());
+
+			// Invert the sense of bottom_delta for topleft layout
+			S32 bottom_delta = 0;
+			if (node->hasAttribute("bottom_delta"))
+			{
+				node->getAttributeS32("bottom_delta", bottom_delta);
+				bottom_delta = -bottom_delta;
+			}
+			else if (node->hasAttribute("top_pad"))
+			{
+				node->getAttributeS32("top_pad", bottom_delta);
+				bottom_delta = -(h + bottom_delta);
+			}
+			else if (node->hasAttribute("top_delta"))
+			{
+				node->getAttributeS32("top_delta", bottom_delta);
+				bottom_delta =
+					-(bottom_delta + h - default_rect.getHeight());
+			}
+			else if (!node->hasAttribute("left_delta")
+						&& !node->hasAttribute("left_pad"))
+			{
+				// set default position is just below last rect
+				bottom_delta = -(h + VPAD);
+			}
+			y = last_y + bottom_delta;
+		
+			// default to same left edge
+			S32 left_delta = 0;
+			if (node->hasAttribute("left_pad"))
+			{
+				node->getAttributeS32("left_delta", left_delta);
+				// left_pad is based on prior widget's right edge
+				left_delta += default_rect.getWidth();
+			}
+
+			x = left_delta;
+		}
+		else
 		if (node->hasAttribute("bottom_delta"))
 		{
 			S32 bottom_delta = 0;
