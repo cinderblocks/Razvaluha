@@ -2569,7 +2569,7 @@ static bool get_last_child_rect(LLView* parent, LLRect *rect)
 	for (;itor != parent->getChildList()->end(); ++itor)
 	{
 		LLView *last_view = (*itor);
-		//if (last_view->getFromXUI())
+		if (last_view->getSaveToXML())
 		{
 			*rect = last_view->getRect();
 			return true;
