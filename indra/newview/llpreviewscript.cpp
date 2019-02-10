@@ -1991,6 +1991,15 @@ void LLPreviewLSL::saveIfNeeded(bool sync /*= true*/)
 	mScriptEd->mErrorList->setCommentText("");
 	mScriptEd->makeEditorPristine();
 
+	// save off asset into file
+	LLTransactionID tid;
+	tid.generate();
+	LLAssetID asset_id = tid.makeAssetID(gAgent.getSecureSessionID());
+	std::string filepath = gDirUtilp->getExpandedFilename(LL_PATH_CACHE,asset_id.asString());
+	std::string filename = filepath + ".lsl";
+
+	mScriptEd->writeToFile(filename);
+
 	if (sync)
 	{
 		mScriptEd->sync();
@@ -2588,6 +2597,16 @@ void LLLiveLSLEditor::saveIfNeeded(bool sync /*= true*/)
 	mScriptEd->mErrorList->setCommentText("");
 
 	mScriptEd->makeEditorPristine();
+	LLTransactionID tid;
+	tid.generate();
+	LLAssetID asset_id = tid.makeAssetID(gAgent.getSecureSessionID());
+	std::string filepath = gDirUtilp->getExpandedFilename(LL_PATH_CACHE,asset_id.asString());
+	std::string filename = llformat("%s.lsl", filepath.c_str());
+
+	mItem->setAssetUUID(asset_id);
+	mItem->setTransactionID(tid);
+
+	mScriptEd->writeToFile(filename);
 
 	if (sync)
 	{
