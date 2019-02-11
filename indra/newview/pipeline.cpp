@@ -397,6 +397,7 @@ void LLPipeline::init()
 {
 	refreshCachedSettings();
 
+	gOctreeMinSize = gSavedSettings.getF32("OctreeMinimumNodeSize");
 	mInitialized = true;
 	
 	stop_glerror();
