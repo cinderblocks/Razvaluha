@@ -563,7 +563,8 @@ U32Bytes				gTotalWorldData,
 U32								gSimPingCount = 0;
 U32Bits				gObjectData;
 F32Milliseconds		gAvgSimPing(0.f);
-U32Bytes     gTotalTextureBytesPerBoostLevel[LLGLTexture::MAX_GL_IMAGE_CATEGORY] = {U32Bytes(0)};
+// rely on default initialization
+U32Bytes			gTotalTextureBytesPerBoostLevel[LLViewerTexture::MAX_GL_IMAGE_CATEGORY];
 
 extern U32  gVisCompared;
 extern U32  gVisTested;
@@ -712,7 +713,7 @@ void send_stats()
 	std::string url = gAgent.getRegion()->getCapability("ViewerStats");
 
 	if (url.empty()) {
-		LL_WARNS() << "Could not get ViewerStats capability" << LL_ENDL;
+		LL_DEBUGS() << "Could not get ViewerStats capability" << LL_ENDL;
 		return;
 	}
 	
@@ -763,6 +764,7 @@ void send_stats()
 	system["ram"] = (S32) gSysMemory.getPhysicalMemoryKB().value();
 	system["os"] = LLAppViewer::instance()->getOSInfo().getOSStringSimple();
 	system["cpu"] = gSysCPU.getCPUString();
+	//system["address_size"] = ADDRESS_SIZE; // Singu TODO: ADDRESS_SIZE macro?
 	unsigned char MACAddress[MAC_ADDRESS_BYTES];
 	LLUUID::getNodeID(MACAddress);
 	std::string macAddressString = llformat("%02x-%02x-%02x-%02x-%02x-%02x",
@@ -846,15 +848,15 @@ void send_stats()
 	
 	body["MinimalSkin"] = false;
 	
+	LL_INFOS("LogViewerStatsPacket") << "Sending viewer statistics: " << body << LL_ENDL;
+
+	// The session ID token must never appear in logs
+	body["session_id"] = gAgentSessionID;
+
 	LLViewerStats::getInstance()->addToMessage(body);
 
-	LL_INFOS("LogViewerStatsPacket") << "Sending viewer statistics: " << body << LL_ENDL;
     LLCoreHttpUtil::HttpCoroutineAdapter::messageHttpPost(url, body,
         "Statistics posted to sim", "Failed to post statistics to sim");
-}
-
-LLViewerStats::PhaseMap::PhaseMap()
-{
 }
 
 LLTimer& LLViewerStats::PhaseMap::getPhaseTimer(const std::string& phase_name)
@@ -872,8 +874,31 @@ LLTimer& LLViewerStats::PhaseMap::getPhaseTimer(const std::string& phase_name)
 void LLViewerStats::PhaseMap::startPhase(const std::string& phase_name)
 {
 	LLTimer& timer = getPhaseTimer(phase_name);
-	LL_DEBUGS() << "startPhase " << phase_name << LL_ENDL;
 	timer.start();
+	//LL_DEBUGS("Avatar") << "startPhase " << phase_name << LL_ENDL;
+}
+
+void LLViewerStats::PhaseMap::clearPhases()
+{
+	//LL_DEBUGS("Avatar") << "clearPhases" << LL_ENDL;
+
+	mPhaseMap.clear();
+}
+
+LLSD LLViewerStats::PhaseMap::dumpPhases()
+{
+	LLSD result;
+	for (phase_map_t::iterator iter = mPhaseMap.begin(); iter != mPhaseMap.end(); ++iter)
+	{
+		const std::string& phase_name = iter->first;
+		result[phase_name]["completed"] = LLSD::Integer(!(iter->second.getStarted()));
+		result[phase_name]["elapsed"] = iter->second.getElapsedTimeF32();
+	}
+	return result;
+}
+
+LLViewerStats::PhaseMap::PhaseMap()
+{
 }
 
 void LLViewerStats::PhaseMap::stopPhase(const std::string& phase_name)
@@ -902,23 +927,4 @@ bool LLViewerStats::PhaseMap::getPhaseValues(const std::string& phase_name, F32&
 	{
 		return false;
 	}
-}
-	
-void LLViewerStats::PhaseMap::clearPhases()
-{
-	LL_DEBUGS() << "clearPhases" << LL_ENDL;
-
-	mPhaseMap.clear();
-}
-
-LLSD LLViewerStats::PhaseMap::dumpPhases()
-{
-	LLSD result;
-	for (phase_map_t::iterator iter = mPhaseMap.begin(); iter != mPhaseMap.end(); ++iter)
-	{
-		const std::string& phase_name = iter->first;
-		result[phase_name]["completed"] = LLSD::Integer(!(iter->second.getStarted()));
-		result[phase_name]["elapsed"] = iter->second.getElapsedTimeF32();
-	}
-	return result;
 }
