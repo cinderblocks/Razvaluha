@@ -100,10 +100,8 @@ std::vector<std::string>* doLoadDialog(const std::vector<std::string> allowed_ty
 }
 
 
-std::string* doSaveDialog(const std::string* file, 
-                  const std::string* type,
-                  const std::string* creator,
-                  const std::string* extension,
+std::string* doSaveDialog(const std::string& file,
+                  const std::string& extension,
                   unsigned int flags)
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
