@@ -165,7 +165,7 @@ protected:
 	void setPixel(const LLColor4 &col, const S32 i, const S32 j)
 	{
 		S32 offset = i * sResolution + j;
-		mSkyData[offset] = col;
+		mSkyData[offset] = LLColor4U(col);
 	}
 
 	void setPixel(const LLColor4U &col, const S32 i, const S32 j)
@@ -214,8 +214,8 @@ protected:
 public:
 	LLHeavenBody(const F32 rad) :
 		mDirectionCached(LLVector3(0,0,0)),
-		mDirection(LLVector3(0,0,0)),
 		mIntensity(0.f),
+		mDirection(LLVector3(0,0,0)),
 		mDiskRadius(rad), mDraw(FALSE),
 		mHorizonVisibility(1.f), mVisibility(1.f),
 		mVisible(FALSE)
@@ -388,15 +388,6 @@ protected:
 
 
 class LLCubeMap;
-
-// turn on floating point precision
-// in vs2003 for this class.  Otherwise
-// black dots go everywhere from 7:10 - 8:50
-#if LL_MSVC && __MSVC_VER__ < 8
-#pragma optimize("p", on)		
-#endif
-
-
 class LLVOSky : public LLStaticViewerObject
 {
 public:
@@ -462,14 +453,14 @@ public:
 	void cleanupGL();
 	void restoreGL();
 
-	/*virtual*/ void idleUpdate(LLAgent &agent, LLWorld &world, const F64 &time);
+	/*virtual*/ void idleUpdate(LLAgent &agent, const F64 &time) override;
 	BOOL updateSky();
 	
 	// Graphical stuff for objects - maybe broken out into render class
 	// later?
-	/*virtual*/ void updateTextures();
-	/*virtual*/ LLDrawable* createDrawable(LLPipeline *pipeline);
-	/*virtual*/ BOOL		updateGeometry(LLDrawable *drawable);
+	/*virtual*/ void updateTextures() override;
+	/*virtual*/ LLDrawable* createDrawable(LLPipeline *pipeline) override;
+	/*virtual*/ BOOL		updateGeometry(LLDrawable *drawable) override;
 
 	void initSkyTextureDirs(const S32 side, const S32 tile);
 	void createSkyTexture(const S32 side, const S32 tile);
@@ -619,11 +610,6 @@ public:
 
 	BOOL mHeavenlyBodyUpdated ;
 };
-
-// turn it off
-#if LL_MSVC && __MSVC_VER__ < 8
-#pragma optimize("p", off)		
-#endif
 
 // Utility functions
 F32 azimuth(const LLVector3 &v);

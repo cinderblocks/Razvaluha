@@ -142,7 +142,7 @@ void LLUI::initClass(LLControlGroup* config,
 
 	sAudioCallback = audio_callback;
 	sWindow = NULL; // set later in startup
-	LLFontGL::sShadowColor = colors->getColor("ColorDropShadow");
+	LLFontGL::sShadowColor = LLColor4U(colors->getColor("ColorDropShadow"));
 
 	LLUI::sShowXUINames = LLUI::sConfigGroup->getBOOL("ShowXUINames");
 	LLUI::sConfigGroup->getControl("ShowXUINames")->getSignal()->connect(boost::bind(&handleShowXUINamesChanged,_2));
