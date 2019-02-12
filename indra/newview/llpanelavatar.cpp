@@ -421,7 +421,11 @@ BOOL LLPanelAvatarWeb::postBuild()
 	LLLineEditor* url_edit = getChild<LLLineEditor>("url_edit");
 	LLUICtrl* loadctrl = getChild<LLUICtrl>("load");
 
-	url_edit->setKeystrokeCallback(boost::bind(&LLView::setEnabled, loadctrl, boost::bind(&std::string::length, boost::bind(&LLLineEditor::getText, _1))));
+	const auto&& disable_load_if_empty = [&loadctrl](const LLLineEditor* edit)
+	{
+		loadctrl->setEnabled(!edit->getText().empty());
+	};
+	url_edit->setKeystrokeCallback(disable_load_if_empty);
 	url_edit->setCommitCallback(boost::bind(&LLPanelAvatarWeb::load, this, boost::bind(&LLSD::asString, _2)));
 
 	loadctrl->setCommitCallback(boost::bind(&LLPanelAvatarWeb::onCommitLoad, this, _2));

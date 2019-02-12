@@ -273,11 +273,15 @@ LLFloaterDirectory::LLFloaterDirectory(const std::string& name)
 		LLPanel* prev_tab(getChild<LLPanel>("find_all_old_panel"));
 		LFSimFeatureHandler& inst(LFSimFeatureHandler::instance());
 		set_tab_visible(container, panel, !inst.searchURL().empty(), prev_tab);
-		inst.setSearchURLCallback(boost::bind(set_tab_visible, container, panel, !boost::bind(&std::string::empty, _1), prev_tab));
+		const auto&& hide_if_empty = [&](const std::string& url)
+		{
+			set_tab_visible(container, panel, !url.empty(), prev_tab);
+		};
+		inst.setSearchURLCallback(hide_if_empty);
 		panel = getChild<LLPanel>("showcase_panel");
 		prev_tab = getChild<LLPanel>("events_panel");
 		set_tab_visible(container, panel, !inst.destinationGuideURL().empty(), prev_tab);
-		inst.setDestinationGuideURLCallback(boost::bind(set_tab_visible, container, panel, !boost::bind(&std::string::empty, _1), prev_tab));
+		inst.setDestinationGuideURLCallback(hide_if_empty);
 
 		LLPanelDirMarket* marketp = static_cast<LLPanelDirMarket*>(container->getPanelByName(market_panel));
 		container->removeTabPanel(marketp); // Until we get a MarketPlace URL, tab is removed.
