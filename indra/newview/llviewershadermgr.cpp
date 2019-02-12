@@ -955,7 +955,7 @@ BOOL LLViewerShaderMgr::loadShadersDeferred()
 
 	BOOL success = TRUE;
 
-	success = loadShaderFile("deferred/components/utilityFuncF.glsl", mVertexShaderLevel[SHADER_DEFERRED], GL_FRAGMENT_SHADER_ARB);
+	success = !!loadShaderFile("deferred/components/utilityFuncF.glsl", mVertexShaderLevel[SHADER_DEFERRED], GL_FRAGMENT_SHADER_ARB);
 
 	if (success)
 	{
