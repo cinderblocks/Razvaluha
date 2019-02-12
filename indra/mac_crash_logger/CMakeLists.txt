@@ -47,7 +47,7 @@ set_source_files_properties(${mac_crash_logger_HEADER_FILES}
 list(APPEND mac_crash_logger_SOURCE_FILES ${mac_crash_logger_HEADER_FILES})
 
 set(mac_crash_logger_RESOURCE_FILES
-  CrashReporter.nib/
+  CrashReporter.nib
   )
 set_source_files_properties(
   ${mac_crash_logger_RESOURCE_FILES}
@@ -87,7 +87,7 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND}
   ARGS
     -E
-    copy_directory
+    copy_if_different
     ${CMAKE_CURRENT_SOURCE_DIR}/CrashReporter.nib
     ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/mac-crash-logger.app/Contents/Resources/CrashReporter.nib
   )
