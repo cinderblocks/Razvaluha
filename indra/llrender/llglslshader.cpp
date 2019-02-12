@@ -36,6 +36,9 @@
 
 #if LL_DARWIN
 #include "OpenGL/OpenGL.h"
+#include <OpenGL/gl.h> //OS x libs
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
 #endif
 
 #ifdef LL_RELEASE_FOR_DOWNLOAD
@@ -50,7 +53,7 @@ using std::make_pair;
 using std::string;
 
 GLhandleARB LLGLSLShader::sCurBoundShader = 0;
-LLGLSLShader* LLGLSLShader::sCurBoundShaderPtr = NULL;
+LLGLSLShader* LLGLSLShader::sCurBoundShaderPtr = nullptr;
 S32 LLGLSLShader::sIndexedTextureChannels = 0;
 bool LLGLSLShader::sNoFixedFunction = false;
 bool LLGLSLShader::sProfileEnabled = false;
