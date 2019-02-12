@@ -453,7 +453,7 @@ public:
 	void cleanupGL();
 	void restoreGL();
 
-	/*virtual*/ void idleUpdate(LLAgent &agent, const F64 &time) override;
+	/*virtual*/ void idleUpdate(LLAgent &agent, LLWorld &world, const F64 &time) override;
 	BOOL updateSky();
 	
 	// Graphical stuff for objects - maybe broken out into render class
