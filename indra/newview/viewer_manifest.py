@@ -1164,9 +1164,6 @@ class DarwinManifest(ViewerManifest):
         # for script in 'Contents/MacOS/update_install.py',:
         #     self.run_command("chmod +x %r" % os.path.join(self.get_dst_prefix(), script))
 
-    def app_name(self):
-        return self.channel_oneword()
-
     def package_finish(self):
         global CHANNEL_VENDOR_BASE
         # MBW -- If the mounted volume name changes, it breaks the .DS_Store's background image and icon positioning.
