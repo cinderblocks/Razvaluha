@@ -304,7 +304,7 @@ void LLGLSLShader::readProfileQuery(U32 count, U32 mode)
 #endif
 }
 LLGLSLShader::LLGLSLShader(S32 shader_class)
-	: mProgramObject(0),
+	: mProgramObject((GLhandleARB)nullptr),
 	  mShaderClass(shader_class),
 	  mAttributeMask(0),
 	  mTotalUniformSize(0),
@@ -349,7 +349,7 @@ void LLGLSLShader::unload()
 		}*/
 		if(mProgramObject)
 			glDeleteProgram(mProgramObject);
-		mProgramObject = 0;
+		mProgramObject = (GLhandleARB)nullptr;
 	}
     
     if (mTimerQuery)
@@ -418,7 +418,7 @@ BOOL LLGLSLShader::createShader(std::vector<LLStaticHashedString> * attributes,
 	{
 		if(mProgramObject)
 			glDeleteProgram(mProgramObject);
-		mProgramObject = 0;
+		mProgramObject = (GLhandleARB)nullptr;
 		return FALSE;
 	}
 
@@ -448,7 +448,7 @@ BOOL LLGLSLShader::createShader(std::vector<LLStaticHashedString> * attributes,
 	{
 		if(mProgramObject)
 			glDeleteProgram(mProgramObject);
-		mProgramObject = 0;
+		mProgramObject = (GLhandleARB)nullptr;
 
 		LL_WARNS("ShaderLoading") << "Failed to link shader: " << mName << LL_ENDL;
 
@@ -919,7 +919,7 @@ S32 LLGLSLShader::disableTexture(S32 uniform, LLTexUnit::eTextureType mode)
 GLint LLGLSLShader::getUniformLocation(U32 index)
 {
 	GLint ret = -1;
-	if (mProgramObject != (GLint)NULL)
+	if (mProgramObject != (GLhandleARB)nullptr)
 	{
 		llassert(index < mUniform.size());
 		return mUniform[index];

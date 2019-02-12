@@ -806,7 +806,7 @@ void LLDrawPoolAvatar::beginRiggedSimple()
 	}
 
 	sVertexProgram = &gObjectSimpleProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT];
-	llassert_always(sVertexProgram->mProgramObject > 0);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
 
 	sDiffuseChannel = 0;
 	sVertexProgram->bind();
@@ -854,7 +854,7 @@ void LLDrawPoolAvatar::beginRiggedGlow()
 	}
 
 	sVertexProgram = &gObjectEmissiveProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT];
-	llassert_always(sVertexProgram->mProgramObject > 0);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
 
 	sVertexProgram->bind();
 	sVertexProgram->uniform1f(LLShaderMgr::TEXTURE_GAMMA, LLPipeline::sRenderDeferred ? 2.2f : 1.1f);
@@ -882,7 +882,7 @@ void LLDrawPoolAvatar::beginRiggedFullbright()
 	{
 		sVertexProgram = &gObjectFullbrightProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT];
 	}
-	llassert_always(sVertexProgram->mProgramObject > 0);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
 
 	sVertexProgram->bind();
 	if (LLPipeline::sRenderingHUDs || !LLPipeline::sRenderDeferred)
@@ -917,7 +917,7 @@ void LLDrawPoolAvatar::beginRiggedShinySimple()
 	}
 
 	sVertexProgram = &gObjectSimpleProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT | 1<<SHD_SHINY_BIT];
-	llassert_always(sVertexProgram->mProgramObject > 0);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
 
 	sVertexProgram->bind();
 	LLDrawPoolBump::bindCubeMap(sVertexProgram, 2, sDiffuseChannel, cube_channel);
@@ -950,7 +950,7 @@ void LLDrawPoolAvatar::beginRiggedFullbrightShiny()
 	{
 		sVertexProgram = &gObjectFullbrightProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT | 1<<SHD_SHINY_BIT];
 	}
-	llassert_always(sVertexProgram->mProgramObject > 0);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
 
 	sVertexProgram->bind();
 	LLDrawPoolBump::bindCubeMap(sVertexProgram, 2, sDiffuseChannel, cube_channel);

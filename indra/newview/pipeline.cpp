@@ -1248,7 +1248,7 @@ void LLPipeline::restoreGL()
 
 BOOL LLPipeline::canUseWindLightShaders() const
 {
-	return (gWLSkyProgram.mProgramObject != 0 &&
+	return (gWLSkyProgram.mProgramObject &&
 			LLViewerShaderMgr::instance()->getVertexShaderLevel(LLViewerShaderMgr::SHADER_WINDLIGHT) > 1);
 }
 

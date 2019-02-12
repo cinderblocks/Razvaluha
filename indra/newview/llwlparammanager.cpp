@@ -392,7 +392,7 @@ void LLWLParamManager::updateShaderLinks()
 	end_shaders = LLViewerShaderMgr::instance()->endShaders();
 	for(shaders_iter = LLViewerShaderMgr::instance()->beginShaders(); shaders_iter != end_shaders; ++shaders_iter)
 	{
-		if (shaders_iter->mProgramObject != 0
+		if (shaders_iter->mProgramObject
 			&& (gPipeline.canUseWindLightShaders() || shaders_iter->mShaderGroup == LLGLSLShader::SG_WATER))
 		{
 			if(	glGetUniformLocationARB(shaders_iter->mProgramObject,"lightnorm")>=0			||

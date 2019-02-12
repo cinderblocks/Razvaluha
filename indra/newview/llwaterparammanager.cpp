@@ -365,7 +365,7 @@ void LLWaterParamManager::updateShaderLinks()
 	end_shaders = LLViewerShaderMgr::instance()->endShaders();
 	for(shaders_iter = LLViewerShaderMgr::instance()->beginShaders(); shaders_iter != end_shaders; ++shaders_iter)
 	{
-		if (shaders_iter->mProgramObject != 0
+		if (shaders_iter->mProgramObject
 			&& shaders_iter->mShaderGroup == LLGLSLShader::SG_WATER)
 		{
 			if(	shaders_iter->getUniformLocation(sLightNorm) >=0		||

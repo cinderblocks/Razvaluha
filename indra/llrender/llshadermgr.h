@@ -257,7 +257,7 @@ public:
 	std::multimap<std::string, CachedObjectInfo > mShaderObjects;	//Singu Note: Packing more info here. Doing such provides capability to skip unneeded duplicate loading..
 
 	// Map of program names linked
-	std::map<std::string, GLuint> mProgramObjects;
+	std::map<std::string, GLhandleARB> mProgramObjects;
 
 	//global (reserved slot) shader parameters
 	std::vector<std::string> mReservedAttribs;
