@@ -1280,7 +1280,7 @@ U32 LLViewerObject::processUpdateMessage(LLMessageSystem *mesgsys,
 				}
 
 				mHudTextString.clear();				//Cache for reset on debug infodisplay toggle.
-				mHudTextColor = LLColor4U::white;	//Cache for reset on debug infodisplay toggle.
+				mHudTextColor = LLColor4::white;	//Cache for reset on debug infodisplay toggle.
 
 				S32 text_size = mesgsys->getSizeFast(_PREHASH_ObjectData, block_num, _PREHASH_Text);
 				if (text_size > 1)
@@ -1536,7 +1536,7 @@ U32 LLViewerObject::processUpdateMessage(LLMessageSystem *mesgsys,
 				}
 
 				mHudTextString.clear();				//Cache for reset on debug infodisplay toggle.
-				mHudTextColor = LLColor4U::white;	//Cache for reset on debug infodisplay toggle.
+				mHudTextColor = LLColor4::white;	//Cache for reset on debug infodisplay toggle.
 
 				// Setup object text
 				if (!mText && (value & 0x4))

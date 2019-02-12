@@ -1706,7 +1706,7 @@ void LLViewerObjectList::renderObjectsForMap(LLNetMap &netmap)
 		// See DEV-17370 and SNOW-79 for details.
 		approx_radius = llmin(approx_radius, max_radius);
 
-		LLColor4U color = above_water_color;
+		LLColor4 color = above_water_color;
 		if( objectp->permYouOwner() )
 		{
 			static const LLCachedControl<U32> delta("MiniMapPrimMaxAltitudeDeltaOwn");
@@ -1753,7 +1753,7 @@ void LLViewerObjectList::renderObjectsForMap(LLNetMap &netmap)
 
 		netmap.renderScaledPointGlobal( 
 			pos, 
-			color,
+			LLColor4U(color),
 			approx_radius );
 	}
 }
