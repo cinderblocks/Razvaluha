@@ -774,7 +774,6 @@ bool LLAppViewer::init()
 	std::string logdir = gDirUtilp->getExpandedFilename(LL_PATH_DUMP, "");
 	mDumpPath = logdir;
 	setMiniDumpDir(logdir);
-	logdir += gDirUtilp->getDirDelimiter();
 	setDebugFileNames(logdir);
 
 	mAlloc.setProfilingEnabled(gSavedSettings.getBOOL("MemProfiling"));
