@@ -7952,28 +7952,6 @@ To grant this permission please update your viewer to the latest version.
 
   <notification
    icon="notify.tga"
-   name="UnknownScriptQuestion"
-   persist="false"
-   type="notify">
-The runtime script permission requested by &apos;[OBJECTNAME]&apos;, an object owned by &apos;[NAME]&apos;, isn&apos;t recognized by the viewer and can&apos;t be granted.
-
-To grant this permission please update your viewer to the latest version.
-     <tag>confirm</tag>
-     <form name="form">
-        <button
-         default="true"
-         index="1"
-         name="Deny"
-         text="Ok"/>
-        <button
-         index="2"
-         name="Mute"
-         text="Block"/>
-     </form>
-  </notification>
-
-  <notification
-   icon="notify.tga"
    name="ScriptDialog"
    type="notify">
 [NAME]&apos;s &apos;[TITLE]&apos; (ch[CHANNEL])
