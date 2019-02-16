@@ -1885,7 +1885,6 @@ if (DARWIN)
       --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
       --bundleid=${MACOSX_BUNDLE_GUI_IDENTIFIER}
       --source=${CMAKE_CURRENT_SOURCE_DIR}
-      --extra_libraries="${MANIFEST_LIBRARIES}"
     DEPENDS
       ${VIEWER_BINARY_NAME}
       ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
