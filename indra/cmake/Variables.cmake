@@ -262,7 +262,7 @@ else()
 endif()
 
 
-set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_ONE_WORD} CACHE STRING "Prefix used for resulting artifacts.")
+set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_ONEWORD} CACHE STRING "Prefix used for resulting artifacts.")
 
 set(VIEWER_BRANDING_ID "singularity" CACHE STRING "Viewer branding id")
 
