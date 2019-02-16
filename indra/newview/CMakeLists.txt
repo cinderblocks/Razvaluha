@@ -1234,7 +1234,7 @@ if (DARWIN)
     gpu_table.txt
     Singularity.xib
     # CMake doesn't seem to support Xcode language variants well just yet
-    English.lproj/InfoPlist.strings
+    ${CMAKE_CURRENT_BINARY_DIR}/English.lproj/InfoPlist.strings
     English.lproj/language.txt
     German.lproj/language.txt
     Japanese.lproj/language.txt

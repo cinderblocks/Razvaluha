@@ -246,7 +246,7 @@
 // viewer.cpp - these are only used in viewer, should be easily moved.
 
 #if LL_DARWIN
-const char * const LL_VERSION_BUNDLE_ID = "org.singularityviewer.viewer";
+//const char * const LL_VERSION_BUNDLE_ID = "org.singularityviewer.viewer";
 extern void init_apple_menu(const char* product);
 #endif // LL_DARWIN
 

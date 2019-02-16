@@ -946,10 +946,10 @@ class DarwinManifest(ViewerManifest):
 
                 # Translations
                 self.path("English.lproj/language.txt")
-                self.replace_in(src="English.lproj/InfoPlist.strings",
-                                dst="English.lproj/InfoPlist.strings",
-                                searchdict={'%%VERSION%%':'.'.join(self.args['version'])}
-                                )
+                #self.replace_in(src="English.lproj/InfoPlist.strings",
+                #                dst="English.lproj/InfoPlist.strings",
+                #                searchdict={'%%VERSION%%':'.'.join(self.args['version'])}
+                #                )
                 self.path("German.lproj")
                 self.path("Japanese.lproj")
                 self.path("Korean.lproj")
