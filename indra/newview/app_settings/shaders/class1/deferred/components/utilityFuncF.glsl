@@ -62,7 +62,6 @@ vec3 srgb_to_linear(vec3 cs)
 	vec3 high_range = pow((cs+vec3(0.055))/vec3(1.055), vec3(2.4));
 
 	bvec3 lte = lessThanEqual(cs,vec3(0.04045));
-	vec3 result;
 #ifdef OLD_SELECT
 	vec3 result;
 	result.r = lte.r ? low_range.r : high_range.r;
