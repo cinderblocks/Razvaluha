@@ -2166,8 +2166,9 @@ void LLFolderView::doIdle()
 	}
 
 	LLFavoritesOrderStorage::instance(); // Singu TODO: Favorites bar.
-	BOOL collectFavoriteItems();
-	collectFavoriteItems();
+	BOOL collectFavoriteItems(LLInventoryModel::item_array_t&);
+	LLInventoryModel::item_array_t items;
+	collectFavoriteItems(items);
 
 	BOOL debug_filters = gSavedSettings.getBOOL("DebugInventoryFilters");
 	if (debug_filters != getDebugFilters())

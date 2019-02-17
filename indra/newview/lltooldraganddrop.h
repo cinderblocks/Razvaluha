@@ -51,6 +51,7 @@ class LLToolDragAndDrop : public LLTool, public LLSingleton<LLToolDragAndDrop>
 {
 	LLSINGLETON(LLToolDragAndDrop);
 public:
+	typedef boost::signals2::signal<void ()> enddrag_signal_t;
 
 	// overridden from LLTool
 	BOOL	handleMouseUp(S32 x, S32 y, MASK mask) override;
@@ -88,7 +89,10 @@ public:
 	const LLUUID& getObjectID() const { return mObjectID; }
 	EAcceptance getLastAccept() { return mLastAccept; }
 	
+	boost::signals2::connection setEndDragCallback( const enddrag_signal_t::slot_type& cb ) { return mEndDragSignal.connect(cb); }
+
 	uuid_vec_t::size_type getCargoIDsCount() const { return mCargoIDs.size(); }
+
 	static S32 getOperationId() { return sOperationId; }
 
 	// deal with permissions of object, etc. returns TRUE if drop can
@@ -146,6 +150,8 @@ protected:
 	BOOL			mDrop;
 	S32				mCurItemIndex;
 	std::string		mToolTipMsg;
+
+	enddrag_signal_t	mEndDragSignal;
 
 protected:
 	// 3d drop functions. these call down into the static functions
