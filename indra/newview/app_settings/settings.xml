@@ -17325,6 +17325,28 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Value</key>
       <string/>
     </map>
+    <key>VivoxVoiceHost</key>
+    <map>
+      <key>Comment</key>
+      <string>Client SLVoice host to connect to</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>String</string>
+      <key>Value</key>
+      <string>127.0.0.1</string>
+    </map>
+    <key>VivoxVoicePort</key>
+    <map>
+      <key>Comment</key>
+      <string>Client SLVoice port to connect to</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>U32</string>
+      <key>Value</key>
+      <integer>44125</integer>
+    </map>
     <key>VoiceCallsFriendsOnly</key>
     <map>
       <key>Comment</key>
@@ -17423,17 +17445,6 @@ This should be as low as possible, but too low may break functionality</string>
       <string>S32</string>
       <key>Value</key>
       <integer>0</integer>
-    </map>
-    <key>VoiceHost</key>
-    <map>
-      <key>Comment</key>
-      <string>Client SLVoice host to connect to</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>String</string>
-      <key>Value</key>
-      <string>127.0.0.1</string>
     </map>
     <key>VoiceImageLevel0</key>
     <map>
@@ -17544,17 +17555,6 @@ This should be as low as possible, but too low may break functionality</string>
       <string>String</string>
       <key>Value</key>
       <string>Default</string>
-    </map>
-    <key>VoicePort</key>
-    <map>
-      <key>Comment</key>
-      <string>Client SLVoice port to connect to</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>U32</string>
-      <key>Value</key>
-      <integer>44125</integer>
     </map>
     <key>VoiceMultiInstance</key>
     <map>
