@@ -541,12 +541,14 @@ extern PFNGLBEGINTRANSFORMFEEDBACKPROC glBeginTransformFeedback;
 extern PFNGLENDTRANSFORMFEEDBACKPROC glEndTransformFeedback;
 extern PFNGLTRANSFORMFEEDBACKVARYINGSPROC glTransformFeedbackVaryings;
 extern PFNGLBINDBUFFERRANGEPROC glBindBufferRange;
+extern PFNGLBINDBUFFERBASEPROC glBindBufferBase;
 
 
 #elif LL_WINDOWS
 //----------------------------------------------------------------------------
 // LL_WINDOWS
 
+// windows gl headers depend on things like APIENTRY, so include windows.
 #include "llwin32headerslean.h"
 
 //----------------------------------------------------------------------------
@@ -780,6 +782,7 @@ extern PFNGLBEGINTRANSFORMFEEDBACKPROC glBeginTransformFeedback;
 extern PFNGLENDTRANSFORMFEEDBACKPROC glEndTransformFeedback;
 extern PFNGLTRANSFORMFEEDBACKVARYINGSPROC glTransformFeedbackVaryings;
 extern PFNGLBINDBUFFERRANGEPROC glBindBufferRange;
+extern PFNGLBINDBUFFERBASEPROC glBindBufferBase;
 
 //GL_ARB_debug_output
 extern PFNGLDEBUGMESSAGECONTROLARBPROC glDebugMessageControlARB;
@@ -828,6 +831,9 @@ extern void glGenerateMipmapEXT(GLenum target) AVAILABLE_MAC_OS_X_VERSION_10_4_A
 #define glGenerateMipmap glGenerateMipmapEXT
 #define GL_MAX_SAMPLES	0x8D57
 #endif
+
+// Singu Note: Make Apple Compile Again
+#define glDeleteVertexArrays glDeleteVertexArraysAPPLE
 
 // GL_ARB_draw_buffers
 extern void glDrawBuffersARB(GLsizei n, const GLenum* bufs) AVAILABLE_MAC_OS_X_VERSION_10_4_AND_LATER;
