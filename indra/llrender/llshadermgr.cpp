@@ -904,10 +904,13 @@ GLhandleARB LLShaderMgr::loadShaderFile(const std::string& filename, S32 & shade
 		std::string shader_name = filename.substr(filename.find_last_of("/")+1);			//shader_name.glsl
 		shader_name = shader_name.substr(0,shader_name.find_last_of("."));					//shader_name
 		std::string maindir = gDirUtilp->getExpandedFilename(LL_PATH_LOGS,"shader_dump"+delim);
-		//mkdir is NOT recursive. Step through the folders one by one.
-		LLFile::mkdir(maindir);																//..Roaming/SecondLife/logs/shader_dump/
-		LLFile::mkdir(maindir+="class" + llformat("%i",gpu_class) + delim);					//..shader_dump/class1/
-		LLFile::mkdir(maindir+=filename.substr(0,filename.find_last_of("/")+1));			//..shader_dump/class1/windlight/
+		//create_directories is recursive.
+		//..Roaming/SecondLife/logs/shader_dump/
+		maindir += llformat("class%i",gpu_class) + delim;					//..shader_dump/class1/
+		maindir += filename.substr(0, filename.find_last_of("/")+1);			//..shader_dump/class1/windlight/
+		boost::system::error_code ec;
+		boost::filesystem::create_directories(maindir, ec);
+		if (ec) LL_WARNS() << "Trouble creating directories " << maindir << ": " << ec.message() << LL_ENDL;
 
 		llofstream file(maindir + shader_name + (ret ? "" : llformat("_FAILED(%i)",error)) + ".glsl");
 		file << ostr.str();
