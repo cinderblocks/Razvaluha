@@ -113,7 +113,6 @@ public:
 	/*virtual*/ void allowLanguageTextInput(LLPreeditor *preeditor, BOOL b);
 	/*virtual*/ void interruptLanguageTextInput();
 	/*virtual*/ void spawnWebBrowser(const std::string& escaped_url, bool async);
-	/*virtual*/ void ShellEx(const std::string& command);
 	/*virtual*/ F32 getScaleFactor();
 	/*virtual*/ void updateUnreadCount(S32 num_conversations);
 

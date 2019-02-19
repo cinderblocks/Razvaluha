@@ -1759,15 +1759,7 @@ void LLWindowSDL2::spawnWebBrowser(const std::string& escaped_url, bool async)
 
 	LL_INFOS("Window") << "Opening URL " << escaped_url << LL_ENDL;
 
-	constexpr auto&& open =
-#if LL_WINDOWS
-	"start ";
-#elif LL_DARWIN
-	"open ";
-#else // Assume we're modern unix and therefore have xdg-open
-	"xdg-open ";
-#endif
-	auto code = std::system((open + escaped_url).c_str());
+	auto code = ShellEx(escaped_url);
 	if (!code)
 	{
 #if LL_LINUX
