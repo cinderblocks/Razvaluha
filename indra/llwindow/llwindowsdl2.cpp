@@ -1757,29 +1757,25 @@ void LLWindowSDL2::spawnWebBrowser(const std::string& escaped_url, bool async)
 		return;
 	}
 
-#if LL_WINDOWS
 	LL_INFOS("Window") << "Opening URL " << escaped_url << LL_ENDL;
 
-	// replaced ShellExecute code with ShellExecuteEx since ShellExecute doesn't work
-	// reliablly on Vista.
-
-	// this is madness.. no, this is..
-	LLWString url_wstring = utf8str_to_wstring(escaped_url);
-	llutf16string url_utf16 = wstring_to_utf16str(url_wstring);
-
-	// let the OS decide what to use to open the URL
-	SHELLEXECUTEINFO sei = { sizeof(sei) };
-	// NOTE: this assumes that SL will stick around long enough to complete the DDE message exchange
-	// necessary for ShellExecuteEx to complete
-	if (async)
-	{
-		sei.fMask = SEE_MASK_ASYNCOK;
-	}
-	sei.nShow = SW_SHOWNORMAL;
-	sei.lpVerb = L"open";
-	sei.lpFile = url_utf16.c_str();
-	ShellExecuteEx(&sei);
+	constexpr auto&& open =
+#if LL_WINDOWS
+	"start ";
+#elif LL_DARWIN
+	"open ";
+#else // Assume we're modern unix and therefore have xdg-open
+	"xdg-open ";
 #endif
+	auto code = std::system((open + escaped_url).c_str());
+	if (!code)
+	{
+#if LL_LINUX
+		code = std::system((gDirUtilp->add(gDirUtilp->getAppRODataDir(), "etc", "launch_url.sh") + ' ' + escaped_url).c_str())
+		if (!code) // Fall back on the old script
+#endif
+		LL_INFOS() << "Error: Couldn't open URL: " << escaped_url << ". Error code " << code << LL_ENDL;
+	}
 }
 
 
