@@ -1864,7 +1864,7 @@ if (DARWIN)
 
   configure_file(
      "${CMAKE_CURRENT_SOURCE_DIR}/Info-Singularity.plist"
-     "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL_NOSPACE}.app/Contents/Info.plist"
+     "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL}.app/Contents/Info.plist"
     )
 
   add_dependencies(${VIEWER_BINARY_NAME} generate_viewer_version)
@@ -1882,7 +1882,7 @@ if (DARWIN)
       --buildtype=${CMAKE_BUILD_TYPE}
       --channel=${VIEWER_CHANNEL}
       --configuration=${CMAKE_CFG_INTDIR}
-      --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL_NOSPACE}.app
+      --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL}.app
       --grid=${GRID}
         --sdl2=${LLWINDOW_SDL2}
       --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
@@ -1916,7 +1916,7 @@ if (DARWIN)
           --buildtype=${CMAKE_BUILD_TYPE}
           --channel=${VIEWER_CHANNEL}
           --configuration=${CMAKE_CFG_INTDIR}
-          --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL_NOSPACE}.app
+          --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL}.app
           --grid=${GRID}
           --sdl2=${LLWINDOW_SDL2}
           --channel=${VIEWER_CHANNEL}
