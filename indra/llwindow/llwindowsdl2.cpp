@@ -1751,18 +1751,7 @@ BOOL LLWindowSDL2::dialogColorPicker(F32 *r, F32 *g, F32 *b)
 // Must begin with protocol identifier.
 void LLWindowSDL2::spawnWebBrowser(const std::string& escaped_url, bool async)
 {
-	bool found = false;
-	S32 i;
-	for (i = 0; i < gURLProtocolWhitelistCount; i++)
-	{
-		if (escaped_url.find(gURLProtocolWhitelist[i]) != std::string::npos)
-		{
-			found = true;
-			break;
-		}
-	}
-
-	if (!found)
+	if (!isWhitelistedProtocol(escaped_url))
 	{
 		LL_WARNS() << "spawn_web_browser called for url with protocol not on whitelist: " << escaped_url << LL_ENDL;
 		return;
