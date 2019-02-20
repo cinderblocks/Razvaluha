@@ -30,7 +30,6 @@
 lggHunSpell_Wrapper *glggHunSpell = 0;
 Hunspell* lggHunSpell_Wrapper::myHunspell = 0;
 // do not insert empty lines after this line until the size calculation
-#define COUNTRY_CODES_RAW_START_LINE (__LINE__ + 2)
 static char * countryCodesraw[] = {
   (char*)"SL",(char*)"SecondLife",
   (char*)"AD",(char*)"Andorra",
@@ -279,9 +278,7 @@ static char * countryCodesraw[] = {
   (char*)"ZW",(char*)"Zimbabwe",
   (char*)"ZZ",(char*)"Unknown or unspecified country"
 };
-//#define COUNTRY_CODES_RAW_SIZE ((__LINE__ - 1 - COUNTRY_CODES_RAW_START_LINE) * 2)
 #define COUNTRY_CODES_RAW_SIZE 492
-#define LANGUAGE_CODES_RAW_START_LINE (__LINE__ + 2)
 static char * languageCodesraw[]={
   (char*)"aa",(char*)"Afar",
   (char*)"ab",(char*)"Abkhazian",
@@ -468,7 +465,6 @@ static char * languageCodesraw[]={
   (char*)"zh",(char*)"Chinese",
   (char*)"zu",(char*)"Zulu"
 };
-//#define LANGUAGE_CODES_RAW_SIZE ((__LINE__ - 1 - LANGUAGE_CODES_RAW_START_LINE) * 2)
 #define LANGUAGE_CODES_RAW_SIZE 368
 
 lggHunSpell_Wrapper::lggHunSpell_Wrapper()
@@ -488,13 +484,18 @@ BOOL lggHunSpell_Wrapper::getSpellCheckHighlight()
     return mSpellCheckHighlight;
 }
 
+std::string get_dictionaries_path(bool user, const std::string& filename = LLStringUtil::null)
+{
+	return gDirUtilp->getExpandedFilename(user ? LL_PATH_USER_SETTINGS : LL_PATH_APP_SETTINGS, "dictionaries", filename);
+}
+
 std::string lggHunSpell_Wrapper::getCorrectPath(std::string file)
 {
 	//finds out if it is in user dir, if not, takes it from app dir
-	std::string dicpath1(gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "dictionaries", file).c_str());
+	std::string dicpath1(get_dictionaries_path(true, file));
 	if (!gDirUtilp->fileExists(dicpath1))
 	{
-		dicpath1=gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "dictionaries", file).c_str();
+		dicpath1 = get_dictionaries_path(false, file);
 	}
 	return dicpath1;
 }
@@ -532,7 +533,7 @@ void lggHunSpell_Wrapper::setNewDictionary(std::string newDict)
 
 void lggHunSpell_Wrapper::createCustomDic()
 {
-	std::string filename(gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "dictionaries", "custom.dic"));
+	std::string filename(get_dictionaries_path(true, "custom.dic"));
 	if (!gDirUtilp->fileExists(filename))
 	{
 		llofstream export_file;	
@@ -551,7 +552,7 @@ void lggHunSpell_Wrapper::addWordToCustomDictionary(std::string wordToAdd)
 	}
 
 	myHunspell->add(wordToAdd.c_str());
-	std::string filename(gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "dictionaries", "custom.dic"));
+	std::string filename(get_dictionaries_path(true, "custom.dic"));
 	std::vector<std::string> lines;
 	if (gDirUtilp->fileExists(filename))
 	{
@@ -567,14 +568,14 @@ void lggHunSpell_Wrapper::addWordToCustomDictionary(std::string wordToAdd)
 
 	llofstream export_file;	
 	export_file.open(filename);
-	std::string sizePart(llformat("%i", (int)(lines.size()+1)) + "\n");
+	std::string sizePart(llformat("%i", (int)(lines.size() + 1)) + '\n');
 	export_file.write(sizePart.c_str(), sizePart.length());
 	for (int i = 0; i < (int)lines.size() ;i++)
 	{
-		export_file.write(std::string(lines[i]+"\n").c_str(),lines[i].length()+1);
+		export_file.write(std::string(lines[i]+'\n').c_str(),lines[i].length()+1);
 	}
 	//LLStringUtil::toLower(wordToAdd);
-	wordToAdd = wordToAdd+std::string("\n");
+	wordToAdd += '\n';
 	export_file.write(wordToAdd.c_str(), wordToAdd.length());
 	//export_file << std::hex << 10 ;
 	export_file.close();
@@ -671,17 +672,17 @@ std::string lggHunSpell_Wrapper::dictName2FullName(std::string dictName)
 		return dictName;
 	}
 
-	std::string countryCode("");
-	std::string languageCode("");
+	std::string countryCode;
+	std::string languageCode;
 
 	//remove extension
-	dictName = dictName.substr(0,dictName.find("."));
+	dictName = dictName.substr(0,dictName.find('.'));
 
 	//break it up by - or _
-	S32 breakPoint = dictName.find("-");
+	S32 breakPoint = dictName.find('-');
 	if (breakPoint == std::string::npos)
 	{
-		breakPoint = dictName.find("_");
+		breakPoint = dictName.find('_');
 	}
 	if (breakPoint == std::string::npos)
 	{
@@ -716,7 +717,7 @@ std::string lggHunSpell_Wrapper::dictName2FullName(std::string dictName)
 				break;
 			}
 		}
-		countryCode = " (" + countryCode + ")";
+		countryCode = " (" + countryCode + ')';
 	}
 	
 	return std::string(languageCode+countryCode);
@@ -724,8 +725,8 @@ std::string lggHunSpell_Wrapper::dictName2FullName(std::string dictName)
 
 std::string lggHunSpell_Wrapper::fullName2DictName(std::string fullName)
 {
-	std::string countryCode("");
-	std::string languageCode("");
+	std::string countryCode;
+	std::string languageCode;
 	S32 breakPoint = fullName.find(" (");
 	if (breakPoint == std::string::npos)
 	{
@@ -759,7 +760,7 @@ std::string lggHunSpell_Wrapper::fullName2DictName(std::string fullName)
 				break;
 			}
 		}
-		toReturn += "_" + countryCode;
+		toReturn += '_' + countryCode;
 	}
 
 	LLStringUtil::toLower(toReturn);
@@ -768,16 +769,14 @@ std::string lggHunSpell_Wrapper::fullName2DictName(std::string fullName)
 
 std::vector <std::string> lggHunSpell_Wrapper::getDicts()
 {
-	std::vector<std::string> names;	
-	std::string path_name(gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "dictionaries", ""));
+	std::vector<std::string> names;
 	std::string name;
-	LLDirIterator app_iter(path_name, "*.aff");
+	LLDirIterator app_iter(get_dictionaries_path(false), "*.aff");
 	while (app_iter.next(name))
 	{
 		names.push_back(dictName2FullName(name));
 	}
-	path_name = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "dictionaries", "");
-	LLDirIterator user_iter(path_name, "*.aff");
+	LLDirIterator user_iter(get_dictionaries_path(true), "*.aff");
 	while (user_iter.next(name))
 	{
 		names.push_back(dictName2FullName(name));
@@ -787,16 +786,14 @@ std::vector <std::string> lggHunSpell_Wrapper::getDicts()
 
 std::vector <std::string> lggHunSpell_Wrapper::getExtraDicts()
 {
-	std::vector<std::string> names;	
-	std::string path_name(gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "dictionaries", ""));
+	std::vector<std::string> names;
 	std::string name;
-	LLDirIterator app_iter(path_name, "*.dic");
+	LLDirIterator app_iter(get_dictionaries_path(false), "*.dic");
 	while (app_iter.next(name))
 	{
 		names.push_back(dictName2FullName(name));
 	}
-	path_name = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "dictionaries", "");
-	LLDirIterator user_iter(path_name, "*.dic");
+	LLDirIterator user_iter(get_dictionaries_path(true), "*.dic");
 	while (user_iter.next(name))
 	{
 		names.push_back(dictName2FullName(name));
@@ -808,10 +805,9 @@ std::vector<std::string> lggHunSpell_Wrapper::getInstalledDicts()
 {
 	std::vector<std::string> toReturn;
 	//expecting short names to be stored...
-	std::vector<std::string> shortNames = CSV2VEC(gSavedSettings.getString("SpellInstalled"));
-	for (int i =0; i < (int)shortNames.size(); i++)
+	for (const auto& shortName : CSV2VEC(gSavedSettings.getString("SpellInstalled")))
 	{
-		toReturn.push_back(dictName2FullName(shortNames[i]));
+		toReturn.push_back(dictName2FullName(shortName));
 	}
 	return toReturn;
 }
@@ -821,27 +817,20 @@ std::vector<std::string> lggHunSpell_Wrapper::getAvailDicts()
 	std::vector<std::string> toReturn;
 	std::vector<std::string> dics = getExtraDicts();
 	std::vector<std::string> installedDics = getInstalledDicts();
-	for (int i = 0; i < (int)dics.size(); i++)
+	for (const auto& dic : dics)
 	{
 		bool found = false;
-		for (int j = 0; j < (int)installedDics.size(); j++)
+		for (const auto& installedDic : installedDics)
 		{
-			if (0 == LLStringUtil::compareInsensitive(dics[i], installedDics[j]))
+			if (0 == LLStringUtil::compareInsensitive(dic, installedDic))
 			{
 				found = true;//this dic is already installed
+				break;
 			}
 		}
-		if (0 == LLStringUtil::compareInsensitive(dics[i], currentBaseDic))
+		if (!found && LLStringUtil::compareInsensitive(dic, currentBaseDic) != 0 &&  LLStringUtil::compareInsensitive(dic, "custom") != 0)
 		{
-			found = true;
-		}
-		if (0 == LLStringUtil::compareInsensitive(dics[i], "custom"))
-		{
-			found = true;
-		}
-		if (!found)
-		{
-			toReturn.push_back(dics[i]);
+			toReturn.push_back(dic);
 		}
 	}
 	return toReturn;
@@ -862,7 +851,7 @@ std::vector<std::string> lggHunSpell_Wrapper::CSV2VEC(std::string csv)
 
 std::string lggHunSpell_Wrapper::VEC2CSV(std::vector<std::string> vec)
 {
-	std::string toReturn("");
+	std::string toReturn;
 	if (vec.size() < 1)
 	{
 		return toReturn;
@@ -870,7 +859,7 @@ std::string lggHunSpell_Wrapper::VEC2CSV(std::vector<std::string> vec)
 
 	for (int i = 0;i < (int)vec.size() ;i++)
 	{
-		toReturn += vec[i] + ",";
+		toReturn += vec[i] + ',';
 	}
 	return toReturn.erase(toReturn.length()-1);
 }
@@ -946,7 +935,7 @@ void lggHunSpell_Wrapper::getMoreButton(void* data)
 
 void lggHunSpell_Wrapper::editCustomButton()
 {
-	std::string dicdicpath(gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "dictionaries", std::string("custom.dic")).c_str());
+	std::string dicdicpath = get_dictionaries_path(true, "custom.dic");
 
 	if (!gDirUtilp->fileExists(dicdicpath))
 	{
