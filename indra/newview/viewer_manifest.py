@@ -1488,7 +1488,7 @@ class LinuxManifest(ViewerManifest):
         self.path("featuretable_linux.txt")
 
     def package_finish(self):
-
+        installer_name = self.installer_base_name()
         self.strip_binaries()
 
         # Fix access permissions
@@ -1505,7 +1505,7 @@ class LinuxManifest(ViewerManifest):
         # name in the tarfile
         realname = self.get_dst_prefix()
         tempname = self.build_path_of(installer_name)
-        self.run_command(["mv", realname, tempname])
+        self.run_command(['mv', realname, tempname])
         try:
             # --numeric-owner hides the username of the builder for
             # security etc.
@@ -1513,14 +1513,8 @@ class LinuxManifest(ViewerManifest):
                               '--numeric-owner', '-cJf',
                              tempname + '.tar.xz', installer_name])
         finally:
-            self.run_command(["mv", tempname, realname])
+            self.run_command(['mv', tempname, realname])
             self.package_file = installer_name + '.tar.xz'
-
-    def strip_binaries(self):
-        print "* Going strip-crazy on the packaged binaries"
-        # makes some small assumptions about our packaged dir structure
-        self.run_command(r"find %(d)r/lib %(d)r/lib32 %(d)r/lib64 -type f \! -name update_install | xargs --no-run-if-empty strip -S" % {'d': self.get_dst_prefix()} )
-        self.run_command(r"find %(d)r/bin -executable -type f \! -name update_install | xargs --no-run-if-empty strip -S" % {'d': self.get_dst_prefix()} )
 
 class Linux_i686_Manifest(LinuxManifest):
     address_size = 32
@@ -1560,7 +1554,17 @@ class Linux_i686_Manifest(LinuxManifest):
             self.path("libvivoxsdk.so")
             self.path("libvivoxplatform.so")
 
-
+    def strip_binaries(self):
+        print "* Going strip-crazy on the packaged binaries"
+        # makes some small assumptions about our packaged dir structure
+        try:
+            self.run_command(
+                ["find"] +
+                [os.path.join(self.get_dst_prefix(), dir) for dir in ('bin', 'lib')] +
+                ['-executable', '-type', 'f', '!', '-name', 'update_install', '-exec', 'strip', '-S', '{}', ';'])
+        except ManifestError as err:
+            print err.message
+            pass
 
 class Linux_x86_64_Manifest(LinuxManifest):
     address_size = 64
@@ -1615,6 +1619,17 @@ class Linux_x86_64_Manifest(LinuxManifest):
         with self.prefix(src=relpkgdir, dst="lib64"):
             self.path("libcef.so")
 
+    def strip_binaries(self):
+        print "* Going strip-crazy on the packaged binaries"
+        # makes some small assumptions about our packaged dir structure
+        try:
+            self.run_command(
+                ["find"] +
+                [os.path.join(self.get_dst_prefix(), dir) for dir in ('bin', 'lib32', 'lib64')] +
+                ['-executable', '-type', 'f', '!', '-name', 'update_install', '-exec', 'strip', '-S', '{}', ';'])
+        except ManifestError as err:
+            print err.message
+            pass
 
 ################################################################
 
