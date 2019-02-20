@@ -45,7 +45,8 @@
 
 #if LL_GTK
 extern "C" {
-# include <gtk/gtk.h>
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
 #if GTK_CHECK_VERSION(2, 24, 0)
 #include <gdk/gdkx.h>
 #endif
@@ -1397,8 +1398,8 @@ LLWindow::LLWindowResolution* LLWindowSDL::getSupportedResolutions(S32 &num_reso
 
 BOOL LLWindowSDL::convertCoords(LLCoordGL from, LLCoordWindow *to)
 {
-    if (!to)
-        return FALSE;
+	if (!to)
+		return FALSE;
 
 	to->mX = from.mX;
 	to->mY = mWindow->h - from.mY - 1;
@@ -1408,8 +1409,8 @@ BOOL LLWindowSDL::convertCoords(LLCoordGL from, LLCoordWindow *to)
 
 BOOL LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordGL* to)
 {
-    if (!to)
-        return FALSE;
+	if (!to)
+		return FALSE;
 
 	to->mX = from.mX;
 	to->mY = mWindow->h - from.mY - 1;
@@ -2250,8 +2251,12 @@ S32 OSMessageBoxSDL(const std::string& text, const std::string& caption, U32 typ
 		    gWindowImplementation->mSDL_XWindowID != None)
 		{
 			gtk_widget_realize(GTK_WIDGET(win)); // so we can get its gdkwin
-			GdkWindow *gdkwin = gdk_window_foreign_new(gWindowImplementation->mSDL_XWindowID);
-			gdk_window_set_transient_for(GTK_WIDGET(win)->window, gdkwin);
+#if GTK_CHECK_VERSION(2, 24, 0)
+			GdkWindow* gdkwin = gdk_x11_window_foreign_new_for_display(gdk_display_get_default(), static_cast<Window>(gWindowImplementation->mSDL_XWindowID));
+#else
+			GdkWindow* gdkwin = gdk_window_foreign_new(static_cast<GdkNativeWindow>(gWindowImplementation->mSDL_XWindowID));
+#endif
+			gdk_window_set_transient_for(gtk_widget_get_window(GTK_WIDGET(win)), gdkwin);
 		}
 # endif //LL_X11
 
@@ -2358,19 +2363,23 @@ BOOL LLWindowSDL::dialogColorPicker( F32 *r, F32 *g, F32 *b)
 
 		win = gtk_color_selection_dialog_new(NULL);
 
-# if LL_X11
+#if LL_X11
 		// Get GTK to tell the window manager to associate this
 		// dialog with our non-GTK SDL window, which should try
 		// to keep it on top etc.
 		if (mSDL_XWindowID != None)
 		{
 			gtk_widget_realize(GTK_WIDGET(win)); // so we can get its gdkwin
-			GdkWindow *gdkwin = gdk_window_foreign_new(mSDL_XWindowID);
-			gdk_window_set_transient_for(GTK_WIDGET(win)->window, gdkwin);
+#if GTK_CHECK_VERSION(2, 24, 0)
+			GdkWindow* gdkwin = gdk_x11_window_foreign_new_for_display(gdk_display_get_default(), static_cast<Window>(mSDL_XWindowID));
+#else
+			GdkWindow* gdkwin = gdk_window_foreign_new(static_cast<GdkNativeWindow>(mSDL_XWindowID));
+#endif	  
+			gdk_window_set_transient_for(gtk_widget_get_window(GTK_WIDGET(win)), gdkwin);
 		}
-# endif //LL_X11
+#endif //LL_X11
 
-		GtkColorSelection *colorsel = GTK_COLOR_SELECTION (GTK_COLOR_SELECTION_DIALOG(win)->colorsel);
+		GtkColorSelection *colorsel = GTK_COLOR_SELECTION (gtk_color_selection_dialog_get_color_selection (GTK_COLOR_SELECTION_DIALOG(win)));
 
 		GdkColor color, orig_color;
 		orig_color.pixel = 0;
@@ -2396,8 +2405,6 @@ BOOL LLWindowSDL::dialogColorPicker( F32 *r, F32 *g, F32 *b)
 
 		gtk_window_set_modal(GTK_WINDOW(win), TRUE);
 		gtk_widget_show_all(win);
-		// hide the help button - we don't service it.
-		gtk_widget_hide(GTK_COLOR_SELECTION_DIALOG(win)->help_button);
 		gtk_main();
 
 		if (response == GTK_RESPONSE_OK &&
