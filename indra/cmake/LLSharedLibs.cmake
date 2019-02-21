@@ -59,6 +59,7 @@ macro(ll_stage_sharedlib DSO_TARGET)
   endif(NOT WINDOWS)
 
   if (DARWIN)
+    cmake_policy(SET CMP0068 NEW)
     set_target_properties(${DSO_TARGET} PROPERTIES
       BUILD_WITH_INSTALL_RPATH TRUE
       INSTALL_NAME_DIR "@executable_path/../Resources"
