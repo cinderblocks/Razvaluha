@@ -30,6 +30,24 @@
 
 #include "llimagegl.h"
 
+#ifdef LL_GL_CORE
+#define GL_COLOR_MATERIAL_LEGACY 0
+#define GL_ALPHA_TEST_LEGACY 0
+#define GL_LIGHTING_LEGACY 0
+#define GL_FOG_LEGACY 0
+#define GL_LINE_SMOOTH_LEGACY 0
+#define GL_LINE_STIPPLE_LEGACY 0
+#define GL_NORMALIZE_LEGACY 0
+#else
+#define GL_COLOR_MATERIAL_LEGACY GL_COLOR_MATERIAL
+#define GL_ALPHA_TEST_LEGACY GL_ALPHA_TEST
+#define GL_LIGHTING_LEGACY GL_LIGHTING
+#define GL_FOG_LEGACY GL_FOG
+#define GL_LINE_SMOOTH_LEGACY GL_LINE_SMOOTH
+#define GL_LINE_STIPPLE_LEGACY GL_LINE_STIPPLE
+#define GL_NORMALIZE_LEGACY GL_NORMALIZE
+#endif
+
 //----------------------------------------------------------------------------
 
 class LLGLDepthTest
@@ -56,33 +74,39 @@ private:
 struct LLGLSDefault
 {
 private:
-	LLGLEnable<GL_COLOR_MATERIAL> mColorMaterial;
-	LLGLDisable<GL_ALPHA_TEST> mAlphaTest;
 	LLGLDisable<GL_BLEND> mBlend;
 	LLGLDisable<GL_CULL_FACE> mCullFace;
 	LLGLDisable<GL_DITHER> mDither;
-	LLGLDisable<GL_FOG> mFog;
-	LLGLDisable<GL_LINE_SMOOTH> mLineSmooth;
-	LLGLDisable<GL_LINE_STIPPLE> mLineStipple;
-	LLGLDisable<GL_NORMALIZE> mNormalize;
 	LLGLDisable<GL_POLYGON_SMOOTH> mPolygonSmooth;
 	LLGLDisable<GL_MULTISAMPLE_ARB> mGLMultisample;
-	LLGLDisable<GL_LIGHTING> lighting;
+#ifndef LL_GL_CORE
+	LLGLEnable<GL_COLOR_MATERIAL_LEGACY> mColorMaterial;
+	LLGLDisable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
+	LLGLDisable<GL_LIGHTING_LEGACY> lighting;
+	LLGLDisable<GL_FOG_LEGACY> mFog;
+	LLGLDisable<GL_LINE_SMOOTH_LEGACY> mLineSmooth;
+	LLGLDisable<GL_LINE_STIPPLE_LEGACY> mLineStipple;
+	LLGLDisable<GL_NORMALIZE_LEGACY> mNormalize;
+#endif
 };
 
 struct LLGLSObjectSelect
 {
 private:
 	LLGLDisable<GL_BLEND> mBlend;
-	LLGLDisable<GL_ALPHA_TEST> mAlphaTest;
-	LLGLDisable<GL_FOG> mFog;
 	LLGLEnable<GL_CULL_FACE> mCullFace;
+#ifndef LL_GL_CORE
+	LLGLDisable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
+	LLGLDisable<GL_FOG_LEGACY> mFog;
+#endif
 };
 
 struct LLGLSObjectSelectAlpha
 {
+#ifndef LL_GL_CORE
 private:
-	LLGLEnable<GL_ALPHA_TEST> mAlphaTest;
+	LLGLEnable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
+#endif
 };
 
 //----------------------------------------------------------------------------
@@ -91,35 +115,61 @@ struct LLGLSUIDefault
 { 
 private:
 	LLGLEnable<GL_BLEND> mBlend;
-	LLGLEnable<GL_ALPHA_TEST> mAlphaTest;
 	LLGLDisable<GL_CULL_FACE> mCullFace;
-	LLGLDisable<GL_MULTISAMPLE_ARB> mMSAA;
 	//LLGLEnable<GL_SCISSOR_TEST> mScissor;
 	LLGLDepthTest mDepthTest;
+	LLGLDisable<GL_MULTISAMPLE_ARB> mMSAA;
+#ifndef LL_GL_CORE
+	LLGLEnable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
+#endif
 public:
 	LLGLSUIDefault()
 		: mDepthTest(GL_FALSE, GL_TRUE, GL_LEQUAL)
 	{}
 };
 
-struct LLGLSNoAlphaTest // : public LLGLSUIDefault
+struct LLGLSNoAlphaTest
 {
+	LLGLSNoAlphaTest(bool noskip = true)
+#ifndef LL_GL_CORE
+		: mAlphaTest(noskip)
+#endif
+	{}
+#ifndef LL_GL_CORE
 private:
-	LLGLDisable<GL_ALPHA_TEST> mAlphaTest;
+	LLGLDisable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
+#endif
+};
+
+struct LLGLSAlphaTest
+{
+	LLGLSAlphaTest(bool noskip = true)
+#ifndef LL_GL_CORE
+		: mAlphaTest(noskip)
+#endif
+	{}
+#ifndef LL_GL_CORE
+private:
+	LLGLEnable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
+#endif
 };
 
 //----------------------------------------------------------------------------
 
 struct LLGLSFog
 {
+#ifndef LL_GL_CORE
 private:
-	LLGLEnable<GL_FOG> mFog;
+	LLGLEnable<GL_FOG_LEGACY> mFog;
+#endif
 };
 
 struct LLGLSNoFog
 {
+#ifndef LL_GL_CORE
 private:
-	LLGLDisable<GL_FOG> mFog;
+	LLGLDisable<GL_FOG_LEGACY> mFog;
+#endif
 };
 
 //----------------------------------------------------------------------------
@@ -138,8 +188,10 @@ public:
 struct LLGLSPipelineAlpha // : public LLGLSPipeline
 { 
 private:
-	LLGLEnable<GL_ALPHA_TEST> mAlphaTest;
 	LLGLEnable<GL_BLEND> mBlend;
+#ifndef LL_GL_CORE
+	LLGLEnable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
+#endif
 };
 
 struct LLGLSPipelineEmbossBump
@@ -156,29 +208,36 @@ private:
 
 struct LLGLSPipelineAvatar
 {
+#ifndef LL_GL_CORE
 private:
-	LLGLEnable<GL_NORMALIZE> mNormalize;
+	LLGLEnable<GL_NORMALIZE_LEGACY> mNormalize;
+#endif
 };
 
 struct LLGLSPipelineSkyBox
 { 
 private:
-	LLGLDisable<GL_ALPHA_TEST> mAlphaTest;
 	LLGLDisable<GL_CULL_FACE> mCullFace;
-	LLGLDisable<GL_FOG> mFog;
-	LLGLDisable<GL_LIGHTING> mLighting;
+#ifndef LL_GL_CORE
+	LLGLDisable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
+	LLGLDisable<GL_FOG_LEGACY> mFog;
+	LLGLDisable<GL_LIGHTING_LEGACY> mLighting;
+#endif
 };
 
 struct LLGLSTracker
 {
 private:
-	LLGLEnable<GL_ALPHA_TEST> mAlphaTest;
 	LLGLEnable<GL_BLEND> mBlend;
+#ifndef LL_GL_CORE
 	LLGLEnable<GL_CULL_FACE> mCullFace;
+	LLGLEnable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
+#endif
 };
 
 //----------------------------------------------------------------------------
 
+#ifndef LL_GL_CORE
 class LLGLSSpecular
 {
 public:
@@ -203,6 +262,7 @@ public:
 		}
 	}
 };
+#endif
 
 //----------------------------------------------------------------------------
 

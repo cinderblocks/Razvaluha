@@ -3357,7 +3357,7 @@ void LLSpatialPartition::renderDebug()
 	LLGLEnable<GL_BLEND> blend;
 	gGL.setSceneBlendType(LLRender::BT_ALPHA);
 	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	gPipeline.disableLights(light_state);
 
 	LLSpatialBridge* bridge = asBridge();

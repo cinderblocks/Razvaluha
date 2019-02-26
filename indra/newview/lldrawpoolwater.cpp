@@ -202,7 +202,7 @@ void LLDrawPoolWater::render(S32 pass)
 
 	LLFace* refl_face = voskyp->getReflFace();
 
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	gPipeline.disableLights(light_state);
 	
 	LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE);
@@ -372,7 +372,7 @@ void LLDrawPoolWater::renderOpaqueLegacyWater()
 	LLGLDepthTest gls_depth(GL_TRUE, GL_TRUE);
 	LLGLDisable<GL_CULL_FACE> no_cull;
 	LLGLDisable<GL_BLEND> no_blend;
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	gPipeline.disableLights(light_state);
 
 	//Singu note: This is a hack around bizarre opensim behavior. The opaque water texture we get is pure white and only has one channel.

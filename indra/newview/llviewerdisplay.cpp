@@ -342,7 +342,7 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 	
 	stop_glerror();
 
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	gPipeline.disableLights(light_state);
 
 	//reset vertex buffers if needed
@@ -1094,8 +1094,8 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 
 
 			gGL.setColorMask(true, false);
-			LLGLEnable<GL_LIGHTING> lighting;
-			LLGLEnable<GL_NORMALIZE> normalize;
+			LLGLEnable<GL_LIGHTING_LEGACY> lighting;
+			LLGLEnable<GL_NORMALIZE_LEGACY> normalize;
 			if (LLPipeline::sRenderDeferred)
 			{
 				gPipeline.renderGeomDeferred(*LLViewerCamera::getInstance());

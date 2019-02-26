@@ -207,7 +207,7 @@ void LLDrawPoolAlpha::render(S32 pass)
 	LL_RECORD_BLOCK_TIME(FTM_RENDER_ALPHA);
 
 	LLGLSPipelineAlpha gls_pipeline_alpha;
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	gPipeline.enableLightsDynamic(light_state);
 
 	if (deferred_render && pass == 1)
@@ -273,7 +273,7 @@ void LLDrawPoolAlpha::render(S32 pass)
 
 	if (sShowDebugAlpha)
 	{
-		LLGLState<GL_LIGHTING> light_state;
+		LLGLState<GL_LIGHTING_LEGACY> light_state;
 		bool shaders = LLGLSLShader::sNoFixedFunction;
 		if (shaders)
 		{
@@ -344,7 +344,7 @@ static LLTrace::BlockTimerStatHandle FTM_RENDER_ALPHA_PUSH("Alpha Push Verts");
 
 void LLDrawPoolAlpha::renderAlpha(U32 mask, S32 pass)
 {
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	bool light_enabled = TRUE;
 	bool use_shaders = LLGLSLShader::sNoFixedFunction;
 	bool depth_only = (pass == 1 && !LLPipeline::sImpostorRender);

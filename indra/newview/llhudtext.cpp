@@ -136,7 +136,7 @@ void LLHUDText::renderText()
 
 	gGL.getTexUnit(0)->enable(LLTexUnit::TT_TEXTURE);
 	LLGLEnable<GL_BLEND> gls_blend;
-	LLGLEnable<GL_ALPHA_TEST> gls_alpha;
+	LLGLEnable<GL_ALPHA_TEST_LEGACY> gls_alpha;
 	
 	LLColor4 shadow_color(0.f, 0.f, 0.f, 1.f);
 	F32 alpha_factor = 1.f;
@@ -618,7 +618,7 @@ void LLHUDText::renderAllHUD()
 	LLGLStateValidator::checkClientArrays();
 
 	{
-		LLGLEnable<GL_COLOR_MATERIAL> color_mat;
+		LLGLEnable<GL_COLOR_MATERIAL_LEGACY> color_mat;
 		LLGLDepthTest depth(GL_FALSE, GL_FALSE);
 		
 		VisibleTextObjectIterator text_it;

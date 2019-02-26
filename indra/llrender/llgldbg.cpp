@@ -42,6 +42,7 @@
 //------------------------------------------------------------------------
 const char *cmstr(int i)
 {
+#ifndef LL_GL_CORE
 	switch( i )
 	{
 	case GL_EMISSION: return "GL_EMISSION";
@@ -50,6 +51,7 @@ const char *cmstr(int i)
 	case GL_SPECULAR: return "GL_SPECULAR";
 	case GL_AMBIENT_AND_DIFFUSE: return "GL_AMBIENT_AND_DIFFUSE";
 	}
+#endif
 	return "UNKNOWN";
 }
 
@@ -110,8 +112,10 @@ const char *fv1(F32 *f)
 //------------------------------------------------------------------------
 void llgl_dump()
 {
+#ifndef LL_GL_CORE
 	int i;
 	F32 fv[16];
+#endif
 	GLboolean b;
 
 	LL_INFOS() << "==========================" << LL_ENDL;
@@ -122,6 +126,7 @@ void llgl_dump()
 	LL_INFOS() << "Current Values" << LL_ENDL;
 	LL_INFOS() << "-----------------------------------" << LL_ENDL;
 
+#ifndef LL_GL_CORE
 	glGetFloatv(GL_CURRENT_COLOR, fv);
 	LL_INFOS() << "GL_CURRENT_COLOR          : " << fv4(fv) << LL_ENDL;
 
@@ -213,6 +218,7 @@ void llgl_dump()
 	LL_INFOS() << "-----------------------------------" << LL_ENDL;
 
 	LL_INFOS() << "GL_ALPHA_TEST              : " << boolstr(glIsEnabled(GL_ALPHA_TEST)) << LL_ENDL;
+#endif
 	LL_INFOS() << "GL_DEPTH_TEST              : " << boolstr(glIsEnabled(GL_DEPTH_TEST)) << LL_ENDL;
 
 	glGetBooleanv(GL_DEPTH_WRITEMASK, &b);

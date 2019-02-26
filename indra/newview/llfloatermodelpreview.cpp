@@ -3717,7 +3717,7 @@ BOOL LLModelPreview::render()
 	LLGLDisable<GL_BLEND> no_blend;
 	LLGLEnable<GL_CULL_FACE> cull;
 	LLGLDepthTest depth(GL_TRUE);
-	LLGLDisable<GL_FOG> fog;
+	LLGLDisable<GL_FOG_LEGACY> fog;
 
 	{
 		if (use_shaders)
@@ -3865,7 +3865,7 @@ BOOL LLModelPreview::render()
 	}
 
 	gGL.loadIdentity();
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	gPipeline.enableLightsPreview(light_state);
 
 	LLQuaternion camera_rot = LLQuaternion(mCameraPitch, LLVector3::y_axis) *
@@ -3890,7 +3890,7 @@ BOOL LLModelPreview::render()
 
 	const U32 type_mask = LLVertexBuffer::MAP_VERTEX | LLVertexBuffer::MAP_NORMAL | LLVertexBuffer::MAP_TEXCOORD0;
 
-	LLGLEnable<GL_NORMALIZE> normalize;
+	LLGLEnable<GL_NORMALIZE_LEGACY> normalize;
 
 	if (!mBaseModel.empty() && mVertexBuffer[5].empty())
 	{
@@ -4115,7 +4115,7 @@ BOOL LLModelPreview::render()
 
 					gGL.setLineWidth(3.f);
 					gGL.setPointSize(8.f);
-					LLGLState<GL_LIGHTING> light_state;
+					LLGLState<GL_LIGHTING_LEGACY> light_state;
 					gPipeline.enableLightsFullbright(light_state);
 					//show degenerate triangles
 					LLGLDepthTest depth(GL_TRUE, GL_TRUE, GL_ALWAYS);

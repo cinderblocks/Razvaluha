@@ -282,7 +282,9 @@ void LLHUDNameTag::renderText(BOOL for_select)
 	}
 
 	LLGLState<GL_BLEND> gls_blend(for_select ? FALSE : TRUE);
-	LLGLState<GL_ALPHA_TEST> gls_alpha(for_select ? FALSE : TRUE);
+#ifndef LL_GL_CORE
+	LLGLState<GL_ALPHA_TEST_LEGACY> gls_alpha(for_select ? FALSE : TRUE);
+#endif
 	gGL.setSceneBlendType(LLRender::BT_ALPHA);	//Workaround avoiding inheriting stale blendstate from... something.
 	
 	LLColor4 shadow_color(0.f, 0.f, 0.f, 1.f);

@@ -2270,7 +2270,7 @@ void LLPipeline::updateCull(LLCamera& camera, LLCullResult& result, S32 water_cl
 	gGL.loadMatrix(glh_get_last_modelview());
 
 	LLGLDisable<GL_BLEND> blend;
-	LLGLDisable<GL_ALPHA_TEST> test;
+	LLGLDisable<GL_ALPHA_TEST_LEGACY> test;
 	LLGLDisable<GL_STENCIL_TEST> stencil;
 	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 
@@ -2523,7 +2523,7 @@ void LLPipeline::doOcclusion(LLCamera& camera)
 			gGL.setColorMask(false, false);
 		}
 		LLGLDisable<GL_BLEND> blend;
-		LLGLDisable<GL_ALPHA_TEST> test;
+		LLGLDisable<GL_ALPHA_TEST_LEGACY> test;
 		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 		LLGLDepthTest depth(GL_TRUE, GL_FALSE);
 
@@ -3833,7 +3833,7 @@ void render_hud_elements()
 {
 	LL_RECORD_BLOCK_TIME(FTM_RENDER_UI);
 
-	LLGLDisable<GL_FOG> fog;
+	LLGLDisable<GL_FOG_LEGACY> fog;
 	LLGLSUIDefault gls_ui;
 
 	LLGLEnable<GL_STENCIL_TEST> stencil;
@@ -3951,8 +3951,8 @@ void LLPipeline::renderHighlights()
 	// Draw 3D UI elements here (before we clear the Z buffer in POOL_HUD)
 	// Render highlighted faces.
 	LLGLSPipelineAlpha gls_pipeline_alpha;
-	LLGLEnable<GL_COLOR_MATERIAL> color_mat;
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLEnable<GL_COLOR_MATERIAL_LEGACY> color_mat;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	gPipeline.disableLights(light_state);
 
 	// Singu Note: Logic here changed, and behavior changed as well. Always draw overlays of some nature over all selected faces.
@@ -4036,14 +4036,14 @@ void LLPipeline::renderGeom(LLCamera& camera, BOOL forceVBOUpdate)
 	static const LLCachedControl<U32> RenderFSAASamples("RenderFSAASamples",0);
 	LLGLEnable<GL_MULTISAMPLE_ARB> multisample(RenderFSAASamples > 0);
 
-	LLGLEnable<GL_COLOR_MATERIAL> gls_color_material;
+	LLGLEnable<GL_COLOR_MATERIAL_LEGACY> gls_color_material;
 				
 	// Toggle backface culling for debugging
 	LLGLEnable<GL_CULL_FACE> cull_face(mBackfaceCull);
 
 	// Set fog only if not using shaders and is underwater render.
 	BOOL use_fog = hasRenderDebugFeatureMask(LLPipeline::RENDER_DEBUG_FEATURE_FOG);
-	LLGLEnable<GL_FOG> fog_enable(use_fog && sUnderWaterRender && !LLGLSLShader::sNoFixedFunction);
+	LLGLEnable<GL_FOG_LEGACY> fog_enable(use_fog && sUnderWaterRender && !LLGLSLShader::sNoFixedFunction);
 	gSky.updateFog(camera.getFar());
 
 	gGL.getTexUnit(0)->bind(LLViewerFetchedTexture::sDefaultImagep);
@@ -4079,7 +4079,7 @@ void LLPipeline::renderGeom(LLCamera& camera, BOOL forceVBOUpdate)
 			updateHWLightMode(LIGHT_MODE_NORMAL);
 		}
 
-		llassert_always(LLGLState<GL_LIGHTING>::checkEnabled());
+		llassert_always(LLGLState<GL_LIGHTING_LEGACY>::checkEnabled());
 
 		BOOL occlude = sUseOcclusion > 1;
 		U32 cur_type = 0;
@@ -4355,7 +4355,7 @@ void LLPipeline::renderGeomPostDeferred(LLCamera& camera, bool do_occlusion)
 
 	updateHWLightMode(LIGHT_MODE_NORMAL);
 
-	llassert_always(LLGLState<GL_LIGHTING>::checkEnabled());
+	llassert_always(LLGLState<GL_LIGHTING_LEGACY>::checkEnabled());
 
 	gGL.setColorMask(true, false);
 
@@ -5423,7 +5423,7 @@ static F32 calc_light_dist(LLVOVolume* light, const LLVector3& cam_pos, F32 max_
 //Default all gl light parameters. Used upon restoreGL. Fixes brightness problems on fullscren toggle
 void LLPipeline::resetLocalLights()
 {
-	LLGLEnable<GL_LIGHTING> enable;
+	LLGLEnable<GL_LIGHTING_LEGACY> enable;
 	for (S32 i = 0; i < LLRender::NUM_LIGHTS; ++i)
 	{
 		LLLightState *pLight = gGL.getLight(i);
@@ -5744,7 +5744,7 @@ void LLPipeline::updateHWLightMode(U8 mode)
 	}
 }
 
-void LLPipeline::enableLights(U32 mask, LLGLState<GL_LIGHTING>& light_state, const LLColor4* color)
+void LLPipeline::enableLights(U32 mask, LLGLState<GL_LIGHTING_LEGACY>& light_state, const LLColor4* color)
 {
 	if (mLightMask != mask)
 	{
@@ -5781,13 +5781,13 @@ void LLPipeline::enableLights(U32 mask, LLGLState<GL_LIGHTING>& light_state, con
 	gGL.setAmbientLightColor(ambient);
 }
 
-void LLPipeline::enableLightsStatic(LLGLState<GL_LIGHTING>& light_state)
+void LLPipeline::enableLightsStatic(LLGLState<GL_LIGHTING_LEGACY>& light_state)
 {
 	updateHWLightMode(LIGHT_MODE_NORMAL);
 	enableLights(0xFFFFFFFF, light_state);
 }
 
-void LLPipeline::enableLightsDynamic(LLGLState<GL_LIGHTING>& light_state)
+void LLPipeline::enableLightsDynamic(LLGLState<GL_LIGHTING_LEGACY>& light_state)
 {
 	assertInitialized();
 	
@@ -5809,29 +5809,29 @@ void LLPipeline::enableLightsDynamic(LLGLState<GL_LIGHTING>& light_state)
 	enableLights(0xFFFFFFFF, light_state);
 }
 
-void LLPipeline::enableLightsAvatar(LLGLState<GL_LIGHTING>& light_state)
+void LLPipeline::enableLightsAvatar(LLGLState<GL_LIGHTING_LEGACY>& light_state)
 {
 	updateHWLightMode(gAvatarBacklight ? LIGHT_MODE_BACKLIGHT : LIGHT_MODE_NORMAL);  // Avatar backlight only, set ambient
 	enableLights(0xFFFFFFFF, light_state);
 }
 
-void LLPipeline::enableLightsPreview(LLGLState<GL_LIGHTING>& light_state)
+void LLPipeline::enableLightsPreview(LLGLState<GL_LIGHTING_LEGACY>& light_state)
 {
 	updateHWLightMode(LIGHT_MODE_PREVIEW);
 	enableLights(0xFFFFFFFF, light_state);
 }
-void LLPipeline::enableLightsAvatarEdit(LLGLState<GL_LIGHTING>& light_state, const LLColor4& color)
+void LLPipeline::enableLightsAvatarEdit(LLGLState<GL_LIGHTING_LEGACY>& light_state, const LLColor4& color)
 {
 	updateHWLightMode(LIGHT_MODE_EDIT);
 	enableLights(0xFFFFFFFF, light_state, &color);
 }
 
-void LLPipeline::enableLightsFullbright(LLGLState<GL_LIGHTING>& light_state)
+void LLPipeline::enableLightsFullbright(LLGLState<GL_LIGHTING_LEGACY>& light_state)
 {
 	enableLights(0, light_state);
 }
 
-void LLPipeline::disableLights(LLGLState<GL_LIGHTING>& light_state)
+void LLPipeline::disableLights(LLGLState<GL_LIGHTING_LEGACY>& light_state)
 {
 	enableLights(0, light_state); // no lighting (full bright)
 }
@@ -6740,7 +6740,7 @@ void LLPipeline::renderBloom(BOOL for_snapshot, F32 zoom_factor, int subfield, b
 	LLGLDisable<GL_BLEND> blend;
 	LLGLDisable<GL_CULL_FACE> cull;
 	
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	enableLightsFullbright(light_state);
 
 	gGL.matrixMode(LLRender::MM_PROJECTION);
@@ -6750,7 +6750,7 @@ void LLPipeline::renderBloom(BOOL for_snapshot, F32 zoom_factor, int subfield, b
 	gGL.pushMatrix();
 	gGL.loadIdentity();
 
-	LLGLDisable<GL_ALPHA_TEST> test;
+	LLGLDisable<GL_ALPHA_TEST_LEGACY> test;
 
 	gGL.setColorMask(true, true);
 	glClearColor(0,0,0,0);
@@ -6847,7 +6847,7 @@ void LLPipeline::renderBloom(BOOL for_snapshot, F32 zoom_factor, int subfield, b
 		gGlowExtractProgram.uniform3f(LLShaderMgr::GLOW_WARMTH_WEIGHTS, warmthWeights.mV[0], warmthWeights.mV[1], warmthWeights.mV[2]);
 		gGlowExtractProgram.uniform1f(LLShaderMgr::GLOW_WARMTH_AMOUNT, warmthAmount);
 		LLGLEnable<GL_BLEND> blend_on;
-		LLGLEnable<GL_ALPHA_TEST> test;
+		LLGLEnable<GL_ALPHA_TEST_LEGACY> test;
 		
 		gGL.setSceneBlendType(LLRender::BT_ADD_WITH_ALPHA);
 
@@ -6855,7 +6855,7 @@ void LLPipeline::renderBloom(BOOL for_snapshot, F32 zoom_factor, int subfield, b
 		render_target.bindTexture(0, 0);
 		
 		gGL.color4f(1,1,1,1);
-		LLGLState<GL_LIGHTING> light_state;
+		LLGLState<GL_LIGHTING_LEGACY> light_state;
 		gPipeline.enableLightsFullbright(light_state);
 
 		drawFullScreenRect();
@@ -7595,7 +7595,7 @@ void LLPipeline::renderDeferredLighting()
 			glh_get_current_modelview().rotate(mTransformedSunDir,mTransformedSunDir);
 		}
 
-		llassert_always(LLGLState<GL_LIGHTING>::checkEnabled());
+		llassert_always(LLGLState<GL_LIGHTING_LEGACY>::checkEnabled());
 
 		gGL.pushMatrix();
 		gGL.loadIdentity();
@@ -7742,7 +7742,7 @@ void LLPipeline::renderDeferredLighting()
 			{
 				LLGLDepthTest depth(GL_FALSE);
 				LLGLDisable<GL_BLEND> blend;
-				LLGLDisable<GL_ALPHA_TEST> test;
+				LLGLDisable<GL_ALPHA_TEST_LEGACY> test;
 
 				//full screen blit
 				gGL.pushMatrix();
@@ -8180,7 +8180,7 @@ void LLPipeline::renderDeferredLightingToRT(LLRenderTarget* target)
 			glh_get_current_modelview().rotate(mTransformedSunDir,mTransformedSunDir);
 		}
 
-		llassert_always(LLGLState<GL_LIGHTING>::checkEnabled());
+		llassert_always(LLGLState<GL_LIGHTING_LEGACY>::checkEnabled());
 
 		gGL.pushMatrix();
 		gGL.loadIdentity();
@@ -8288,7 +8288,7 @@ void LLPipeline::renderDeferredLightingToRT(LLRenderTarget* target)
 			{
 				LLGLDepthTest depth(GL_FALSE);
 				LLGLDisable<GL_BLEND> blend;
-				LLGLDisable<GL_ALPHA_TEST> test;
+				LLGLDisable<GL_ALPHA_TEST_LEGACY> test;
 
 				//full screen blit
 				gGL.pushMatrix();

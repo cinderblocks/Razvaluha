@@ -55,7 +55,11 @@ using std::string;
 GLhandleARB LLGLSLShader::sCurBoundShader = 0;
 LLGLSLShader* LLGLSLShader::sCurBoundShaderPtr = nullptr;
 S32 LLGLSLShader::sIndexedTextureChannels = 0;
+#ifdef LL_GL_CORE
+bool LLGLSLShader::sNoFixedFunction = true;
+#else
 bool LLGLSLShader::sNoFixedFunction = false;
+#endif
 bool LLGLSLShader::sProfileEnabled = false;
 std::set<LLGLSLShader*> LLGLSLShader::sInstances;
 U64 LLGLSLShader::sTotalTimeElapsed = 0;
@@ -227,7 +231,6 @@ void LLGLSLShader::stopProfile(U32 count, U32 mode)
 
 void LLGLSLShader::placeProfileQuery()
 {
-#if !LL_DARWIN
     if (mTimerQuery == 0)
     {
         glGenQueriesARB(1, &mSamplesQuery);
@@ -269,12 +272,10 @@ void LLGLSLShader::placeProfileQuery()
 
     glBeginQueryARB(GL_SAMPLES_PASSED, mSamplesQuery);
     glBeginQueryARB(GL_TIME_ELAPSED, mTimerQuery);
-#endif
 }
 
 void LLGLSLShader::readProfileQuery(U32 count, U32 mode)
 {
-#if !LL_DARWIN
     glEndQueryARB(GL_TIME_ELAPSED);
     glEndQueryARB(GL_SAMPLES_PASSED);
     
@@ -304,10 +305,9 @@ void LLGLSLShader::readProfileQuery(U32 count, U32 mode)
 
     sTotalDrawCalls++;
     mDrawCalls++;
-#endif
 }
 LLGLSLShader::LLGLSLShader(S32 shader_class)
-	: mProgramObject((GLhandleARB)nullptr),
+	: mProgramObject((GLhandleARB)0),
 	  mShaderClass(shader_class),
 	  mAttributeMask(0),
 	  mTotalUniformSize(0),
@@ -352,7 +352,7 @@ void LLGLSLShader::unload()
 		}*/
 		if(mProgramObject)
 			glDeleteProgram(mProgramObject);
-		mProgramObject = (GLhandleARB)nullptr;
+		mProgramObject = (GLhandleARB)0;
 	}
     
     if (mTimerQuery)
@@ -421,7 +421,7 @@ BOOL LLGLSLShader::createShader(std::vector<LLStaticHashedString> * attributes,
 	{
 		if(mProgramObject)
 			glDeleteProgram(mProgramObject);
-		mProgramObject = (GLhandleARB)nullptr;
+		mProgramObject = (GLhandleARB)0;
 		return FALSE;
 	}
 
@@ -451,7 +451,7 @@ BOOL LLGLSLShader::createShader(std::vector<LLStaticHashedString> * attributes,
 	{
 		if(mProgramObject)
 			glDeleteProgram(mProgramObject);
-		mProgramObject = (GLhandleARB)nullptr;
+		mProgramObject = (GLhandleARB)0;
 
 		LL_WARNS("ShaderLoading") << "Failed to link shader: " << mName << LL_ENDL;
 
@@ -922,7 +922,7 @@ S32 LLGLSLShader::disableTexture(S32 uniform, LLTexUnit::eTextureType mode)
 GLint LLGLSLShader::getUniformLocation(U32 index)
 {
 	GLint ret = -1;
-	if (mProgramObject != (GLhandleARB)nullptr)
+	if (mProgramObject != (GLhandleARB)0)
 	{
 		llassert(index < mUniform.size());
 		return mUniform[index];

@@ -313,14 +313,14 @@ public:
 	void setupHWLights();
 	void updateHWLightMode(U8 mode);
 	U8 setupFeatureLights(U8 cur_count);
-	void enableLights(U32 mask, LLGLState<GL_LIGHTING>& light_state, const LLColor4* color = nullptr);
-	void enableLightsStatic(LLGLState<GL_LIGHTING>& light_state);
-	void enableLightsDynamic(LLGLState<GL_LIGHTING>& light_state);
-	void enableLightsAvatar(LLGLState<GL_LIGHTING>& light_state);
-	void enableLightsPreview(LLGLState<GL_LIGHTING>& light_state);
-	void enableLightsAvatarEdit(LLGLState<GL_LIGHTING>& light_state, const LLColor4& color);
-	void enableLightsFullbright(LLGLState<GL_LIGHTING>& light_state);
-	void disableLights(LLGLState<GL_LIGHTING>& light_state);
+	void enableLights(U32 mask, LLGLState<GL_LIGHTING_LEGACY>& light_state, const LLColor4* color = nullptr);
+	void enableLightsStatic(LLGLState<GL_LIGHTING_LEGACY>& light_state);
+	void enableLightsDynamic(LLGLState<GL_LIGHTING_LEGACY>& light_state);
+	void enableLightsAvatar(LLGLState<GL_LIGHTING_LEGACY>& light_state);
+	void enableLightsPreview(LLGLState<GL_LIGHTING_LEGACY>& light_state);
+	void enableLightsAvatarEdit(LLGLState<GL_LIGHTING_LEGACY>& light_state, const LLColor4& color);
+	void enableLightsFullbright(LLGLState<GL_LIGHTING_LEGACY>& light_state);
+	void disableLights(LLGLState<GL_LIGHTING_LEGACY>& light_state);
 
 	void shiftObjects(const LLVector3 &offset);
 

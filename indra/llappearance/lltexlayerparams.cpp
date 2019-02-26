@@ -327,7 +327,7 @@ BOOL LLTexLayerParamAlpha::render(S32 x, S32 y, S32 width, S32 height)
 				// We now have something in one of our caches
 				LLTexLayerSet::sHasCaches |= mCachedProcessedTexture ? TRUE : FALSE;
 
-				mCachedProcessedTexture->setExplicitFormat(GL_ALPHA8, GL_ALPHA);
+				mCachedProcessedTexture->setExplicitFormat(GL_ALPHA8_LEGACY, GL_ALPHA_LEGACY);
 			}
 
 			// Applies domain and effective weight to data as it is decoded. Also resizes the raw image if needed.
@@ -350,7 +350,7 @@ BOOL LLTexLayerParamAlpha::render(S32 x, S32 y, S32 width, S32 height)
 					mCachedProcessedTexture->setAddressMode(LLTexUnit::TAM_CLAMP);
 				}
 
-				LLGLSNoAlphaTest gls_no_alpha_test;
+				LLGLDisable<GL_ALPHA_TEST_LEGACY> gls_no_alpha_test;
 				gGL.getTexUnit(0)->bind(mCachedProcessedTexture);
 				gl_rect_2d_simple_tex(width, height);
 				gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
@@ -367,7 +367,7 @@ BOOL LLTexLayerParamAlpha::render(S32 x, S32 y, S32 width, S32 height)
 	}
 	else
 	{
-		LLGLDisable<GL_ALPHA_TEST> no_alpha;
+		LLGLDisable<GL_ALPHA_TEST_LEGACY> no_alpha;
 		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 		gGL.color4f(0.f, 0.f, 0.f, effective_weight);
 		gl_rect_2d_simple(width, height);

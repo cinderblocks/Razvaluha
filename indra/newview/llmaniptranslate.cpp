@@ -1560,7 +1560,7 @@ void LLManipTranslate::renderSnapGuides()
 				}
 				
 				{
-					LLGLDisable<GL_ALPHA_TEST> alpha_test;
+					LLGLDisable<GL_ALPHA_TEST_LEGACY> alpha_test;
 					//draw black overlay
 					gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 					renderGrid(u,v,tiles,0.0f, 0.0f, 0.0f,a*0.16f);
@@ -1581,7 +1581,7 @@ void LLManipTranslate::renderSnapGuides()
 
 				{
 					LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE, GL_GREATER);
-					LLGLEnable<GL_LINE_STIPPLE> stipple;
+					LLGLEnable<GL_LINE_STIPPLE_LEGACY> stipple;
 					gGL.flush();
 
 					if (!LLGLSLShader::sNoFixedFunction)
@@ -2211,7 +2211,7 @@ void LLManipTranslate::renderArrow(S32 which_arrow, S32 selected_arrow, F32 box_
 {
 	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 	LLGLEnable<GL_BLEND> gls_blend;
-	LLGLEnable<GL_COLOR_MATERIAL> gls_color_material;
+	LLGLEnable<GL_COLOR_MATERIAL_LEGACY> gls_color_material;
 
 	for (S32 pass = 1; pass <= 2; pass++)
 	{	

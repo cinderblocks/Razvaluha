@@ -794,10 +794,10 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 //----------------------------------------------------------------------------
 // LL_DARWIN
 
-#include <OpenGL/gl.h>
+#include <OpenGL/gl3.h>
 
 #define GL_EXT_separate_specular_color 1
-#include <OpenGL/glext.h>
+#include <OpenGL/glext3.h>
 
 #include "GL/glh_extensions.h"
 
@@ -805,9 +805,91 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 // Note that they also must not be called on 10.3.9.  This should be taken care of by a runtime check for the existence of the GL extension.
 #include <AvailabilityMacros.h>
 
-//GL_EXT_blend_func_separate
-extern void glBlendFuncSeparateEXT(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha) ;
+#define LL_GL_CORE 3.2
+#define ARB_FN(fn)
+#define glUniform1iARB glUniform1i
+#define glUniform1ivARB glUniform1iv
+#define glUniform1fARB glUniform1f
+#define glUniform1fvARB glUniform1fv
+#define glUniform2fARB glUniform2f
+#define glUniform2fvARB glUniform2fv
+#define glUniform1ivARB glUniform1iv
+#define glUniform3fARB glUniform3f
+#define glUniform3fvARB glUniform3fv
+#define glUniform4fARB glUniform4f
+#define glUniform4fvARB glUniform4fv
+#define glUniformMatrix3fvARB glUniformMatrix3fv
+#define glUniformMatrix3x4fv glUniformMatrix3x4fv
+#define glUniformMatrix4fvARB glUniformMatrix4fv
+#define glVertexAttrib4fARB glVertexAttrib4f
+#define glGetUniformLocationARB glGetUniformLocation
+#define glBeginQueryARB glBeginQuery
+#define glEndQueryARB glEndQuery
+#define glDeleteQueriesARB glDeleteQueries
+#define glCreateShaderObjectARB glCreateShader
+#define glShaderSourceARB glShaderSource
+#define glCompileShaderARB glCompileShader
+#define glAttachObjectARB glAttachShader
+#define glGetAttachedObjectsARB glGetAttachedShaders
+#define glLinkProgramARB glLinkProgram
+#define glUseProgramObjectARB glUseProgram
+#define glValidateProgramARB glValidateProgram
+#define glBindAttribLocationARB glBindAttribLocation
+#define glGetActiveUniformARB glGetActiveUniform
+#define glCompressedTexImage2DARB glCompressedTexImage2D
+#define glActiveTextureARB glActiveTexture
+#define glDrawBuffersARB glDrawBuffers
+#define glBindBufferARB glBindBuffer
+#define glGenBuffersARB glGenBuffers
+#define glDeleteBuffersARB glDeleteBuffers
+#define glBindBufferDataARB glBindBufferData
+#define glMapBufferARB glMapBuffer
+#define glUnmapBufferARB glUnmapBuffer
+#define glBufferDataARB glBufferData
+#define glBufferSubDataARB glBufferSubData
+#define glVertexAttribPointerARB glVertexAttribPointer
+#define glDisableVertexAttribArrayARB glDisableVertexAttribArray
+#define glEnableVertexAttribArrayARB glEnableVertexAttribArray
+#define glGetBufferParameterivARB glGetBufferParameteriv
+#define glGetCompressedTexImageARB glGetCompressedTexImage
+#define glBlendFuncSeparateEXT glBlendFuncSeparate
 
+#define GL_MULTISAMPLE_ARB GL_MULTISAMPLE
+#define GL_TEXTURE_CUBE_MAP_ARB GL_TEXTURE_CUBE_MAP
+#define GL_TEXTURE_CUBE_MAP_NEGATIVE_X_ARB GL_TEXTURE_CUBE_MAP_NEGATIVE_X
+#define GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB GL_TEXTURE_CUBE_MAP_POSITIVE_X
+#define GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_ARB GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
+#define GL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB GL_TEXTURE_CUBE_MAP_POSITIVE_Y
+#define GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+#define GL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+#define GL_TEXTURE0_ARB GL_TEXTURE0
+#define GL_TEXTURE1_ARB GL_TEXTURE1
+#define GL_TEXTURE2_ARB GL_TEXTURE2
+#define GL_TEXTURE3_ARB GL_TEXTURE3
+#define GL_STATIC_DRAW_ARB GL_STATIC_DRAW
+#define GL_STREAM_DRAW_ARB GL_STREAM_DRAW
+#define GL_DYNAMIC_DRAW_ARB GL_DYNAMIC_DRAW
+#define GL_MAX_TEXTURE_IMAGE_UNITS_ARB GL_MAX_TEXTURE_IMAGE_UNITS
+#define GL_MAX_VERTEX_UNIFORM_COMPONENTS_ARB GL_MAX_VERTEX_UNIFORM_COMPONENTS
+#define GL_MAX_VERTEX_ATTRIBS_ARB GL_MAX_VERTEX_ATTRIBS
+#define GL_ACTIVE_TEXTURE_ARB GL_ACTIVE_TEXTURE
+#define GL_FRAGMENT_SHADER_ARB GL_FRAGMENT_SHADER
+#define GL_VERTEX_SHADER_ARB GL_VERTEX_SHADER
+#define GL_ELEMENT_ARRAY_BUFFER_BINDING_ARB GL_ELEMENT_ARRAY_BUFFER_BINDING
+#define GL_ARRAY_BUFFER_ARB GL_ARRAY_BUFFER
+#define GL_ELEMENT_ARRAY_BUFFER_ARB GL_ELEMENT_ARRAY_BUFFER
+#define GL_BUFFER_SIZE_ARB GL_BUFFER_SIZE
+#define GL_BGRA_EXT GL_BGRA
+#define GL_WRITE_ONLY_ARB GL_WRITE_ONLY
+#define GL_ARRAY_BUFFER_BINDING_ARB GL_ARRAY_BUFFER_BINDING
+#define GL_DYNAMIC_COPY_ARB GL_DYNAMIC_COPY
+
+
+#define GLhandleARB GLuint
+
+//GL_EXT_blend_func_separate
+#if 0 // Commented out during Shyotl's OS X OpenGL 3.2 patch
+extern void glBlendFuncSeparateEXT(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha) ;
 // GL_EXT_framebuffer_object
 extern GLboolean glIsRenderbufferEXT(GLuint renderbuffer) AVAILABLE_MAC_OS_X_VERSION_10_4_AND_LATER;
 extern void glBindRenderbufferEXT(GLenum target, GLuint renderbuffer) AVAILABLE_MAC_OS_X_VERSION_10_4_AND_LATER;
@@ -1008,6 +1090,7 @@ extern void glGetBufferPointervARB (GLenum, GLenum, GLvoid* *);
 #endif
 
 #include <OpenGL/gl.h>
+#endif // End OS X OpenGL 3.2 comment block
 
 #endif // LL_MESA / LL_WINDOWS / LL_DARWIN
 

@@ -111,9 +111,11 @@ void LLDrawPoolSky::render(S32 pass)
 
 	LLGLSquashToFarClip far_clip(glh_get_current_projection());
 
-	LLGLEnable<GL_FOG> fog_enable(mVertexShaderLevel < 1 && LLViewerCamera::getInstance()->cameraUnderWater());
-	
+	LLGLEnable<GL_FOG_LEGACY> fog_enable(mVertexShaderLevel < 1 && LLViewerCamera::getInstance()->cameraUnderWater());
+
+#ifndef LL_GL_CORE
 	LLGLDisable<GL_CLIP_PLANE0> clip;
+#endif
 
 	gGL.pushMatrix();
 	LLVector3 origin = LLViewerCamera::getInstance()->getOrigin();

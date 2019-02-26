@@ -229,13 +229,13 @@ void clear_glerror();
 
 	//disable lighting for rendering hud objects
 	//INCORRECT USAGE
-	LLGLEnable<GL_LIGHTING> lighting;
+	LLGLEnable<GL_LIGHTING_LEGACY> lighting;
 	renderHUD();
-	LLGLDisable<GL_LIGHTING> lighting;
+	LLGLDisable<GL_LIGHTING_LEGACY> lighting;
 
 	//CORRECT USAGE
 	{
-		LLGLEnable<GL_LIGHTING> lighting;
+		LLGLEnable<GL_LIGHTING_LEGACY> lighting;
 		renderHUD();
 	}
 
@@ -243,7 +243,7 @@ void clear_glerror();
 	is useful:
 
 	{
-		LLGLEnable<GL_LIGHTING> lighting(light_hud);
+		LLGLEnable<GL_LIGHTING_LEGACY> lighting(light_hud);
 		renderHUD();
 	}
 
@@ -304,6 +304,7 @@ public:
 	}
 	virtual ~LLGLState()
 	{
+		if (!state) return;
 		llassert_always(staticData.activeInstance == (char*)this);
 		if (staticData.depth != 0)
 		{
@@ -336,6 +337,7 @@ private:
 
 	void setEnabled(S32 newState)
 	{
+		if (!state) return;
 		llassert_always(staticData.activeInstance == (char*)this);
 		bool enabled = newState == CURRENT_STATE ? staticData.currentState : !!newState;
 		setState(enabled);
@@ -343,6 +345,7 @@ private:
 
 	static void setState(bool enabled)
 	{
+		if (!state) return;
 		if (staticData.currentState != enabled && (!staticData.disabler || !*staticData.disabler))
 		{
 			gGL.flush();

@@ -245,6 +245,7 @@ attributedStringInfo getSegments(NSAttributedString *str)
 		NSOpenGLPFADepthSize, static_cast<NSOpenGLPixelFormatAttribute>(24),
 		NSOpenGLPFAAlphaSize, static_cast<NSOpenGLPixelFormatAttribute>(8),
 		NSOpenGLPFAColorSize, static_cast<NSOpenGLPixelFormatAttribute>(24),
+		NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
 		0
     };
 	

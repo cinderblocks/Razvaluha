@@ -64,13 +64,16 @@ public:
 
 	// virtual
 	void setupVertexBuffer(U32 data_mask)
-	{	
+	{
+#ifndef LL_GL_CORE
 		if (LLGLSLShader::sNoFixedFunction)
+#endif
 		{ //just use default if shaders are in play
 			LLVertexBuffer::setupVertexBuffer(data_mask & ~(MAP_TEXCOORD2 | MAP_TEXCOORD3));
 			return;
 		}
 
+#ifndef LL_GL_CORE
 		volatile U8* base = useVBOs() ? (U8*) mAlignedOffset : mMappedData;
 
 		//assume tex coords 2 and 3 are present
@@ -122,6 +125,7 @@ public:
 		{
 			glVertexPointer(3,GL_FLOAT, LLVertexBuffer::sTypeSize[TYPE_VERTEX], (void*)(base + 0));
 		}
+#endif
 	}
 };
 

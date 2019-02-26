@@ -5000,7 +5000,7 @@ U32 LLVOAvatar::renderSkinned()
 
 		bool is_muted = LLPipeline::sImpostorRender && isVisuallyMuted();	//Disable masking and also disable alpha in LLViewerJoint::render
 		const bool should_alpha_mask = !is_muted && shouldAlphaMask();
-		LLGLState<GL_ALPHA_TEST> test(should_alpha_mask);
+		LLGLEnable<GL_ALPHA_TEST_LEGACY> test(should_alpha_mask);
 		
 		if (should_alpha_mask && !LLGLSLShader::sNoFixedFunction)
 		{
@@ -5051,7 +5051,9 @@ U32 LLVOAvatar::renderSkinned()
 		if (!LLDrawPoolAvatar::sSkipTransparent || LLPipeline::sImpostorRender)
 		{
 			LLGLState<GL_BLEND> blend(!mIsDummy);
-			LLGLState<GL_ALPHA_TEST> test(!mIsDummy);
+#ifndef LL_GL_CORE
+			LLGLState<GL_ALPHA_TEST_LEGACY> test(!mIsDummy);
+#endif
 			num_indices += renderTransparent(first_pass);
 		}
 
@@ -5133,7 +5135,9 @@ U32 LLVOAvatar::renderRigid()
 	}
 
 	const bool should_alpha_mask = shouldAlphaMask();
-	LLGLState<GL_ALPHA_TEST> test(should_alpha_mask);
+#ifndef LL_GL_CORE
+	LLGLEnable<GL_ALPHA_TEST_LEGACY> test(should_alpha_mask);
+#endif
 
 	if (should_alpha_mask && !LLGLSLShader::sNoFixedFunction)
 	{
@@ -5178,7 +5182,7 @@ U32 LLVOAvatar::renderImpostor(LLColor4U color, S32 diffuse_channel)
 	left *= mImpostorDim.mV[0];
 	up *= mImpostorDim.mV[1];
 
-	LLGLEnable<GL_ALPHA_TEST> test;
+	LLGLEnable<GL_ALPHA_TEST_LEGACY> test;
 	gGL.setAlphaRejectSettings(LLRender::CF_GREATER, 0.f);
 
 	gGL.color4ubv(color.mV);
@@ -8991,9 +8995,9 @@ void LLVOAvatar::onBakedTextureMasksLoaded( BOOL success, LLViewerFetchedTexture
 			stop_glerror();
 
 			LLImageGL::setManualImage(
-				GL_TEXTURE_2D, 0, GL_ALPHA8,
+				GL_TEXTURE_2D, 0, GL_ALPHA8_LEGACY,
 				aux_src->getWidth(), aux_src->getHeight(),
-				GL_ALPHA, GL_UNSIGNED_BYTE, aux_src->getData());
+				GL_ALPHA_LEGACY, GL_UNSIGNED_BYTE, aux_src->getData());
 			stop_glerror();
 
 			gGL.getTexUnit(0)->setTextureFilteringOption(LLTexUnit::TFO_BILINEAR);
@@ -10158,7 +10162,7 @@ U32 calc_shame(LLVOVolume* volume, std::set<LLUUID> &textures)
 
 		if (face->getPoolType() == LLDrawPool::POOL_ALPHA)
 			++alpha;
-		else if (!invisi && img->getPrimaryFormat() == GL_ALPHA)
+		else if (!invisi && img->getPrimaryFormat() == GL_ALPHA_LEGACY)
 			invisi = 1;
 
 		if (const LLTextureEntry* te = face->getTextureEntry())

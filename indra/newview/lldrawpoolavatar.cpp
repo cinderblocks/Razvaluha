@@ -295,7 +295,7 @@ void LLDrawPoolAvatar::beginDeferredRiggedAlpha()
 	sVertexProgram = &gDeferredSkinnedAlphaProgram;
 	gPipeline.bindDeferredShader(*sVertexProgram);
 	sDiffuseChannel = sVertexProgram->enableTexture(LLViewerShaderMgr::DIFFUSE_MAP);
-	gPipeline.enableLightsDynamic(*(LLGLState<GL_LIGHTING>*)gPipeline.pushRenderPassState<GL_LIGHTING>());
+	gPipeline.enableLightsDynamic(*(LLGLState<GL_LIGHTING_LEGACY>*)gPipeline.pushRenderPassState<GL_LIGHTING_LEGACY>());
 }
 
 void LLDrawPoolAvatar::beginDeferredRiggedMaterialAlpha(S32 pass)
@@ -317,7 +317,7 @@ void LLDrawPoolAvatar::beginDeferredRiggedMaterialAlpha(S32 pass)
 	sDiffuseChannel = sVertexProgram->enableTexture(LLViewerShaderMgr::DIFFUSE_MAP);
 	normal_channel = sVertexProgram->enableTexture(LLViewerShaderMgr::BUMP_MAP);
 	specular_channel = sVertexProgram->enableTexture(LLViewerShaderMgr::SPECULAR_MAP);
-	gPipeline.enableLightsDynamic(*(LLGLState<GL_LIGHTING>*)gPipeline.pushRenderPassState<GL_LIGHTING>());
+	gPipeline.enableLightsDynamic(*(LLGLState<GL_LIGHTING_LEGACY>*)gPipeline.pushRenderPassState<GL_LIGHTING_LEGACY>());
 }
 void LLDrawPoolAvatar::endDeferredRiggedAlpha()
 {
@@ -634,7 +634,7 @@ void LLDrawPoolAvatar::beginImpostor()
 		gImpostorProgram.setMinimumAlpha(0.01f);
 	}
 
-	gPipeline.enableLightsFullbright(*(LLGLState<GL_LIGHTING>*)gPipeline.pushRenderPassState<GL_LIGHTING>());
+	gPipeline.enableLightsFullbright(*(LLGLState<GL_LIGHTING_LEGACY>*)gPipeline.pushRenderPassState<GL_LIGHTING_LEGACY>());
 	sDiffuseChannel = 0;
 }
 
@@ -806,7 +806,7 @@ void LLDrawPoolAvatar::beginRiggedSimple()
 	}
 
 	sVertexProgram = &gObjectSimpleProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT];
-	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)0);
 
 	sDiffuseChannel = 0;
 	sVertexProgram->bind();
@@ -854,7 +854,7 @@ void LLDrawPoolAvatar::beginRiggedGlow()
 	}
 
 	sVertexProgram = &gObjectEmissiveProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT];
-	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)0);
 
 	sVertexProgram->bind();
 	sVertexProgram->uniform1f(LLShaderMgr::TEXTURE_GAMMA, LLPipeline::sRenderDeferred ? 2.2f : 1.1f);
@@ -882,7 +882,7 @@ void LLDrawPoolAvatar::beginRiggedFullbright()
 	{
 		sVertexProgram = &gObjectFullbrightProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT];
 	}
-	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)0);
 
 	sVertexProgram->bind();
 	if (LLPipeline::sRenderingHUDs || !LLPipeline::sRenderDeferred)
@@ -917,7 +917,7 @@ void LLDrawPoolAvatar::beginRiggedShinySimple()
 	}
 
 	sVertexProgram = &gObjectSimpleProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT | 1<<SHD_SHINY_BIT];
-	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)0);
 
 	sVertexProgram->bind();
 	LLDrawPoolBump::bindCubeMap(sVertexProgram, 2, sDiffuseChannel, cube_channel);
@@ -950,7 +950,7 @@ void LLDrawPoolAvatar::beginRiggedFullbrightShiny()
 	{
 		sVertexProgram = &gObjectFullbrightProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT | 1<<SHD_SHINY_BIT];
 	}
-	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)nullptr);
+	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)0);
 
 	sVertexProgram->bind();
 	LLDrawPoolBump::bindCubeMap(sVertexProgram, 2, sDiffuseChannel, cube_channel);
@@ -1813,7 +1813,7 @@ void LLDrawPoolAvatar::renderRiggedGlow(LLVOAvatar* avatar)
 	if (!mRiggedFace[RIGGED_GLOW].empty())
 	{
 		LLGLEnable<GL_BLEND> blend;
-		LLGLDisable<GL_ALPHA_TEST> test;
+		LLGLDisable<GL_ALPHA_TEST_LEGACY> test;
 		gGL.flush();
 
 		LLGLEnable<GL_POLYGON_OFFSET_FILL> polyOffset;

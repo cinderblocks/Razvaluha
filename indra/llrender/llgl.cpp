@@ -430,9 +430,9 @@ LLGLManager::LLGLManager() :
 	mMaxSamples(0),
 	mHasFramebufferMultisample(FALSE),
 	mHasBlendFuncSeparate(FALSE),
-	mHasSync(FALSE),
 	mHasVertexBufferObject(FALSE),
 	mHasVertexArrayObject(FALSE),
+	mHasSync(FALSE),
 	mHasMapBufferRange(FALSE),
 	mHasFlushBufferRange(FALSE),
 	mHasPBuffer(FALSE),
@@ -746,6 +746,9 @@ bool LLGLManager::initGL()
 		}
 	}
 
+#ifdef LL_GL_CORE
+	mNumTextureUnits = llmin(mNumTextureImageUnits, MAX_GL_TEXTURE_UNITS);
+#else
 	if (LLRender::sGLCoreProfile)
 	{
 		// If core is true, then mNumTextureUnits is pretty much unused.
@@ -769,6 +772,7 @@ bool LLGLManager::initGL()
 		LL_WARNS("RenderInit") << "GL Drivers do not support GL_ARB_multitexture" << LL_ENDL;
 		return false;
 	}
+#endif
 	
 	stop_glerror();
 	
@@ -984,11 +988,14 @@ void LLGLManager::initExtensions()
 	mHasTransformFeedback = mGLVersion >= 4.f || ExtensionExists("GL_EXT_transform_feedback", gGLHExts.mSysExts);
 #if !LL_DARWIN
 	mHasPointParameters = mGLVersion >= 2.f || (!mIsATI && ExtensionExists("GL_ARB_point_parameters", gGLHExts.mSysExts));
-#endif
+#elif defined(LL_GL_CORE)
+	mHasShaderObjects = mHasVertexShader = mHasFragmentShader = true;
+#else
 	mHasShaderObjects = mGLVersion >= 2.f || ExtensionExists("GL_ARB_shader_objects", gGLHExts.mSysExts) && (LLRender::sGLCoreProfile || ExtensionExists("GL_ARB_shading_language_100", gGLHExts.mSysExts));
 	mHasVertexShader = mGLVersion >= 2.f || (ExtensionExists("GL_ARB_vertex_program", gGLHExts.mSysExts) && ExtensionExists("GL_ARB_vertex_shader", gGLHExts.mSysExts)
 		&& (LLRender::sGLCoreProfile || ExtensionExists("GL_ARB_shading_language_100", gGLHExts.mSysExts)));
 	mHasFragmentShader = mGLVersion >= 2.f || ExtensionExists("GL_ARB_fragment_shader", gGLHExts.mSysExts) && (LLRender::sGLCoreProfile || ExtensionExists("GL_ARB_shading_language_100", gGLHExts.mSysExts));
+#endif
 #endif
 #ifdef GL_ARB_gpu_shader5
 	mHasGpuShader5 = mGLVersion >= 4.f || ExtensionExists("GL_ARB_gpu_shader5", gGLHExts.mSysExts);;
@@ -1424,10 +1431,12 @@ const std::string getGLErrorString(GLenum error)
 		return "Invalid Framebuffer Operation";
 	case GL_OUT_OF_MEMORY:
 		return "Out of Memory";
+#ifndef LL_GL_CORE
 	case GL_STACK_UNDERFLOW:
 		return "Stack Underflow";
 	case GL_STACK_OVERFLOW:
 		return "Stack Overflow";
+#endif
 #ifdef GL_TABLE_TOO_LARGE
 	case GL_TABLE_TOO_LARGE:
 		return "Table too large";
@@ -1575,6 +1584,7 @@ void LLGLStateValidator::restoreGL()
 // Really shouldn't be needed, but seems we sometimes do.
 void LLGLStateValidator::resetTextureStates()
 {
+#ifndef LL_GL_CORE
 	gGL.flush();
 	GLint maxTextureUnits;
 	
@@ -1585,6 +1595,7 @@ void LLGLStateValidator::resetTextureStates()
 		glClientActiveTextureARB(GL_TEXTURE0_ARB+j);
 		j == 0 ? gGL.getTexUnit(j)->enable(LLTexUnit::TT_TEXTURE) : gGL.getTexUnit(j)->disable();
 	}
+#endif
 }
 
 void LLGLStateValidator::dumpStates() 
@@ -1851,6 +1862,7 @@ void LLGLStateValidator::checkTextureChannels(const std::string& msg)
 
 void LLGLStateValidator::checkClientArrays(const std::string& msg, U32 data_mask)
 {
+#ifndef LL_GL_CORE
 	if (!gDebugGL || LLGLSLShader::sNoFixedFunction)
 	{
 		return;
@@ -2022,6 +2034,7 @@ void LLGLStateValidator::checkClientArrays(const std::string& msg, U32 data_mask
 			LL_GL_ERRS << "GL client array corruption detected.  " << msg << LL_ENDL;
 		}
 	}
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -2029,7 +2042,6 @@ void LLGLStateValidator::checkClientArrays(const std::string& msg, U32 data_mask
 ////////////////////////////////////////////////////////////////////////////////
 
 initLLGLState(GL_BLEND, false, nullptr);
-initLLGLState(GL_CLIP_PLANE0, false, nullptr);
 initLLGLState(GL_CULL_FACE, false, nullptr);
 initLLGLState(GL_DEPTH_CLAMP, false, nullptr);
 initLLGLState(GL_DITHER, true, nullptr);
@@ -2040,6 +2052,8 @@ initLLGLState(GL_POLYGON_OFFSET_LINE, false, nullptr);
 initLLGLState(GL_POLYGON_SMOOTH, false, nullptr);
 initLLGLState(GL_SCISSOR_TEST, false, nullptr);
 initLLGLState(GL_STENCIL_TEST, false, nullptr);
+#ifndef LL_GL_CORE
+initLLGLState(GL_CLIP_PLANE0, false, nullptr);
 initLLGLState(GL_ALPHA_TEST, false, &LLGLSLShader::sNoFixedFunction);
 initLLGLState(GL_COLOR_MATERIAL, false, &LLGLSLShader::sNoFixedFunction);
 initLLGLState(GL_FOG, false, &LLGLSLShader::sNoFixedFunction);
@@ -2051,6 +2065,7 @@ initLLGLState(GL_TEXTURE_GEN_Q, false, &LLGLSLShader::sNoFixedFunction);
 initLLGLState(GL_TEXTURE_GEN_R, false, &LLGLSLShader::sNoFixedFunction);
 initLLGLState(GL_TEXTURE_GEN_S, false, &LLGLSLShader::sNoFixedFunction);
 initLLGLState(GL_TEXTURE_GEN_T, false, &LLGLSLShader::sNoFixedFunction);
+#endif
 
 void LLGLManager::initGLStates()
 {

@@ -53,7 +53,11 @@ LLRect gGLViewport;
 U32 LLRender::sUICalls = 0;
 U32 LLRender::sUIVerts = 0;
 U32 LLTexUnit::sWhiteTexture = 0;
+#ifdef LL_GL_CORE
+bool LLRender::sGLCoreProfile = true;
+#else
 bool LLRender::sGLCoreProfile = false;
+#endif
 
 static const U32 LL_NUM_TEXTURE_LAYERS = 32; 
 
@@ -147,26 +151,32 @@ void LLTexUnit::refreshState(void)
 	// Per apple spec, don't call glEnable/glDisable when index exceeds max texture units
 	// http://www.mailinglistarchive.com/html/mac-opengl@lists.apple.com/2008-07/msg00653.html
 	//
+#ifndef LL_GL_CORE
 	bool enableDisable = !LLGLSLShader::sNoFixedFunction && 
 		(mIndex < gGLManager.mNumTextureUnits);
-		
+#endif
+
 	if (mCurrTexType != TT_NONE)
 	{
+#ifndef LL_GL_CORE
 		if (enableDisable)
 		{
 			glEnable(sGLTextureType[mCurrTexType]);
 		}
-		
+#endif
+
 		//if (mCurrTexture) validate_bind_texture(mCurrTexture);
 		glBindTexture(sGLTextureType[mCurrTexType], mCurrTexture);
 	}
 	else
 	{
+#ifndef LL_GL_CORE
 		if (enableDisable)
 		{
 			glDisable(GL_TEXTURE_2D);
 		}
-		
+#endif
+
 		glBindTexture(GL_TEXTURE_2D, 0);	
 	}
 
@@ -211,6 +221,7 @@ void LLTexUnit::enable(eTextureType type)
 		mCurrTexType = type;
 
 		gGL.flush();
+#ifndef LL_GL_CORE
 		if (!LLGLSLShader::sNoFixedFunction && 
 			mIndex < gGLManager.mNumTextureUnits)
 		{
@@ -218,6 +229,7 @@ void LLTexUnit::enable(eTextureType type)
 			glEnable(sGLTextureType[type]);
 			stop_glerror();
 		}
+#endif
 	}
 }
 
@@ -230,11 +242,13 @@ void LLTexUnit::disable(void)
 		activate();
 		unbind(mCurrTexType);
 		gGL.flush();
+#ifndef LL_GL_CORE
 		if (!LLGLSLShader::sNoFixedFunction &&
 			mIndex < gGLManager.mNumTextureUnits)
 		{
 			glDisable(sGLTextureType[mCurrTexType]);
 		}
+#endif
 		
 		mCurrTexType = TT_NONE;
 	}
@@ -553,6 +567,7 @@ void LLTexUnit::setTextureFilteringOption(LLTexUnit::eTextureFilterOptions optio
 
 void LLTexUnit::setTextureBlendType(eTextureBlendType type)
 {
+#ifndef LL_GL_CORE
 	if (LLGLSLShader::sNoFixedFunction)
 	{ //texture blend type means nothing when using shaders
 		return;
@@ -598,10 +613,12 @@ void LLTexUnit::setTextureBlendType(eTextureBlendType type)
 	}
 	setColorScale(scale_amount);
 	setAlphaScale(1);
+#endif
 }
 
 GLint LLTexUnit::getTextureSource(eTextureBlendSrc src)
 {
+#ifndef LL_GL_CORE
 	switch(src)
 	{
 		// All four cases should return the same value.
@@ -636,10 +653,14 @@ GLint LLTexUnit::getTextureSource(eTextureBlendSrc src)
 			LL_WARNS() << "Unknown eTextureBlendSrc: " << src << ".  Using Vertex Color instead." << LL_ENDL;
 			return GL_PRIMARY_COLOR_ARB;
 	}
+#else
+	return 0;
+#endif
 }
 
 GLint LLTexUnit::getTextureSourceType(eTextureBlendSrc src, bool isAlpha)
 {
+#ifndef LL_GL_CORE
 	switch(src)
 	{
 		// All four cases should return the same value.
@@ -674,10 +695,14 @@ GLint LLTexUnit::getTextureSourceType(eTextureBlendSrc src, bool isAlpha)
 			LL_WARNS() << "Unknown eTextureBlendSrc: " << src << ".  Using Source Color or Alpha instead." << LL_ENDL;
 			return (isAlpha) ? GL_SRC_ALPHA: GL_SRC_COLOR;
 	}
+#else
+	return 0;
+#endif
 }
 
 void LLTexUnit::setTextureCombiner(eTextureBlendOp op, eTextureBlendSrc src1, eTextureBlendSrc src2, bool isAlpha)
 {
+#ifndef LL_GL_CORE
 	if (LLGLSLShader::sNoFixedFunction)
 	{ //register combiners do nothing when not using fixed function
 		return;
@@ -827,26 +852,31 @@ void LLTexUnit::setTextureCombiner(eTextureBlendOp op, eTextureBlendSrc src1, eT
 	glTexEnvi(GL_TEXTURE_ENV, src1_enum, source2);
 	glTexEnvi(GL_TEXTURE_ENV, operand1_enum, operand2);
 	(isAlpha) ? setAlphaScale(scale_amount) : setColorScale(scale_amount);
+#endif
 }
 
 void LLTexUnit::setColorScale(S32 scale)
 {
+#ifndef LL_GL_CORE
 	if (mCurrColorScale != scale || gGL.mDirty)
 	{
 		gGL.flush();
 		mCurrColorScale = scale;
 		glTexEnvi( GL_TEXTURE_ENV, GL_RGB_SCALE, scale );
 	}
+#endif
 }
 
 void LLTexUnit::setAlphaScale(S32 scale)
 {
+#ifndef LL_GL_CORE
 	if (mCurrAlphaScale != scale || gGL.mDirty)
 	{
 		gGL.flush();
 		mCurrAlphaScale = scale;
 		glTexEnvi( GL_TEXTURE_ENV, GL_ALPHA_SCALE, scale );
 	}
+#endif
 }
 
 // Useful for debugging that you've manually assigned a texture operation to the correct 
@@ -1093,19 +1123,11 @@ void LLRender::syncShaders()
 
 void LLRender::syncContextState()
 {
+#ifndef LL_GL_CORE
 	if (mContext.color != mNewContext.color)
 	{
 		mContext.color = mNewContext.color;
 		glColor4fv(mContext.color.mV);
-	}
-	if (mContext.colorMask != mNewContext.colorMask)
-	{
-		mContext.colorMask = mNewContext.colorMask;
-		glColorMask(
-			mContext.colorMask & (1 << 0),
-			mContext.colorMask & (1 << 1),
-			mContext.colorMask & (1 << 2),
-			mContext.colorMask & (1 << 3));
 	}
 	if (mContext.alphaFunc != mNewContext.alphaFunc ||
 		mContext.alphaVal != mNewContext.alphaVal)
@@ -1120,6 +1142,16 @@ void LLRender::syncContextState()
 		{
 			glAlphaFunc(sGLCompareFunc[mContext.alphaFunc], mContext.alphaVal);
 		}
+	}
+#endif
+	if (mContext.colorMask != mNewContext.colorMask)
+	{
+		mContext.colorMask = mNewContext.colorMask;
+		glColorMask(
+			mContext.colorMask & (1 << 0),
+			mContext.colorMask & (1 << 1),
+			mContext.colorMask & (1 << 2),
+			mContext.colorMask & (1 << 3));
 	}
 	if (LLGLState<GL_BLEND>::isEnabled() && (
 		mContext.blendColorSFactor != mNewContext.blendColorSFactor ||
@@ -1194,6 +1226,7 @@ void LLRender::syncContextState()
 U32 sLightMask = 0xFFFFFFFF;
 void LLRender::syncLightState()
 {
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		// Legacy
@@ -1249,6 +1282,7 @@ void LLRender::syncLightState()
 		}
 		return;
 	}
+#endif
 
 	LLGLSLShader* shader = LLGLSLShader::sCurBoundShaderPtr;
 	if (!shader || (!shader->mFeatures.hasLighting && !shader->mFeatures.calculatesLighting))
@@ -1998,6 +2032,7 @@ void LLRender::setSceneBlendType(eBlendType type)
 
 void LLRender::setAlphaRejectSettings(eCompareFunc func, F32 value)
 {
+#ifndef LL_GL_CORE
 	if (LLGLSLShader::sNoFixedFunction)
 	{ //glAlphaFunc is deprecated in OpenGL 3.3
 		return;
@@ -2034,6 +2069,7 @@ void LLRender::setAlphaRejectSettings(eCompareFunc func, F32 value)
 			LL_ERRS() << "Alpha test value corrupted!" << LL_ENDL;
 		}
 	}*/
+#endif
 }
 
 void LLRender::setViewport(const LLRect& rect)
@@ -2640,11 +2676,13 @@ void LLRender::diffuseColor3f(F32 r, F32 g, F32 b)
 	{
 		shader->uniform4f(LLShaderMgr::DIFFUSE_COLOR, r,g,b,1.f);
 	}
+#ifndef LL_GL_CORE
 	else if (r != mNewContext.color.mV[0] || g != mNewContext.color.mV[1] || b != mNewContext.color.mV[2] || mNewContext.color.mV[3] != 1.f || mDirty)
 	{
 		flush();
 		mNewContext.color.set(r, g, b, 1.f);
 	}
+#endif
 }
 
 void LLRender::diffuseColor3fv(const F32* c)
@@ -2656,11 +2694,13 @@ void LLRender::diffuseColor3fv(const F32* c)
 	{
 		shader->uniform4f(LLShaderMgr::DIFFUSE_COLOR, c[0], c[1], c[2], 1.f);
 	}
+#ifndef LL_GL_CORE
 	else if (c[0] != mNewContext.color.mV[0] || c[1] != mNewContext.color.mV[1] || c[2] != mNewContext.color.mV[2] || mNewContext.color.mV[3] != 1.f || mDirty)
 	{
 		flush();
 		mNewContext.color.set(c[0], c[1], c[2], 1.f);
 	}
+#endif
 }
 
 void LLRender::diffuseColor4f(F32 r, F32 g, F32 b, F32 a)
@@ -2672,11 +2712,13 @@ void LLRender::diffuseColor4f(F32 r, F32 g, F32 b, F32 a)
 	{
 		shader->uniform4f(LLShaderMgr::DIFFUSE_COLOR, r,g,b,a);
 	}
+#ifndef LL_GL_CORE
 	else if (r != mNewContext.color.mV[0] || g != mNewContext.color.mV[1] || b != mNewContext.color.mV[2] || a != mNewContext.color.mV[3] || mDirty)
 	{
 		flush();
 		mNewContext.color = { r, g, b, a };
 	}
+#endif
 }
 
 void LLRender::diffuseColor4fv(const F32* c)
@@ -2688,11 +2730,13 @@ void LLRender::diffuseColor4fv(const F32* c)
 	{
 		shader->uniform4fv(LLShaderMgr::DIFFUSE_COLOR, 1, c);
 	}
+#ifndef LL_GL_CORE
 	else if (c[0] != mNewContext.color.mV[0] || c[1] != mNewContext.color.mV[1] || c[2] != mNewContext.color.mV[2] || c[3] != mNewContext.color.mV[3] || mDirty)
 	{
 		flush();
 		mNewContext.color = c;
 	}
+#endif
 }
 
 void LLRender::diffuseColor4ubv(const U8* c)
@@ -2704,6 +2748,7 @@ void LLRender::diffuseColor4ubv(const U8* c)
 	{
 		shader->uniform4f(LLShaderMgr::DIFFUSE_COLOR, c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f);
 	}
+#ifndef LL_GL_CORE
 	else if (c[0] / 255.f != mNewContext.color.mV[0] || c[1] / 255.f != mNewContext.color.mV[1] || c[2] / 255.f != mNewContext.color.mV[2] || c[3] / 255.f != mNewContext.color.mV[3] || mDirty)
 	{
 		flush();
@@ -2712,6 +2757,7 @@ void LLRender::diffuseColor4ubv(const U8* c)
 		mNewContext.color.mV[2] = c[2] / 255.f;
 		mNewContext.color.mV[3] = c[3] / 255.f;
 	}
+#endif
 }
 
 void LLRender::diffuseColor4ub(U8 r, U8 g, U8 b, U8 a)
@@ -2723,6 +2769,7 @@ void LLRender::diffuseColor4ub(U8 r, U8 g, U8 b, U8 a)
 	{
 		shader->uniform4f(LLShaderMgr::DIFFUSE_COLOR, r/255.f, g/255.f, b/255.f, a/255.f);
 	}
+#ifndef LL_GL_CORE
 	else if (r / 255.f != mNewContext.color.mV[0] || g / 255.f != mNewContext.color.mV[1] || b / 255.f != mNewContext.color.mV[2] || a / 255.f != mNewContext.color.mV[3] || mDirty)
 	{
 		flush();
@@ -2731,6 +2778,7 @@ void LLRender::diffuseColor4ub(U8 r, U8 g, U8 b, U8 a)
 		mNewContext.color.mV[2] = b / 255.f;
 		mNewContext.color.mV[3] = a / 255.f;
 	}
+#endif
 }
 
 void LLRender::debugTexUnits(void)

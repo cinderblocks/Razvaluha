@@ -41,6 +41,22 @@
 #define BYTES_TO_MEGA_BYTES(x) ((x) >> 20)
 #define MEGA_BYTES_TO_BYTES(x) ((x) << 20)
 
+#ifdef LL_GL_CORE
+#define GL_ALPHA8_LEGACY GL_RED
+#define GL_ALPHA_LEGACY 1
+#define GL_LUMINANCE8_LEGACY GL_R8
+#define GL_LUMINANCE_LEGACY 2
+#define GL_LUMINANCE_ALPHA8_LEGACY GL_RG8
+#define GL_LUMINANCE_ALPHA_LEGACY 3
+#else
+#define GL_ALPHA8_LEGACY GL_ALPHA8
+#define GL_ALPHA_LEGACY GL_ALPHA
+#define GL_LUMINANCE8_LEGACY GL_LUMINANCE8
+#define GL_LUMINANCE_LEGACY GL_LUMINANCE
+#define GL_LUMINANCE8_ALPHA8_LEGACY GL_LUMINANCE8_ALPHA8
+#define GL_LUMINANCE_ALPHA_LEGACY GL_LUMINANCE_ALPHA
+#endif
+
 //============================================================================
 class LLImageGL : public LLRefCount
 {
@@ -192,7 +208,9 @@ public:
 
 	BOOL getIsAlphaMask(const F32 max_rmse, const F32 max_mid) const { return mNeedsAlphaAndPickMask && (max_rmse < 0.f ? (bool)mIsMask : (mMaskRMSE <= max_rmse && mMaskMidPercentile <= max_mid)); }
 
+#ifndef LL_GL_CORE
 	BOOL getIsResident(BOOL test_now = FALSE); // not const
+#endif
 
 	void setTarget(const LLGLenum target, const LLTexUnit::eTextureType bind_target);
 

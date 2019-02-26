@@ -68,8 +68,8 @@ LLDrawPoolTerrain::LLDrawPoolTerrain(LLViewerTexture *texturep) :
 	LLFacePool(POOL_TERRAIN),
 	mTexturep(texturep)
 {
-	U32 format = GL_ALPHA;
-	U32 int_format = GL_ALPHA8;
+	U32 format = GL_ALPHA_LEGACY;
+	U32 int_format = GL_ALPHA8_LEGACY;
 
 	// Hack!
 	sDetailScale = 1.f/gSavedSettings.getF32("RenderTerrainScale");
@@ -190,7 +190,7 @@ void LLDrawPoolTerrain::render(S32 pass)
 
 	LLGLSPipeline gls;
 	{
-		LLGLState<GL_LIGHTING> light_state;
+		LLGLState<GL_LIGHTING_LEGACY> light_state;
 
 		if (mVertexShaderLevel > 1 && sShader->mShaderLevel > 0)
 		{

@@ -6429,7 +6429,7 @@ void LLSelectNode::renderOneWireframe(const LLColor4& color)
 		{
 			if (!LLGLSLShader::sNoFixedFunction)
 			{
-				LLGLEnable<GL_FOG> fog;
+				LLGLEnable<GL_FOG_LEGACY> fog;
 				glFogi(GL_FOG_MODE, GL_LINEAR);
 				float d = (LLViewerCamera::getInstance()->getPointOfInterest() - LLViewerCamera::getInstance()->getOrigin()).magVec();
 				LLColor4 fogCol = color * (F32)llclamp((LLSelectMgr::getInstance()->getSelectionCenterGlobal() - gAgentCamera.getCameraPositionGlobal()).magVec() / (LLSelectMgr::getInstance()->getBBoxOfSelection().getExtentLocal().magVec() * 4), 0.0, 1.0);
@@ -6555,7 +6555,7 @@ void LLSelectNode::renderOneSilhouette(const LLColor4 &color)
 			gGL.blendFunc(LLRender::BF_SOURCE_COLOR, LLRender::BF_ONE);
 			if (!LLGLSLShader::sNoFixedFunction)
 			{
-				LLGLEnable<GL_FOG> fog;
+				LLGLEnable<GL_FOG_LEGACY> fog;
 				glFogi(GL_FOG_MODE, GL_LINEAR);
 				float d = (LLViewerCamera::getInstance()->getPointOfInterest() - LLViewerCamera::getInstance()->getOrigin()).magVec();
 				LLColor4 fogCol = color * (F32)llclamp((LLSelectMgr::getInstance()->getSelectionCenterGlobal() - gAgentCamera.getCameraPositionGlobal()).magVec() / (LLSelectMgr::getInstance()->getBBoxOfSelection().getExtentLocal().magVec() * 4), 0.0, 1.0);

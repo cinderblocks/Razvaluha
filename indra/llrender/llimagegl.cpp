@@ -235,16 +235,18 @@ S32 LLImageGL::dataFormatBits(S32 dataformat)
 	  case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:	return 4;
 	  case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:	return 8;
 	  case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:	return 8;
-	  case GL_LUMINANCE:						return 8;
-	  case GL_ALPHA:							return 8;
-	  case GL_COLOR_INDEX:						return 8;
-	  case GL_LUMINANCE_ALPHA:					return 16;
 	  case GL_RED:								return 8;
 	  case GL_RG:								return 16;
 	  case GL_RGB:								return 24;
 	  case GL_RGB8:								return 24;
 	  case GL_RGBA:								return 32;
 	  case GL_BGRA:								return 32;		// Used for QuickTime media textures on the Mac
+	  case GL_ALPHA_LEGACY:						return 8;
+	  case GL_LUMINANCE_LEGACY:					return 8;
+	  case GL_LUMINANCE_ALPHA_LEGACY:			return 16;
+#ifndef LL_GL_CORE
+	  case GL_COLOR_INDEX:						return 8;
+#endif
 	  default:
 		LL_ERRS() << "LLImageGL::Unknown format: " << dataformat << LL_ENDL;
 		return 0;
@@ -273,15 +275,18 @@ S32 LLImageGL::dataFormatComponents(S32 dataformat)
 	  case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:	return 3;
 	  case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:	return 4;
 	  case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:	return 4;
-	  case GL_LUMINANCE:						return 1;
-	  case GL_ALPHA:							return 1;
-	  case GL_COLOR_INDEX:						return 1;
-	  case GL_LUMINANCE_ALPHA:					return 2;
 	  case GL_RED:								return 1;
 	  case GL_RG:								return 2;
 	  case GL_RGB:								return 3;
+	  case GL_RGB8:								return 3;
 	  case GL_RGBA:								return 4;
 	  case GL_BGRA:								return 4;		// Used for QuickTime media textures on the Mac
+	  case GL_ALPHA_LEGACY:						return 1;
+	  case GL_LUMINANCE_LEGACY:					return 1;
+	  case GL_LUMINANCE_ALPHA_LEGACY:			return 2;
+#ifndef LL_GL_CORE
+	  case GL_COLOR_INDEX:						return 1;
+#endif
 	  default:
 		LL_ERRS() << "LLImageGL::Unknown format: " << dataformat << LL_ENDL;
 		return 0;
@@ -664,8 +669,10 @@ BOOL LLImageGL::updateBindStats(S32Bytes tex_mem) const
 {	
 	if (getTexName())
 	{
+#ifndef LL_GL_CORE
 #ifdef DEBUG_MISS
 		mMissed = ! getIsResident(TRUE);
+#endif
 #endif
 		sBindCount++;
 		if (mLastBindTime != sLastFrameTime)
@@ -816,10 +823,12 @@ void LLImageGL::setImage(const U8* data_in, BOOL data_hasmips)
  					//use legacy mipmap generation mode (note: making this condional can cause rendering issues)
 					// -- but making it not conditional triggers deprecation warnings when core profile is enabled
 					//		(some rendering issues while core profile is enabled are acceptable at this point in time)
+#ifndef LL_GL_CORE
 					if (!LLRender::sGLCoreProfile)
 					{
 						glTexParameteri(mTarget, GL_GENERATE_MIPMAP, GL_TRUE);
 					}
+#endif
 					
 					LLImageGL::setManualImage(mTarget, 0, mFormatInternal,
 								 w, h, 
@@ -836,7 +845,9 @@ void LLImageGL::setImage(const U8* data_in, BOOL data_hasmips)
 						stop_glerror();
 					}
 
+#ifndef LL_GL_CORE
 					if (LLRender::sGLCoreProfile)
+#endif
 					{
 						glGenerateMipmap(mTarget);
 					}	
@@ -1412,12 +1423,14 @@ void LLImageGL::setManualImage(U32 target, S32 miplevel, S32 intformat, S32 widt
 {
 	LL_RECORD_BLOCK_TIME(FTM_SET_MANUAL_IMAGE);
 	std::vector<U32> scratch;
+#ifndef LL_GL_CORE
 	if (LLRender::sGLCoreProfile)
+#endif
 	{
 #ifdef GL_ARB_texture_swizzle
 		if(gGLManager.mHasTextureSwizzle)
 		{
-			if (pixformat == GL_ALPHA)
+			if (pixformat == GL_ALPHA_LEGACY)
 			{ //GL_ALPHA is deprecated, convert to RGBA
 				const GLint mask[] = {GL_ZERO, GL_ZERO, GL_ZERO, GL_RED};
 				glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, mask);
@@ -1425,7 +1438,7 @@ void LLImageGL::setManualImage(U32 target, S32 miplevel, S32 intformat, S32 widt
 				intformat = GL_R8;
 			}
 
-			if (pixformat == GL_LUMINANCE)
+			if (pixformat == GL_LUMINANCE_LEGACY)
 			{ //GL_LUMINANCE is deprecated, convert to GL_RGBA
 				const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
 				glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, mask);
@@ -1433,7 +1446,7 @@ void LLImageGL::setManualImage(U32 target, S32 miplevel, S32 intformat, S32 widt
 				intformat = GL_R8;
 			}
 
-			if (pixformat == GL_LUMINANCE_ALPHA)
+			if (pixformat == GL_LUMINANCE_ALPHA_LEGACY)
 			{ //GL_LUMINANCE_ALPHA is deprecated, convert to RGBA
 				const GLint mask[] = {GL_RED, GL_RED, GL_RED, GL_GREEN};
 				glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, mask);
@@ -1444,7 +1457,7 @@ void LLImageGL::setManualImage(U32 target, S32 miplevel, S32 intformat, S32 widt
 		else
 #endif
 		{
-			if (pixformat == GL_ALPHA && pixtype == GL_UNSIGNED_BYTE)
+			if (pixformat == GL_ALPHA_LEGACY && pixtype == GL_UNSIGNED_BYTE)
 			{ //GL_ALPHA is deprecated, convert to RGBA
 				scratch.resize(width*height);
 
@@ -1462,7 +1475,7 @@ void LLImageGL::setManualImage(U32 target, S32 miplevel, S32 intformat, S32 widt
 				intformat = GL_RGBA8;
 			}
 
-			if (pixformat == GL_LUMINANCE_ALPHA && pixtype == GL_UNSIGNED_BYTE)
+			if (pixformat == GL_LUMINANCE_ALPHA_LEGACY && pixtype == GL_UNSIGNED_BYTE)
 			{ //GL_LUMINANCE_ALPHA is deprecated, convert to RGBA
 				scratch.resize(width*height);
 
@@ -1483,7 +1496,7 @@ void LLImageGL::setManualImage(U32 target, S32 miplevel, S32 intformat, S32 widt
 				intformat = GL_RGBA8;
 			}
 
-			if (pixformat == GL_LUMINANCE && pixtype == GL_UNSIGNED_BYTE)
+			if (pixformat == GL_LUMINANCE_LEGACY && pixtype == GL_UNSIGNED_BYTE)
 			{ //GL_LUMINANCE_ALPHA is deprecated, convert to RGB
 				scratch.resize(width*height);
 
@@ -1518,81 +1531,26 @@ void LLImageGL::setManualImage(U32 target, S32 miplevel, S32 intformat, S32 widt
 				break;
 			case GL_RGB: 
 			case GL_RGB8:
-			{
-				/*std::vector<U32> tex;
-				tex.resize(height*width);
-				for (U32 i = 0; i < tex.size(); ++i)
-				{
-					((U8*)&tex[i])[0] = ((U8*)pixels)[i * 3];
-					((U8*)&tex[i])[1] = ((U8*)pixels)[i * 3 + 1];
-					((U8*)&tex[i])[2] = ((U8*)pixels)[i * 3 + 2];
-					((U8*)&tex[i])[3] = 255;
-				}
-				crn_comp_params comp_params;
-				comp_params.m_width = width;
-				comp_params.m_height = height;
-				comp_params.set_flag(cCRNCompFlagPerceptual, true);
-				comp_params.set_flag(cCRNCompFlagHierarchical, false);
-				comp_params.m_file_type = cCRNFileTypeDDS;
-				comp_params.m_format = cCRNFmtDXT5;
-				comp_params.m_pImages[0][0] = &tex[0];
-				comp_params.m_quality_level = cCRNDXTQualityUber;
-				SYSTEM_INFO g_system_info;
-				GetSystemInfo(&g_system_info);
-				comp_params.m_num_helper_threads = std::max<S32>(0, (S32)g_system_info.dwNumberOfProcessors - 1);
-				crn_mipmap_params mip_params;
-				mip_params.m_gamma_filtering = true;
-				mip_params.m_mode = cCRNMipModeGenerateMips;
-
-				crn_uint32 output_file_size;
-				void *compressed_data = crn_compress(comp_params, mip_params, output_file_size);
-				if (compressed_data)
-				{
-					glTexParameteri(target, GL_GENERATE_MIPMAP, GL_FALSE);
-
-					U32 pos = sizeof(U32);
-					const DDS_HEADER& header = *(DDS_HEADER*)(((U8*)compressed_data) + pos);
-					pos += sizeof(DDS_HEADER);
-					if (header.ddspf.dwFlags & 0x4 && header.ddspf.dwFourCC == '01XD')
-					{
-						pos += sizeof(DDS_HEADER_DXT10);
-					}
-
-					U32 num_mips = (header.dwFlags & 0x20000) ? header.dwMipMapCount : 1;
-
-					U32 x = width;
-					U32 y = height;
-					for (U32 i = 0; i < num_mips; ++i)
-					{
-						size_t size = llmax(4u, x) / 4 * llmax(4u, y) / 4 * 16;
-						glCompressedTexImage2DARB(GL_TEXTURE_2D, i, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, x, y, 0, size, (const void*)(((U8*)compressed_data) + pos));
-						x = (x + 1) >> 1;
-						y = (y + 1) >> 1;
-						pos += size;
-					}
-					crn_free_block(compressed_data);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, num_mips - 1);
-					return;
-				}*/
-			}
-
+				intformat = GL_COMPRESSED_RGB;
 				break;
 			case GL_RGBA:
 			case GL_RGBA8:
-				//intformat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+				intformat = GL_COMPRESSED_RGBA;
 				break;
-			case GL_LUMINANCE:
-			case GL_LUMINANCE8:
+#ifndef LL_GL_CORE
+			case GL_LUMINANCE_LEGACY:
+			case GL_LUMINANCE8_LEGACY:
 				intformat = GL_COMPRESSED_LUMINANCE;
 				break;
-			case GL_LUMINANCE_ALPHA:
-			case GL_LUMINANCE8_ALPHA8:
+			case GL_LUMINANCE_ALPHA_LEGACY:
+			case GL_LUMINANCE8_ALPHA8_LEGACY:
 				intformat = GL_COMPRESSED_LUMINANCE_ALPHA;
 				break;
-			case GL_ALPHA:
-			case GL_ALPHA8:
+			case GL_ALPHA_LEGACY:
+			case GL_ALPHA8_LEGACY:
 				intformat = GL_COMPRESSED_ALPHA;
 				break;
+#endif
 			default:
 				LL_WARNS() << "Could not compress format: " << std::hex << intformat << std::dec << LL_ENDL;
 				break;
@@ -1667,14 +1625,14 @@ BOOL LLImageGL::createGLTexture(S32 discard_level, const LLImageRaw* imageraw, G
 		{
 			case 1:
 			// Use luminance alpha (for fonts)
-			mFormatInternal = GL_LUMINANCE8;
-			mFormatPrimary = GL_LUMINANCE;
+			mFormatInternal = GL_LUMINANCE8_LEGACY;
+			mFormatPrimary = GL_LUMINANCE_LEGACY;
 			mFormatType = GL_UNSIGNED_BYTE;
 			break;
 			case 2:
 			// Use luminance alpha (for fonts)
-			mFormatInternal = GL_LUMINANCE8_ALPHA8;
-			mFormatPrimary = GL_LUMINANCE_ALPHA;
+			mFormatInternal = GL_LUMINANCE8_ALPHA8_LEGACY;
+			mFormatPrimary = GL_LUMINANCE_ALPHA_LEGACY;
 			mFormatType = GL_UNSIGNED_BYTE;
 			break;
 			case 3:
@@ -1758,13 +1716,6 @@ BOOL LLImageGL::createGLTexture(S32 discard_level, const U8* data_in, BOOL data_
 	if (mUseMipMaps)
 	{
 		mAutoGenMips = gGLManager.mHasMipMapGeneration;
-#if LL_DARWIN
-		// On the Mac GF2 and GF4MX drivers, auto mipmap generation doesn't work right with alpha-only textures.
-		if(gGLManager.mIsGF2or4MX && (mFormatInternal == GL_ALPHA8) && (mFormatPrimary == GL_ALPHA))
-		{
-			mAutoGenMips = FALSE;
-		}
-#endif
 	}
 
 	mCurrentDiscardLevel = discard_level;	
@@ -1976,6 +1927,7 @@ void LLImageGL::setFilteringOption(LLTexUnit::eTextureFilterOptions option)
 	}
 }
 
+#ifndef LL_GL_CORE
 BOOL LLImageGL::getIsResident(BOOL test_now)
 {
 	if (test_now)
@@ -1993,6 +1945,7 @@ BOOL LLImageGL::getIsResident(BOOL test_now)
 
 	return mIsResident;
 }
+#endif
 
 S32 LLImageGL::getHeight(S32 discard_level) const
 {
@@ -2094,11 +2047,11 @@ void LLImageGL::calcAlphaChannelOffsetAndStride()
 	mAlphaStride = -1 ;
 	switch (mFormatPrimary)
 	{
-	case GL_LUMINANCE:
+	case GL_LUMINANCE_LEGACY:
 	case GL_ALPHA:
 		mAlphaStride = 1;
 		break;
-	case GL_LUMINANCE_ALPHA:
+	case GL_LUMINANCE_ALPHA_LEGACY:
 		mAlphaStride = 2;
 		break;
 	case GL_RGB:

@@ -976,7 +976,7 @@ void LLShaderMgr::cleanupShaderSources()
 			iter_end = mProgramObjects.cend(); iter != iter_end; ++iter)
 		{
 			GLhandleARB program = iter->second;
-			if (program != (GLhandleARB)nullptr)
+			if (program != (GLhandleARB)0)
 			{
 				GLhandleARB shaders[1024] = {};
 				GLsizei count = -1;

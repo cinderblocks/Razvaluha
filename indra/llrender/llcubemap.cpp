@@ -195,6 +195,7 @@ void LLCubeMap::enableTexture(S32 stage)
 void LLCubeMap::enableTextureCoords(S32 stage)
 {
 	mTextureCoordStage = stage;
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction && gGLManager.mHasCubeMap && stage >= 0 && LLCubeMap::sUseCubeMaps)
 	{
 		if (stage > 0)
@@ -215,6 +216,7 @@ void LLCubeMap::enableTextureCoords(S32 stage)
 			gGL.getTexUnit(0)->activate();
 		}
 	}
+#endif
 }
 
 void LLCubeMap::disable(void)
@@ -237,6 +239,7 @@ void LLCubeMap::disableTexture(void)
 
 void LLCubeMap::disableTextureCoords(void)
 {
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction && gGLManager.mHasCubeMap && mTextureCoordStage >= 0 && LLCubeMap::sUseCubeMaps)
 	{
 		if (mTextureCoordStage > 0)
@@ -251,6 +254,7 @@ void LLCubeMap::disableTextureCoords(void)
 			gGL.getTexUnit(0)->activate();
 		}
 	}
+#endif
 }
 
 void LLCubeMap::setMatrix(S32 stage)

@@ -788,7 +788,6 @@ void LLMediaCtrl::draw()
 
 	// alpha off for this
 	LLGLSUIDefault gls_ui;
-	LLGLDisable<GL_ALPHA_TEST> gls_alpha_test;
 
 	bool draw_media = false;
 	

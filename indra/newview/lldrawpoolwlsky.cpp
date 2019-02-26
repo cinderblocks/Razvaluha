@@ -210,7 +210,7 @@ void LLDrawPoolWLSky::renderStars(void) const
 	// and we might as well only bind once.
 	gGL.getTexUnit(0)->enable(LLTexUnit::TT_TEXTURE);
 
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	gPipeline.disableLights(light_state);
 
 	/*if (!LLPipeline::sReflectionRender)
@@ -276,7 +276,7 @@ void LLDrawPoolWLSky::renderHeavenlyBodies()
 
 	LLGLSPipelineSkyBox gls_skybox;
 	LLGLEnable<GL_BLEND> blend_on;
-	LLGLDisable<GL_LIGHTING> lighting;
+	LLGLDisable<GL_LIGHTING_LEGACY> lighting;
 	gGL.setSceneBlendType(LLRender::BT_ALPHA);
 
 #if 0 // when we want to re-add a texture sun disc, here's where to do it.
@@ -336,7 +336,9 @@ void LLDrawPoolWLSky::renderDeferred(S32 pass)
 	LLGLDisable<GL_STENCIL_TEST> stencil;
 	LLGLSNoFog disableFog;
 	LLGLDepthTest depth(GL_TRUE, GL_FALSE);
+#ifndef LL_GL_CORE
 	LLGLDisable<GL_CLIP_PLANE0> clip;
+#endif
 
 	LLGLSquashToFarClip far_clip(glh_get_current_projection());
 
@@ -380,7 +382,9 @@ void LLDrawPoolWLSky::render(S32 pass)
 
 	LLGLSNoFog disableFog;
 	LLGLDepthTest depth(GL_TRUE, GL_FALSE);
+#ifndef LL_GL_CORE
 	LLGLDisable<GL_CLIP_PLANE0> clip;
+#endif
 
 	LLGLSquashToFarClip far_clip(glh_get_current_projection());
 

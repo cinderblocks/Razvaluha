@@ -252,7 +252,7 @@ void LLFloaterImagePreview::draw()
 		if (selected <= 0)
 		{
 			gl_rect_2d_checkerboard( calcScreenRect(), mPreviewRect);
-			LLGLDisable<GL_ALPHA_TEST> gls_alpha;
+			LLGLSNoAlphaTest gls_alpha;
 
 			if(mImagep.notNull())
 			{
@@ -763,7 +763,7 @@ BOOL LLImagePreviewAvatar::render()
 		if (face)
 		{
 			LLDrawPoolAvatar *avatarPoolp = (LLDrawPoolAvatar *)face->getPool();
-			LLGLState<GL_LIGHTING> light_state;
+			LLGLState<GL_LIGHTING_LEGACY> light_state;
 			gPipeline.enableLightsPreview(light_state);
 			avatarPoolp->renderAvatars(avatarp);  // renders only one avatar
 		}
@@ -952,7 +952,7 @@ BOOL LLImagePreviewSculpted::render()
 	const LLVolumeFace &vf = mVolume->getVolumeFace(0);
 	U32 num_indices = vf.mNumIndices;
 	
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	gPipeline.enableLightsAvatar(light_state);
 
 	if (LLGLSLShader::sNoFixedFunction)

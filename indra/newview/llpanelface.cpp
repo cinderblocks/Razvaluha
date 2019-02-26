@@ -886,7 +886,7 @@ void LLPanelFace::updateUI()
 			switch (image_format)
 			{
 			case GL_RGBA:
-			case GL_ALPHA:
+			case GL_ALPHA_LEGACY:
 				{
 					mIsAlpha = TRUE;
 				}
@@ -1813,7 +1813,7 @@ void LLPanelFace::onSelectTexture(const LLSD& data)
 		switch (image_format)
 		{
 		case GL_RGBA:
-		case GL_ALPHA:
+		case GL_ALPHA_LEGACY:
 			{
 				alpha_mode = LLMaterial::DIFFUSE_ALPHA_MODE_BLEND;
 			}

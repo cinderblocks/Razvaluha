@@ -523,7 +523,9 @@ void LLVertexBuffer::setupClientArrays(U32 data_mask)
 			data_mask = data_mask & ~MAP_TEXTURE_INDEX;
 		}
 
+#ifndef LL_GL_CORE
 		if (LLGLSLShader::sNoFixedFunction)
+#endif
 		{
 			for (U32 i = 0; i < TYPE_MAX; ++i)
 			{
@@ -547,7 +549,9 @@ void LLVertexBuffer::setupClientArrays(U32 data_mask)
 				}
 			}
 		}
+#ifndef LL_GL_CORE
 		else
+#endif
 		{
 
 			static const GLenum array[] =
@@ -1720,9 +1724,11 @@ volatile U8* LLVertexBuffer::mapVertexBuffer(S32 type, S32 index, S32 count, boo
 				{
 					if (map_range)
 					{
+#ifndef LL_GL_CORE
 #ifndef LL_MESA_HEADLESS
 						glBufferParameteriAPPLE(GL_ARRAY_BUFFER_ARB, GL_BUFFER_SERIALIZED_MODIFY_APPLE, GL_FALSE);
 						glBufferParameteriAPPLE(GL_ARRAY_BUFFER_ARB, GL_BUFFER_FLUSHING_UNMAP_APPLE, GL_FALSE);
+#endif
 #endif
 						src = (U8*) glMapBufferARB(GL_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 					}
@@ -1915,9 +1921,11 @@ volatile U8* LLVertexBuffer::mapIndexBuffer(S32 index, S32 count, bool map_range
 				{
 					if (map_range)
 					{
+#ifndef LL_GL_CORE
 #ifndef LL_MESA_HEADLESS
 						glBufferParameteriAPPLE(GL_ELEMENT_ARRAY_BUFFER_ARB, GL_BUFFER_SERIALIZED_MODIFY_APPLE, GL_FALSE);
 						glBufferParameteriAPPLE(GL_ELEMENT_ARRAY_BUFFER_ARB, GL_BUFFER_FLUSHING_UNMAP_APPLE, GL_FALSE);
+#endif
 #endif
 						src = (U8*) glMapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 					}
@@ -2529,7 +2537,9 @@ void LLVertexBuffer::setupVertexBuffer(U32 data_mask)
 		LL_ERRS() << "LLVertexBuffer::setupVertexBuffer missing required components for supplied data mask." << LL_ENDL;
 	}
 
+#ifndef LL_GL_CORE
 	if (LLGLSLShader::sNoFixedFunction)
+#endif
 	{
 		if (data_mask & MAP_NORMAL)
 		{
@@ -2607,11 +2617,11 @@ void LLVertexBuffer::setupVertexBuffer(U32 data_mask)
 		if (data_mask & MAP_TEXTURE_INDEX && 
 				(gGLManager.mGLSLVersionMajor >= 2 || gGLManager.mGLSLVersionMinor >= 30)) //indexed texture rendering requires GLSL 1.30 or later
 		{
-#if !LL_DARWIN
+//#if !LL_DARWIN
 			S32 loc = TYPE_TEXTURE_INDEX;
 			void *ptr = (void*) (base + mOffsets[TYPE_VERTEX] + 12);
 			glVertexAttribIPointer(loc, 4, GL_UNSIGNED_BYTE, LLVertexBuffer::sTypeSize[TYPE_VERTEX], ptr);
-#endif
+//#endif
 		}
 		if (data_mask & MAP_VERTEX)
 		{
@@ -2620,6 +2630,7 @@ void LLVertexBuffer::setupVertexBuffer(U32 data_mask)
 			glVertexAttribPointerARB(loc, 3,GL_FLOAT, GL_FALSE, LLVertexBuffer::sTypeSize[TYPE_VERTEX], ptr);
 		}	
 	}	
+#ifndef LL_GL_CORE
 	else
 	{
 		if (data_mask & MAP_NORMAL)
@@ -2663,6 +2674,7 @@ void LLVertexBuffer::setupVertexBuffer(U32 data_mask)
 			glVertexPointer(3,GL_FLOAT, LLVertexBuffer::sTypeSize[TYPE_VERTEX], (void*)(base + 0));
 		}	
 	}
+#endif
 
 	llglassertok();
 }

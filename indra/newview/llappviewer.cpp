@@ -504,8 +504,10 @@ static void settings_to_globals()
 	LLCOMBOBOX_WIDTH	= 128;
 
 	LLSurface::setTextureSize(gSavedSettings.getU32("RegionTextureSize"));
-	
+
+#ifndef LL_GL_CORE
 	LLRender::sGLCoreProfile = LLGLSLShader::sNoFixedFunction = gSavedSettings.getBOOL("RenderGLCoreProfile");
+#endif
 
 	LLImageGL::sGlobalUseAnisotropic	= gSavedSettings.getBOOL("RenderAnisotropic");
 	LLImageGL::sCompressTextures		= gSavedSettings.getBOOL("RenderCompressTextures");

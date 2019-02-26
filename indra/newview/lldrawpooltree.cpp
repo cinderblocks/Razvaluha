@@ -100,8 +100,8 @@ void LLDrawPoolTree::render(S32 pass)
 		return;
 	}
 
-	LLGLState<GL_ALPHA_TEST> test(LLGLSLShader::sNoFixedFunction ? 0 : 1);
-	LLGLState<GL_LIGHTING> light_state;
+	LLGLState<GL_ALPHA_TEST_LEGACY> test(LLGLSLShader::sNoFixedFunction ? 0 : 1);
+	LLGLState<GL_LIGHTING_LEGACY> light_state;
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		gPipeline.enableLightsDynamic(light_state);

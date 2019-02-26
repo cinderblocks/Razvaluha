@@ -215,7 +215,7 @@ void LLManipScale::render()
 	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 	LLGLDepthTest gls_depth(GL_TRUE);
 	LLGLEnable<GL_BLEND> gl_blend;
-	LLGLEnable<GL_ALPHA_TEST> gls_alpha_test;
+	LLGLEnable<GL_ALPHA_TEST_LEGACY> gls_alpha_test;
 	LLBBox bbox = LLSelectMgr::getInstance()->getBBoxOfSelection();
 
 	if( canAffectSelection() )

@@ -748,7 +748,7 @@ void LLDrawPoolBump::renderBump(U32 pass)
 	}
 
 	LL_RECORD_BLOCK_TIME(FTM_RENDER_BUMP);
-	LLGLDisable<GL_FOG> fog;
+	LLGLDisable<GL_FOG_LEGACY> fog;
 	LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE, GL_LEQUAL);
 	LLGLEnable<GL_BLEND> blend;
 	gGL.diffuseColor4f(1,1,1,1);
@@ -1329,7 +1329,7 @@ void LLBumpImageList::onSourceLoaded( BOOL success, LLViewerTexture *src_vi, LLI
 			if (!LLPipeline::sRenderDeferred)
 			{
 				LL_RECORD_BLOCK_TIME(FTM_BUMP_SOURCE_CREATE);
-				bump->setExplicitFormat(GL_ALPHA8, GL_ALPHA);
+				bump->setExplicitFormat(GL_ALPHA8_LEGACY, GL_ALPHA_LEGACY);
 				bump->createGLTexture(0, dst_image);
 			}
 			else 
@@ -1340,7 +1340,7 @@ void LLBumpImageList::onSourceLoaded( BOOL success, LLViewerTexture *src_vi, LLI
 
 				{
 					LL_RECORD_BLOCK_TIME(FTM_BUMP_SOURCE_CREATE);
-					bump->setExplicitFormat(GL_RGBA8, GL_ALPHA);
+					bump->setExplicitFormat(GL_RGBA8, GL_ALPHA_LEGACY);
 					bump->createGLTexture(0, dst_image);
 				}
 

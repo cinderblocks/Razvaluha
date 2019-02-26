@@ -55,7 +55,7 @@ void LLDrawPoolGlow::renderPostDeferred(S32 pass)
 {
 	LL_RECORD_BLOCK_TIME(FTM_RENDER_GLOW);
 	LLGLEnable<GL_BLEND> blend;
-	LLGLDisable<GL_ALPHA_TEST> test;
+	LLGLDisable<GL_ALPHA_TEST_LEGACY> test;
 	gGL.flush();
 	/// Get rid of z-fighting with non-glow pass.
 	LLGLEnable<GL_POLYGON_OFFSET_FILL> polyOffset;
@@ -96,7 +96,7 @@ void LLDrawPoolGlow::render(S32 pass)
 {
 	LL_RECORD_BLOCK_TIME(FTM_RENDER_GLOW);
 	LLGLEnable<GL_BLEND> blend;
-	LLGLDisable<GL_ALPHA_TEST> test;
+	LLGLDisable<GL_ALPHA_TEST_LEGACY> test;
 	gGL.flush();
 	/// Get rid of z-fighting with non-glow pass.
 	LLGLEnable<GL_POLYGON_OFFSET_FILL> polyOffset;
@@ -188,7 +188,7 @@ void LLDrawPoolSimple::render(S32 pass)
 	
 	{ //render simple
 		LL_RECORD_BLOCK_TIME(FTM_RENDER_SIMPLE);
-		LLGLState<GL_LIGHTING> lighting;
+		LLGLState<GL_LIGHTING_LEGACY> lighting;
 		gPipeline.enableLightsDynamic(lighting);
 
 		if (mVertexShaderLevel > 0)
@@ -209,7 +209,7 @@ void LLDrawPoolSimple::render(S32 pass)
 		}
 		else
 		{
-			LLGLDisable<GL_ALPHA_TEST> alpha_test;
+			LLGLDisable<GL_ALPHA_TEST_LEGACY> alpha_test;
 			renderTexture(LLRenderPass::PASS_SIMPLE, getVertexDataMask());
 		}
 		
@@ -287,7 +287,7 @@ void LLDrawPoolAlphaMask::render(S32 pass)
 	}
 	else
 	{
-		LLGLEnable<GL_ALPHA_TEST> test;
+		LLGLEnable<GL_ALPHA_TEST_LEGACY> test;
 		pushMaskBatches(LLRenderPass::PASS_ALPHA_MASK, getVertexDataMask(), TRUE, FALSE);
 		gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT); //OK
 	}
@@ -357,8 +357,8 @@ void LLDrawPoolFullbrightAlphaMask::render(S32 pass)
 	}
 	else
 	{
-		LLGLEnable<GL_ALPHA_TEST> test;
-		LLGLState<GL_LIGHTING> lighting;
+		LLGLEnable<GL_ALPHA_TEST_LEGACY> test;
+		LLGLState<GL_LIGHTING_LEGACY> lighting;
 		gPipeline.enableLightsFullbright(lighting);
 		pushMaskBatches(LLRenderPass::PASS_FULLBRIGHT_ALPHA_MASK, getVertexDataMask(), TRUE, FALSE);
 		gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT); //OK
@@ -386,7 +386,7 @@ void LLDrawPoolSimple::endDeferredPass(S32 pass)
 void LLDrawPoolSimple::renderDeferred(S32 pass)
 {
 	LLGLDisable<GL_BLEND> blend;
-	LLGLDisable<GL_ALPHA_TEST> alpha_test;
+	LLGLDisable<GL_ALPHA_TEST_LEGACY> alpha_test;
 
 	{ //render simple
 		LL_RECORD_BLOCK_TIME(FTM_RENDER_SIMPLE_DEFERRED);
@@ -476,7 +476,7 @@ void LLDrawPoolGrass::render(S32 pass)
 	
 	{
 		LL_RECORD_BLOCK_TIME(FTM_RENDER_GRASS);
-		LLGLEnable<GL_ALPHA_TEST> test;
+		LLGLEnable<GL_ALPHA_TEST_LEGACY> test;
 		gGL.setSceneBlendType(LLRender::BT_ALPHA);
 		//render grass
 		LLRenderPass::renderTexture(LLRenderPass::PASS_GRASS, getVertexDataMask());
@@ -604,7 +604,7 @@ void LLDrawPoolFullbright::render(S32 pass)
 	}
 	else
 	{
-		LLGLState<GL_LIGHTING> light_state;
+		LLGLState<GL_LIGHTING_LEGACY> light_state;
 		gPipeline.enableLightsFullbright(light_state);
 		U32 fullbright_mask = LLVertexBuffer::MAP_VERTEX | LLVertexBuffer::MAP_TEXCOORD0 | LLVertexBuffer::MAP_COLOR;
 		renderTexture(LLRenderPass::PASS_FULLBRIGHT, fullbright_mask);
