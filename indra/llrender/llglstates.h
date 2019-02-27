@@ -229,8 +229,8 @@ struct LLGLSTracker
 {
 private:
 	LLGLEnable<GL_BLEND> mBlend;
-#ifndef LL_GL_CORE
 	LLGLEnable<GL_CULL_FACE> mCullFace;
+#ifndef LL_GL_CORE
 	LLGLEnable<GL_ALPHA_TEST_LEGACY> mAlphaTest;
 #endif
 };
