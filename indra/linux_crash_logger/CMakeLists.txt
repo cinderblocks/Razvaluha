@@ -73,6 +73,7 @@ target_link_libraries(linux-crash-logger
     ${UI_LIBRARIES}
     ${FREETYPE_LIBRARIES}
     ${LIBRT_LIBRARY}
+    fontconfig
     )
 
 add_custom_target(linux-crash-logger-target ALL
