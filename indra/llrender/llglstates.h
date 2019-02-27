@@ -196,8 +196,10 @@ private:
 
 struct LLGLSPipelineEmbossBump
 {
+#ifndef LL_GL_CORE
 private:
-	LLGLDisable<GL_FOG> mFog;
+	LLGLDisable<GL_FOG_LEGACY> mFog;
+#endif
 };
 
 struct LLGLSPipelineSelection
