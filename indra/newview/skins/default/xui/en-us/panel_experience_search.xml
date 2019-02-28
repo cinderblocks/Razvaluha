@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <panel
   layout="topleft"
-  bottom="18"
+  bottom="48"
   mouse_opaque="false"
   left="0"
   width="350"

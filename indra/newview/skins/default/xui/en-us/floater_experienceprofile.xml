@@ -62,7 +62,6 @@
       width="348"
       name="panel_experience_info">
       <scroll_container
-        color="0.169 0.169 0.169 1"
         follows="all"
         height="520"
         layout="topleft"
@@ -72,7 +71,6 @@
         top_pad="10"
         width="330">
         <panel
-          bg_alpha_color="0.169 0.169 0.169 1"
           follows="top|left|right"
           height="550"
           layout="topleft"
@@ -174,7 +172,7 @@
               width="315"
               visible="false"
               name="description panel">
-              <expandable_text
+              <text_editor
                 follows="left|top|right"
                 font="SansSerif"
                 height="50"
@@ -183,7 +181,8 @@
                 name="experience_description"
                 top="0"
                 value=""
-                width="293"/>
+                width="293"
+				max_length="2048"/>
             </layout_panel>
             <layout_panel
               follows=""
@@ -431,7 +430,6 @@
       width="348"
       name="edit_panel_experience_info">
       <scroll_container
-        color="0.169 0.169 0.169 1"
         follows="all"
         height="520"
         layout="topleft"
@@ -441,7 +439,6 @@
         top_pad="10"
         width="330">
         <panel
-          bg_alpha_color="0.169 0.169 0.169 1"
           follows="top|left|right"
           height="590"
           layout="topleft"
@@ -475,7 +472,6 @@
             left="10"
             name="edit_experience_title"
             max_length_bytes="63"
-            text_color="0 0 0 1"
             right="-10"/>
           <text
             follows="left|top|right"
@@ -494,7 +490,6 @@
             left="11"
             name="edit_experience_description"
             max_length="2048"
-            text_color="0 0 0 1"
             right="-11"
             word_wrap="true"/>
           <button
