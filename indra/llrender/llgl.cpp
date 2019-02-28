@@ -988,7 +988,8 @@ void LLGLManager::initExtensions()
 	mHasTransformFeedback = mGLVersion >= 4.f || ExtensionExists("GL_EXT_transform_feedback", gGLHExts.mSysExts);
 #if !LL_DARWIN
 	mHasPointParameters = mGLVersion >= 2.f || (!mIsATI && ExtensionExists("GL_ARB_point_parameters", gGLHExts.mSysExts));
-#elif defined(LL_GL_CORE)
+#endif
+#if defined(LL_GL_CORE)
 	mHasShaderObjects = mHasVertexShader = mHasFragmentShader = true;
 #else
 	mHasShaderObjects = mGLVersion >= 2.f || ExtensionExists("GL_ARB_shader_objects", gGLHExts.mSysExts) && (LLRender::sGLCoreProfile || ExtensionExists("GL_ARB_shading_language_100", gGLHExts.mSysExts));
