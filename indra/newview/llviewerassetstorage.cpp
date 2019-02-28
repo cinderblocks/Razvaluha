@@ -86,11 +86,11 @@ protected:
 			{
 				// Okay, it appears this request was used for useful things.  Record
 				// the expected dequeue and duration of request processing.
-            /*LLViewerAssetStatsFF::record_dequeue(mType, mWithHTTP, false);
-            LLViewerAssetStatsFF::record_response(mType, mWithHTTP, false,
+	            LLViewerAssetStatsFF::record_dequeue_main(mType, mWithHTTP, false);
+	            LLViewerAssetStatsFF::record_response_main(mType, mWithHTTP, false,
 												  (LLViewerAssetStatsFF::get_timestamp()
                                                    - mMetricsStartTime),
-                                                  mBytesFetched);*/
+                                                  mBytesFetched);
 				mMetricsStartTime = (U32Seconds)0;
 			}
 		}
@@ -157,7 +157,6 @@ void LLViewerAssetStorage::storeAssetData(
 
 			LLVFile vfile(mVFS, asset_id, asset_type, LLVFile::READ);
 			S32 asset_size = vfile.getSize();
-
 
 			LLAssetRequest *req = new LLAssetRequest(asset_id, asset_type);
 			req->mUpCallback = callback;
@@ -344,6 +343,7 @@ void LLViewerAssetStorage::storeAssetData(
 	}
 }
 
+
 /**
  * @brief Allocate and queue an asset fetch request for the viewer
  *
@@ -384,22 +384,22 @@ void LLViewerAssetStorage::queueRequestHttp(
 {
     LL_DEBUGS("ViewerAsset") << "Request asset via HTTP " << uuid << " type " << LLAssetType::lookup(atype) << LL_ENDL;
 
-    bool with_http = true;
-		LLViewerAssetRequest *req = new LLViewerAssetRequest(uuid, atype, with_http);
-		req->mDownCallback = callback;
-		req->mUserData = user_data;
-		req->mIsPriority = is_priority;
-		if (!duplicate)
-		{
-			// Only collect metrics for non-duplicate requests.  Others 
-			// are piggy-backing and will artificially lower averages.
-			req->mMetricsStartTime = LLViewerAssetStatsFF::get_timestamp();
-		}
-		mPendingDownloads.push_back(req);
-	
+	bool with_http = true;
+	LLViewerAssetRequest *req = new LLViewerAssetRequest(uuid, atype, with_http);
+	req->mDownCallback = callback;
+	req->mUserData = user_data;
+	req->mIsPriority = is_priority;
+	if (!duplicate)
+	{
+		// Only collect metrics for non-duplicate requests.  Others
+		// are piggy-backing and will artificially lower averages.
+		req->mMetricsStartTime = LLViewerAssetStatsFF::get_timestamp();
+	}
+	mPendingDownloads.push_back(req);
+
     // This is the same as the current UDP logic - don't re-request a duplicate.
-		if (!duplicate)
-		{
+	if (!duplicate)
+	{
         LLCoprocedureManager::instance().enqueueCoprocedure("AssetStorage","LLViewerAssetStorage::assetRequestCoro",
             boost::bind(&LLViewerAssetStorage::assetRequestCoro, this, req, uuid, atype, callback, user_data));
     }
@@ -468,13 +468,13 @@ void LLViewerAssetStorage::assetRequestCoro(
         LL_WARNS_ONCE("ViewerAsset") << "capsRecv got event" << LL_ENDL;
         LL_WARNS_ONCE("ViewerAsset") << "region " << gAgent.getRegion() << " mViewerAssetUrl " << mViewerAssetUrl << LL_ENDL;
     }
-    if (mViewerAssetUrl.empty() && gAgent.getRegion())
+    if (/*mViewerAssetUrl.empty() &&*/ gAgent.getRegion())
     {
         mViewerAssetUrl = gAgent.getRegion()->getViewerAssetUrl();
     }
 	if (mViewerAssetUrl.empty())
 	{
-		if (!gHippoGridManager->getCurrentGrid()->isSecondLife() && isUpstreamOK())
+		if (gHippoGridManager->getCurrentGrid()->isSecondLife() && isUpstreamOK()) // maintain this code for older grids
 		{
 			req->mWithHTTP = false;
 
@@ -492,7 +492,7 @@ void LLViewerAssetStorage::assetRequestCoro(
 			LLTransferTargetChannel *ttcp = gTransferManager.getTargetChannel(mUpstreamHost, LLTCT_ASSET);
 			ttcp->requestTransfer(spa, tpvf, 100.f + (req->mIsPriority ? 1.f : 0.f));
 
-			//LLViewerAssetStatsFF::record_enqueue(atype, req->mWithHTTP, false);
+			LLViewerAssetStatsFF::record_enqueue_main(atype, req->mWithHTTP, req->mIsTemp);
 		}
 		else
 		{
@@ -504,7 +504,7 @@ void LLViewerAssetStorage::assetRequestCoro(
 		return;
 	}
 
-    //LLViewerAssetStatsFF::record_enqueue(atype, req->mWithHTTP, false);
+    LLViewerAssetStatsFF::record_enqueue_main(atype, req->mWithHTTP, req->mIsTemp);
 
     std::string url = getAssetURL(mViewerAssetUrl, uuid,atype);
     LL_DEBUGS("ViewerAsset") << "request url: " << url << LL_ENDL;

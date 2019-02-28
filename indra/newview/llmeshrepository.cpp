@@ -3650,7 +3650,7 @@ void LLMeshRepository::notifyLoadedMeshes()
 				//calculate "score" for pending requests
 
 				//create score map
-				std::map<LLUUID, F32> score_map;
+				boost::unordered_map<LLUUID, F32> score_map;
 
 				for (U32 i = 0; i < 4; ++i)
 				{

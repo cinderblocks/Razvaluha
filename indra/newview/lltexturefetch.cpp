@@ -1358,7 +1358,8 @@ bool LLTextureFetchWorker::doWork(S32 param)
 
 			if (region)
 			{
-				std::string http_url = region->getHttpUrl() ;
+				std::string http_url = region->getViewerAssetUrl();
+				if (http_url.empty()) http_url = region->getCapability("GetTexture");
 				if (!http_url.empty())
 				{
 					if (mFTType != FTT_DEFAULT)
@@ -4566,7 +4567,7 @@ void LLTextureFetchDebugger::debugHTTP()
 		return;
 	}
 	
-	mHTTPUrl = region->getHttpUrl();
+	mHTTPUrl = region->getViewerAssetUrl();
 	if (mHTTPUrl.empty())
 	{
 		LL_INFOS(LOG_TXT) << "Fetch Debugger : Current region URL undefined. Cannot fetch textures through HTTP." << LL_ENDL;

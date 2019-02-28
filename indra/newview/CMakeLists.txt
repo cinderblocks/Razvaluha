@@ -89,9 +89,8 @@ include_directories(SYSTEM
 
 set(viewer_SOURCE_FILES
     NACLantispam.cpp
-    aifile.cpp
-    #aixml.cpp
-    #aixmllindengenepool.cpp
+    aixml.cpp
+    aixmllindengenepool.cpp
     alfloaterregiontracker.cpp
     aoremotectrl.cpp
     ascentfloatercontactgroups.cpp
@@ -636,9 +635,8 @@ set(viewer_HEADER_FILES
     ViewerInstall.cmake
 
     NACLantispam.h
-    aifile.h
-    #aixml.h
-    #aixmllindengenepool.h
+    aixml.h
+    aixmllindengenepool.h
     alfloaterregiontracker.h
     aoremotectrl.h
     ascentfloatercontactgroups.h

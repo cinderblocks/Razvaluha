@@ -116,8 +116,6 @@
 #include "llskinningutil.h"
 
 #include "llfloaterexploreanimations.h"
-//#include "aixmllindengenepool.h"
-#include "aifile.h"
 
 #include "llavatarname.h"
 #include "../lscript/lscript_byteformat.h"

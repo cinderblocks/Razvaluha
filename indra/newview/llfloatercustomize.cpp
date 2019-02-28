@@ -39,6 +39,7 @@
 #include "llagentwearables.h"
 #include "llappearancemgr.h"
 #include "llflyoutbutton.h"
+#include "llfilepicker.h"
 #include "llmakeoutfitdialog.h"
 #include "llmorphview.h"
 #include "llnotificationsutil.h"
@@ -54,8 +55,7 @@
 #include "llvoavatarself.h"
 
 #include "hippogridmanager.h"
-//#include "aixmllindengenepool.h"
-#include "aifile.h"
+#include "aixmllindengenepool.h"
 
 using namespace LLAvatarAppearanceDefines;
 
@@ -118,9 +118,9 @@ LLFloaterCustomize::LLFloaterCustomize()
 	gInventory.addObserver(mInventoryObserver);
 
 	LLOutfitObserver& outfit_observer =  LLOutfitObserver::instance();
-	outfit_observer.addBOFReplacedCallback(boost::bind(&LLFloaterCustomize::refreshCurrentOutfitName, this, ""));
-	outfit_observer.addBOFChangedCallback(boost::bind(&LLFloaterCustomize::refreshCurrentOutfitName, this, ""));
-	outfit_observer.addCOFChangedCallback(boost::bind(&LLFloaterCustomize::refreshCurrentOutfitName, this, ""));
+	outfit_observer.addBOFReplacedCallback(boost::bind(&LLFloaterCustomize::refreshCurrentOutfitName, this, LLStringUtil::null));
+	outfit_observer.addBOFChangedCallback(boost::bind(&LLFloaterCustomize::refreshCurrentOutfitName, this, LLStringUtil::null));
+	outfit_observer.addCOFChangedCallback(boost::bind(&LLFloaterCustomize::refreshCurrentOutfitName, this, LLStringUtil::null));
 
 	LLCallbackMap::map_t factory_map;
 	const std::string &invalid_name = LLWearableType::getTypeName(LLWearableType::WT_INVALID);
@@ -237,7 +237,11 @@ void LLFloaterCustomize::editWearable(LLViewerWearable* wearable, bool disable_c
 {
 	if(!wearable)
 		return;
-	LLFloaterCustomize::getInstance()->setCurrentWearableType(wearable->getType(), disable_camera_switch);
+	auto& inst = LLFloaterCustomize::instance();
+	inst.setCurrentWearableType(wearable->getType(), disable_camera_switch);
+	U32 index(0);
+	gAgentWearables.getWearableIndex(wearable, index);
+	static_cast<LLPanelEditWearable*>(inst.mTabContainer->getCurrentPanel())->setWearableIndex(index);
 }
 
 //static
@@ -306,9 +310,8 @@ void LLFloaterCustomize::setCurrentWearableType( LLWearableType::EType type, boo
 // reX: new function
 void LLFloaterCustomize::onBtnImport()
 {
-#if 0
 	LLFilePicker& filepicker = LLFilePicker::instance();
-	if (!filepicker.getLoadFile(LLFilePicker::FFLOAD_XML))
+	if (!filepicker.getOpenFile(LLFilePicker::FFLOAD_XML))
 	{
 		// User canceled import.
 		return;
@@ -450,7 +453,6 @@ void LLFloaterCustomize::onBtnImport()
 	{
 		AIAlert::add("AIXMLImportWearableTypeMismatch", args("[TYPE]", label)("[ARCHETYPENAME]", wearable_types));
 	}
-#endif
 }
 
 // reX: new function
@@ -490,7 +492,7 @@ void LLFloaterCustomize::onBtnExport()
 	//std::string default_path = gDirUtilp->getExpandedFilename(LL_PATH_LOGS, "");
 
 	LLFilePicker& filepicker = LLFilePicker::instance();
-	if (filepicker->getSaveFile(LLFilePicker::FFSAVE_XML, filename))
+	if (filepicker.getSaveFile(LLFilePicker::FFSAVE_XML, file_name))
 	{
 		// User canceled export.
 		return;
@@ -501,9 +503,7 @@ void LLFloaterCustomize::onBtnExport()
 	bool success = false;
 	try
 	{
-		AIFile outfile(filename, "wb");
-
-		AIXMLLindenGenepool linden_genepool(outfile);
+		AIXMLLindenGenepool linden_genepool(filename);
 		linden_genepool.child(edit_wearable->getArchetype());
 
 		success = true;
@@ -664,7 +664,8 @@ const S32 HEADER_HEIGHT = 3 * (LINE_HEIGHT + LLFLOATER_VPAD) + (2 * LLPANEL_BORD
 void LLFloaterCustomize::wearablesChanged(LLWearableType::EType type)
 {
 	llassert( type < LLWearableType::WT_COUNT );
-	gSavedSettings.setU32("AvatarSex", (gAgentAvatarp->getSex() == SEX_MALE) );
+	if (type == LLWearableType::WT_SHAPE)
+		gSavedSettings.setU32("AvatarSex", (gAgentAvatarp->getSex() == SEX_MALE));
 	
 	LLPanelEditWearable* panel = mWearablePanelList[ type ];
 	if( panel )

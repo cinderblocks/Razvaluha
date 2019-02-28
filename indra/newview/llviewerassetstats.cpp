@@ -240,11 +240,12 @@ LLViewerAssetStats::recordGetDequeued(LLViewerAssetType::EType at, bool with_htt
 }
 
 void
-LLViewerAssetStats::recordGetServiced(LLViewerAssetType::EType at, bool with_http, bool is_temp, duration_t duration)
+LLViewerAssetStats::recordGetServiced(LLViewerAssetType::EType at, bool with_http, bool is_temp, duration_t duration, F64 bytes)
 {
 	const EViewerAssetCategories eac(asset_type_to_category(at, with_http, is_temp));
 
 	mCurRegionStats->mRequests[int(eac)].mResponse.record(duration);
+	mCurRegionStats->mRequests[int(eac)].mBytesFetched.record(bytes);
 }
 
 void
@@ -276,6 +277,7 @@ LLViewerAssetStats::asLLSD(bool compact_output)
 	static const LLSD::String rmin_tag("resp_min");
 	static const LLSD::String rmax_tag("resp_max");
 	static const LLSD::String rmean_tag("resp_mean");
+	static const LLSD::String rmean_bytes_tag("resp_mean_bytes");
 
 	// MMM Group Sub-tags.
 	static const LLSD::String cnt_tag("count");
@@ -318,6 +320,7 @@ LLViewerAssetStats::asLLSD(bool compact_output)
 				slot[rmin_tag] = LLSD(F64(stats.mRequests[i].mResponse.getMin().valueInUnits<LLUnits::Seconds>()));
 				slot[rmax_tag] = LLSD(F64(stats.mRequests[i].mResponse.getMax().valueInUnits<LLUnits::Seconds>()));
 				slot[rmean_tag] = LLSD(F64(stats.mRequests[i].mResponse.getMean().valueInUnits<LLUnits::Seconds>()));
+				slot[rmean_bytes_tag] = LLSD(F64(stats.mRequests[i].mBytesFetched.getMean()));
 			}
 		}
 
@@ -422,7 +425,7 @@ record_dequeue_main(LLViewerAssetType::EType at, bool with_http, bool is_temp)
 }
 
 void
-record_response_main(LLViewerAssetType::EType at, bool with_http, bool is_temp, LLViewerAssetStats::duration_t duration)
+record_response_main(LLViewerAssetType::EType at, bool with_http, bool is_temp, LLViewerAssetStats::duration_t duration, F64 bytes)
 {
 	if (! gViewerAssetStatsMain)
 		return;

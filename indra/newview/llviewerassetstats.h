@@ -154,6 +154,7 @@ typedef U64Microseconds duration_t;
 			LLSimpleStatCounter			mEnqueued;
 			LLSimpleStatCounter			mDequeued;
 			LLSimpleStatMMM<duration_t>	mResponse;
+			LLSimpleStatMMM<>			mBytesFetched;
 		}
 		mRequests [EVACCount];
 	};
@@ -176,7 +177,7 @@ public:
 	// Asset GET Requests
 	void recordGetEnqueued(LLViewerAssetType::EType at, bool with_http, bool is_temp);
 	void recordGetDequeued(LLViewerAssetType::EType at, bool with_http, bool is_temp);
-	void recordGetServiced(LLViewerAssetType::EType at, bool with_http, bool is_temp, duration_t duration);
+	void recordGetServiced(LLViewerAssetType::EType at, bool with_http, bool is_temp, duration_t duration, F64 bytes=0);
 
 	// Frames-Per-Second Samples
 	void recordFPS(F32 fps);
@@ -306,7 +307,7 @@ void record_enqueue_main(LLViewerAssetType::EType at, bool with_http, bool is_te
 void record_dequeue_main(LLViewerAssetType::EType at, bool with_http, bool is_temp);
 
 void record_response_main(LLViewerAssetType::EType at, bool with_http, bool is_temp,
-						  LLViewerAssetStats::duration_t duration);
+						  LLViewerAssetStats::duration_t duration, F64 bytes=0);
 
 void record_fps_main(F32 fps);
 

@@ -81,7 +81,7 @@ const std::string& HippoGridInfo::getGridOwner() const
 	}
 	else
 	{
-		return this->getGridName();
+		return getGridName();
 	}	
 }
 
@@ -102,8 +102,7 @@ void HippoGridInfo::setPlatform(Platform platform)
 void HippoGridInfo::setPlatform(const std::string& platform)
 {
 	std::string tmp = platform;
-	for (unsigned i=0; i<platform.size(); i++)
-		tmp[i] = tolower(tmp[i]);
+	LLStringUtil::toLower(tmp);
 
 	if (tmp == "aurora" || tmp == "whitecore")
 	{
@@ -120,7 +119,7 @@ void HippoGridInfo::setPlatform(const std::string& platform)
 	else 
 	{
 		setPlatform(PLATFORM_OTHER);
-		LL_WARNS() << "Unknown platform '" << platform << "' for " << mGridName << "." << LL_ENDL;
+		LL_WARNS() << "Unknown platform '" << platform << "' for " << mGridName << '.' << LL_ENDL;
 	}
 }
 
@@ -337,7 +336,7 @@ void HippoGridInfo::onXmlCharacterData(void* userData, const XML_Char* s, int le
 
 		case XML_GRIDNAME:
 		{
-		  if (self->mGridName == "")
+		  if (self->mGridName.empty())
 		  {
 			self->mGridName.assign(s, len);
 		  }
@@ -489,7 +488,7 @@ std::string HippoGridInfo::getGridNick() const
 // static
 const char* HippoGridInfo::getPlatformString(Platform platform)
 {
-	static const char* platformStrings[PLATFORM_LAST] = 
+	constexpr const char* platformStrings[PLATFORM_LAST] =
 	{
 		"Other", "WhiteCore", "OpenSim", "SecondLife"
 	};

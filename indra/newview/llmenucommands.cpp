@@ -196,7 +196,6 @@ struct MenuFloaterDict : public LLSingleton<MenuFloaterDict>
 		registerFloater("mouselook", boost::bind(toggle_mouselook));
 		registerFloater("my land", boost::bind(LLFloaterLandHoldings::show, nullptr));
 		registerFloater("outfit", boost::bind(show_outfit_dialog));
-		registerFloater("PostProcess", boost::bind(LLFloaterPostProcess::show));
 		registerFloater("preferences", boost::bind(LLFloaterPreference::show, nullptr));
 		registerFloater("quit", boost::bind(&LLAppViewer::userQuit, LLAppViewer::instance()));
 		registerFloater("RegionDebugConsole", boost::bind(handle_singleton_toggle<LLFloaterRegionDebugConsole>, nullptr), boost::bind(LLFloaterRegionDebugConsole::instanceExists));
@@ -243,6 +242,7 @@ struct MenuFloaterDict : public LLSingleton<MenuFloaterDict>
 		registerFloater<LLFloaterPathfindingCharacters>	("pathfinding_characters");
 		registerFloater<LLFloaterPathfindingLinksets>	("pathfinding_linksets");
 		registerFloater<LLFloaterPermsDefault>			("perm prefs");
+		registerFloater<LLFloaterPostProcess>			("PostProcess");
 		registerFloater<LLFloaterAvatarList>			("radar");
 		registerFloater<ALFloaterRegionTracker>			("region_tracker");
 		registerFloater<LLFloaterScriptLimits>			("script info");
