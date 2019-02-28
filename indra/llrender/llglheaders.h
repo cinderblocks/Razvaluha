@@ -805,7 +805,6 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 // Note that they also must not be called on 10.3.9.  This should be taken care of by a runtime check for the existence of the GL extension.
 #include <AvailabilityMacros.h>
 
-#define LL_GL_CORE 3.2
 #define ARB_FN(fn)
 #define glUniform1iARB glUniform1i
 #define glUniform1ivARB glUniform1iv
