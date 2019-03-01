@@ -223,7 +223,6 @@ public:
 	void set_page_zoom_factor( F64 factor );
 	void clear_cache();
 	void clear_cookies();
-	void set_cookies(const std::string &cookies);
 	void cookies_enabled(bool enable);
 	void proxy_setup(bool enable, int type = 0, const std::string &host = LLStringUtil::null, int port = 0, const std::string &user = LLStringUtil::null, const std::string &pass = LLStringUtil::null);
 	void browse_stop();
