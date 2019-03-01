@@ -2321,9 +2321,10 @@ void LLLiveLSLEditor::onLoadComplete(LLVFS *vfs, const LLUUID& asset_id,
 {
 	LL_DEBUGS() << "LLLiveLSLEditor::onLoadComplete: got uuid " << asset_id
 		 << LL_ENDL;
-	LLUUID* xored_id = (LLUUID*)user_data;
+	LLSD* key = (LLSD*)user_data;
+	const auto& xored_id = (*key)["itemid"];
 
-	LLLiveLSLEditor* instance = static_cast<LLLiveLSLEditor*>(LLPreview::find(*xored_id));
+	LLLiveLSLEditor* instance = static_cast<LLLiveLSLEditor*>(LLPreview::find(xored_id));
 
 	if(instance )
 	{
@@ -2354,7 +2355,7 @@ void LLLiveLSLEditor::onLoadComplete(LLVFS *vfs, const LLUUID& asset_id,
 		}
 	}
 
-	delete xored_id;
+	delete key;
 }
 
 void LLLiveLSLEditor::loadScriptText(LLVFS *vfs, const LLUUID &uuid, LLAssetType::EType type)
