@@ -53,13 +53,12 @@
 #include "llpanelprofile.h"
 #include "llparcel.h"
 #include "llpluginclassmedia.h"
-#include "llplugincookiestore.h"
 #include "llurldispatcher.h"
 #include "lluuid.h"
 #include "llvieweraudio.h"
 #include "llviewermediafocus.h"
 #include "llviewercontrol.h"
-#include "llviewermenufile.h"
+#include "llviewermenufile.h" // LLFilePickerThread
 #include "llviewernetwork.h"
 #include "llviewerparcelmedia.h"
 #include "llviewerparcelmgr.h"
@@ -87,7 +86,6 @@ std::string getProfileURL(const std::string& agent_name);
 /*static*/ const char* LLViewerMedia::SHOW_MEDIA_OUTSIDE_PARCEL_SETTING = "MediaShowOutsideParcel";
 
 
-/* Singu TODO: Threaded File Picker for browser
 class LLMediaFilePicker : public LLFilePickerThread // deletes itself when done
 {
 public:
@@ -112,20 +110,15 @@ public:
 private:
     boost::shared_ptr<LLPluginClassMedia> mPlugin;
 };
-*/
 
 void init_threaded_picker_load_dialog(LLPluginClassMedia* plugin, LLFilePicker::ELoadFilter filter, bool get_multiple)
 {
-	auto& inst = LLFilePicker::instance();
-	if (get_multiple ? inst.getMultipleOpenFiles(filter) : inst.getOpenFile(filter))
-		plugin->sendPickFileResponse(inst.getFilenames());
+    (new LLMediaFilePicker(plugin, filter, get_multiple))->getFile(); // will delete itself
 }
 
 void init_threaded_picker_save_dialog(LLPluginClassMedia* plugin, LLFilePicker::ESaveFilter filter, std::string &proposed_name)
 {
-	auto& inst = LLFilePicker::instance();
-	if (inst.getSaveFile(filter, proposed_name))
-		plugin->sendPickFileResponse(inst.getFilenames());
+    (new LLMediaFilePicker(plugin, filter, proposed_name))->getFile(); // will delete itself
 }
 
 ///////////////////////////////////////////////////////////////////////////////
