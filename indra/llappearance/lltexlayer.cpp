@@ -1130,12 +1130,14 @@ void LLTexLayer::calculateTexLayerColor(const param_color_list_t &param_list, LL
 
 BOOL LLTexLayer::render(S32 x, S32 y, S32 width, S32 height)
 {
+#ifndef LL_GL_CORE
 	LLGLEnable<GL_COLOR_MATERIAL> color_mat;
 	// *TODO: Is this correct?
 	//gPipeline.disableLights();
 	stop_glerror();
 	LLGLDisable<GL_LIGHTING> no_lighting(!LLGLSLShader::sNoFixedFunction);
 	stop_glerror();
+#endif
 
 	bool use_shaders = LLGLSLShader::sNoFixedFunction;
 

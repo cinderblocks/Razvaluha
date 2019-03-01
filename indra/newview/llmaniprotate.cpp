@@ -289,7 +289,7 @@ void LLManipRotate::render()
 			}
 
 			LLGLEnable<GL_CULL_FACE> cull_face;
-#ifndef LL_CORE_GL
+#ifndef LL_GL_CORE
 			LLGLEnable<GL_CLIP_PLANE0> clip_plane0(!LLRender::sGLCoreProfile);
 #endif
 			LLGLDepthTest gls_depth(GL_FALSE);

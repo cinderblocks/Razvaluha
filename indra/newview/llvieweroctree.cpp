@@ -800,7 +800,11 @@ protected:
 	{
 		GLuint ret = 0;
 
+#ifndef LL_GL_CORE
 		glGenQueriesARB(1, &ret);
+#else
+		glGenQueries(1, &ret);
+#endif
 
 		return ret;
 	}
@@ -1084,6 +1088,7 @@ U32 LLOcclusionCullingGroup::getLastOcclusionIssuedTime()
 
 void LLOcclusionCullingGroup::checkOcclusion()
 {
+#ifndef LL_GL_CORE
 	if (LLPipeline::sUseOcclusion > 1)
 	{
 		LL_RECORD_BLOCK_TIME(FTM_OCCLUSION_READBACK);
@@ -1169,6 +1174,7 @@ void LLOcclusionCullingGroup::checkOcclusion()
 			assert_states_valid(this);
 		}
 	}
+#endif
 }
 
 static LLTrace::BlockTimerStatHandle FTM_PUSH_OCCLUSION_VERTS("Push Occlusion");
@@ -1230,7 +1236,7 @@ void LLOcclusionCullingGroup::doOcclusion(LLCamera* camera, const LLVector4a* sh
 #if !LL_DARWIN					
 					U32 mode = gGLManager.mHasOcclusionQuery2 ? GL_ANY_SAMPLES_PASSED : GL_SAMPLES_PASSED_ARB;
 #else
-					U32 mode = GL_SAMPLES_PASSED_ARB;
+					U32 mode = GL_ANY_SAMPLES_PASSED;
 #endif
 					
 #if LL_TRACK_PENDING_OCCLUSION_QUERIES

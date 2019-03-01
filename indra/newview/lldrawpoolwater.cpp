@@ -190,6 +190,7 @@ void LLDrawPoolWater::render(S32 pass)
 		return;
 	}
 
+#ifndef LL_GL_CORE
 	LLVOSky *voskyp = gSky.mVOSkyp;
 
 	stop_glerror();
@@ -340,6 +341,7 @@ void LLDrawPoolWater::render(S32 pass)
 	}
 
 	gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
+#endif
 }
 
 // for low end hardware
@@ -409,6 +411,7 @@ void LLDrawPoolWater::renderOpaqueLegacyWater()
 	gGL.getTexUnit(0)->enable(LLTexUnit::TT_TEXTURE);
 	gGL.getTexUnit(0)->bind(mOpaqueWaterImagep);
 
+#ifndef LL_GL_CORE
 	// Automatically generate texture coords for water texture
 	if (!shader)
 	{
@@ -417,6 +420,7 @@ void LLDrawPoolWater::renderOpaqueLegacyWater()
 		glTexGenf(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 		glTexGenf(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 	}
+#endif
 
 	// Use the fact that we know all water faces are the same size
 	// to save some computation
@@ -442,12 +446,14 @@ void LLDrawPoolWater::renderOpaqueLegacyWater()
 	F32 tp0[4] = { 16.f / 256.f, 0.0f, 0.0f, offset };
 	F32 tp1[4] = { 0.0f, 16.f / 256.f, 0.0f, offset };
 
+#ifndef LL_GL_CORE
 	if (!shader)
 	{
 		glTexGenfv(GL_S, GL_OBJECT_PLANE, tp0);
 		glTexGenfv(GL_T, GL_OBJECT_PLANE, tp1);
 	}
 	else
+#endif
 	{
 		shader->uniform4fv(LLShaderMgr::OBJECT_PLANE_S, 1, tp0);
 		shader->uniform4fv(LLShaderMgr::OBJECT_PLANE_T, 1, tp1);

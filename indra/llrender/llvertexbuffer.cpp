@@ -2061,12 +2061,6 @@ void LLVertexBuffer::unmapBuffer()
 							glFlushMappedBufferRange(GL_ARRAY_BUFFER_ARB, offset, length);
 #endif
 						}
-						else if (gGLManager.mHasFlushBufferRange)
-						{
-#ifndef LL_MESA_HEADLESS
-							glFlushMappedBufferRangeAPPLE(GL_ARRAY_BUFFER_ARB, offset, length);
-#endif
-						}
 						stop_glerror();
 					}
 
@@ -2136,14 +2130,6 @@ void LLVertexBuffer::unmapBuffer()
 							//LL_RECORD_BLOCK_TIME(FTM_IBO_FLUSH_RANGE);
 #ifdef GL_ARB_map_buffer_range
 							glFlushMappedBufferRange(GL_ELEMENT_ARRAY_BUFFER_ARB, offset, length);
-#endif
-						}
-						else if (gGLManager.mHasFlushBufferRange)
-						{
-#ifdef GL_APPLE_flush_buffer_range
-#ifndef LL_MESA_HEADLESS
-							glFlushMappedBufferRangeAPPLE(GL_ELEMENT_ARRAY_BUFFER_ARB, offset, length);
-#endif
 #endif
 						}
 						stop_glerror();

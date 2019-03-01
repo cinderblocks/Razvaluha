@@ -198,6 +198,7 @@ void LLDrawPoolTerrain::render(S32 pass)
 
 			renderFullShader();
 		}
+#ifndef LL_GL_CORE
 		else
 		{
 			gPipeline.enableLightsStatic(light_state);
@@ -217,6 +218,7 @@ void LLDrawPoolTerrain::render(S32 pass)
 				gGL.setSceneBlendType(LLRender::BT_ALPHA);
 			}
 		}
+#endif
 	}
 
 	// Special-case for land ownership feedback
@@ -461,6 +463,7 @@ void LLDrawPoolTerrain::renderFullShader()
 
 void LLDrawPoolTerrain::renderFull4TU()
 {
+#ifndef LL_GL_CORE
 	// Hack! Get the region that this draw pool is rendering from!
 	LLViewerRegion *regionp = mDrawFace[0]->getDrawable()->getVObj()->getRegion();
 	LLVLComposition *compp = regionp->getComposition();
@@ -659,10 +662,12 @@ void LLDrawPoolTerrain::renderFull4TU()
 	gGL.matrixMode(LLRender::MM_MODELVIEW);
 
 	gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
+#endif
 }
 
 void LLDrawPoolTerrain::renderFull2TU()
 {
+#ifndef LL_GL_CORE
 	// Hack! Get the region that this draw pool is rendering from!
 	LLViewerRegion *regionp = mDrawFace[0]->getDrawable()->getVObj()->getRegion();
 	LLVLComposition *compp = regionp->getComposition();
@@ -845,6 +850,7 @@ void LLDrawPoolTerrain::renderFull2TU()
 	gGL.loadIdentity();
 	gGL.matrixMode(LLRender::MM_MODELVIEW);
 	gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
+#endif
 }
 
 
