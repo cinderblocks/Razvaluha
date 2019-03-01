@@ -141,6 +141,7 @@ void LLFloaterEnvSettings::syncMenu()
 		childEnable("EnvUseEstateTimeButton");
 	}
 
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		childDisable("EnvWaterColor");
@@ -148,6 +149,7 @@ void LLFloaterEnvSettings::syncMenu()
 		//childDisable("EnvAdvancedWaterButton");		
 	}
 	else
+#endif
 	{
 		childEnable("EnvWaterColor");
 		childEnable("EnvWaterColorText");

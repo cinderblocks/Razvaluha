@@ -92,6 +92,7 @@ void LLDrawPoolSky::render(S32 pass)
 	{ //just use the UI shader (generic single texture no lighting)
 		gOneTextureNoColorProgram.bind();
 	}
+#ifndef LL_GL_CORE
 	else
 	{
 		// don't use shaders!
@@ -103,6 +104,7 @@ void LLDrawPoolSky::render(S32 pass)
 		}
 		mShader = NULL;
 	}
+#endif
 	
 
 	LLGLSPipelineSkyBox gls_skybox;

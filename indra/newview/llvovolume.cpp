@@ -5880,6 +5880,7 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 					facep->setTextureIndex(0);
 				}
 			}
+#ifndef LL_GL_CORE
 			else
 			{
 				while (i != end_faces && 
@@ -5907,6 +5908,7 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 					flexi = flexi || facep->getViewerObject()->getVolume()->isUnique();
 				}
 				}
+#endif
 			}
 
 		}
@@ -5970,6 +5972,7 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 					}
 				}
 			}
+#ifndef LL_GL_CORE
 			else
 			{
 				//face has no texture index
@@ -5997,6 +6000,7 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 					++i;
 				}
 			}
+#endif
 		}
 
 		if (flexi && buffer_usage && buffer_usage != GL_STREAM_DRAW_ARB)
@@ -6331,6 +6335,7 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 				}
 				
 				
+#ifndef LL_GL_CORE
 				if (!LLGLSLShader::sNoFixedFunction &&
 					!is_alpha &&
 					te->getShiny() &&
@@ -6338,6 +6343,7 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 				{ //shiny as an extra pass when shaders are disabled
 					registerFace(group, facep, LLRenderPass::PASS_SHINY);
 				}
+#endif
 			}
 			
 			//not sure why this is here, and looks like it might cause bump mapped objects to get rendered redundantly -- davep 5/11/2010
@@ -6364,7 +6370,11 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 
 			bool is_alpha =			facep->getPoolType() == LLDrawPool::POOL_ALPHA;
 			bool is_shiny_shader =	facep->getPoolType() == LLDrawPool::POOL_BUMP && LLGLSLShader::sNoFixedFunction && te->getShiny();
+#ifndef LL_GL_CORE
 			bool is_shiny_fixed =	facep->getPoolType() == LLDrawPool::POOL_BUMP && !LLGLSLShader::sNoFixedFunction && te->getShiny();
+#else
+			bool is_shiny_fixed =	false;
+#endif
 			bool is_fullbright =	facep->isState(LLFace::FULLBRIGHT);
 
 			if (facep->getPoolType() == LLDrawPool::POOL_MATERIALS)

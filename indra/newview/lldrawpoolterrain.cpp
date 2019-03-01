@@ -872,6 +872,7 @@ void LLDrawPoolTerrain::renderSimple()
 		sShader->uniform4fv(LLShaderMgr::OBJECT_PLANE_S, 1, tp0.mV);
 		sShader->uniform4fv(LLShaderMgr::OBJECT_PLANE_T, 1, tp1.mV);
 	}
+#ifndef LL_GL_CORE
 	else
 	{
 		glEnable(GL_TEXTURE_GEN_S);
@@ -881,6 +882,7 @@ void LLDrawPoolTerrain::renderSimple()
 		glTexGenfv(GL_S, GL_OBJECT_PLANE, tp0.mV);
 		glTexGenfv(GL_T, GL_OBJECT_PLANE, tp1.mV);
 	}
+#endif
 
 	gGL.getTexUnit(0)->setTextureColorBlend(LLTexUnit::TBO_MULT, LLTexUnit::TBS_TEX_COLOR, LLTexUnit::TBS_VERT_COLOR);
 
@@ -891,11 +893,13 @@ void LLDrawPoolTerrain::renderSimple()
 	
 	gGL.getTexUnit(0)->activate();
 	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		glDisable(GL_TEXTURE_GEN_S);
 		glDisable(GL_TEXTURE_GEN_T);
 	}
+#endif
 	gGL.matrixMode(LLRender::MM_TEXTURE);
 	gGL.loadIdentity();
 	gGL.matrixMode(LLRender::MM_MODELVIEW);

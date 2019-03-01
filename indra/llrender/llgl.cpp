@@ -2004,26 +2004,6 @@ void LLGLStateValidator::checkClientArrays(const std::string& msg, U32 data_mask
 	glClientActiveTextureARB(GL_TEXTURE0_ARB);
 	gGL.getTexUnit(0)->activate();
 
-	if (gGLManager.mHasVertexShader && LLGLSLShader::sNoFixedFunction)
-	{	//make sure vertex attribs are all disabled
-		GLint count;
-		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS_ARB, &count);
-		for (GLint i = 0; i < count; i++)
-		{
-			GLint enabled;
-			glGetVertexAttribivARB((GLuint) i, GL_VERTEX_ATTRIB_ARRAY_ENABLED_ARB, &enabled);
-			if (enabled)
-			{
-				error = TRUE;
-				LL_WARNS("RenderState") << "GL still has vertex attrib array " << i << " enabled." << LL_ENDL;
-				if (gDebugSession)
-				{
-					gFailLog <<  "GL still has vertex attrib array " << i << " enabled." << std::endl;
-				}
-			}
-		}
-	}
-
 	if (error)
 	{
 		if (gDebugSession)

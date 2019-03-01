@@ -457,6 +457,7 @@ void LLDrawPoolBump::unbindCubeMap(LLGLSLShader* shader, S32 shader_level, S32& 
 		cube_map->restoreMatrix();
 	}
 
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		gGL.getTexUnit(diffuse_channel)->disable();
@@ -465,6 +466,7 @@ void LLDrawPoolBump::unbindCubeMap(LLGLSLShader* shader, S32 shader_level, S32& 
 		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 		gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
 	}
+#endif
 }
 
 void LLDrawPoolBump::endShiny()
@@ -703,6 +705,7 @@ void LLDrawPoolBump::beginBump(U32 pass)
 	{
 		gObjectBumpProgram.bind();
 	}
+#ifndef LL_GL_CORE
 	else
 	{
 		// TEXTURE UNIT 0
@@ -734,6 +737,7 @@ void LLDrawPoolBump::beginBump(U32 pass)
 		gGL.getTexUnit(0)->activate();
 		gGL.getTexUnit(1)->unbind(LLTexUnit::TT_TEXTURE);
 	}
+#endif
 
 	gGL.setSceneBlendType(LLRender::BT_MULT_X2);
 	stop_glerror();
@@ -770,6 +774,7 @@ void LLDrawPoolBump::endBump(U32 pass)
 	{
 		gObjectBumpProgram.unbind();
 	}
+#ifndef LL_GL_CORE
 	else
 	{
 		// Disable texture blending on unit 1
@@ -781,6 +786,7 @@ void LLDrawPoolBump::endBump(U32 pass)
 		gGL.getTexUnit(0)->activate();
 		gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
 	}
+#endif
 	
 	gGL.setSceneBlendType(LLRender::BT_ALPHA);
 }
@@ -1478,12 +1484,14 @@ void LLDrawPoolBump::pushBatch(LLDrawInfo& params, U32 mask, BOOL texture, BOOL 
 			}
 			else
 			{
+#ifndef LL_GL_CORE
 				if (!LLGLSLShader::sNoFixedFunction)
 				{
 					gGL.getTexUnit(1)->activate();
 					gGL.matrixMode(LLRender::MM_TEXTURE);
 					gGL.loadMatrix(*params.mTextureMatrix);
 				}
+#endif
 
 				gGL.getTexUnit(0)->activate();
 				gGL.matrixMode(LLRender::MM_TEXTURE);
@@ -1525,12 +1533,14 @@ void LLDrawPoolBump::pushBatch(LLDrawInfo& params, U32 mask, BOOL texture, BOOL 
 		}
 		else
 		{
+#ifndef LL_GL_CORE
 			if (!LLGLSLShader::sNoFixedFunction)
 			{
 				gGL.getTexUnit(1)->activate();
 				gGL.matrixMode(LLRender::MM_TEXTURE);
 				gGL.loadIdentity();
 			}
+#endif
 			gGL.getTexUnit(0)->activate();
 			gGL.matrixMode(LLRender::MM_TEXTURE);
 		}

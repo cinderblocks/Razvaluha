@@ -1019,7 +1019,7 @@ BOOL LLShaderMgr::linkProgramObject(GLhandleARB obj, BOOL suppress_errors)
 #if LL_DARWIN
 
 	// For some reason this absolutely kills the frame rate when VBO's are enabled
-	if (0)
+#if 0
 	{
 		// Force an evaluation of the gl state so the driver can tell if the shader will run in hardware or software
 		// per Apple's suggestion
@@ -1051,6 +1051,7 @@ BOOL LLShaderMgr::linkProgramObject(GLhandleARB obj, BOOL suppress_errors)
 			suppress_errors = FALSE;		
 		}
 	}
+#endif
 
 #else
 	std::string log = get_object_log(obj, true);

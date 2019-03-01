@@ -2330,6 +2330,7 @@ void LLModelPreview::genLODs(S32 which_lod, U32 decimation, bool enforce_tri_lim
 
 	LLVertexBuffer::unbind();
 
+#ifndef LL_GL_CORE
 	bool no_ff = LLGLSLShader::sNoFixedFunction;
 	LLGLSLShader* shader = LLGLSLShader::sCurBoundShaderPtr;
 	LLGLSLShader::sNoFixedFunction = false;
@@ -2675,6 +2676,7 @@ void LLModelPreview::genLODs(S32 which_lod, U32 decimation, bool enforce_tri_lim
 	{
 		shader->bind();
 	}
+#endif
 }
 void LLModelPreview::genModelBBox()
 {

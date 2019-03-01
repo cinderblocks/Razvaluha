@@ -279,10 +279,12 @@ void LLDrawPoolAlpha::render(S32 pass)
 		{
 			gHighlightProgram.bind();
 		}
+#ifndef LL_GL_CORE
 		else
 		{
 			gPipeline.enableLightsFullbright(light_state);
 		}
+#endif
 
 		gGL.diffuseColor4f(0.9f,0.f,0.f,0.4f);
 				
@@ -299,10 +301,12 @@ void LLDrawPoolAlpha::render(S32 pass)
 		{
 			gHighlightProgram.unbind();
 		}
+#ifndef LL_GL_CORE
 		else
 		{
 			gPipeline.enableLightsDynamic(light_state);
 		}
+#endif
 	}
 	gGL.setSceneBlendType(LLRender::BT_ALPHA);
 }
@@ -409,6 +413,7 @@ void LLDrawPoolAlpha::renderAlpha(U32 mask, S32 pass)
 				}
 				
 				LLMaterial* mat = deferred_render ? params.mMaterial.get() : NULL;
+#ifndef LL_GL_CORE
 				if (!use_shaders)
 				{
 					llassert_always(!target_shader);
@@ -432,6 +437,7 @@ void LLDrawPoolAlpha::renderAlpha(U32 mask, S32 pass)
 					}
 				}
 				else
+#endif
 				{
 					if (mat)
 					{

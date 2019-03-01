@@ -1584,10 +1584,12 @@ void LLManipTranslate::renderSnapGuides()
 					LLGLEnable<GL_LINE_STIPPLE_LEGACY> stipple;
 					gGL.flush();
 
+#ifndef LL_GL_CORE
 					if (!LLGLSLShader::sNoFixedFunction)
 					{
 						glLineStipple(1, 0x3333);
 					}
+#endif
 		
 					switch (mManipPart)
 					{

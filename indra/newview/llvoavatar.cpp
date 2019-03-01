@@ -5000,10 +5000,12 @@ U32 LLVOAvatar::renderSkinned()
 		const bool should_alpha_mask = !is_muted && shouldAlphaMask();
 		LLGLEnable<GL_ALPHA_TEST_LEGACY> test(should_alpha_mask);
 		
+#ifndef LL_GL_CORE
 		if (should_alpha_mask && !LLGLSLShader::sNoFixedFunction)
 		{
 			gGL.setAlphaRejectSettings(LLRender::CF_GREATER, 0.5f);
 		}
+#endif
 		
 		BOOL first_pass = TRUE;
 		if (!LLDrawPoolAvatar::sSkipOpaque)
@@ -5041,10 +5043,12 @@ U32 LLVOAvatar::renderSkinned()
 			}
 		}
 
+#ifndef LL_GL_CORE
 		if (should_alpha_mask && !LLGLSLShader::sNoFixedFunction)
 		{
 			gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT);
 		}
+#endif
 
 		if (!LLDrawPoolAvatar::sSkipTransparent || LLPipeline::sImpostorRender)
 		{
@@ -5135,12 +5139,12 @@ U32 LLVOAvatar::renderRigid()
 	const bool should_alpha_mask = shouldAlphaMask();
 #ifndef LL_GL_CORE
 	LLGLEnable<GL_ALPHA_TEST_LEGACY> test(should_alpha_mask);
-#endif
 
 	if (should_alpha_mask && !LLGLSLShader::sNoFixedFunction)
 	{
 		gGL.setAlphaRejectSettings(LLRender::CF_GREATER, 0.5f);
 	}
+#endif
 
 	if (isTextureVisible(TEX_EYES_BAKED)  || mIsDummy)
 	{
@@ -5156,10 +5160,12 @@ U32 LLVOAvatar::renderRigid()
 		}
 	}
 
+#ifndef LL_GL_CORE
 	if (should_alpha_mask && !LLGLSLShader::sNoFixedFunction)
 	{
 		gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT);
 	}
+#endif
 
 	return num_indices;
 }

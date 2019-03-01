@@ -487,11 +487,13 @@ public:
 		static const LLCachedControl<bool> debugShowRenderInfo("DebugShowRenderInfo");
 		if (debugShowRenderInfo)
 		{
+#ifndef LL_GL_CORE
 			if (!LLGLSLShader::sNoFixedFunction)
 			{
 				addText(xpos, ypos, "Shaders Disabled");
 				ypos += y_inc;
 			}
+#endif
 
 			if (gGLManager.mHasATIMemInfo)
 			{
@@ -1827,6 +1829,7 @@ void LLViewerWindow::initGLDefaults()
 {
 	gGL.setSceneBlendType(LLRender::BT_ALPHA);
 
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{ //initialize fixed function state
 		glColorMaterial( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
@@ -1840,6 +1843,7 @@ void LLViewerWindow::initGLDefaults()
 		gGL.getTexUnit(0)->enable(LLTexUnit::TT_TEXTURE);
 		gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
 	}
+#endif
 
 	glPixelStorei(GL_PACK_ALIGNMENT,1);
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);

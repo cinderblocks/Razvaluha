@@ -152,10 +152,12 @@ BOOL LLTexLayerSetBuffer::renderTexLayerSet()
 		gAlphaMaskProgram.bind();
 		gAlphaMaskProgram.setMinimumAlpha(0.004f);
 	}
+#ifndef LL_GL_CORE
 	else
 	{
 		gGL.setAlphaRejectSettings(LLRender::CF_GREATER, 0.00f);
 	}
+#endif
 
 	//LLVertexBuffer::unbind();
 

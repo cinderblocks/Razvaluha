@@ -230,22 +230,26 @@ void LLDrawPoolWLSky::renderStars(void) const
 		static LLStaticHashedString sCustomAlpha("custom_alpha");
 		star_shader->uniform1f(sCustomAlpha, star_alpha.mV[3]);
 	}
+#ifndef LL_GL_CORE
 	else
 	{
 		gGL.getTexUnit(0)->setTextureColorBlend(LLTexUnit::TBO_MULT, LLTexUnit::TBS_TEX_COLOR, LLTexUnit::TBS_VERT_COLOR);
 		gGL.getTexUnit(0)->setTextureAlphaBlend(LLTexUnit::TBO_MULT_X2, LLTexUnit::TBS_CONST_ALPHA, LLTexUnit::TBS_TEX_ALPHA);
 		glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, star_alpha.mV);
 	}
+#endif
 
 	gSky.mVOWLSkyp->drawStars();
 
 	gGL.popMatrix();
 
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		// and disable the combiner states
 		gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
 	}
+#endif
 }
 
 void LLDrawPoolWLSky::renderSkyClouds(F32 camHeightLocal) const
@@ -306,20 +310,24 @@ void LLDrawPoolWLSky::renderHeavenlyBodies()
 			static LLStaticHashedString sCustomAlpha("custom_alpha");
 			star_shader->uniform1f(sCustomAlpha, color.mV[VW]);
 		}
+#ifndef LL_GL_CORE
 		else
 		{
 			gGL.getTexUnit(0)->setTextureColorBlend(LLTexUnit::TBO_MULT, LLTexUnit::TBS_TEX_COLOR, LLTexUnit::TBS_VERT_COLOR);
 			gGL.getTexUnit(0)->setTextureAlphaBlend(LLTexUnit::TBO_MULT_X2, LLTexUnit::TBS_CONST_ALPHA, LLTexUnit::TBS_TEX_ALPHA);
 			glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, color.mV);
 		}
+#endif
 
 		face->getVertexBuffer()->setBuffer(LLDrawPoolWLSky::STAR_VERTEX_DATA_MASK);
 		face->getVertexBuffer()->draw(LLRender::TRIANGLES, face->getVertexBuffer()->getNumIndices(), 0);
 		
+#ifndef LL_GL_CORE
 		if (!LLGLSLShader::sNoFixedFunction)
 		{
 			gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
 		}
+#endif
 	}
 }
 

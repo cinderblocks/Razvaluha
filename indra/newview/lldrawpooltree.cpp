@@ -85,10 +85,12 @@ void LLDrawPoolTree::beginRenderPass(S32 pass)
 		shader->setMinimumAlpha(0.5f);
 		gGL.diffuseColor4f(1,1,1,1);
 	}
+#ifndef LL_GL_CORE
 	else
 	{
 		gGL.setAlphaRejectSettings(LLRender::CF_GREATER, 0.5f);
 	}
+#endif
 }
 
 void LLDrawPoolTree::render(S32 pass)
@@ -102,10 +104,12 @@ void LLDrawPoolTree::render(S32 pass)
 
 	LLGLState<GL_ALPHA_TEST_LEGACY> test(LLGLSLShader::sNoFixedFunction ? 0 : 1);
 	LLGLState<GL_LIGHTING_LEGACY> light_state;
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		gPipeline.enableLightsDynamic(light_state);
 	}
+#endif
 	LLOverrideFaceColor color(this, 1.f, 1.f, 1.f, 1.f);
 
 	gGL.getTexUnit(sDiffTex)->bind(mTexturep);

@@ -1449,6 +1449,7 @@ void LLRender::syncMatrices()
 			}
 		}
 	}
+#ifndef LL_GL_CORE
 	else if (!LLGLSLShader::sNoFixedFunction)
 	{
 		static const GLenum mode[] = 
@@ -1482,6 +1483,7 @@ void LLRender::syncMatrices()
 			}
 		}
 	}
+#endif
 
 	//also sync light state
 	syncLightState();

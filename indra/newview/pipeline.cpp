@@ -4043,7 +4043,9 @@ void LLPipeline::renderGeom(LLCamera& camera, BOOL forceVBOUpdate)
 
 	// Set fog only if not using shaders and is underwater render.
 	BOOL use_fog = hasRenderDebugFeatureMask(LLPipeline::RENDER_DEBUG_FEATURE_FOG);
+#ifndef LL_GL_CORE
 	LLGLEnable<GL_FOG_LEGACY> fog_enable(use_fog && sUnderWaterRender && !LLGLSLShader::sNoFixedFunction);
+#endif
 	gSky.updateFog(camera.getFar());
 
 	gGL.getTexUnit(0)->bind(LLViewerFetchedTexture::sDefaultImagep);
@@ -5667,11 +5669,13 @@ void LLPipeline::setupHWLights()
 		LLColor4 ambient = PreviewAmbientColor;
 		gGL.setAmbientLightColor(ambient);
 	}
+#ifndef LL_GL_CORE
 	else if (!LLGLSLShader::sNoFixedFunction)
 	{
 		LLColor4 ambient = gSky.getTotalAmbientColor();
 		gGL.setAmbientLightColor(ambient);
 	}
+#endif
 
 	U8 cur_light = 0;
 	// Light 0 = Sun or Moon (All objects)
@@ -7230,6 +7234,7 @@ void LLPipeline::renderBloom(BOOL for_snapshot, F32 zoom_factor, int subfield, b
 		{
 			gGlowCombineProgram.bind();
 		}
+#ifndef LL_GL_CORE
 		else
 		{
 			//tex unit 0
@@ -7237,6 +7242,7 @@ void LLPipeline::renderBloom(BOOL for_snapshot, F32 zoom_factor, int subfield, b
 			//tex unit 1
 			gGL.getTexUnit(1)->setTextureColorBlend(LLTexUnit::TBO_ADD, LLTexUnit::TBS_TEX_COLOR, LLTexUnit::TBS_PREV_COLOR);
 		}
+#endif
 		
 		gGL.getTexUnit(0)->bind(&mGlow[1]);
 		gGL.getTexUnit(1)->bind(&mScreen);
@@ -7249,6 +7255,7 @@ void LLPipeline::renderBloom(BOOL for_snapshot, F32 zoom_factor, int subfield, b
 		{
 			gGlowCombineProgram.unbind();
 		}
+#ifndef LL_GL_CORE
 		else
 		{
 			gGL.getTexUnit(1)->disable();
@@ -7257,6 +7264,7 @@ void LLPipeline::renderBloom(BOOL for_snapshot, F32 zoom_factor, int subfield, b
 			gGL.getTexUnit(0)->activate();
 			gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
 		}
+#endif
 		
 	}
 

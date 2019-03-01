@@ -726,11 +726,13 @@ void LLDrawPoolAvatar::endDeferredRigid()
 
 void LLDrawPoolAvatar::beginSkinned()
 {
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		sVertexProgram = NULL;
 		return;
 	}
+#endif
 
 	if (sShaderLevel > 0)	// for hardware blending
 	{
@@ -799,11 +801,13 @@ void LLDrawPoolAvatar::endSkinned()
 void LLDrawPoolAvatar::beginRiggedSimple()
 {
 	sDiffuseChannel = 0;
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		sVertexProgram = NULL;
 		return;
 	}
+#endif
 
 	sVertexProgram = &gObjectSimpleProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT];
 	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)0);
@@ -847,11 +851,13 @@ void LLDrawPoolAvatar::endRiggedFullbrightAlpha()
 void LLDrawPoolAvatar::beginRiggedGlow()
 {
 	sDiffuseChannel = 0;
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		sVertexProgram = NULL;
 		return;
 	}
+#endif
 
 	sVertexProgram = &gObjectEmissiveProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT];
 	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)0);
@@ -869,11 +875,13 @@ void LLDrawPoolAvatar::endRiggedGlow()
 void LLDrawPoolAvatar::beginRiggedFullbright()
 {
 	sDiffuseChannel = 0;
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		sVertexProgram = NULL;
 		return;
 	}
+#endif
 	if (sShaderLevel > 0 && !LLPipeline::sUnderWaterRender && LLPipeline::sRenderDeferred)
 	{
 		sVertexProgram = &gDeferredSkinnedFullbrightProgram;
@@ -910,11 +918,13 @@ void LLDrawPoolAvatar::endRiggedFullbright()
 
 void LLDrawPoolAvatar::beginRiggedShinySimple()
 {
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		sVertexProgram = NULL;
 		return;
 	}
+#endif
 
 	sVertexProgram = &gObjectSimpleProgram[1<<SHD_ALPHA_MASK_BIT | LLPipeline::sUnderWaterRender<<SHD_WATER_BIT | 1<<SHD_NO_INDEX_BIT | (sShaderLevel>0)<<SHD_SKIN_BIT | 1<<SHD_SHINY_BIT];
 	llassert_always(sVertexProgram->mProgramObject != (GLhandleARB)0);
@@ -937,11 +947,13 @@ void LLDrawPoolAvatar::endRiggedShinySimple()
 
 void LLDrawPoolAvatar::beginRiggedFullbrightShiny()
 {
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		sVertexProgram = NULL;
 		return;
 	}
+#endif
 	if (sShaderLevel > 0 && !LLPipeline::sUnderWaterRender && LLPipeline::sRenderDeferred)
 	{
 		sVertexProgram = &gDeferredSkinnedFullbrightShinyProgram;

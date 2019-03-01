@@ -6427,6 +6427,7 @@ void LLSelectNode::renderOneWireframe(const LLColor4& color)
 		}
 		else
 		{
+#ifndef LL_GL_CORE
 			if (!LLGLSLShader::sNoFixedFunction)
 			{
 				LLGLEnable<GL_FOG_LEGACY> fog;
@@ -6437,6 +6438,7 @@ void LLSelectNode::renderOneWireframe(const LLColor4& color)
 				glFogf(GL_FOG_END, d*(1 + (LLViewerCamera::getInstance()->getView() / LLViewerCamera::getInstance()->getDefaultFOV())));
 				glFogfv(GL_FOG_COLOR, fogCol.mV);
 			}
+#endif
 
 			gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT);
 			{
@@ -6553,6 +6555,7 @@ void LLSelectNode::renderOneSilhouette(const LLColor4 &color)
 		{
 			gGL.flush();
 			gGL.blendFunc(LLRender::BF_SOURCE_COLOR, LLRender::BF_ONE);
+#ifndef LL_GL_CORE
 			if (!LLGLSLShader::sNoFixedFunction)
 			{
 				LLGLEnable<GL_FOG_LEGACY> fog;
@@ -6563,6 +6566,7 @@ void LLSelectNode::renderOneSilhouette(const LLColor4 &color)
 				glFogf(GL_FOG_END, d*(1 + (LLViewerCamera::getInstance()->getView() / LLViewerCamera::getInstance()->getDefaultFOV())));
 				glFogfv(GL_FOG_COLOR, fogCol.mV);
 			}
+#endif
 
 			LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE, GL_GEQUAL);
 			gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT);

@@ -551,7 +551,6 @@ void LLVertexBuffer::setupClientArrays(U32 data_mask)
 		}
 #ifndef LL_GL_CORE
 		else
-#endif
 		{
 
 			static const GLenum array[] =
@@ -657,6 +656,7 @@ void LLVertexBuffer::setupClientArrays(U32 data_mask)
 				glClientActiveTextureARB(GL_TEXTURE0_ARB);
 			}
 		}
+#endif
 				
 		sLastMask = data_mask;
 	}

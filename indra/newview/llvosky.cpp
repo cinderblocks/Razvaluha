@@ -2043,12 +2043,14 @@ void LLVOSky::updateFog(const F32 distance)
 {
 	if (!gPipeline.hasRenderDebugFeatureMask(LLPipeline::RENDER_DEBUG_FEATURE_FOG))
 	{
+#ifndef LL_GL_CORE
 		if (!LLGLSLShader::sNoFixedFunction)
 		{
 			glFogf(GL_FOG_DENSITY, 0);
 			glFogfv(GL_FOG_COLOR, (F32 *) &LLColor4::white.mV);
 			glFogf(GL_FOG_END, 1000000.f);
 		}
+#endif
 		return;
 	}
 
@@ -2118,10 +2120,12 @@ void LLVOSky::updateFog(const F32 distance)
 	if (camera_height > water_height)
 	{
 		LLColor4 fog(render_fog_color);
+#ifndef LL_GL_CORE
 		if (!LLGLSLShader::sNoFixedFunction)
 		{
 			glFogfv(GL_FOG_COLOR, fog.mV);
 		}
+#endif
 		mGLFogCol = fog;
 
 		if (hide_clip_plane)
@@ -2129,19 +2133,23 @@ void LLVOSky::updateFog(const F32 distance)
 			// For now, set the density to extend to the cull distance.
 			const F32 f_log = 2.14596602628934723963618357029f; // sqrt(fabs(log(0.01f)))
 			fog_density = f_log/fog_distance;
+#ifndef LL_GL_CORE
 			if (!LLGLSLShader::sNoFixedFunction)
 			{
 				glFogi(GL_FOG_MODE, GL_EXP2);
 			}
+#endif
 		}
 		else
 		{
 			const F32 f_log = 4.6051701859880913680359829093687f; // fabs(log(0.01f))
 			fog_density = (f_log)/fog_distance;
+#ifndef LL_GL_CORE
 			if (!LLGLSLShader::sNoFixedFunction)
 			{
 				glFogi(GL_FOG_MODE, GL_EXP);
 			}
+#endif
 		}
 	}
 	else
@@ -2166,17 +2174,20 @@ void LLVOSky::updateFog(const F32 distance)
 		// set the density based on what the shaders use
 		fog_density = water_fog_density * gSavedSettings.getF32("WaterGLFogDensityScale");
 
+#ifndef LL_GL_CORE
 		if (!LLGLSLShader::sNoFixedFunction)
 		{
 			glFogfv(GL_FOG_COLOR, (F32 *) &fogCol.mV);
 			glFogi(GL_FOG_MODE, GL_EXP2);
 		}
+#endif
 	}
 
 	mFogColor = sky_fog_color;
 	mFogColor.setAlpha(1);
 	LLDrawPoolWater::sWaterFogEnd = fog_distance*2.2f;
 
+#ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
 		LLGLSFog gls_fog;
@@ -2184,6 +2195,7 @@ void LLVOSky::updateFog(const F32 distance)
 		glFogf(GL_FOG_DENSITY, fog_density);
 		glHint(GL_FOG_HINT, GL_NICEST);
 	}
+#endif
 	stop_glerror();
 }
 
