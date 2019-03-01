@@ -475,12 +475,14 @@ void LLDrawPoolWater::renderOpaqueLegacyWater()
 
 	stop_glerror();
 
+#ifndef LL_GL_CORE
 	if (!shader)
 	{
 		// Reset the settings back to expected values
 		glDisable(GL_TEXTURE_GEN_S); //texture unit 0
 		glDisable(GL_TEXTURE_GEN_T); //texture unit 0
 	}
+#endif
 
 	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 	gGL.getTexUnit(0)->setTextureBlendType(LLTexUnit::TB_MULT);
