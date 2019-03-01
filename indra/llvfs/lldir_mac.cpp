@@ -135,7 +135,7 @@ LLDir_Mac::LLDir_Mac()
 		{
 			mOSCacheDir = cachedir;
 			//TODO:  This changes from ~/Library/Cache/Secondlife to ~/Library/Cache/com.app.secondlife/Secondlife.  Last dir level could go away.
-			CreateDirectory(mOSCacheDir, secondLifeString, NULL);
+			CreateDirectory(mOSCacheDir, "SingularityViewer", NULL);
 		}
 		
 		// mOSUserAppDir
