@@ -827,11 +827,21 @@ void LLViewerMedia::updateMedia(void *dummy_arg)
 				}
 			}
 			// update the audio stream here as well
+			static bool restore_parcel_audio = false;
 			if( !inworld_audio_enabled)
 			{
 				if(LLViewerMedia::isParcelAudioPlaying() && gAudiop && LLViewerMedia::hasParcelAudio())
 				{
 					gAudiop->stopInternetStream();
+					restore_parcel_audio = true;
+				}
+			}
+            else
+            {
+                if(gAudiop && LLViewerMedia::hasParcelAudio() && restore_parcel_audio && gSavedSettings.getBOOL("MediaTentativeAutoPlay"))
+                {
+					LLViewerParcelMedia::playStreamingMusic(LLViewerParcelMgr::getInstance()->getAgentParcel());
+                    restore_parcel_audio = false;
                 }
             }
 
