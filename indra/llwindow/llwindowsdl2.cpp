@@ -1763,7 +1763,7 @@ void LLWindowSDL2::spawnWebBrowser(const std::string& escaped_url, bool async)
 	if (!code)
 	{
 #if LL_LINUX
-		code = std::system((gDirUtilp->add(gDirUtilp->getAppRODataDir(), "etc", "launch_url.sh") + ' ' + escaped_url).c_str())
+		code = std::system((gDirUtilp->add(gDirUtilp->getAppRODataDir(), "etc", "launch_url.sh") + ' ' + escaped_url).c_str());
 		if (!code) // Fall back on the old script
 #endif
 		LL_INFOS() << "Error: Couldn't open URL: " << escaped_url << ". Error code " << code << LL_ENDL;
