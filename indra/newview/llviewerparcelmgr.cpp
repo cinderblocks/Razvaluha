@@ -1860,7 +1860,9 @@ void optionally_start_music(LLParcel* parcel)
 	{
 		// only play music when you enter a new parcel if the UI control for this
 		// was not *explicitly* stopped by the user. (part of SL-4878)
-		LLPanelNearByMedia* nearby_media_panel = gOverlayBar && gOverlayBar->musicPlaying() && LLFloaterNearbyMedia::instanceExists() ? LLFloaterNearbyMedia::getInstance()->getMediaPanel() : nullptr;
+		if (gOverlayBar && gOverlayBar->musicPlaying())
+		{
+		LLPanelNearByMedia* nearby_media_panel = LLFloaterNearbyMedia::instanceExists() ? LLFloaterNearbyMedia::getInstance()->getMediaPanel() : nullptr;
 		if ((nearby_media_panel &&
 		     nearby_media_panel->getParcelAudioAutoStart()) ||
 		    // or they have expressed no opinion in the UI, but have autoplay on...
@@ -1870,6 +1872,7 @@ void optionally_start_music(LLParcel* parcel)
 		{
 			LL_INFOS() << "Starting parcel music " << parcel->getMusicURL() << LL_ENDL;
 			LLViewerParcelMedia::playStreamingMusic(parcel);
+		}
 		}
 		else
 		{
