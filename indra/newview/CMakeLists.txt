@@ -1200,6 +1200,16 @@ set_source_files_properties(
    COMPILE_DEFINITIONS "${VIEWER_CHANNEL_VERSION_DEFINES}" # see BuildVersion.cmake
    )
 
+# Replace the icons with the appropriate ones for the channel
+# ('test' is the default)
+set(ICON_PATH "default")
+if (VIEWER_CHANNEL_BASE STREQUAL "Alpha")
+  set(ICON_PATH "alpha")
+else if (VIEWER_CHANNEL_BASE STREQUAL "Beta")
+  set(ICON_PATH "beta")
+endif()
+set(VIEWER_MACOSX_PHASE "d")
+
 if (DARWIN)
   LIST(APPEND viewer_SOURCE_FILES llappviewermacosx.cpp)
   LIST(APPEND viewer_SOURCE_FILES llappviewermacosx-objc.mm)
@@ -1289,10 +1299,6 @@ if (WINDOWS)
         list(APPEND viewer_SOURCE_FILES llviewerprecompiledheaders.cpp)
     endif(USE_PRECOMPILED_HEADERS)
 
-    # Replace the icons with the appropriate ones for the channel
-    # ('test' is the default)
-    set(ICON_PATH "default")
-    set(VIEWER_MACOSX_PHASE "d")
     message("Copying icons for ${ICON_PATH}")
     execute_process(
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
