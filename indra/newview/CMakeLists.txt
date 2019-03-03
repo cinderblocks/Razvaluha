@@ -1227,9 +1227,9 @@ if (DARWIN)
 
   # Add resource files to the project.
   set(viewer_RESOURCE_FILES
+    gpu_table.txt
     res/singularity_icon.icns
     Info-Singularity.plist
-    gpu_table.txt
     Singularity.xib
     # CMake doesn't seem to support Xcode language variants well just yet
     ${CMAKE_CURRENT_BINARY_DIR}/English.lproj/InfoPlist.strings
@@ -1840,22 +1840,22 @@ endif (LINUX)
 
 if (DARWIN)
   # These all get set with PROPERTIES
-  set(MACOSX_BUNDLE_INFO_STRING "${VIEWER_BRANDING_NAME}")
+  set(MACOSX_BUNDLE_INFO_STRING "${VIEWER_CHANNEL}")
   set(MACOSX_BUNDLE_ICON_FILE "viewer.icns")
-  set(MACOSX_BUNDLE_GUI_IDENTIFIER "${VIEWER_BRANDING_NAME}")
+  set(MACOSX_BUNDLE_GUI_IDENTIFIER "${VIEWER_CHANNEL}")
   set(MACOSX_BUNDLE_LONG_VERSION_STRING "${VIEWER_CHANNEL} ${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}")
-  set(MACOSX_BUNDLE_BUNDLE_NAME "${VIEWER_BRANDING_NAME}")
+  set(MACOSX_BUNDLE_BUNDLE_NAME "${VIEWER_CHANNEL}")
   set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VIEWER_SHORT_VERSION}")
   set(MACOSX_BUNDLE_BUNDLE_VERSION "${${ROOT_PROJECT_NAME}_VERSION}")
   set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2010-2019 Siana Gearz")
-  set(MACOSX_BUNDLE_NSMAIN_NIB_FILE "${VIEWER_BRANDING_NAME}")
+  set(MACOSX_BUNDLE_NSMAIN_NIB_FILE "${VIEWER_CHANNEL}")
   set(MACOSX_BUNDLE_NSPRINCIPAL_CLASS "LLNSApplication")
 
   set_target_properties(
     ${VIEWER_BINARY_NAME}
     PROPERTIES
     RESOURCE "${viewer_RESOURCE_FILES}"
-    OUTPUT_NAME "${VIEWER_BRANDING_NAME}"
+    OUTPUT_NAME "${VIEWER_CHANNEL}"
     MACOSX_BUNDLE_INFO_PLIST
     "${CMAKE_CURRENT_SOURCE_DIR}/Info-Singularity.plist"
     )
@@ -1878,11 +1878,11 @@ if (DARWIN)
       --branding_id=${VIEWER_BRANDING_ID}
       --build=${CMAKE_CURRENT_BINARY_DIR}
       --buildtype=${CMAKE_BUILD_TYPE}
-      --channel=${VIEWER_CHANNEL}
       --configuration=${CMAKE_CFG_INTDIR}
       --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL}.app
       --grid=${GRID}
-        --sdl2=${LLWINDOW_SDL2}
+      --channel=${VIEWER_CHANNEL}
+      --sdl2=${LLWINDOW_SDL2}
       --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
       --bundleid=${MACOSX_BUNDLE_GUI_IDENTIFIER}
       --source=${CMAKE_CURRENT_SOURCE_DIR}
@@ -1954,7 +1954,7 @@ if (PACKAGE)
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/mac_crash_logger/${CMAKE_CFG_INTDIR}")
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/media_plugins/gstreamer010/${CMAKE_CFG_INTDIR}")
     set(VIEWER_SYMBOL_FILE "${SYMBOL_NAME}-darwin.tar.bz2")
-    set(VIEWER_EXE_GLOBS "'${VIEWER_BRANDING_NAME}' AlchemyPlugin mac-crash-logger")
+    set(VIEWER_EXE_GLOBS "'${VIEWER_CHANNEL}' AlchemyPlugin mac-crash-logger")
     set(VIEWER_LIB_GLOB "*.dylib")
   endif (DARWIN)
   if (LINUX)
