@@ -942,7 +942,7 @@ class DarwinManifest(ViewerManifest):
                 with self.prefix(src=icon_path, dst="") :
                     self.path("%s.icns" % self.viewer_branding_id())
 
-                self.path("%s.nib" % self.viewer_branding_id())
+                self.path("%s.nib" % self.viewer_branding_id().capitalize())
 
                 # Translations
                 self.path("English.lproj/language.txt")
