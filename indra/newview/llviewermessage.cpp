@@ -5062,6 +5062,8 @@ void process_kill_object(LLMessageSystem *mesgsys, void **user_data)
 		regionp = LLWorld::getInstance()->getRegion(host);
 	}
 
+	bool different_region = mesgsys->getSender().getIPandPort() != gAgent.getRegion()->getHost().getIPandPort();
+
 	S32 num_objects = mesgsys->getNumberOfBlocksFast(_PREHASH_ObjectData);
 	for (S32 i = 0; i < num_objects; ++i)
 	{
@@ -5086,6 +5088,12 @@ void process_kill_object(LLMessageSystem *mesgsys, void **user_data)
 		LLViewerObject *objectp = gObjectList.findObject(id);
 		if (objectp)
 		{
+			if (different_region && gAgentAvatarp == objectp->getAvatar())
+			{
+				LL_WARNS() << "Region other than our own killing our attachments!!" << LL_ENDL;
+				continue;
+			}
+
 			// Display green bubble on kill
 			if ( gShowObjectUpdates )
 			{
