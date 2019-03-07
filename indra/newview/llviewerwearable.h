@@ -67,6 +67,9 @@ public:
 
 	/*virtual*/ EImportResult	importStream( std::istream& input_stream, LLAvatarAppearance* avatarp ) override;
 
+	// Singu extension.
+	class AIArchetype getArchetype() const;
+
 	void				setParamsToDefaults();
 	void				setTexturesToDefaults();
 	void				setVolatile(BOOL is_volatile) { mVolatile = is_volatile; } // TRUE when doing preview renders, some updates will be suppressed.

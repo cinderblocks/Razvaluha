@@ -458,7 +458,6 @@ void LLFloaterCustomize::onBtnImport()
 // reX: new function
 void LLFloaterCustomize::onBtnExport()
 {
-#if 0
 	// Find the editted wearable.
 	LLPanelEditWearable* panel_edit_wearable = getCurrentWearablePanel();
 	LLViewerWearable* edit_wearable = panel_edit_wearable->getWearable();
@@ -517,7 +516,6 @@ void LLFloaterCustomize::onBtnExport()
 	{
 		AIAlert::add_modal("AIXMLExportSuccess", AIArgs("[FILE]", filename));
 	}
-#endif
 }
 
 void LLFloaterCustomize::onBtnOk()

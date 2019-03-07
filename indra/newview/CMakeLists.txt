@@ -248,6 +248,7 @@ set(viewer_SOURCE_FILES
     llfloaterlandholdings.cpp
     llfloaterlandmark.cpp
     llfloatermap.cpp
+    llfloatermarketplacelistings.cpp
     llfloatermediafilter.cpp
     llfloatermediasettings.cpp
     llfloatermemleak.cpp
@@ -262,7 +263,6 @@ set(viewer_SOURCE_FILES
     llfloaterobjectiminfo.cpp
     llfloaterobjectweights.cpp
     llfloateropenobject.cpp
-    llfloateroutbox.cpp
     llfloaterparcel.cpp
     llfloaterpathfindingcharacters.cpp
     llfloaterpathfindinglinksets.cpp
@@ -411,7 +411,6 @@ set(viewer_SOURCE_FILES
     llpanellandoptions.cpp
     llpanellogin.cpp
     llpanelmaininventory.cpp
-    llpanelmarketplaceoutboxinventory.cpp
     llpanelmediasettingsgeneral.cpp
     llpanelmediasettingspermissions.cpp
     llpanelmediasettingssecurity.cpp
@@ -794,6 +793,7 @@ set(viewer_HEADER_FILES
     llfloaterlandholdings.h
     llfloaterlandmark.h
     llfloatermap.h
+    llfloatermarketplacelistings.h
     llfloatermediafilter.h
     llfloatermediasettings.h
     llfloatermemleak.h
@@ -808,7 +808,6 @@ set(viewer_HEADER_FILES
     llfloaterobjectiminfo.h
     llfloaterobjectweights.h
     llfloateropenobject.h
-    llfloateroutbox.h
     llfloaterparcel.h
     llfloaterpathfindingcharacters.h
     llfloaterpathfindinglinksets.h
@@ -958,7 +957,6 @@ set(viewer_HEADER_FILES
     llpanellandoptions.h
     llpanellogin.h
     llpanelmaininventory.h
-    llpanelmarketplaceoutboxinventory.h
     llpanelmediasettingsgeneral.h
     llpanelmediasettingspermissions.h
     llpanelmediasettingssecurity.h

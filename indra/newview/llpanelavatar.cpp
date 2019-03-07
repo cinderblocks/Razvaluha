@@ -69,6 +69,9 @@
 #include <iosfwd>
 #include <boost/date_time.hpp>
 
+
+#include "hippogridmanager.h" // Include Gridmanager for OpenSim Support in profiles, provides ability for the helpbutton to redirect to GRID Websites Help page
+
 // [RLVa:KB]
 #include "rlvhandler.h"
 // [/RLVa:KB]
@@ -298,11 +301,15 @@ void LLPanelAvatarSecondLife::onDoubleClickGroup()
 		LLGroupActions::show(item->getUUID());
 }
 
-// static 
+// static - Not anymore :P
 bool LLPanelAvatarSecondLife::onClickPartnerHelpLoadURL(const LLSD& notification, const LLSD& response)
 {
 	if (!LLNotification::getSelectedOption(notification, response))
-		LLWeb::loadURL("http://secondlife.com/partner");
+	{
+		const auto& grid = *gHippoGridManager->getConnectedGrid();
+		const std::string url = grid.isSecondLife() ? "http://secondlife.com/partner" : grid.getPartnerUrl();
+		if (!url.empty()) LLWeb::loadURL(url);
+	}
 	return false;
 }
 

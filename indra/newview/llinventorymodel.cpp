@@ -590,7 +590,7 @@ LLUUID LLInventoryModel::createNewCategory(const LLUUID& parent_id,
 
 	if(LLFolderType::lookup(preferred_type) == LLFolderType::badLookup())
 	{
-		LL_DEBUGS(LOG_INV) << "Attempt to create undefined category. (" <<  preferred_type << ")" << LL_ENDL;
+		LL_DEBUGS(LOG_INV) << "Attempt to create undefined category." << LL_ENDL;
 		return id;
 	}
 
@@ -1147,7 +1147,7 @@ void LLInventoryModel::updateCategory(const LLViewerInventoryCategory* cat, U32 
 	if(old_cat)
 	{
 		// We already have an old category, modify its values
-
+		U32 mask = LLInventoryObserver::NONE;
 		LLUUID old_parent_id = old_cat->getParentUUID();
 		LLUUID new_parent_id = cat->getParentUUID();
 		if(old_parent_id != new_parent_id)
@@ -1168,6 +1168,12 @@ void LLInventoryModel::updateCategory(const LLViewerInventoryCategory* cat, U32 
             mask |= LLInventoryObserver::INTERNAL;
 		}
 		if(old_cat->getName() != cat->getName())
+		{
+			mask |= LLInventoryObserver::LABEL;
+		}
+		// Under marketplace, category labels are quite complex and need extra upate
+		const LLUUID marketplace_id = findCategoryUUIDForType(LLFolderType::FT_MARKETPLACE_LISTINGS, false);
+		if (marketplace_id.notNull() && isObjectDescendentOf(cat->getUUID(), marketplace_id))
 		{
 			mask |= LLInventoryObserver::LABEL;
 		}
@@ -1307,7 +1313,8 @@ void LLInventoryModel::changeCategoryParent(LLViewerInventoryCategory* cat,
 void LLInventoryModel::onAISUpdateReceived(const std::string& context, const LLSD& update)
 {
 	LLTimer timer;
-	if (gSavedSettings.getBOOL("DebugAvatarAppearanceMessage"))
+	static LLCachedControl<bool> debug_ava_appr_msg(gSavedSettings, "DebugAvatarAppearanceMessage");
+	if (debug_ava_appr_msg)
 	{
 		dump_sequential_xml(gAgentAvatarp->getFullname() + "_ais_update", update);
 	}
@@ -1560,11 +1567,11 @@ void LLInventoryModel::deleteObject(const LLUUID& id, bool fix_broken_links, boo
 	// Can't have links to links, so there's no need for this update
 	// if the item removed is a link. Can also skip if source of the
 	// update is getting broken link info separately.
-	obj = NULL; // delete obj
 	if (fix_broken_links && !is_link_type)
 	{
 		updateLinkedObjectsFromPurge(id);
 	}
+	obj = NULL; // delete obj
 	if (do_notify_observers)
 	{
 		notifyObservers();
@@ -1674,9 +1681,10 @@ void LLInventoryModel::addChangedMask(U32 mask, const LLUUID& referent)
 	}
 	
 	mModifyMask |= mask; 
-	if (referent.notNull())
+	if (referent.notNull() && (mChangedItemIDs.find(referent) == mChangedItemIDs.end()))
 	{
 		mChangedItemIDs.insert(referent);
+		update_marketplace_category(referent, false);
 
 		if (mask & LLInventoryObserver::ADD)
 		{
@@ -2105,6 +2113,11 @@ bool LLInventoryModel::loadSkeleton(
 					// if the cached version does not match the server version,
 					// throw away the version we have so we can fetch the
 					// correct contents the next time the viewer opens the folder.
+					tcat->setVersion(NO_VERSION);
+				}
+				else if (tcat->getPreferredType() == LLFolderType::FT_MARKETPLACE_STOCK)
+				{
+					// Do not trust stock folders being updated
 					tcat->setVersion(NO_VERSION);
 				}
 				else
@@ -3169,7 +3182,18 @@ void LLInventoryModel::processBulkUpdateInventory(LLMessageSystem* msg, void**)
 		LL_DEBUGS("Inventory") << "unpacked folder '" << tfolder->getName() << "' ("
 							   << tfolder->getUUID() << ") in " << tfolder->getParentUUID()
 							   << LL_ENDL;
-		if(tfolder->getUUID().notNull())
+
+		// If the folder is a listing or a version folder, all we need to do is update the SLM data
+		int depth_folder = depth_nesting_in_marketplace(tfolder->getUUID());
+		if ((depth_folder == 1) || (depth_folder == 2))
+		{
+			// Trigger an SLM listing update
+			LLUUID listing_uuid = (depth_folder == 1 ? tfolder->getUUID() : tfolder->getParentUUID());
+			S32 listing_id = LLMarketplaceData::instance().getListingID(listing_uuid);
+			LLMarketplaceData::instance().getListing(listing_id);
+			// In that case, there is no item to update so no callback -> we skip the rest of the update
+		}
+		else if(tfolder->getUUID().notNull())
 		{
 			folders.push_back(tfolder);
 			LLViewerInventoryCategory* folderp = gInventory.getCategory(tfolder->getUUID());
@@ -4268,3 +4292,4 @@ void LLInventoryModel::FetchItemHttpHandler::processFailure(const char * const r
 					  << LLCoreHttpUtil::responseToString(response) << "]" << LL_ENDL;
 	gInventory.notifyObservers();
 }
+

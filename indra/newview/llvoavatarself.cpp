@@ -160,7 +160,6 @@ LLVOAvatarSelf::LLVOAvatarSelf(const LLUUID& id,
 	mLastRegionHandle(0),
 	mRegionCrossingCount(0),
 	mScreenp(NULL),
-	mInitialBakesLoaded(false),
 	// Value outside legal range, so will always be a mismatch the
 	// first time through.
 	mLastHoverOffsetSent(LLVector3(0.0f, 0.0f, -999.0f)),

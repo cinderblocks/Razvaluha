@@ -1582,9 +1582,11 @@ void LLAppearanceMgr::wearItemsOnAvatar(const uuid_vec_t& item_ids_to_wear,
             break;
                 
             case LLAssetType::AT_OBJECT:
-            {
-                rez_attachment(item_to_wear, NULL, replace);
-            }
+	    {
+	    	LL_DEBUGS("Avatar") << "ATT wearing object. calling rez_attachment, item " << item_to_wear->getName()
+							<< " id " << item_to_wear->getLinkedUUID() << LL_ENDL;
+		    rez_attachment(item_to_wear, NULL, replace);
+	    }
             break;
 
             default: continue;

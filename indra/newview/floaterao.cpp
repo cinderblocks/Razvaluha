@@ -37,7 +37,12 @@ void cmdline_printchat(const std::string& message);
 namespace
 {
 	bool sSwimming = false;
-	bool is_underwater() { return gAgentAvatarp && gAgentAvatarp->mBelowWater; }
+	bool enable_swim()
+	{
+		static const LLCachedControl<bool> swim(gSavedSettings, "AOSwimEnabled", false);
+		return swim;
+	}
+	bool is_underwater() { return enable_swim() && gAgentAvatarp && gAgentAvatarp->mBelowWater; }
 }
 
 class AONotecardCallback : public LLInventoryCallback
@@ -191,6 +196,12 @@ LLFloaterAO::LLFloaterAO(const LLSD&) : LLFloater("floater_ao")
 	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_ao.xml", nullptr, false);
 	init();
 	gSavedSettings.getControl("AOEnabled")->getSignal()->connect(boost::bind(&LLFloaterAO::run));
+	gSavedSettings.getControl("AOEnabled")->getSignal()->connect(std::bind([](const LLSD& enabled)
+	{
+		// Toggle typing AO the moment we toggle AO
+		const bool typing = gAgent.getRenderState() & AGENT_STATE_TYPING;
+		gAgent.sendAnimationRequest(GetAnimIDFromState(STATE_AGENT_TYPING), enabled && typing ? ANIM_REQUEST_START : ANIM_REQUEST_STOP);
+	}, std::placeholders::_2));
 	gSavedSettings.getControl("AOSitsEnabled")->getSignal()->connect(boost::bind(&LLFloaterAO::run));
 	sSwimming = is_underwater();
 	gSavedSettings.getControl("AOSwimEnabled")->getSignal()->connect(boost::bind(&LLFloaterAO::toggleSwim, boost::bind(is_underwater)));
@@ -412,9 +423,10 @@ void LLFloaterAO::run()
 {
 	setAnimationState(STATE_AGENT_IDLE); // reset state
 	AOState state = getAnimationState(); // check if sitting or hovering
+	bool enabled = gSavedSettings.getBOOL("AOEnabled");
 	if (state == STATE_AGENT_IDLE || state == STATE_AGENT_STAND)
 	{
-		if (gSavedSettings.getBOOL("AOEnabled"))
+		if (enabled)
 		{
 			if (mAOStandTimer)
 			{
@@ -444,7 +456,7 @@ void LLFloaterAO::run()
 			break;
 		default: break;
 		}
-		gAgent.sendAnimationRequest(GetAnimIDFromState(state), (gSavedSettings.getBOOL("AOEnabled") &&  (!sit || gSavedSettings.getBOOL("AOSitsEnabled"))) ? ANIM_REQUEST_START : ANIM_REQUEST_STOP);
+		gAgent.sendAnimationRequest(GetAnimIDFromState(state), (enabled &&  (!sit || gSavedSettings.getBOOL("AOSitsEnabled"))) ? ANIM_REQUEST_START : ANIM_REQUEST_STOP);
 	}
 }
 
@@ -454,7 +466,7 @@ void LLFloaterAO::typing(bool start)
 	// If we're stopping, stop regardless, just in case the setting was toggled during (e.g.: keyboard shortcut)
 	if (!start || gSavedSettings.getBOOL("PlayTypingAnim")) // Linden typing
 		anims.push_back(ANIM_AGENT_TYPE);
-	if (!start || gSavedSettings.getBOOL("AOEnabled")) // Typing override
+	if (gSavedSettings.getBOOL("AOEnabled")) // Typing override
 		anims.push_back(GetAnimIDFromState(STATE_AGENT_TYPING));
 	gAgent.sendAnimationRequests(anims, start ? ANIM_REQUEST_START : ANIM_REQUEST_STOP);
 }
@@ -643,10 +655,9 @@ void LLFloaterAO::ChangeStand()
 
 void LLFloaterAO::toggleSwim(bool underwater)
 {
-	const LLCachedControl<bool> enabled(gSavedSettings, "AOEnabled", false);
-	const LLCachedControl<bool> swim(gSavedSettings, "AOSwimEnabled", false);
+	static const LLCachedControl<bool> enabled(gSavedSettings, "AOEnabled", false);
 
-	sSwimming = underwater && swim;
+	sSwimming = underwater && enable_swim();
 
 	// Don't send requests if we have the AO disabled.
 	if (enabled)
@@ -654,10 +665,15 @@ void LLFloaterAO::toggleSwim(bool underwater)
 		AOState state = getAnimationState();
 		if (state != STATE_AGENT_IDLE && state != STATE_AGENT_STAND) // Don't bother if we're just standing or idle (Who pushed us?!)
 		{
-			// Stop flying/swimming
-			gAgent.sendAnimationRequest(GetAnimIDFromState(sSwimming ? swimToFlyState(state) : flyToSwimState(state)), ANIM_REQUEST_STOP);
-			// Start swimming/flying
-			gAgent.sendAnimationRequest(GetAnimIDFromState(state), ANIM_REQUEST_START);
+			// Stop all of the previous states
+			constexpr std::array<AOState, 4> swim_states = { STATE_AGENT_FLOAT, STATE_AGENT_SWIM, STATE_AGENT_SWIM_UP, STATE_AGENT_SWIM_DOWN };
+			constexpr std::array<AOState, 4> fly_states = { STATE_AGENT_HOVER, STATE_AGENT_FLY, STATE_AGENT_HOVER_UP, STATE_AGENT_HOVER_DOWN };
+			uuid_vec_t vec;
+			for (const auto& state : sSwimming ? fly_states : swim_states)
+				vec.push_back(GetAnimIDFromState(state));
+			gAgent.sendAnimationRequests(vec, ANIM_REQUEST_STOP);
+			// Process new animations
+			gAgentAvatarp->processAnimationStateChanges();
 		}
 	}
 }

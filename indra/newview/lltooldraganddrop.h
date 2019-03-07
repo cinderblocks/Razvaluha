@@ -91,6 +91,11 @@ public:
 	
 	boost::signals2::connection setEndDragCallback( const enddrag_signal_t::slot_type& cb ) { return mEndDragSignal.connect(cb); }
 
+	void setCargoCount(U32 count) { mCargoCount = count; }
+	void resetCargoCount() { mCargoCount = 0; }
+	U32 getCargoCount() const { return (mCargoCount > 0) ? mCargoCount : mCargoIDs.size(); }
+	S32 getCargoIndex() const { return mCurItemIndex; }
+
 	uuid_vec_t::size_type getCargoIDsCount() const { return mCargoIDs.size(); }
 
 	static S32 getOperationId() { return sOperationId; }
@@ -130,6 +135,8 @@ protected:
 
 protected:
 
+	U32				mCargoCount;
+
 	S32				mDragStartX;
 	S32				mDragStartY;
 	
@@ -150,6 +157,7 @@ protected:
 	BOOL			mDrop;
 	S32				mCurItemIndex;
 	std::string		mToolTipMsg;
+	std::string		mCustomMsg;
 
 	enddrag_signal_t	mEndDragSignal;
 
@@ -263,7 +271,8 @@ public:
 	static bool handleGiveDragAndDrop(LLUUID agent, LLUUID session, BOOL drop,
 									  EDragAndDropType cargo_type,
 									  void* cargo_data,
-									  EAcceptance* accept);
+									  EAcceptance* accept,
+									  const LLSD& dest = LLSD());
 
 	// Classes used for determining 3d drag and drop types.
 private:

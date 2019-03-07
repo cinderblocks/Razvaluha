@@ -116,10 +116,10 @@ public:
 	static void initClass();
 	static void updateClass(const F32 velocity, const F32 angular_velocity) ;
 	
-	LLViewerTexture(BOOL usemipmaps = TRUE);
-	LLViewerTexture(const LLUUID& id, BOOL usemipmaps) ;
-	LLViewerTexture(const LLImageRaw* raw, BOOL usemipmaps) ;
-	LLViewerTexture(const U32 width, const U32 height, const U8 components, BOOL usemipmaps) ;
+	LLViewerTexture(BOOL usemipmaps = TRUE, bool allow_compression = false);
+	LLViewerTexture(const LLUUID& id, BOOL usemipmaps, bool allow_compression = false) ;
+	LLViewerTexture(const LLImageRaw* raw, BOOL usemipmaps, bool allow_compression = false) ;
+	LLViewerTexture(const U32 width, const U32 height, const U8 components, BOOL usemipmaps, bool allow_compression = false) ;
 
 	void setNeedsAlphaAndPickMask(BOOL need_mask) { if(mGLTexturep)mGLTexturep->setNeedsAlphaAndPickMask(need_mask); }
 
@@ -220,7 +220,7 @@ public:
 	static S32Megabytes sMaxBoundTextureMemory;
 	static S32Megabytes sMaxTotalTextureMem;
 	static S64Bytes sMaxDesiredTextureMem ;
-	static S8  sCameraMovingDiscardBias;
+	static S32 sCameraMovingDiscardBias;
 	static F32 sCameraMovingBias;
 	static S32 sMaxSculptRez ;
 	static S32 sMinLargeImageSize ;

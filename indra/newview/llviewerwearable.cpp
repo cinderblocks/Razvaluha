@@ -43,6 +43,7 @@
 #include "llviewerwearable.h"
 #include "llviewercontrol.h"
 #include "llviewerregion.h"
+#include "aixmllindengenepool.h"
 
 using namespace LLAvatarAppearanceDefines;
 
@@ -139,6 +140,19 @@ LLWearable::EImportResult LLViewerWearable::importStream( std::istream& input_st
 	return result;
 }
 
+AIArchetype LLViewerWearable::getArchetype() const
+{
+	AIArchetype archetype(this);
+	for (const auto& pair : mVisualParamIndexMap)
+	{
+		archetype.add(AIVisualParamIDValuePair(pair.second));
+	}
+	for (const auto& pair : mTEMap)
+	{
+		archetype.add(AITextureIDUUIDPair(pair.first, pair.second->getID()));
+	}
+	return archetype;
+}
 
 // Avatar parameter and texture definitions can change over time.
 // This function returns true if parameters or textures have been added or removed
@@ -321,11 +335,8 @@ LLUUID LLViewerWearable::getDefaultTextureImageID(ETextureIndex index) const
 //virtual
 void LLViewerWearable::writeToAvatar(LLAvatarAppearance *avatarp)
 {
-	LLVOAvatarSelf* viewer_avatar = dynamic_cast<LLVOAvatarSelf*>(avatarp);
-
-	if (!avatarp || !viewer_avatar) return;
-
-	if (!viewer_avatar->isValid()) return;
+	if (!avatarp || !avatarp->isSelf() || !avatarp->isValid()) return;
+	LLVOAvatarSelf* viewer_avatar = static_cast<LLVOAvatarSelf*>(avatarp);
 
 	ESex old_sex = avatarp->getSex();
 

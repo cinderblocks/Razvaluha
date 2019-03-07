@@ -76,6 +76,7 @@
 #include "llfloaterland.h"
 #include "llfloaterlandholdings.h"
 #include "llfloatermap.h"
+#include "llfloatermarketplacelistings.h"
 #include "llfloatermediafilter.h"
 #include "llfloatermemleak.h"
 #include "llfloatermessagebuilder.h"
@@ -83,7 +84,6 @@
 #include "llfloatermessagerewriter.h"
 #include "llfloatermute.h"
 #include "llfloaternotificationsconsole.h"
-#include "llfloateroutbox.h"
 #include "llfloaterpathfindingcharacters.h"
 #include "llfloaterpathfindinglinksets.h"
 #include "llfloaterperms.h"
@@ -235,10 +235,10 @@ struct MenuFloaterDict : public LLSingleton<MenuFloaterDict>
 		registerFloater<LLFloaterMessageLog>			("messagelog");
 		registerFloater<LLFloaterMessageRewriter>		("messagerewriter");
 		registerFloater<LLFloaterMap>					("mini map");
+		registerFloater<LLFloaterMarketplaceListings>	("marketplace_listings");
 		registerFloater<LLFloaterMove>					("movement controls");
 		registerFloater<LLFloaterMute>					("mute list");
 		registerFloater<LLFloaterNotificationConsole>	("notifications console");
-		registerFloater<LLFloaterOutbox>				("outbox");
 		registerFloater<LLFloaterPathfindingCharacters>	("pathfinding_characters");
 		registerFloater<LLFloaterPathfindingLinksets>	("pathfinding_linksets");
 		registerFloater<LLFloaterPermsDefault>			("perm prefs");

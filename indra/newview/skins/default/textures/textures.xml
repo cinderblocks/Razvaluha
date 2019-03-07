@@ -46,6 +46,9 @@ with the same filename but different name
   <texture name="Cam_Preset_Side_Off" file_name="Cam_Preset_Side_Off.png" preload="false" />
   <texture name="Cam_Preset_Side_On" file_name="Cam_Preset_Side_On.png" preload="false" />
 
+  <texture name="Conv_toolbar_plus" file_name="Conv_toolbar_plus.png" preload="false" />
+  <texture name="Conv_toolbar_sort" file_name="Conv_toolbar_sort.png" preload="false" />
+
   <texture name="icon_group.tga"/>
 
   <texture name="Favorite_Star_Active" file_name="navbar/Favorite_Star_Active.png" preload="false" />
@@ -62,6 +65,9 @@ with the same filename but different name
   <texture name="ProgressTrack" file_name="progressbar_track.tga" preload="true" scale.left="10" scale.top="7" scale.right="80" scale.bottom="7" />
   <texture name="Refresh_Off" file_name="Refresh_Off.png" preload="true" />
 
+  <texture name="Marketplace_Dropzone_Background" file_name="Marketplace_Dropzone_Background.png" preload="true" />
+  <texture name="MarketplaceBtn_Off" file_name="MarketplaceBtn_Off.png" preload="true" scale.left="30" scale.top="4" scale.right="35" scale.bottom="4" />
+  <texture name="MarketplaceBtn_Selected" file_name="MarketplaceBtn_Selected.png" preload="true" scale.left="30" scale.top="4" scale.right="35" scale.bottom="4" />
   <texture name="NoEntryLines" file_name="world/NoEntryLines.png" use_mips="true" preload="false" />
   <texture name="NoEntryPassLines" file_name="world/NoEntryPassLines.png" use_mips="true" preload="false" />
   <texture name="Rounded_Rect"	file_name="Rounded_Rect.png" preload="true" scale.left="6" scale.top="26" scale.right="58" scale.bottom="6" />
@@ -149,6 +155,11 @@ with the same filename but different name
   <!-- Images that have since been renamed to something else in v3 and need updating. Alphabetical. -->
   <texture name="Flag.png" file_name="Flag.png" preload="false" />
   <texture name="Inv_Post_Process.png" preload="true"/>
+  <texture name="Inv_Settings" file_name="Inv_Settings.png" preload="false" />
+  <texture name="Inv_SettingsSky" file_name="Inv_SettingsSky.png" preload="false" />
+  <texture name="Inv_SettingsWater" file_name="Inv_SettingsWater.png" preload="false" />
+  <texture name="Inv_SettingsDay" file_name="Inv_SettingsDay.png" preload="false" />
+  <texture name="Inv_Unknown" file_name="Inv_UnknownObject.png" preload="false" />
   <texture name="Inv_WaterLight.png" preload="true"/>
   <texture name="Inv_WindLight.png" preload="true"/>
   <texture name="Parcel_Exp_Color.png" file_name="Parcel_Exp_Color.png" preload="false" />
@@ -314,12 +325,13 @@ with the same filename but different name
   <texture name="inv_folder_sound.tga"/>
   <texture name="inv_folder_texture.tga"/>
   <texture name="inv_folder_trash.tga" preload="true"/>
-  <texture name="Inv_SysOpen" file_name="inv_folder_plain_open.tga" preload="false" />
-  <texture name="Inv_SysClosed" file_name="inv_folder_plain_closed.tga" preload="false" />
   <texture name="Inv_StockFolderClosed" file_name="Inv_StockFolderClosed.png" preload="false" />
   <texture name="Inv_StockFolderOpen" file_name="Inv_StockFolderOpen.png" preload="false" />
+  <texture name="Inv_SysOpen" file_name="inv_folder_plain_open.tga" preload="false" />
+  <texture name="Inv_SysClosed" file_name="inv_folder_plain_closed.tga" preload="false" />
   <texture name="Inv_VersionFolderClosed" file_name="Inv_VersionFolderClosed.png" preload="false" />
   <texture name="Inv_VersionFolderOpen" file_name="Inv_VersionFolderOpen.png" preload="false" />
+
   <texture name="inv_item_animation.tga"/>
   <texture name="inv_item_callingcard_offline.tga"/>
   <texture name="inv_item_callingcard_online.tga"/>
@@ -454,4 +466,6 @@ with the same filename but different name
   <texture name="icon_avatar_expand.png" preload="true" />
   <texture name="Inv_FolderClosedToxic" file_name="Inv_FolderClosedToxic.png" preload="false" />
   <texture name="Inv_FolderOpenToxic" file_name="Inv_FolderOpenToxic.png" preload="false" />
+
+  <texture name="Marketplace_Dropzone_Background" file_name="Marketplace_Dropzone_Background.png" preload="true" />
 </textures>

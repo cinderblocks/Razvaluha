@@ -51,7 +51,7 @@ S32 LLViewerDynamicTexture::sNumRenders = 0;
 // LLViewerDynamicTexture()
 //-----------------------------------------------------------------------------
 LLViewerDynamicTexture::LLViewerDynamicTexture(S32 width, S32 height, S32 components, EOrder order, BOOL clamp) : 
-	LLViewerTexture(width, height, components, FALSE),
+	LLViewerTexture(width, height, components, FALSE, false),
 	mClamp(clamp)
 {
 	llassert((1 <= components) && (components <= 4));
@@ -227,7 +227,6 @@ BOOL LLViewerDynamicTexture::updateAllInstances()
 	}
 
 	LLGLSLShader::bindNoShader();
-	LLVertexBuffer::unbind();
 	
 	BOOL result = FALSE;
 	BOOL ret = FALSE ;

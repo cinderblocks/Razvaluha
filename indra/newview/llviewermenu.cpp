@@ -110,6 +110,7 @@
 #include "llstartup.h"
 #include "llstatusbar.h"
 #include "lltextureview.h"
+#include "lltoolbar.h"
 #include "lltoolcomp.h"
 #include "lltoolgrab.h"
 #include "lltoolmgr.h"
@@ -553,43 +554,6 @@ void set_underclothes_menu_options()
 	}
 }
 
-void set_merchant_SLM_menu()
-{
-    // All other cases (new merchant, not merchant, migrated merchant): show the new Marketplace Listings menu and enable the tool
-	const bool isInSecondlife = gHippoGridManager->getCurrentGrid()->isSecondLife();
-    gMenuHolder->getChild<LLView>("MarketplaceListings")->setVisible(isInSecondlife);
-    /* Singu Note: We do this differently.
-	LLCommand* command = LLCommandManager::instance().getCommand("marketplacelistings");
-    gToolBarView->enableCommand(command->id(), isInSecondlife);
-	*/
-}
-
-void check_merchant_status(bool force)
-{
-    if (!gSavedSettings.getBOOL("InventoryOutboxDisplayBoth"))
-    {
-        if (force)
-        {
-            // Reset the SLM status: we actually want to check again, that's the point of calling check_merchant_status()
-            LLMarketplaceData::instance().setSLMStatus(MarketplaceStatusCodes::MARKET_PLACE_NOT_INITIALIZED);
-        }
-        // Hide SLM related menu item
-        gMenuHolder->getChild<LLView>("MarketplaceListings")->setVisible(FALSE);
-        
-        /* Singu Note: We do this differently.
-		// Also disable the toolbar button for Marketplace Listings
-        LLCommand* command = LLCommandManager::instance().getCommand("marketplacelistings");
-		gToolBarView->enableCommand(command->id(), false);
-		*/
-        
-        if (!gAgent.getRegionCapability("DirectDelivery").empty())
-        {
-            // Launch an SLM test connection to get the merchant status
-            LLMarketplaceData::instance().initializeSLM(boost::bind(&set_merchant_SLM_menu));
-        }
-    }
-}
-
 static std::vector<LLPointer<view_listener_t> > sMenus;
 
 void build_pie_menus()
@@ -628,6 +592,34 @@ void rebuild_context_menus()
 	build_pie_menus();
 	if (!gAgentAvatarp) return; // The agent's avatar isn't here yet, don't bother with the dynamic attach/detach submenus.
 	gAgentAvatarp->buildContextMenus();
+}
+
+void set_merchant_SLM_menu()
+{
+	const bool isInSecondlife = gHippoGridManager->getCurrentGrid()->isSecondLife();
+	// DD-170 : SLM Alpha and Beta program : for the moment, we always show the SLM menu and
+	// tools so that all merchants can try out the UI, even if not migrated.
+	// *TODO : Keep SLM UI hidden for non migrated merchant in released viewer
+	gMenuHolder->getChild<LLView>("MarketplaceListings")->setVisible(isInSecondlife);
+	gToolBar->getChild<LLView>("marketplace_listings_btn")->setEnabled(isInSecondlife);
+}
+
+void check_merchant_status()
+{
+	if (!gSavedSettings.getBOOL("InventoryOutboxDisplayBoth"))
+	{
+		// Reset the SLM status: we actually want to check again, that's the point of calling check_merchant_status()
+		LLMarketplaceData::instance().setSLMStatus(MarketplaceStatusCodes::MARKET_PLACE_NOT_INITIALIZED);
+
+		// Hide SLM related menu item
+		gMenuHolder->getChild<LLView>("MarketplaceListings")->setVisible(FALSE);
+
+		// Also disable the toolbar button for Marketplace Listings
+		gToolBar->getChild<LLView>("marketplace_listings_btn")->setEnabled(false);
+
+		// Launch an SLM test connection to get the merchant status
+		LLMarketplaceData::instance().initializeSLM(boost::bind(&set_merchant_SLM_menu));
+	}
 }
 
 void init_menus()

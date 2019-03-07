@@ -830,7 +830,7 @@ bool idle_startup()
 	{
 		LL_DEBUGS("AppInit") << "STATE_BROWSER_INIT" << LL_ENDL;
 		std::string msg = LLTrans::getString("LoginInitializingBrowser");
-		set_startup_status(0.03f, msg.c_str(), gAgent.mMOTD.c_str());
+		set_startup_status(0.03f, msg, gAgent.mMOTD);
 		display_startup();
 		// LLViewerMedia::initBrowser();
 		LLStartUp::setStartupState( STATE_LOGIN_SHOW );
@@ -2280,11 +2280,14 @@ bool idle_startup()
 		}
 
 		display_startup();
+
+		// *TODO : Uncomment that line once the whole grid migrated to SLM and suppress it from LLAgent::handleTeleportFinished() (llagent.cpp)
+		check_merchant_status();
+
+		display_startup();
+
 		// We're successfully logged in.
 		gSavedSettings.setBOOL("FirstLoginThisInstall", FALSE);
-
-        // *TODO : Uncomment that line once the whole grid migrated to SLM and suppress it from LLAgent::handleTeleportFinished() (llagent.cpp)
-        //check_merchant_status();
 
 		// based on the comments, we've successfully logged in so we can delete the 'forced'
 		// URL that the updater set in settings.ini (in a mostly paranoid fashion)
@@ -2586,15 +2589,15 @@ bool idle_startup()
 		update_texture_fetch();
 		display_startup();
 		set_startup_status(0.9f + 0.1f * wearables_time / MAX_WEARABLES_TIME,
-						 LLTrans::getString("LoginDownloadingClothing").c_str(),
-						 gAgent.mMOTD.c_str());
+						 LLTrans::getString("LoginDownloadingClothing"),
+						 gAgent.mMOTD);
 		display_startup();
 		return TRUE;
 	}
 
 	if (STATE_CLEANUP == LLStartUp::getStartupState())
 	{
-		set_startup_status(1.0, "", "");
+		set_startup_status(1.0, LLStringUtil::null, LLStringUtil::null);
 		display_startup();
 
 		// Let the map know about the inventory.

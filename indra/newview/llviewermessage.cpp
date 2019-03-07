@@ -6591,7 +6591,7 @@ bool attempt_standard_notification(LLMessageSystem* msgsystem)
 			LLUI::sAudioCallback(LLUUID(gSavedSettings.getString("UISndRestart")));
 			return true; // Floater is enough.
 		}
-
+		else
 		// Special Marketplace update notification
 		if (notificationID == "SLM_UPDATE_FOLDER")
 		{
@@ -6602,10 +6602,13 @@ bool attempt_standard_notification(LLMessageSystem* msgsystem)
 				LLMarketplaceData::instance().deleteListing(llsdBlock["listing_id"].asInteger());
 				return true;
 			}
-			// In general, no message will be displayed, all we want is to get the listing updated in the marketplace floater
-			// If getListing() fails though, the message of the alert will be shown by the caller of attempt_standard_notification()
-			return LLMarketplaceData::instance().getListing(llsdBlock["listing_id"].asInteger());
-		}
+            else
+            {
+				// In general, no message will be displayed, all we want is to get the listing updated in the marketplace floater
+				// If getListing() fails though, the message of the alert will be shown by the caller of attempt_standard_notification()
+				return LLMarketplaceData::instance().getListing(llsdBlock["listing_id"].asInteger());
+			}
+        }
 
 		// Error Notification can come with and without reason
 		if (notificationID == "JoinGroupError" && llsdBlock.has("reason"))

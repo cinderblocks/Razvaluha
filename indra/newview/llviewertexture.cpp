@@ -96,7 +96,7 @@ S32Bytes LLViewerTexture::sBoundTextureMemory;
 S32Bytes LLViewerTexture::sTotalTextureMemory;
 S32Bytes LLViewerTexture::sMaxDesiredTextureMem;
 #endif
-S8  LLViewerTexture::sCameraMovingDiscardBias = 0;
+S32  LLViewerTexture::sCameraMovingDiscardBias = 0;
 F32 LLViewerTexture::sCameraMovingBias = 0.0f;
 S32 LLViewerTexture::sMaxSculptRez = 128; //max sculpt image size
 const S32 MAX_CACHED_RAW_IMAGE_AREA = 64 * 64;
@@ -380,7 +380,7 @@ void LLViewerTextureManager::init()
 	imagep->setCachedRawImage(0, image_raw);
 	image_raw = NULL;
 #else
- 	LLViewerFetchedTexture::sDefaultImagep = LLViewerTextureManager::getFetchedTexture(IMG_DEFAULT, TRUE, LLGLTexture::BOOST_UI);
+ 	LLViewerFetchedTexture::sDefaultImagep = LLViewerTextureManager::getFetchedTexture(IMG_DEFAULT, FTT_DEFAULT, TRUE, LLGLTexture::BOOST_UI);
 #endif
 	LLViewerFetchedTexture::sDefaultImagep->dontDiscard();
 	LLViewerFetchedTexture::sDefaultImagep->setCategory(LLGLTexture::OTHER);
@@ -562,7 +562,7 @@ void LLViewerTexture::updateClass(const F32 velocity, const F32 angular_velocity
 	F32 camera_moving_speed = LLViewerCamera::getInstance()->getAverageSpeed();
 	F32 camera_angular_speed = LLViewerCamera::getInstance()->getAverageAngularSpeed();
 	sCameraMovingBias = llmax(0.2f * camera_moving_speed, 2.0f * camera_angular_speed - 1);
-	sCameraMovingDiscardBias = (S8)(sCameraMovingBias);
+	sCameraMovingDiscardBias = sCameraMovingBias;
 
 	LLViewerTexture::sFreezeImageScalingDown = (sBoundTextureMemory < 0.75f * sMaxBoundTextureMemory * texmem_middle_bound_scale) &&
 				(sTotalTextureMemory < 0.75f * sMaxTotalTextureMem * texmem_middle_bound_scale);
@@ -572,8 +572,8 @@ void LLViewerTexture::updateClass(const F32 velocity, const F32 angular_velocity
 //-------------------------------------------------------------------------------------------
 const U32 LLViewerTexture::sCurrentFileVersion = 1;
 
-LLViewerTexture::LLViewerTexture(BOOL usemipmaps) :
-	LLGLTexture(usemipmaps)
+LLViewerTexture::LLViewerTexture(BOOL usemipmaps, bool allow_compression) :
+	LLGLTexture(usemipmaps, allow_compression)
 {
 	init(true);
 
@@ -581,8 +581,8 @@ LLViewerTexture::LLViewerTexture(BOOL usemipmaps) :
 	sImageCount++;
 }
 
-LLViewerTexture::LLViewerTexture(const LLUUID& id, BOOL usemipmaps) :
-	LLGLTexture(usemipmaps),
+LLViewerTexture::LLViewerTexture(const LLUUID& id, BOOL usemipmaps, bool allow_compression) :
+	LLGLTexture(usemipmaps, allow_compression),
 	mID(id)
 {
 	init(true);
@@ -590,8 +590,8 @@ LLViewerTexture::LLViewerTexture(const LLUUID& id, BOOL usemipmaps) :
 	sImageCount++;
 }
 
-LLViewerTexture::LLViewerTexture(const U32 width, const U32 height, const U8 components, BOOL usemipmaps)  :
-	LLGLTexture(width, height, components, usemipmaps)
+LLViewerTexture::LLViewerTexture(const U32 width, const U32 height, const U8 components, BOOL usemipmaps, bool allow_compression)  :
+	LLGLTexture(width, height, components, usemipmaps, allow_compression)
 {
 	init(true);
 
@@ -599,8 +599,8 @@ LLViewerTexture::LLViewerTexture(const U32 width, const U32 height, const U8 com
 	sImageCount++;
 }
 
-LLViewerTexture::LLViewerTexture(const LLImageRaw* raw, BOOL usemipmaps) :
-	LLGLTexture(raw, usemipmaps)
+LLViewerTexture::LLViewerTexture(const LLImageRaw* raw, BOOL usemipmaps, bool allow_compression) :
+	LLGLTexture(raw, usemipmaps, allow_compression)
 {
 	init(true);
 	
@@ -982,7 +982,7 @@ const std::string& fttype_to_string(const FTType& fttype)
 //----------------------------------------------------------------------------------------------
 
 LLViewerFetchedTexture::LLViewerFetchedTexture(const LLUUID& id, FTType f_type, const LLHost& host, BOOL usemipmaps)
-	: LLViewerTexture(id, usemipmaps),
+	: LLViewerTexture(id, usemipmaps, f_type == FTT_DEFAULT || f_type == FTT_MAP_TILE),
 	mTargetHost(host)
 {
 	init(TRUE);
@@ -996,7 +996,7 @@ LLViewerFetchedTexture::LLViewerFetchedTexture(const LLUUID& id, FTType f_type, 
 }
 	
 LLViewerFetchedTexture::LLViewerFetchedTexture(const LLImageRaw* raw, FTType f_type, BOOL usemipmaps)
-	: LLViewerTexture(raw, usemipmaps)
+	: LLViewerTexture(raw, usemipmaps, f_type == FTT_DEFAULT || f_type == FTT_MAP_TILE)
 {
 	init(TRUE);
 	mFTType = f_type;
@@ -1004,7 +1004,7 @@ LLViewerFetchedTexture::LLViewerFetchedTexture(const LLImageRaw* raw, FTType f_t
 }
 	
 LLViewerFetchedTexture::LLViewerFetchedTexture(const std::string& url, FTType f_type, const LLUUID& id, BOOL usemipmaps)
-	: LLViewerTexture(id, usemipmaps),
+	: LLViewerTexture(id, usemipmaps, f_type == FTT_DEFAULT || f_type == FTT_MAP_TILE),
 	mUrl(url)
 {
 	init(TRUE);

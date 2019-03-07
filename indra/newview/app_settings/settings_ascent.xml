@@ -1796,6 +1796,17 @@ Changing this setting only affects new text.</string>
       <key>IsCOA</key>
       <integer>1</integer>
     </map>
+    <key>ToolbarVisibleMarketplaceListings</key>
+    <map>
+      <key>Comment</key>
+      <string>Whether or not the button for marketplace listings is on the toolbar</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <boolean>0</boolean>
+    </map>
     <key>ToolbarVisibleMeanEvents</key>
     <map>
       <key>Comment</key>
@@ -1926,10 +1937,10 @@ Changing this setting only affects new text.</string>
       <key>IsCOA</key>
       <integer>1</integer>
     </map>
-    <key>ToolbarVisibleOutbox</key>
+    <key>ToolbarVisibleMarketplaceListings</key>
     <map>
       <key>Comment</key>
-      <string>Whether or not the button for outbox is on the toolbar</string>
+      <string>Whether or not the button for Marketplace Listings is on the toolbar</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
@@ -1943,19 +1954,6 @@ Changing this setting only affects new text.</string>
     <map>
       <key>Comment</key>
       <string>Whether or not the button for the notifications console is on the toolbar</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>Boolean</string>
-      <key>Value</key>
-      <boolean>0</boolean>
-      <key>IsCOA</key>
-      <integer>1</integer>
-    </map>
-    <key>ToolbarVisibleOutbox</key>
-    <map>
-      <key>Comment</key>
-      <string>Whether or not the button for the merchant outbox is on the toolbar</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>

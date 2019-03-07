@@ -238,8 +238,8 @@ public:
 	virtual void unpackMessage(LLMessageSystem* msg, const char* block, S32 block_num = 0);
 	virtual BOOL unpackMessage(const LLSD& category);
 
-    // returns true if the category object will accept the incoming item
-    bool acceptItem(LLInventoryItem* inv_item);
+	// returns true if the category object will accept the incoming item
+	bool acceptItem(LLInventoryItem* inv_item);
 
 private:
 	friend class LLInventoryModel;
