@@ -79,6 +79,7 @@
 #include "llfloatergodtools.h"
 #include "llfloaterhtmlcurrency.h"
 #include "llfloaterland.h"
+#include "llfloatermarketplacelistings.h"
 #include "llfloatermute.h"
 #include "llfloateropenobject.h"
 #include "llfloaterpathfindingcharacters.h"
@@ -9277,6 +9278,25 @@ class MediaCtrlViewSource : public view_listener_t
 	}
 };
 
+struct MarketplaceViewSortAction : view_listener_t
+{
+	bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata)
+	{
+		LLFloaterMarketplaceListings::findInstance()->mPanelListings->onViewSortMenuItemClicked(userdata);
+		return true;
+	}
+};
+
+struct MarketplaceViewSortCheckItem : view_listener_t
+{
+	bool handleEvent(LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata)
+	{
+		gMenuHolder->findControl(userdata["control"].asString())
+			->setValue(LLFloaterMarketplaceListings::findInstance()->mPanelListings->onViewSortMenuItemCheck(userdata["data"]));
+		return true;
+	}
+};
+
 void addMenu(view_listener_t *menu, const std::string& name)
 {
 	sMenus.push_back(menu);
@@ -9611,6 +9631,9 @@ void initialize_menus()
 	// Media Ctrl menus
 	addMenu(new MediaCtrlWebInspector(), "Open.WebInspector");
 	addMenu(new MediaCtrlViewSource(), "Open.ViewSource");
+
+	addMenu(new MarketplaceViewSortAction, "Marketplace.ViewSort.Action");
+	addMenu(new MarketplaceViewSortCheckItem, "Marketplace.ViewSort.CheckItem");
 
 	class LLViewBuildMode : public view_listener_t
 	{

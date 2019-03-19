@@ -1284,11 +1284,11 @@ bool LLAppViewer::frame()
 
 		LLTrace::get_thread_recorder()->pullFromChildren();*/
 
-		//clear call stack records
-		LL_CLEAR_CALLSTACKS();
+			//clear call stack records
+			LL_CLEAR_CALLSTACKS();
 
-		//check memory availability information
-		checkMemory() ;
+			//check memory availability information
+			checkMemory() ;
 		
 		try
 		{
@@ -1344,12 +1344,10 @@ bool LLAppViewer::frame()
 			
 #endif
 			//memory leaking simulation
-			LLFloaterMemLeak* mem_leak_instance =
-				LLFloaterMemLeak::getInstance();
-			if(mem_leak_instance)
+			if (auto mem_leak_instance = LLFloaterMemLeak::getInstance())
 			{
-				mem_leak_instance->idle() ;				
-			}			
+				mem_leak_instance->idle();
+			}
 
 			// canonical per-frame event
 			mainloop.post(newFrame);
@@ -1511,7 +1509,6 @@ bool LLAppViewer::frame()
 					// LLAppViewer::getTextureFetch()->pause(); // Don't pause the fetch (IO) thread
 				}
 				//LLVFSThread::sLocal->pause(); // Prevent the VFS thread from running while rendering.
-				//LLLFSThread::sLocal->pause(); // Prevent the LFS thread from running while rendering.
 
 				resumeMainloopTimeout();
 	
@@ -1561,12 +1558,8 @@ bool LLAppViewer::frame()
 				LL_WARNS() << "Bad memory allocation when saveFinalSnapshot() is called!: " << e.what() << LL_ENDL ;
 
 			//stop memory leaking simulation
-			LLFloaterMemLeak* mem_leak_instance =
-				LLFloaterMemLeak::getInstance();
-			if(mem_leak_instance)
-			{
-				mem_leak_instance->stop() ;				
-			}	
+			if (auto mem_leak_instance = LLFloaterMemLeak::getInstance())
+				mem_leak_instance->stop();
 		}
 			catch (...)
 			{
@@ -2680,12 +2673,11 @@ bool LLAppViewer::initConfiguration()
 	//
 	// Set the name of the window
 	//
-	gWindowTitle = LLTrans::getString("APP_NAME");
+	gWindowTitle = LLTrans::getString("APP_NAME") + llformat(" (%d) ", LLVersionInfo::getBuild())
 #if LL_DEBUG
-	gWindowTitle += std::string(" [DEBUG] ") + gArgs;
-#else
-	gWindowTitle += std::string(" ") + gArgs;
+		+ "[DEBUG] "
 #endif
+		+ gArgs;
 	LLStringUtil::truncate(gWindowTitle, 255);
 
 	//RN: if we received a URL, hand it off to the existing instance.
@@ -2871,6 +2863,8 @@ void LLAppViewer::cleanupSavedSettings()
 	{
 		gSavedSettings.setF32("RenderFarClip", gAgentCamera.mDrawDistance);
 	}
+
+	LLSpeakerVolumeStorage::deleteSingleton();
 }
 
 void LLAppViewer::removeCacheFiles(const std::string& file_mask)

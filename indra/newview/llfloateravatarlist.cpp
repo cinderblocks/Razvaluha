@@ -142,6 +142,7 @@ LLAvatarListEntry::LLAvatarListEntry(const LLUUID& id, const std::string& name, 
 	LLAvatarPropertiesProcessor& inst(LLAvatarPropertiesProcessor::instance());
 	inst.addObserver(mID, this);
 	inst.sendAvatarPropertiesRequest(mID);
+	inst.sendAvatarNotesRequest(mID);
 }
 
 LLAvatarListEntry::~LLAvatarListEntry()
@@ -158,37 +159,44 @@ LLAvatarListEntry::~LLAvatarListEntry()
 // virtual
 void LLAvatarListEntry::processProperties(void* data, EAvatarProcessorType type)
 {
-	if (type == APT_PROPERTIES)
+	// If one wanted more information that gets displayed on profiles to be displayed, here would be the place to do it.
+	switch(type)
 	{
-		LLAvatarPropertiesProcessor& inst(LLAvatarPropertiesProcessor::instance());
-		inst.removeObserver(mID, this);
-		const LLAvatarData* pAvatarData = static_cast<const LLAvatarData*>(data);
-		if (pAvatarData && (pAvatarData->avatar_id != LLUUID::null))
-		{
-			using namespace boost::gregorian;
-			int year, month, day;
-			sscanf(pAvatarData->born_on.c_str(),"%d/%d/%d",&month,&day,&year);
-			try
+		case APT_PROPERTIES:
+			if (mAge == -1)
 			{
-				mAge = (day_clock::local_day() - date(year, month, day)).days();
-			}
-			catch(const std::exception&)
-			{
-				LL_WARNS() << "Failed to extract age from APT_PROPERTIES for " << mID << ", received \"" << pAvatarData->born_on << "\". Requesting properties again." << LL_ENDL;
-				inst.addObserver(mID, this);
-				inst.sendAvatarPropertiesRequest(mID);
-				return;
-			}
-			if (!mStats[STAT_TYPE_AGE] && mAge >= 0) //Only announce age once per entry.
-			{
-				static const LLCachedControl<U32> sAvatarAgeAlertDays(gSavedSettings, "AvatarAgeAlertDays");
-				if ((U32)mAge < sAvatarAgeAlertDays)
+				LLAvatarPropertiesProcessor& inst(LLAvatarPropertiesProcessor::instance());
+				const LLAvatarData* pAvatarData = static_cast<const LLAvatarData*>(data);
+				if (pAvatarData && (pAvatarData->avatar_id.notNull()))
 				{
-					chat_avatar_status(mName, mID, STAT_TYPE_AGE, mStats[STAT_TYPE_AGE] = true, (mPosition - gAgent.getPositionGlobal()).magVec());
+					using namespace boost::gregorian;
+					int year, month, day;
+					if (sscanf(pAvatarData->born_on.c_str(),"%d/%d/%d",&month,&day,&year) == 3)
+					try
+					{
+						mAge = (day_clock::local_day() - date(year, month, day)).days();
+					}
+					catch(const std::out_of_range&) {} // date throws this, so we didn't assign
+
+					if (mAge >= 0)
+					{
+						static const LLCachedControl<U32> sAvatarAgeAlertDays(gSavedSettings, "AvatarAgeAlertDays");
+						if (!mStats[STAT_TYPE_AGE] && (U32)mAge < sAvatarAgeAlertDays) //Only announce age once per entry.
+							chat_avatar_status(mName, mID, STAT_TYPE_AGE, mStats[STAT_TYPE_AGE] = true, (mPosition - gAgent.getPositionGlobal()).magVec());
+					}
+					else // Something failed, resend request
+					{
+						LL_WARNS() << "Failed to extract age from APT_PROPERTIES for " << mID << ", received \"" << pAvatarData->born_on << "\". Requesting properties again." << LL_ENDL;
+						inst.sendAvatarPropertiesRequest(mID);
+					}
 				}
 			}
-			// If one wanted more information that gets displayed on profiles to be displayed, here would be the place to do it.
-		}
+			break;
+		case APT_NOTES:
+			if (const LLAvatarNotes* pAvatarNotes = static_cast<const LLAvatarNotes*>(data))
+				mNotes = !pAvatarNotes->notes.empty();
+		break;
+		default: break;
 	}
 }
 
@@ -410,6 +418,7 @@ BOOL LLFloaterAvatarList::postBuild()
 	gSavedSettings.getControl("RadarColumnAltitudeHidden")->getSignal()->connect(boost::bind(&LLFloaterAvatarList::assessColumns, this));
 	gSavedSettings.getControl("RadarColumnActivityHidden")->getSignal()->connect(boost::bind(&LLFloaterAvatarList::assessColumns, this));
 	gSavedSettings.getControl("RadarColumnVoiceHidden")->getSignal()->connect(boost::bind(&LLFloaterAvatarList::assessColumns, this));
+	gSavedSettings.getControl("RadarColumnNotesHidden")->getSignal()->connect(boost::bind(&LLFloaterAvatarList::assessColumns, this));
 	gSavedSettings.getControl("RadarColumnAgeHidden")->getSignal()->connect(boost::bind(&LLFloaterAvatarList::assessColumns, this));
 	gSavedSettings.getControl("RadarColumnTimeHidden")->getSignal()->connect(boost::bind(&LLFloaterAvatarList::assessColumns, this));
 
@@ -454,6 +463,21 @@ void col_helper(const bool hide, LLCachedControl<S32> &setting, LLScrollListColu
 	}
 }
 
+enum AVATARS_COLUMN_ORDER
+{
+	LIST_MARK,
+	LIST_AVATAR_NAME,
+	LIST_DISTANCE,
+	LIST_POSITION,
+	LIST_ALTITUDE,
+	LIST_ACTIVITY,
+	LIST_VOICE,
+	LIST_NOTES,
+	LIST_AGE,
+	LIST_TIME,
+	LIST_CLIENT,
+};
+
 //Macro to reduce redundant lines. Preprocessor concatenation and stringizing avoids bloat that
 //wrapping in a class would create.
 #define BIND_COLUMN_TO_SETTINGS(col, name)\
@@ -468,6 +492,7 @@ void LLFloaterAvatarList::assessColumns()
 	BIND_COLUMN_TO_SETTINGS(LIST_ALTITUDE,Altitude);
 	BIND_COLUMN_TO_SETTINGS(LIST_ACTIVITY,Activity);
 	BIND_COLUMN_TO_SETTINGS(LIST_VOICE,Voice);
+	BIND_COLUMN_TO_SETTINGS(LIST_NOTES,Notes);
 	BIND_COLUMN_TO_SETTINGS(LIST_AGE,Age);
 	BIND_COLUMN_TO_SETTINGS(LIST_TIME,Time);
 
@@ -910,6 +935,12 @@ void LLFloaterAvatarList::refreshAvatarList()
 				}
 			}
 			element.columns.add(voice);
+		}
+
+		static const LLCachedControl<bool> hide_notes("RadarColumnNotesHidden");
+		if (!hide_notes)
+		{
+			element.columns.add(LLScrollListCell::Params().column("notes").type("checkbox").enabled(false).value(entry->mNotes));
 		}
 
 		static const LLCachedControl<bool> hide_age("RadarColumnAgeHidden");

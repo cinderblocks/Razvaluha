@@ -265,13 +265,13 @@ private:
 
     // Handling Marketplace connection and inventory connection
 	U32  mMarketPlaceStatus;
-	status_updated_signal_t* mStatusUpdatedSignal;
+	std::unique_ptr<status_updated_signal_t> mStatusUpdatedSignal;
 	LLInventoryObserver* mInventoryObserver;
     bool mDirtyCount;   // If true, stock count value need to be updated at the next check
     
     // Update data
     U32 mMarketPlaceDataFetched;
-	status_updated_signal_t* mDataFetchedSignal;
+	std::unique_ptr<status_updated_signal_t> mDataFetchedSignal;
     std::set<LLUUID> mPendingUpdateSet;
 
     // Listing folders waiting for validation

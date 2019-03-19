@@ -244,99 +244,99 @@ void update_marketplace_folder_hierarchy(const LLUUID cat_id)
 	LLInventoryModel::cat_array_t* cat_array;
 	LLInventoryModel::item_array_t* item_array;
 	gInventory.getDirectDescendentsOf(cat_id,cat_array,item_array);
-    
-    LLInventoryModel::cat_array_t cat_array_copy = *cat_array;
-    for (LLInventoryModel::cat_array_t::iterator iter = cat_array_copy.begin(); iter != cat_array_copy.end(); iter++)
-    {
-        LLInventoryCategory* category = *iter;
-        update_marketplace_folder_hierarchy(category->getUUID());
-    }
+
+	LLInventoryModel::cat_array_t cat_array_copy = *cat_array;
+	for (LLInventoryModel::cat_array_t::iterator iter = cat_array_copy.begin(); iter != cat_array_copy.end(); iter++)
+	{
+		LLInventoryCategory* category = *iter;
+		update_marketplace_folder_hierarchy(category->getUUID());
+	}
     return;
 }
 
 void update_marketplace_category(const LLUUID& cur_uuid, bool perform_consistency_enforcement)
 {
-    // When changing the marketplace status of an item, we usually have to change the status of all
-    // folders in the same listing. This is because the display of each folder is affected by the
-    // overall status of the whole listing.
-    // Consequently, the only way to correctly update an item anywhere in the marketplace is to 
-    // update the whole listing from its listing root.
-    // This is not as bad as it seems as we only update folders, not items, and the folder nesting depth 
-    // is limited to 4.
-    // We also take care of degenerated cases so we don't update all folders in the inventory by mistake.
+	// When changing the marketplace status of an item, we usually have to change the status of all
+	// folders in the same listing. This is because the display of each folder is affected by the
+	// overall status of the whole listing.
+	// Consequently, the only way to correctly update an item anywhere in the marketplace is to
+	// update the whole listing from its listing root.
+	// This is not as bad as it seems as we only update folders, not items, and the folder nesting depth
+	// is limited to 4.
+	// We also take care of degenerated cases so we don't update all folders in the inventory by mistake.
 
     if (cur_uuid.isNull()
         || gInventory.getCategory(cur_uuid) == NULL
         || gInventory.getCategory(cur_uuid)->getVersion() == LLViewerInventoryCategory::VERSION_UNKNOWN)
-    {
-        return;
-    }
-    
-    // Grab marketplace listing data for this item
-    S32 depth = depth_nesting_in_marketplace(cur_uuid);
-    if (depth > 0)
-    {
-        // Retrieve the listing uuid this object is in
-        LLUUID listing_uuid = nested_parent_id(cur_uuid, depth);
+	{
+		return;
+	}
+
+	// Grab marketplace listing data for this item
+	S32 depth = depth_nesting_in_marketplace(cur_uuid);
+	if (depth > 0)
+	{
+		// Retrieve the listing uuid this object is in
+		LLUUID listing_uuid = nested_parent_id(cur_uuid, depth);
         LLViewerInventoryCategory* listing_cat = gInventory.getCategory(listing_uuid);
         bool listing_cat_loaded = listing_cat != NULL && listing_cat->getVersion() != LLViewerInventoryCategory::VERSION_UNKNOWN;
-    
-        // Verify marketplace data consistency for this listing
+
+		// Verify marketplace data consistency for this listing
         if (perform_consistency_enforcement
             && listing_cat_loaded
             && LLMarketplaceData::instance().isListed(listing_uuid))
-        {
-            LLUUID version_folder_uuid = LLMarketplaceData::instance().getVersionFolder(listing_uuid);
-            S32 version_depth = depth_nesting_in_marketplace(version_folder_uuid);
-            if (version_folder_uuid.notNull() && (!gInventory.isObjectDescendentOf(version_folder_uuid, listing_uuid) || (version_depth != 2)))
-            {
-                LL_INFOS("SLM") << "Unlist and clear version folder as the version folder is not at the right place anymore!!" << LL_ENDL;
-                LLMarketplaceData::instance().setVersionFolder(listing_uuid, LLUUID::null,1);
-            }
+		{
+			LLUUID version_folder_uuid = LLMarketplaceData::instance().getVersionFolder(listing_uuid);
+			S32 version_depth = depth_nesting_in_marketplace(version_folder_uuid);
+			if (version_folder_uuid.notNull() && (!gInventory.isObjectDescendentOf(version_folder_uuid, listing_uuid) || (version_depth != 2)))
+			{
+				LL_INFOS("SLM") << "Unlist and clear version folder as the version folder is not at the right place anymore!!" << LL_ENDL;
+				LLMarketplaceData::instance().setVersionFolder(listing_uuid, LLUUID::null,1);
+			}
             else if (version_folder_uuid.notNull()
                      && gInventory.isCategoryComplete(version_folder_uuid)
                      && LLMarketplaceData::instance().getActivationState(version_folder_uuid)
                      && (count_descendants_items(version_folder_uuid) == 0)
                      && !LLMarketplaceData::instance().isUpdating(version_folder_uuid,version_depth))
-            {
-                LL_INFOS("SLM") << "Unlist as the version folder is empty of any item!!" << LL_ENDL;
-                LLNotificationsUtil::add("AlertMerchantVersionFolderEmpty");
-                LLMarketplaceData::instance().activateListing(listing_uuid, false,1);
-            }
-        }
-    
-        // Check if the count on hand needs to be updated on SLM
+			{
+				LL_INFOS("SLM") << "Unlist as the version folder is empty of any item!!" << LL_ENDL;
+				LLNotificationsUtil::add("AlertMerchantVersionFolderEmpty");
+				LLMarketplaceData::instance().activateListing(listing_uuid, false,1);
+			}
+		}
+
+		// Check if the count on hand needs to be updated on SLM
         if (perform_consistency_enforcement
             && listing_cat_loaded
             && (compute_stock_count(listing_uuid) != LLMarketplaceData::instance().getCountOnHand(listing_uuid)))
-        {
-            LLMarketplaceData::instance().updateCountOnHand(listing_uuid,1);
-        }
-        // Update all descendents starting from the listing root
-        update_marketplace_folder_hierarchy(listing_uuid);
-    }
-    else if (depth == 0)
-    {
-        // If this is the marketplace listings root itself, update all descendents
-        if (gInventory.getCategory(cur_uuid))
-        {
-            update_marketplace_folder_hierarchy(cur_uuid);
-        }
-    }
-    else
-    {
-        // If the folder is outside the marketplace listings root, clear its SLM data if needs be
-        if (perform_consistency_enforcement && LLMarketplaceData::instance().isListed(cur_uuid))
-        {
-            LL_INFOS("SLM") << "Disassociate as the listing folder is not under the marketplace folder anymore!!" << LL_ENDL;
-            LLMarketplaceData::instance().clearListing(cur_uuid);
-        }
-        // Update all descendents if this is a category
-        if (gInventory.getCategory(cur_uuid))
-        {
-            update_marketplace_folder_hierarchy(cur_uuid);
-        }
-    }
+		{
+			LLMarketplaceData::instance().updateCountOnHand(listing_uuid,1);
+		}
+		// Update all descendents starting from the listing root
+		update_marketplace_folder_hierarchy(listing_uuid);
+	}
+	else if (depth == 0)
+	{
+		// If this is the marketplace listings root itself, update all descendents
+		if (gInventory.getCategory(cur_uuid))
+		{
+			update_marketplace_folder_hierarchy(cur_uuid);
+		}
+	}
+	else
+	{
+		// If the folder is outside the marketplace listings root, clear its SLM data if needs be
+		if (perform_consistency_enforcement && LLMarketplaceData::instance().isListed(cur_uuid))
+		{
+			LL_INFOS("SLM") << "Disassociate as the listing folder is not under the marketplace folder anymore!!" << LL_ENDL;
+			LLMarketplaceData::instance().clearListing(cur_uuid);
+		}
+		// Update all descendents if this is a category
+		if (gInventory.getCategory(cur_uuid))
+		{
+			update_marketplace_folder_hierarchy(cur_uuid);
+		}
+	}
 
     return;
 }
@@ -1004,8 +1004,8 @@ int get_folder_levels(LLInventoryCategory* inv_cat)
 	gInventory.getDirectDescendentsOf(inv_cat->getUUID(), cats, items);
     
 	int max_child_levels = 0;
-    
-	for (size_t i=0; i < cats->size(); ++i)
+
+	for (U32 i = 0; i < cats->size(); ++i)
 	{
 		LLInventoryCategory* category = cats->at(i);
 		max_child_levels = llmax(max_child_levels, get_folder_levels(category));
@@ -1166,106 +1166,106 @@ bool can_move_item_to_marketplace(const LLInventoryCategory* root_folder, LLInve
 // bundle_size is the amount of sibling items that are getting moved to the marketplace at the same time.
 bool can_move_folder_to_marketplace(const LLInventoryCategory* root_folder, LLInventoryCategory* dest_folder, LLInventoryCategory* inv_cat, std::string& tooltip_msg, S32 bundle_size, bool check_items, bool from_paste)
 {
-    bool accept = true;
-    
-    // Compute the nested folders level we'll add into with that incoming folder
-    int incoming_folder_depth = get_folder_levels(inv_cat);
-    // Compute the nested folders level we're inserting ourselves in
-    // Note: add 1 when inserting under a listing folder as we need to take the root listing folder in the count
-    int insertion_point_folder_depth = (root_folder ? get_folder_path_length(root_folder->getUUID(), dest_folder->getUUID()) + 1 : 0);
+	bool accept = true;
 
-    // Get the version folder: that's where the folders and items counts start from
-    const LLViewerInventoryCategory * version_folder = (insertion_point_folder_depth >= 2 ? gInventory.getFirstDescendantOf(root_folder->getUUID(), dest_folder->getUUID()) : NULL);
-    
-    // Compare the whole with the nested folders depth limit
-    // Note: substract 2 as we leave root and version folder out of the count threshold
-    if ((incoming_folder_depth + insertion_point_folder_depth - 2) > (S32)(gSavedSettings.getU32("InventoryOutboxMaxFolderDepth")))
-    {
-        LLStringUtil::format_map_t args;
-        U32 amount = gSavedSettings.getU32("InventoryOutboxMaxFolderDepth");
-        args["[AMOUNT]"] = llformat("%d",amount);
-        tooltip_msg = LLTrans::getString("TooltipOutboxFolderLevels", args);
-        accept = false;
-    }
-    
-    if (accept)
-    {
-        LLInventoryModel::cat_array_t descendent_categories;
-        LLInventoryModel::item_array_t descendent_items;
-        gInventory.collectDescendents(inv_cat->getUUID(), descendent_categories, descendent_items, FALSE);
-    
-        U32 dragged_folder_count = descendent_categories.size() + bundle_size;  // Note: We assume that we're moving a bunch of folders in. That might be wrong...
-        S32 dragged_item_count = count_copyable_items(descendent_items) + count_stock_folders(descendent_categories);
-        S32 dragged_stock_count = count_stock_items(descendent_items);
-        S32 existing_item_count = 0;
-        S32 existing_stock_count = 0;
-        U32 existing_folder_count = 0;
-    
-        if (version_folder)
-        {
-            if (!from_paste && gInventory.isObjectDescendentOf(inv_cat->getUUID(), version_folder->getUUID()))
-            {
-                // Clear those counts or they will be counted twice because we're already inside the version category
-                dragged_folder_count = 0;
-                dragged_item_count = 0;
-                dragged_stock_count = 0;
-            }
-        
-            // Tally the total number of categories and items inside the root folder
-            LLInventoryModel::cat_array_t existing_categories;
-            LLInventoryModel::item_array_t existing_items;
-            gInventory.collectDescendents(version_folder->getUUID(), existing_categories, existing_items, FALSE);
-        
-            existing_folder_count += existing_categories.size();
-            existing_item_count += count_copyable_items(existing_items) + count_stock_folders(existing_categories);
-            existing_stock_count += count_stock_items(existing_items);
-        }
-    
-        const U32 total_folder_count = existing_folder_count + dragged_folder_count;
-        const S32 total_item_count = existing_item_count + dragged_item_count;
-        const S32 total_stock_count = existing_stock_count + dragged_stock_count;
-    
-        if (total_folder_count > gSavedSettings.getU32("InventoryOutboxMaxFolderCount"))
-        {
-            LLStringUtil::format_map_t args;
-            U32 amount = gSavedSettings.getU32("InventoryOutboxMaxFolderCount");
-            args["[AMOUNT]"] = llformat("%d",amount);
-            tooltip_msg = LLTrans::getString("TooltipOutboxTooManyFolders", args);
-            accept = false;
-        }
-        else if (total_item_count > (S32)gSavedSettings.getU32("InventoryOutboxMaxItemCount"))
-        {
-            LLStringUtil::format_map_t args;
-            U32 amount = gSavedSettings.getU32("InventoryOutboxMaxItemCount");
-            args["[AMOUNT]"] = llformat("%d",amount);
-            tooltip_msg = LLTrans::getString("TooltipOutboxTooManyObjects", args);
-            accept = false;
-        }
-        else if (total_stock_count > (S32)gSavedSettings.getU32("InventoryOutboxMaxStockItemCount"))
-        {
-            LLStringUtil::format_map_t args;
-            U32 amount = gSavedSettings.getU32("InventoryOutboxMaxStockItemCount");
-            args["[AMOUNT]"] = llformat("%d",amount);
-            tooltip_msg = LLTrans::getString("TooltipOutboxTooManyStockItems", args);
-            accept = false;
-        }
-        
-        // Now check that each item in the folder can be moved in the marketplace
-        if (accept && check_items)
-        {
-            for (size_t i=0; i < descendent_items.size(); ++i)
-            {
-                LLInventoryItem* item = descendent_items[i];
-                if (!can_move_to_marketplace(item, tooltip_msg, false))
-                {
-                    accept = false;
-                    break;
-                }
-            }
-        }
-    }
-    
-    return accept;
+	// Compute the nested folders level we'll add into with that incoming folder
+	int incoming_folder_depth = get_folder_levels(inv_cat);
+	// Compute the nested folders level we're inserting ourselves in
+	// Note: add 1 when inserting under a listing folder as we need to take the root listing folder in the count
+    int insertion_point_folder_depth = (root_folder ? get_folder_path_length(root_folder->getUUID(), dest_folder->getUUID()) + 1 : 1);
+
+	// Get the version folder: that's where the folders and items counts start from
+	const LLViewerInventoryCategory* version_folder = (insertion_point_folder_depth >= 2 ? gInventory.getFirstDescendantOf(root_folder->getUUID(), dest_folder->getUUID()) : NULL);
+
+	// Compare the whole with the nested folders depth limit
+	// Note: substract 2 as we leave root and version folder out of the count threshold
+	if ((incoming_folder_depth + insertion_point_folder_depth - 2) > (S32)(gSavedSettings.getU32("InventoryOutboxMaxFolderDepth")))
+	{
+		LLStringUtil::format_map_t args;
+		U32 amount = gSavedSettings.getU32("InventoryOutboxMaxFolderDepth");
+		args["[AMOUNT]"] = llformat("%d",amount);
+		tooltip_msg = LLTrans::getString("TooltipOutboxFolderLevels", args);
+		accept = false;
+	}
+
+	if (accept)
+	{
+		LLInventoryModel::cat_array_t descendent_categories;
+		LLInventoryModel::item_array_t descendent_items;
+		gInventory.collectDescendents(inv_cat->getUUID(), descendent_categories, descendent_items, FALSE);
+
+		S32 dragged_folder_count = descendent_categories.size() + bundle_size;  // Note: We assume that we're moving a bunch of folders in. That might be wrong...
+		S32 dragged_item_count = count_copyable_items(descendent_items) + count_stock_folders(descendent_categories);
+		S32 dragged_stock_count = count_stock_items(descendent_items);
+		S32 existing_item_count = 0;
+		S32 existing_stock_count = 0;
+		S32 existing_folder_count = 0;
+
+		if (version_folder)
+		{
+			if (!from_paste && gInventory.isObjectDescendentOf(inv_cat->getUUID(), version_folder->getUUID()))
+			{
+				// Clear those counts or they will be counted twice because we're already inside the version category
+				dragged_folder_count = 0;
+				dragged_item_count = 0;
+				dragged_stock_count = 0;
+			}
+
+			// Tally the total number of categories and items inside the root folder
+			LLInventoryModel::cat_array_t existing_categories;
+			LLInventoryModel::item_array_t existing_items;
+			gInventory.collectDescendents(version_folder->getUUID(), existing_categories, existing_items, FALSE);
+
+			existing_folder_count += existing_categories.size();
+			existing_item_count += count_copyable_items(existing_items) + count_stock_folders(existing_categories);
+			existing_stock_count += count_stock_items(existing_items);
+		}
+
+		const S32 total_folder_count = existing_folder_count + dragged_folder_count;
+		const S32 total_item_count = existing_item_count + dragged_item_count;
+		const S32 total_stock_count = existing_stock_count + dragged_stock_count;
+
+		if (total_folder_count > (S32)gSavedSettings.getU32("InventoryOutboxMaxFolderCount"))
+		{
+			LLStringUtil::format_map_t args;
+			U32 amount = gSavedSettings.getU32("InventoryOutboxMaxFolderCount");
+			args["[AMOUNT]"] = llformat("%d",amount);
+			tooltip_msg = LLTrans::getString("TooltipOutboxTooManyFolders", args);
+			accept = false;
+		}
+		else if (total_item_count > (S32)gSavedSettings.getU32("InventoryOutboxMaxItemCount"))
+		{
+			LLStringUtil::format_map_t args;
+			U32 amount = gSavedSettings.getU32("InventoryOutboxMaxItemCount");
+			args["[AMOUNT]"] = llformat("%d",amount);
+			tooltip_msg = LLTrans::getString("TooltipOutboxTooManyObjects", args);
+			accept = false;
+		}
+		else if (total_stock_count > (S32)gSavedSettings.getU32("InventoryOutboxMaxStockItemCount"))
+		{
+			LLStringUtil::format_map_t args;
+			U32 amount = gSavedSettings.getU32("InventoryOutboxMaxStockItemCount");
+			args["[AMOUNT]"] = llformat("%d",amount);
+			tooltip_msg = LLTrans::getString("TooltipOutboxTooManyStockItems", args);
+			accept = false;
+		}
+
+		// Now check that each item in the folder can be moved in the marketplace
+		if (accept && check_items)
+		{
+			for (U32 i=0; i < descendent_items.size(); ++i)
+			{
+				LLInventoryItem* item = descendent_items[i];
+				if (!can_move_to_marketplace(item, tooltip_msg, false))
+				{
+					accept = false;
+					break;
+				}
+			}
+		}
+	}
+
+	return accept;
 }
 
 bool move_item_to_marketplacelistings(LLInventoryItem* inv_item, LLUUID dest_folder, bool copy)

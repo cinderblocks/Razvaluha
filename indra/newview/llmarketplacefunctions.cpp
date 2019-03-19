@@ -773,7 +773,7 @@ void LLMarketplaceData::initializeSLM(const status_updated_signal_t::slot_type& 
 {
 	if (mStatusUpdatedSignal == nullptr)
 	{
-		mStatusUpdatedSignal = new status_updated_signal_t();
+		mStatusUpdatedSignal = std::make_unique<status_updated_signal_t>();
 	}
 	mStatusUpdatedSignal->connect(cb);
     
@@ -855,7 +855,7 @@ void LLMarketplaceData::setDataFetchedSignal(const status_updated_signal_t::slot
 {
 	if (mDataFetchedSignal == nullptr)
 	{
-		mDataFetchedSignal = new status_updated_signal_t();
+		mDataFetchedSignal = std::make_unique<status_updated_signal_t>();
 	}
 	mDataFetchedSignal->connect(cb);
 }

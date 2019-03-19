@@ -35,6 +35,7 @@
 #include "llpostprocess.h"
 
 #include "lldir.h"
+#include "llcontrol.h"
 #include "llfasttimer.h"
 #include "llgl.h"
 #include "llglslshader.h"
@@ -355,42 +356,44 @@ LLPostProcess::LLPostProcess(void) :
 	mShaders.push_back(new LLPosterizeShader());
 
 	/*  Do nothing.  Needs to be updated to use our current shader system, and to work with the move into llrender.*/
-	std::string pathName(gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "windlight", XML_FILENAME));
-	LL_DEBUGS("AppInit", "Shaders") << "Loading PostProcess Effects settings from " << pathName << LL_ENDL;
-
-	llifstream effectsXML(pathName);
-
-	if (effectsXML)
+	auto load_effects = [&](const std::string& pathName)
 	{
-		LLPointer<LLSDParser> parser = new LLSDXMLParser();
+		LL_DEBUGS("AppInit", "Shaders") << "Loading PostProcess Effects settings from " << pathName << LL_ENDL;
+		llifstream effectsXML(pathName);
 
-		parser->parse(effectsXML, mAllEffectInfo, LLSDSerialize::SIZE_UNLIMITED);
-	}
+		if (effectsXML)
+		{
+			LLPointer<LLSDParser> parser = new LLSDXMLParser();
+			parser->parse(effectsXML, mAllEffectInfo, LLSDSerialize::SIZE_UNLIMITED);
+		}
+	};
+	load_effects(gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "windlight", XML_FILENAME));
+	load_effects(gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "windlight", XML_FILENAME));
 
-	// Singu TODO: Make this configurable via settings
-	if (!mAllEffectInfo.has("Default"))
-		mAllEffectInfo["Default"] = LLSD::emptyMap();
+	auto setting = gSavedSettings.getControl("SinguPostProcessDefault");
+	setting->getSignal()->connect(std::bind(&LLPostProcess::setSelectedEffect, this, std::bind(&LLSD::asStringRef, std::placeholders::_2)));
+	const auto& str = setting->get().asStringRef();
+	if (!mAllEffectInfo.has(str))
+		mAllEffectInfo[str] = LLSD::emptyMap();
 
-	LLSD& defaults = mAllEffectInfo["Default"];
+	LLSD& defaults = mAllEffectInfo[str];
 
-	for(std::list<LLPointer<LLPostProcessShader> >::iterator it=mShaders.begin();it!=mShaders.end();++it)
+	// Add defaults for all missing effects
+	for(auto& shader : mShaders)
 	{
-		LLSD shader_defaults = (*it)->getDefaults();
+		const LLSD shader_defaults = shader->getDefaults();
 		for (LLSD::map_const_iterator it2 = defaults.beginMap();it2 != defaults.endMap();++it2)
 		{
 			if(!defaults.has(it2->first))
 				defaults[it2->first]=it2->second;
 		}
 	}
-	for(std::list<LLPointer<LLPostProcessShader> >::iterator it=mShaders.begin();it!=mShaders.end();++it)
-	{
-		(*it)->loadSettings(defaults);
-	}
-	setSelectedEffect("Default");
+	setSelectedEffect(str);
 }
 
 LLPostProcess::~LLPostProcess(void)
 {
+	gSavedSettings.setString("SinguPostProcessDefault", mSelectedEffectName);
 	destroyGL() ;
 }
 
@@ -705,7 +708,7 @@ void LLPostProcess::saveEffectAs(std::string const & effectName)
 	mAllEffectInfo[effectName] = mSelectedEffectInfo;
 	mSelectedEffectChanged(mSelectedEffectName); // Might've changed, either way update the lists
 
-	std::string pathName(gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "windlight", XML_FILENAME));
+	std::string pathName(gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "windlight", XML_FILENAME));
 	//LL_INFOS() << "Saving PostProcess Effects settings to " << pathName << LL_ENDL;
 
 	llofstream effectsXML(pathName);

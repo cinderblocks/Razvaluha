@@ -177,7 +177,8 @@ LLAvatarAppearance::LLAvatarAppearance(LLWearableData* wearable_data) :
     mWearableData(wearable_data),
     mNumBones(0),
     mNumCollisionVolumes(0),
-    mCollisionVolumes(nullptr)
+    mCollisionVolumes(nullptr),
+	mInitFlags(0)
 {
 	llassert_always(mWearableData);
 	mBakedTextureDatas.resize(LLAvatarAppearanceDefines::BAKED_NUM_INDICES);
@@ -268,6 +269,8 @@ void LLAvatarAppearance::initInstance()
 	}
 
 	buildCharacter();
+
+	mInitFlags |= 1<<0;
 
 }
 
@@ -1336,9 +1339,12 @@ LLVector3 LLAvatarAppearance::getVolumePos(S32 joint_index, LLVector3& volume_of
 //-----------------------------------------------------------------------------
 // findCollisionVolume()
 //-----------------------------------------------------------------------------
-LLJoint* LLAvatarAppearance::findCollisionVolume(U32 volume_id)
+LLJoint* LLAvatarAppearance::findCollisionVolume(S32 volume_id)
 {
-	if ((S32)volume_id > mNumCollisionVolumes)
+	//SNOW-488: As mNumCollisionVolumes is a S32 and we are casting from a U32 to a S32
+	//to compare we also need to be sure of the wrap around case producing (S32) <0
+	//or in terms of the U32 an out of bounds index in the array.
+	if ((S32)volume_id > mNumCollisionVolumes || volume_id<0)
 	{
 		return nullptr;
 	}
@@ -1783,13 +1789,34 @@ const LLAvatarAppearance::joint_alias_map_t& LLAvatarAppearance::getJointAliases
     {
         
         LLAvatarSkeletonInfo::bone_info_list_t::const_iterator iter;
-        for (iter = sAvatarSkeletonInfo->mBoneInfoList.begin(); iter != sAvatarSkeletonInfo->mBoneInfoList.end(); ++iter)
+        for (iter = sAvatarSkeletonInfo->mBoneInfoList.begin(); 
+             iter != sAvatarSkeletonInfo->mBoneInfoList.end();
+             ++iter)
         {
             //LLAvatarBoneInfo *bone_info = *iter;
             makeJointAliases( *iter );
         }
+
+        LLAvatarXmlInfo::attachment_info_list_t::iterator attach_iter;
+        for (attach_iter = sAvatarXmlInfo->mAttachmentInfoList.begin();
+             attach_iter != sAvatarXmlInfo->mAttachmentInfoList.end(); 
+             ++attach_iter)
+        {
+            LLAvatarXmlInfo::LLAvatarAttachmentInfo *info = *attach_iter;
+            std::string bone_name = info->mName;
+            
+            // Also accept the name with spaces substituted with
+            // underscores. This gives a mechanism for referencing such joints
+            // in daes, which don't allow spaces.
+            std::string sub_space_to_underscore = bone_name;
+            LLStringUtil::replaceChar(sub_space_to_underscore, ' ', '_');
+            if (sub_space_to_underscore != bone_name)
+            {
+                mJointAliasMap[sub_space_to_underscore] = bone_name;
+            }
+        }
     }
-    
+
     return mJointAliasMap;
 } 
 

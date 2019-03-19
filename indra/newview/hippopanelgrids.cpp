@@ -171,7 +171,7 @@ void HippoPanelGridsImpl::refresh()
 	LLComboBox *grids = getChild<LLComboBox>("grid_selector");
 	S32 selectIndex = -1, i = 0;
 	grids->removeall();
-	if (defaultGrid != "") {
+	if (!defaultGrid.empty()) {
 		grids->add(defaultGrid);
 		selectIndex = i++;
 	}
@@ -191,10 +191,10 @@ void HippoPanelGridsImpl::refresh()
 	if (selectIndex >= 0) {
 		grids->setCurrentByIndex(selectIndex);
 	} else {
-		grids->setLabel(LLStringExplicit(""));  // LLComboBox::removeall() does not clear the label
+		grids->setLabel(LLStringUtil::null);  // LLComboBox::removeall() does not clear the label
 	}
 
-	childSetTextArg("default_grid", "[DEFAULT]", (defaultGrid != "")? defaultGrid: " ");
+	childSetTextArg("default_grid", "[DEFAULT]", !defaultGrid.empty() ? defaultGrid : " ");
 
 	childSetEnabled("btn_delete", (selectIndex >= 0) && mIsEditable );
 	childSetEnabled("btn_copy", (mState == NORMAL) && (selectIndex >= 0));
@@ -247,7 +247,7 @@ void HippoPanelGridsImpl::loadCurGrid()
 		childSetValue("render_compat", gridInfo->isRenderCompat());
 		enableEditing(!gridInfo->getLocked());
 	} else {
-		std::string empty = "";
+		const std::string& empty = LLStringUtil::null;
 		LLComboBox *platform = getChild<LLComboBox>("platform");
 		if (platform) platform->setCurrentByIndex(HippoGridInfo::PLATFORM_OTHER);
 		childSetText("gridname", empty);
@@ -295,9 +295,9 @@ bool HippoPanelGridsImpl::saveCurGrid()
 	refresh();
 	
 	std::string gridname = childGetValue("gridname");
-	if (gridname == "<required>") gridname = "";
+	if (gridname == "<required>") gridname.clear();
 	std::string loginuri = childGetValue("loginuri");
-	if (loginuri == "<required>") loginuri = "";
+	if (loginuri == "<required>") loginuri.clear();
 	
 	if (gridname.empty() && !loginuri.empty())
 		this->retrieveGridInfo();
@@ -306,8 +306,8 @@ bool HippoPanelGridsImpl::saveCurGrid()
 		
 		// check nickname
 		std::string gridname = childGetValue("gridname");
-		childSetValue("gridname", (gridname != "")? gridname: "<required>");
-		if (gridname == "") {
+		childSetValue("gridname", !gridname.empty() ? gridname : "<required>");
+		if (gridname.empty()) {
 			LLNotificationsUtil::add("GridsNoNick");
 			return false;
 		}
@@ -319,7 +319,7 @@ bool HippoPanelGridsImpl::saveCurGrid()
 		}
 		
 		// check login URI
-		if (loginuri == "") {
+		if (loginuri.empty()) {
 			LLSD args;
 			args["NAME"] = gridname;
 			LLNotificationsUtil::add("GridsNoLoginUri", args);
@@ -386,17 +386,17 @@ void HippoPanelGridsImpl::reset()
 void HippoPanelGridsImpl::retrieveGridInfo()
 {
 	std::string loginuri = childGetValue("loginuri");
-	if ((loginuri == "") || (loginuri == "<required>")) {
+	if ((loginuri.empty()) || (loginuri == "<required>")) {
 		LLNotificationsUtil::add("GridInfoNoLoginUri");
 		return;
 	}
 	
-	HippoGridInfo *grid = 0;
+	HippoGridInfo *grid = nullptr;
 	bool cleanupGrid = false;
 	if (mState == NORMAL) {
 		grid = gHippoGridManager->getGrid(mCurGrid);
 	} else if ((mState == ADD_NEW) || (mState == ADD_COPY)) {
-		grid = new HippoGridInfo("");
+		grid = new HippoGridInfo(LLStringUtil::null);
 		cleanupGrid = true;
 	} else {
 		LL_ERRS() << "Illegal state " << mState << '.' << LL_ENDL;
@@ -411,30 +411,28 @@ void HippoPanelGridsImpl::retrieveGridInfo()
 	auto handle = getHandle();
 	LLCoros::instance().launch("HippoGridManager", [=]{
 		try
-		{
-			grid->getGridInfo();
-			if (handle.isDead()) return;
+	{
+		grid->getGridInfo();
 
-			if (grid->getPlatform() != HippoGridInfo::PLATFORM_OTHER)
-				getChild<LLComboBox>("platform")->setCurrentByIndex(grid->getPlatform());
-			if (grid->getGridName() != "") childSetText("gridname", grid->getGridName());
-			if (grid->getLoginUri() != "") childSetText("loginuri", grid->getLoginUri());
-			if (grid->getLoginPage() != "") childSetText("loginpage", grid->getLoginPage());
-			if (grid->getHelperUri() != "") childSetText("helperuri", grid->getHelperUri());
-			if (grid->getWebSite() != "") childSetText("website", grid->getWebSite());
-			if (grid->getSupportUrl() != "") childSetText("support", grid->getSupportUrl());
-			if (grid->getRegisterUrl() != "") childSetText("register", grid->getRegisterUrl());
-			if (grid->getPasswordUrl() != "") childSetText("password", grid->getPasswordUrl());
-			if (grid->getSearchUrl() != "") childSetText("search", grid->getSearchUrl());
-			if (grid->getGridMessage() != "") childSetText("gridmessage", grid->getGridMessage());
-		}
-		catch(AIAlert::ErrorCode const& error)
-		{
-			spawn_gridinfo_error(error);
-		}
-
+		if (grid->getPlatform() != HippoGridInfo::PLATFORM_OTHER)
+			getChild<LLComboBox>("platform")->setCurrentByIndex(grid->getPlatform());
+		if (!grid->getGridName().empty()) childSetText("gridname", grid->getGridName());
+		if (!grid->getLoginUri().empty()) childSetText("loginuri", grid->getLoginUri());
+		if (!grid->getLoginPage().empty()) childSetText("loginpage", grid->getLoginPage());
+		if (!grid->getHelperUri().empty()) childSetText("helperuri", grid->getHelperUri());
+		if (!grid->getWebSite().empty()) childSetText("website", grid->getWebSite());
+		if (!grid->getSupportUrl().empty()) childSetText("support", grid->getSupportUrl());
+		if (!grid->getRegisterUrl().empty()) childSetText("register", grid->getRegisterUrl());
+		if (!grid->getPartnerUrl().empty()) childSetText("partner", grid->getPartnerUrl());
+		if (!grid->getPasswordUrl().empty()) childSetText("password", grid->getPasswordUrl());
+		if (!grid->getSearchUrl().empty()) childSetText("search", grid->getSearchUrl());
+		if (!grid->getGridMessage().empty()) childSetText("gridmessage", grid->getGridMessage());
+	}
+	catch(AIAlert::ErrorCode const& error)
+	{
+		spawn_gridinfo_error(error);
 		if (cleanupGrid) delete grid;
-	});
+	}});
 }
 
 

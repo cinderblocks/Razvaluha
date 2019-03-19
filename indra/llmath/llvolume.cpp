@@ -1304,7 +1304,7 @@ S32 LLPath::getNumNGonPoints(const LLPathParams& params, S32 sides, F32 startOff
 void LLPath::genNGon(const LLPathParams& params, S32 sides, F32 startOff, F32 end_scale, F32 twist_scale)
 {
 	// Generates a circular path, starting at (1, 0, 0), counterclockwise along the xz plane.
-	const F32 tableScale[] = { 1, 1, 1, 0.5f, 0.707107f, 0.53f, 0.525f, 0.5f };
+	static const F32 tableScale[] = { 1, 1, 1, 0.5f, 0.707107f, 0.53f, 0.525f, 0.5f };
 
 	F32 revolutions = params.getRevolutions();
 	F32 skew		= params.getSkew();
@@ -1602,6 +1602,7 @@ BOOL LLPath::generate(const LLPathParams& params, F32 detail, S32 split,
 			if (is_sculpted)
 				sides = llmax(sculpt_size, 1);
 			
+			if (0 < sides)
 			genNGon(params, sides);
 		}
 		break;
@@ -2916,15 +2917,41 @@ F32 LLVolume::sculptGetSurfaceArea()
 	return area;
 }
 
-// create placeholder shape
-void LLVolume::sculptGeneratePlaceholder()
+// create empty placeholder shape
+void LLVolume::sculptGenerateEmptyPlaceholder()
 {
 	S32 sizeS = mPathp->mPath.size();
 	S32 sizeT = mProfilep->mProfile.size();
-	
+
 	S32 line = 0;
 
-	// for now, this is a sphere.
+	for (S32 s = 0; s < sizeS; s++)
+	{
+		for (S32 t = 0; t < sizeT; t++)
+		{
+			S32 i = t + line;
+			LLVector4a& pt = mMesh[i];
+					
+			F32* p = pt.getF32ptr();
+
+			p[0] = 0;
+			p[1] = 0;
+			p[2] = 0;
+
+			llassert(pt.isFinite3());
+		}
+		line += sizeT;
+	}
+}
+
+// create sphere placeholder shape
+void LLVolume::sculptGenerateSpherePlaceholder()
+{
+	S32 sizeS = mPathp->mPath.size();
+	S32 sizeT = mProfilep->mProfile.size();
+
+	S32 line = 0;
+
 	for (S32 s = 0; s < sizeS; s++)
 	{
 		for (S32 t = 0; t < sizeT; t++)
@@ -3133,7 +3160,7 @@ bool sculpt_calc_mesh_resolution(U16 width, U16 height, U8 type, F32 detail, S32
 }
 
 // sculpt replaces generate() for sculpted surfaces
-void LLVolume::sculpt(U16 sculpt_width, U16 sculpt_height, S8 sculpt_components, const U8* sculpt_data, S32 sculpt_level)
+void LLVolume::sculpt(U16 sculpt_width, U16 sculpt_height, S8 sculpt_components, const U8* sculpt_data, S32 sculpt_level, bool visible_placeholder)
 {
     U8 sculpt_type = mParams.getSculptType();
 
@@ -3197,13 +3224,22 @@ void LLVolume::sculpt(U16 sculpt_width, U16 sculpt_height, S8 sculpt_components,
 			if (area < SCULPT_MIN_AREA || area > SCULPT_MAX_AREA)
 			{
 				data_is_empty = TRUE;
+				visible_placeholder = true;
 			}
 		}
 	}
 
 	if (data_is_empty)
 	{
-		sculptGeneratePlaceholder();
+		if (visible_placeholder)
+		{
+			// Object should be visible since there will be nothing else to display
+			sculptGenerateSpherePlaceholder();
+		}
+		else
+		{
+			sculptGenerateEmptyPlaceholder();
+		}
 	}
 
 
@@ -3740,7 +3776,7 @@ void LLVolume::generateSilhouetteVertices(std::vector<LLVector3> &vertices,
 			LLVector4a* v = (LLVector4a*)face.mPositions;
 			LLVector4a* n = (LLVector4a*)face.mNormals;
 
-			for (U32 j = 0; j < face.mNumIndices / 3; j++)
+			for (U32 j = 0; j < (U32)face.mNumIndices / 3; j++)
 			{
 				for (S32 k = 0; k < 3; k++)
 				{
@@ -4759,6 +4795,7 @@ LLVolumeFace::~LLVolumeFace()
 {
 	ll_aligned_free_16(mExtents);
 	mExtents = nullptr;
+	mCenter = nullptr;
 
 	freeData();
 }
@@ -6210,6 +6247,9 @@ void LLVolumeFace::resizeVertices(S32 num_verts)
 	allocateTangents(0);
 	allocateVertices(num_verts);
 	mNumVertices = num_verts;
+
+    // Force update
+    mJointRiggingInfoTab.clear();
 }
 
 void LLVolumeFace::pushVertex(const LLVolumeFace::VertexData& cv)
@@ -6353,78 +6393,6 @@ void LLVolumeFace::fillFromLegacyData(std::vector<LLVolumeFace::VertexData>& v, 
 	for (U32 i = 0; i < idx.size(); ++i)
 	{
 		mIndices[i] = idx[i];
-	}
-}
-
-void LLVolumeFace::appendFace(const LLVolumeFace& face, LLMatrix4& mat_in, LLMatrix4& norm_mat_in)
-{
-	U16 offset = mNumVertices;
-
-	S32 new_count = face.mNumVertices + mNumVertices;
-
-	if (new_count > 65536)
-	{
-		LL_ERRS() << "Cannot append face -- 16-bit overflow will occur." << LL_ENDL;
-	}
-	
-	if (face.mNumVertices == 0)
-	{
-		LL_ERRS() << "Cannot append empty face." << LL_ENDL;
-	}
-
-	allocateVertices(new_count, true);
-	mNumVertices = new_count;
-
-	//get destination address of appended face
-	LLVector4a* dst_pos = mPositions+offset;
-	LLVector2* dst_tc = mTexCoords+offset;
-	LLVector4a* dst_norm = mNormals+offset;
-
-	//get source addresses of appended face
-	const LLVector4a* src_pos = face.mPositions;
-	const LLVector2* src_tc = face.mTexCoords;
-	const LLVector4a* src_norm = face.mNormals;
-
-	//load aligned matrices
-	LLMatrix4a mat, norm_mat;
-	mat.loadu(mat_in);
-	norm_mat.loadu(norm_mat_in);
-
-	for (U32 i = 0; i < face.mNumVertices; ++i)
-	{
-		//transform appended face position and store
-		mat.affineTransform(src_pos[i], dst_pos[i]);
-
-		//transform appended face normal and store
-		norm_mat.rotate(src_norm[i], dst_norm[i]);
-		dst_norm[i].normalize3fast();
-
-		//copy appended face texture coordinate
-		dst_tc[i] = src_tc[i];
-
-		if (offset == 0 && i == 0)
-		{ //initialize bounding box
-			mExtents[0] = mExtents[1] = dst_pos[i];
-		}
-		else
-		{
-			//stretch bounding box
-			update_min_max(mExtents[0], mExtents[1], dst_pos[i]);
-		}
-	}
-
-
-	new_count = mNumIndices + face.mNumIndices;
-
-	allocateIndices(mNumIndices + face.mNumIndices, true);
-
-	//get destination address into new index buffer
-	U16* dst_idx = mIndices+mNumIndices;
-	mNumIndices = new_count;
-
-	for (U32 i = 0; i < face.mNumIndices; ++i)
-	{ //copy indices, offsetting by old vertex count
-		dst_idx[i] = face.mIndices[i]+offset;
 	}
 }
 

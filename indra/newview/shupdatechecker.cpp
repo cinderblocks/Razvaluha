@@ -40,15 +40,14 @@ void onCompleted(const LLSD& data, bool release)
 	std::string viewer_version = llformat("%s (%i)", LLVersionInfo::getShortVersion().c_str(), build);
 
 #if LL_WINDOWS
-	std::string recommended_version = data["recommended"]["windows"].asString();
-	std::string minimum_version = data["minimum"]["windows"].asString();
+	constexpr auto platform = "windows";
 #elif LL_LINUX
-	std::string recommended_version = data["recommended"]["linux"].asString();
-	std::string minimum_version = data["minimum"]["linux"].asString();
+	constexpr auto platform = "linux";
 #elif LL_DARWIN
-	std::string recommended_version = data["recommended"]["apple"].asString();
-	std::string minimum_version = data["minimum"]["apple"].asString();
+	constexpr auto platform = "apple";
 #endif
+	std::string recommended_version = data["recommended"][platform];
+	std::string minimum_version = data["minimum"][platform];
 		
 	S32 minimum_build, recommended_build;
 	sscanf(recommended_version.c_str(), "%*i.%*i.%*i (%i)", &recommended_build);
@@ -83,7 +82,6 @@ void onCompleted(const LLSD& data, bool release)
 #include "llsdutil.h"
 void check_for_updates()
 {
-#if LL_WINDOWS | LL_LINUX | LL_DARWIN
 	// Hard-code the update url for now.
 	std::string url = "http://singularity-viewer.github.io/pages/api/get_update_info.json";//gSavedSettings.getString("SHUpdateCheckURL");
 	if (!url.empty())
@@ -107,5 +105,4 @@ void check_for_updates()
 			onCompleted(data[type], type == "release");
 		});
 	}
-#endif
 }

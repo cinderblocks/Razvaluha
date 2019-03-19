@@ -255,39 +255,6 @@ BOOL LLFloaterBvhPreview::postBuild()
 	// </edit>
 
 	std::string exten = gDirUtilp->getExtension(mFilename);
-	// <edit> Singu TODO: This whole thing could be combined with the block down below and simplified, probably.
-	if (exten == "animatn")
-	{
-		apr_off_t file_size;
-
-		LLAPRFile infile;
-
-		if (infile.open(mFilenameAndPath, LL_APR_RB, nullptr, &file_size) != APR_SUCCESS)
-		{
-			LL_WARNS() << "Can't open animatn file:" << mFilename << LL_ENDL;
-		}
-		else
-		{
-			auto file_buffer = std::make_unique<char[]>(file_size + 1);
-
-			if (file_size == infile.read(file_buffer.get(), file_size))
-			{
-				file_buffer[file_size] = '\0';
-				LL_INFOS() << "Loading animatn file " << mFilename << LL_ENDL;
-				mTransactionID.generate();
-				mMotionID = mTransactionID.makeAssetID(gAgent.getSecureSessionID());
-				mAnimPreview = new LLPreviewAnimation(256, 256);
-				motionp = (LLKeyframeMotion*)mAnimPreview->getDummyAvatar()->createMotion(mMotionID);
-				LLDataPackerBinaryBuffer dp((U8*)file_buffer.get(), file_size);
-				dp.reset();
-				success = motionp && motionp->deserialize(dp);
-			}
-
-			infile.close();
-		}
-	}
-	else
-	// </edit>
 	if (exten == "bvh")
 	{
 		// loading a bvh file
@@ -295,7 +262,7 @@ BOOL LLFloaterBvhPreview::postBuild()
 		// now load bvh file
 		apr_off_t file_size;
 
-		LLAPRFile infile ;
+		LLAPRFile infile;
 		apr_status_t s = infile.open(mFilenameAndPath, LL_APR_RB, nullptr, &file_size);
 		
 		if (s != APR_SUCCESS)
@@ -358,7 +325,7 @@ BOOL LLFloaterBvhPreview::postBuild()
 				loaderp->serialize(dp);
 				dp.reset();
 				LL_INFOS("BVH") << "Deserializing motionp" << LL_ENDL;
-				success = motionp && motionp->deserialize(dp);
+				success = motionp && motionp->deserialize(dp, mMotionID);
 				LL_INFOS("BVH") << "Done" << LL_ENDL;
 
 				delete []buffer;
@@ -391,7 +358,37 @@ BOOL LLFloaterBvhPreview::postBuild()
 				mMotionID.setNull();
 				mAnimPreview = NULL;
 			}
-	// <edit>
+		}
+	}
+	// <edit> Singu TODO: This whole thing could be combined with the block down below and simplified, probably.
+	else if(exten == "animatn")
+	{
+		apr_off_t file_size;
+
+		LLAPRFile infile;
+
+		if (infile.open(mFilenameAndPath, LL_APR_RB, nullptr, &file_size) != APR_SUCCESS)
+		{
+			LL_WARNS() << "Can't open animatn file:" << mFilename << LL_ENDL;
+		}
+		else
+		{
+			auto file_buffer = std::make_unique<char[]>(file_size + 1);
+
+			if (file_size == infile.read(file_buffer.get(), file_size))
+			{
+				file_buffer[file_size] = '\0';
+				LL_INFOS() << "Loading animatn file " << mFilename << LL_ENDL;
+				mTransactionID.generate();
+				mMotionID = mTransactionID.makeAssetID(gAgent.getSecureSessionID());
+				mAnimPreview = new LLPreviewAnimation(256, 256);
+				motionp = (LLKeyframeMotion*)mAnimPreview->getDummyAvatar()->createMotion(mMotionID);
+				LLDataPackerBinaryBuffer dp((U8*)file_buffer.get(), file_size);
+				dp.reset();
+				success = motionp && motionp->deserialize(dp, mMotionID);
+			}
+
+			infile.close();
 		}
 	}
 	// </edit>

@@ -400,14 +400,14 @@ void LLViewerInventoryItem::fetchFromServer(void) const
 		// we have to check region. It can be null after region was destroyed. See EXT-245
 		if (region)
 		{
-		  if (gAgent.getID() != mPermissions.getOwner())
-		  {
-		      url = region->getCapability("FetchLib2");
-		  }
-		  else
-		  {	
-		      url = region->getCapability("FetchInventory2");
-		  }
+			if (gAgent.getID() != mPermissions.getOwner())
+			{
+				url = region->getCapability("FetchLib2");
+			}
+			else
+			{	
+				url = region->getCapability("FetchInventory2");
+			}
 		}
 		else
 		{

@@ -497,23 +497,11 @@ void LLFloaterTopObjects::onGetByParcelName()
 
 void LLFloaterTopObjects::showBeacon()
 {
-	LLScrollListCtrl* list = getChild<LLScrollListCtrl>("objects_list");
-	if (!list) return;
-
-	LLScrollListItem* first_selected = list->getFirstSelected();
-	if (!first_selected) return;
-
+	LLVector3d pos_global = getSelectedPosition();
+	if (pos_global.isExactlyZero()) return;
+	LLScrollListItem* first_selected = getChild<LLScrollListCtrl>("objects_list")->getFirstSelected();
 	std::string name = first_selected->getColumn(1)->getValue().asString();
-	std::string pos_string =  first_selected->getColumn(3)->getValue().asString();
-
-	F32 x, y, z;
-	S32 matched = sscanf(pos_string.c_str(), "<%g,%g,%g>", &x, &y, &z);
-	if (matched != 3) return;
-
-	LLVector3 pos_agent(x, y, z);
-	LLVector3d pos_global = gAgent.getPosGlobalFromAgent(pos_agent);
-	std::string tooltip("");
-	LLTracker::getInstance()->trackLocation(pos_global, name, tooltip, LLTracker::LOCATION_ITEM);
+	LLTracker::getInstance()->trackLocation(pos_global, name, LLStringUtil::null, LLTracker::LOCATION_ITEM);
 
 	const LLUUID& taskid = first_selected->getUUID();
 	if(LLVOAvatar* voavatar = gObjectList.findAvatar(taskid))
@@ -555,7 +543,7 @@ void LLFloaterTopObjects::onCamToObject()
 	LLVector3d pos_global = getSelectedPosition();
 	if (pos_global.isExactlyZero()) return;
 	const LLUUID& id = getChild<LLScrollListCtrl>("objects_list")->getFirstSelected()->getUUID();
-	gAgentCamera.setFocusGlobal(pos_global, id);
+	gAgentCamera.setCameraPosAndFocusGlobal(pos_global + LLVector3d(3.5,1.35,0.75), pos_global, id);
 }
 
 void LLFloaterTopObjects::onKick()

@@ -1536,10 +1536,10 @@ bool idle_startup()
 				if (!secondlife ||
 					!boost::algorithm::iequals(lastname, "Resident"))
 				{
-					name += " " + lastname;
+					name += ' ' + lastname;
 				}
-				if (gSavedSettings.getBOOL("LiruGridInTitle")) gWindowTitle += "- " + gHippoGridManager->getCurrentGrid()->getGridName() + " ";
-				gViewerWindow->getWindow()->setWindowTitle(gWindowTitle += "- " + name);
+				if (gSavedSettings.getBOOL("LiruGridInTitle")) gWindowTitle += "- " + gHippoGridManager->getCurrentGrid()->getGridName() + ' ';
+				gViewerWindow->getWindow()->setTitle(gWindowTitle += "- " + name);
 
 				if (!secondlife)
 				{
@@ -3954,7 +3954,7 @@ bool process_login_success_response(std::string& password, U32& first_sim_size_x
 		LL_INFOS("LLStartup") << "map-server-url : we got an answer from the grid : " << map_server_url << LL_ENDL;
 	}
 
-	bool opensim = gHippoGridManager->getConnectedGrid()->isOpenSimulator();
+	bool opensim = !gHippoGridManager->getConnectedGrid()->isSecondLife();
 	if (opensim)
 	{
 		std::string web_profile_url = response["web_profile_url"];

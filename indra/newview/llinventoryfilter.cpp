@@ -41,6 +41,7 @@
 #include "llfolderview.h"
 #include "llinventorybridge.h"
 #include "llviewerfoldertype.h"
+#include "llstartup.h"
 #include "llagentwearables.h"
 #include "llvoavatarself.h"
 
@@ -73,6 +74,7 @@ LLInventoryFilter::LLInventoryFilter(const Params& p)
 	mFilterSubString(p.substring),
 	mName(p.name),
 	mFilterModified(FILTER_NONE),
+	mEmptyLookupMessage("InventoryNoMatchingItems"),
 	mCurrentGeneration(0),
 	mFirstRequiredGeneration(0),
 	mFirstSuccessGeneration(0)
@@ -95,7 +97,7 @@ bool LLInventoryFilter::check(LLFolderViewItem* item)
 	const bool passed_clipboard = listener && item_id.notNull() ? checkAgainstClipboard(item_id) : true;
 
 	// If it's a folder and we're showing all folders, return automatically.
-	const BOOL is_folder = (dynamic_cast<const LLFolderViewFolder*>(item) != NULL);
+	const BOOL is_folder = listener->getInventoryType() == LLInventoryType::IT_CATEGORY;
 	if (is_folder && (mFilterOps.mShowFolderState == LLInventoryFilter::SHOW_ALL_FOLDERS))
 	{
 		return passed_clipboard;
@@ -139,13 +141,6 @@ bool LLInventoryFilter::checkFolder(const LLFolderViewFolder* folder) const
 
 bool LLInventoryFilter::checkFolder(const LLUUID& folder_id) const
 {
-	// when applying a filter, matching folders get their contents downloaded first
-	if (isNotDefault()
-		&& !gInventory.isCategoryComplete(folder_id))
-	{
-		LLInventoryModelBackgroundFetch::instance().start(folder_id);
-	}
-
 	// Always check against the clipboard
 	const BOOL passed_clipboard = checkAgainstClipboard(folder_id);
 
@@ -156,8 +151,10 @@ bool LLInventoryFilter::checkFolder(const LLUUID& folder_id) const
 	}
 
 	// when applying a filter, matching folders get their contents downloaded first
+	// but make sure we are not interfering with pre-download
 	if (isNotDefault()
-		&& !gInventory.isCategoryComplete(folder_id))
+		&& !gInventory.isCategoryComplete(folder_id)
+		&& LLStartUp::getStartupState() > STATE_WEARABLES_WAIT)
 	{
 		LLInventoryModelBackgroundFetch::instance().start(folder_id);
 	}
@@ -272,15 +269,10 @@ bool LLInventoryFilter::checkAgainstFilterType(const LLFolderViewItem* item) con
 	// Pass if this item is the target UUID or if it links to the target UUID
 	if (filterTypes & FILTERTYPE_UUID)
 	{
-		if (!object)
-		{
-			return FALSE;
-		}
+		if (!object) return FALSE;
 
 		if (object->getLinkedUUID() != mFilterOps.mFilterUUID)
-		{
 			return FALSE;
-		}
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -322,9 +314,7 @@ bool LLInventoryFilter::checkAgainstFilterType(const LLFolderViewItem* item) con
 		LLWearableType::EType type = listener->getWearableType();
 		if ((0x1LL << type & mFilterOps.mFilterWearableTypes) == 0)
 		{
-			{
-				return FALSE;
-			}
+			return FALSE;
 		}
 	}
 
@@ -339,7 +329,11 @@ bool LLInventoryFilter::checkAgainstFilterType(const LLFolderViewItem* item) con
 			if (is_hidden_if_empty)
 			{
 				// Force the fetching of those folders so they are hidden if they really are empty...
-				gInventory.fetchDescendentsOf(object_id);
+				// But don't interfere with startup download
+				if (LLStartUp::getStartupState() > STATE_WEARABLES_WAIT)
+				{
+					gInventory.fetchDescendentsOf(object_id);
+				}
 
 				LLInventoryModel::cat_array_t* cat_array = NULL;
 				LLInventoryModel::item_array_t* item_array = NULL;
@@ -1288,6 +1282,20 @@ S32 LLInventoryFilter::getFirstSuccessGeneration() const
 S32 LLInventoryFilter::getFirstRequiredGeneration() const 
 { 
 	return mFirstRequiredGeneration; 
+}
+
+void LLInventoryFilter::setEmptyLookupMessage(const std::string& message)
+{
+	mEmptyLookupMessage = message;
+}
+
+std::string LLInventoryFilter::getEmptyLookupMessage() const
+{
+	LLStringUtil::format_map_t args;
+	args["[SEARCH_TERM]"] = LLURI::escape(getFilterSubStringOrig());
+
+	return LLTrans::getString(mEmptyLookupMessage, args);
+
 }
 
 bool LLInventoryFilter::areDateLimitsSet()

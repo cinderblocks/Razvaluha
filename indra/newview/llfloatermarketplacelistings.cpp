@@ -64,23 +64,15 @@ void showMenu(LLView* button, LLMenuGL* menu)
 	menu->buildDrawLabels();
 	menu->updateParent(LLMenuGL::sMenuContainer);
 	const auto& rect = button->getRect();
-	LLMenuGL::showPopup(button, menu, rect.mLeft, rect.mBottom);
+	LLMenuGL::showPopup(button->getParent(), menu, rect.mLeft, rect.mBottom);
 }
 
 BOOL LLPanelMarketplaceListings::postBuild()
 {
 	childSetAction("add_btn", boost::bind(&LLPanelMarketplaceListings::onAddButtonClicked, this));
 	childSetAction("audit_btn", boost::bind(&LLPanelMarketplaceListings::onAuditButtonClicked, this));
-	mMenu = LLUICtrlFactory::instance().buildMenu("menu_marketplace_view.xml", this);
+	mMenu = LLUICtrlFactory::instance().buildMenu("menu_marketplace_view.xml", LLMenuGL::sMenuContainer);
 	auto sort = getChild<LLUICtrl>("sort_btn");
-	new LLBindMemberListener(this, "Marketplace.ViewSort.Action", [this](LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata)
-	{
-		LLMenuGL::sMenuContainer->findControl(userdata["control"].asString())->setValue(onViewSortMenuItemCheck(userdata["data"]));
-	});
-	new LLBindMemberListener(this, "Marketplace.ViewSort.CheckItem", [this](LLPointer<LLOldEvents::LLEvent> event, const LLSD& userdata)
-	{
-		onViewSortMenuItemClicked(userdata["data"]);
-	});
 	sort->setCommitCallback(boost::bind(showMenu, _1, mMenu));
 
 	mFilterEditor = getChild<LLFilterEditor>("filter_editor");
@@ -114,22 +106,22 @@ void LLPanelMarketplaceListings::buildAllPanels()
 	// Build the All panel first
 	LLInventoryPanel* panel_all_items;
 	panel_all_items = buildInventoryPanel("All Items", "panel_marketplace_listings_inventory.xml");
-	//panel_all_items->getFilter().setEmptyLookupMessage("MarketplaceNoMatchingItems");
+	panel_all_items->getFilter().setEmptyLookupMessage("MarketplaceNoMatchingItems");
 	panel_all_items->getFilter().markDefault();
 
 	// Build the other panels
 	LLInventoryPanel* panel;
 	panel = buildInventoryPanel("Active Items", "panel_marketplace_listings_listed.xml");
 	panel->getFilter().setFilterMarketplaceActiveFolders();
-	//panel->getFilter().setEmptyLookupMessage("MarketplaceNoMatchingItems");
+	panel->getFilter().setEmptyLookupMessage("MarketplaceNoMatchingItems");
 	panel->getFilter().markDefault();
 	panel = buildInventoryPanel("Inactive Items", "panel_marketplace_listings_unlisted.xml");
 	panel->getFilter().setFilterMarketplaceInactiveFolders();
-	//panel->getFilter().setEmptyLookupMessage("MarketplaceNoMatchingItems");
+	panel->getFilter().setEmptyLookupMessage("MarketplaceNoMatchingItems");
 	panel->getFilter().markDefault();
 	panel = buildInventoryPanel("Unassociated Items", "panel_marketplace_listings_unassociated.xml");
 	panel->getFilter().setFilterMarketplaceUnassociatedFolders();
-	//panel->getFilter().setEmptyLookupMessage("MarketplaceNoMatchingItems");
+	panel->getFilter().setEmptyLookupMessage("MarketplaceNoMatchingItems");
 	panel->getFilter().markDefault();
 
 	// Set the tab panel
@@ -229,7 +221,8 @@ void LLPanelMarketplaceListings::onTabChange()
 		// Show/hide the drop zone and resize the inventory tabs panel accordingly
 		LLPanel* drop_zone = (LLPanel*)getChild<LLPanel>("marketplace_drop_zone");
 		bool drop_zone_visible = drop_zone->getVisible();
-		if (drop_zone_visible != panel->getAllowDropOnRoot())
+		bool allow_drop_on_root = panel->getAllowDropOnRoot() && gSavedSettings.getBOOL("LiruEnableWIPUI");
+		if (drop_zone_visible != allow_drop_on_root)
 		{
 			LLPanel* tabs = (LLPanel*)getChild<LLPanel>("tab_container_panel");
 			S32 delta_height = drop_zone->getRect().getHeight();
@@ -237,7 +230,7 @@ void LLPanelMarketplaceListings::onTabChange()
 			tabs->reshape(tabs->getRect().getWidth(),tabs->getRect().getHeight() + delta_height);
 			tabs->translate(0,-delta_height);
 		}
-		drop_zone->setVisible(panel->getAllowDropOnRoot());
+		drop_zone->setVisible(allow_drop_on_root);
 	}
 }
 

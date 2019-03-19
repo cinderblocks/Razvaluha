@@ -174,6 +174,8 @@ public:
 	// Provide native key event data
 	virtual LLSD getNativeKeyData() { return LLSD::emptyMap(); }
 
+	virtual void setTitle(const std::string &title){};
+
 	virtual float getScaleFactor() { return 1.0f; } //[CR:Retina]
 
 	// Get system UI size based on DPI (for 96 DPI UI size should be 1.0)
