@@ -261,6 +261,7 @@ void LLViewerRegionImpl::requestBaseCapabilitiesCoro(U64 regionHandle)
         buildCapabilityNames(capabilityNames);
 
         LL_INFOS("AppInit", "Capabilities") << "Requesting seed from " << url 
+                                            << " region name " << regionp->getName()
             << " (attempt #" << mSeedCapAttempts << ")" << LL_ENDL;
 
         regionp = nullptr;
@@ -277,6 +278,13 @@ void LLViewerRegionImpl::requestBaseCapabilitiesCoro(U64 regionHandle)
         if (id != mHttpResponderID) // region is no longer referring to this request
         {
             LL_WARNS("AppInit", "Capabilities") << "Received results for a stale capabilities request!" << LL_ENDL;
+            // setup for retry.
+            continue;
+        }
+
+        if (!result.isMap() || result.has("error"))
+        {
+            LL_WARNS("AppInit", "Capabilities") << "Malformed response" << LL_ENDL;
             // setup for retry.
             continue;
         }
@@ -306,6 +314,8 @@ void LLViewerRegionImpl::requestBaseCapabilitiesCoro(U64 regionHandle)
 #endif
 
         regionp->setCapabilitiesReceived(true);
+        LL_DEBUGS("AppInit", "Capabilities") << "received caps for handle " << regionHandle 
+                                             << " region name " << regionp->getName() << LL_ENDL;
 
         if (STATE_SEED_GRANTED_WAIT == LLStartUp::getStartupState())
         {
@@ -323,6 +333,7 @@ void LLViewerRegionImpl::requestBaseCapabilitiesCoro(U64 regionHandle)
     }
 
 }
+
 
 void LLViewerRegionImpl::requestBaseCapabilitiesCompleteCoro(U64 regionHandle)
 {
@@ -1079,6 +1090,10 @@ void LLViewerRegion::dirtyHeights()
 	}
 }
 
+void LLViewerRegion::clearCachedVisibleObjects()
+{
+}
+
 BOOL LLViewerRegion::idleUpdate(F32 max_update_time)
 {
 	// did_update returns TRUE if we did at least one significant update
@@ -1558,6 +1573,26 @@ void LLViewerRegion::getInfo(LLSD& info)
 	info["Region"]["Handle"]["y"] = (LLSD::Integer)y;
 }
 
+void LLViewerRegion::requestSimulatorFeatures()
+{
+	LL_DEBUGS("SimulatorFeatures") << "region " << getName() << " ptr " << this
+								   << " trying to request SimulatorFeatures" << LL_ENDL;
+	// kick off a request for simulator features
+	std::string url = getCapability("SimulatorFeatures");
+	 if (!url.empty())
+	{
+        std::string coroname =
+            LLCoros::instance().launch("LLViewerRegionImpl::requestSimulatorFeatureCoro",
+                                       boost::bind(&LLViewerRegionImpl::requestSimulatorFeatureCoro, mImpl, url, getHandle()));
+
+        LL_INFOS("AppInit", "SimulatorFeatures") << "Launching " << coroname << " requesting simulator features from " << url << LL_ENDL;
+	}
+	else
+	{
+		LL_WARNS("AppInit", "SimulatorFeatures") << "SimulatorFeatures cap not set" << LL_ENDL;
+	}
+}
+
 boost::signals2::connection LLViewerRegion::setSimulatorFeaturesReceivedCallback(const caps_received_signal_t::slot_type& cb)
 {
 	return mSimulatorFeaturesReceivedSignal.connect(cb);
@@ -1588,10 +1623,11 @@ void LLViewerRegion::setSimulatorFeatures(const LLSD& sim_features)
 	std::stringstream str;
 	
 	LLSDSerialize::toPrettyXML(sim_features, str);
-	LL_DEBUGS("SimFeatures") << '\n' << str.str() << LL_ENDL;
+	LL_DEBUGS("SimFeatures") << "region " << getName() << '\n'  << str.str() << LL_ENDL;
 	mSimulatorFeatures = sim_features;
 
 	setSimulatorFeaturesReceived(true);
+
 }
 
 LLViewerRegion::eCacheUpdateResult LLViewerRegion::cacheFullUpdate(LLViewerObject* objectp, LLDataPackerBinaryBuffer &dp)
@@ -1634,6 +1670,14 @@ LLViewerRegion::eCacheUpdateResult LLViewerRegion::cacheFullUpdate(LLViewerObjec
 
 	mImpl->mCacheMap[local_id] = entry;
 	return result;
+}
+
+void LLViewerRegion::removeFromCreatedList(U32 local_id)
+{
+}
+
+void LLViewerRegion::addToCreatedList(U32 local_id)
+{
 }
 
 // Get data packer for this object, if we have cached data
@@ -2032,6 +2076,7 @@ void LLViewerRegionImpl::buildCapabilityNames(LLSD& capabilityNames)
 	capabilityNames.append("MeshUploadFlag");
 	capabilityNames.append("NavMeshGenerationStatus");
 	capabilityNames.append("NewFileAgentInventory");
+	capabilityNames.append("ObjectAnimation");
 	capabilityNames.append("ObjectMedia");
 	capabilityNames.append("ObjectMediaNavigate");
 	capabilityNames.append("ObjectNavMeshProperties");
@@ -2152,15 +2197,8 @@ void LLViewerRegion::setCapability(const std::string& name, const std::string& u
 	}
 	else if (name == "SimulatorFeatures")
 	{
-		// although this is not needed later, add it so we can check if the sim supports it at all later
-		mImpl->mCapabilities[name] = url;
-
-		// kick off a request for simulator features
-        std::string coroname =
-            LLCoros::instance().launch("LLViewerRegionImpl::requestSimulatorFeatureCoro",
-            boost::bind(&LLViewerRegionImpl::requestSimulatorFeatureCoro, mImpl, url, getHandle()));
-
-        LL_INFOS("AppInit", "SimulatorFeatures") << "Launching " << coroname << " requesting simulator features from " << url << LL_ENDL;
+		mImpl->mCapabilities["SimulatorFeatures"] = url;
+		requestSimulatorFeatures();
 	}
 	else if (name == "GamingData")
 	{

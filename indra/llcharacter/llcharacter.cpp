@@ -41,7 +41,6 @@
 LLStringTable LLCharacter::sVisualParamNames(1024);
 
 std::vector< LLCharacter* > LLCharacter::sInstances;
-BOOL LLCharacter::sAllowInstancesChange = TRUE ;
 
 //-----------------------------------------------------------------------------
 // LLCharacter()
@@ -54,7 +53,6 @@ LLCharacter::LLCharacter()
 	mAppearanceSerialNum( 0 ),
 	mSkeletonSerialNum( 0 )
 {
-	llassert_always(sAllowInstancesChange) ;
 	sInstances.push_back(this);
 
 	mMotionController.setCharacter( this );
@@ -78,8 +76,6 @@ LLCharacter::~LLCharacter()
 	bool erased = vector_replace_with_last(sInstances,this);
 
 	llassert_always(erased) ;
-
-	llassert_always(sAllowInstancesChange) ;
 }
 
 

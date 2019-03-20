@@ -165,6 +165,7 @@ public:
 	virtual CapUrlMatches getCapURLMatches(const std::string& cap_url);
 	virtual bool isCapURLMapped(const std::string& cap_url);
 
+	void clearAllVisibleObjects();
 public:
 	typedef std::list<LLViewerRegion*> region_list_t;
 	const region_list_t& getRegionList() const { return mActiveRegionList; }

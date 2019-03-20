@@ -941,6 +941,16 @@ void LLAgent::setRegion(LLViewerRegion *regionp)
 			{
 				gSky.mVOGroundp->setRegion(regionp);
 			}
+
+			if (regionp->capabilitiesReceived())
+			{
+				regionp->requestSimulatorFeatures();
+			}
+			else
+			{
+				regionp->setCapabilitiesReceivedCallback(boost::bind(&LLViewerRegion::requestSimulatorFeatures, regionp));
+			}
+
 		}
 		else
 		{
@@ -4000,12 +4010,16 @@ bool LLAgent::teleportCore(bool is_local)
 		gTeleportDisplay = TRUE;
 		gAgent.setTeleportState( LLAgent::TELEPORT_START );
 
-		/*static const LLCachedControl<bool> hide_tp_screen("AscentDisableTeleportScreens",false);
-		if(!hide_tp_screen)
+		static const LLCachedControl<bool> hide_tp_screen("AscentDisableTeleportScreens",false);
+		static const LLCachedControl<bool> skip_reset_objects_on_teleport("SHSkipResetVBOsOnTeleport", false);
+		if(!hide_tp_screen && !skip_reset_objects_on_teleport)
 		{
+			// AscentDisableTeleportScreens TRUE might be broken..*/
+
 			//release geometry from old location
 			gPipeline.resetVertexBuffers();
-		}*/
+			LLSpatialPartition::sTeleportRequested = TRUE;
+		}
 
 		if (gSavedSettings.getBOOL("SpeedRez"))
 		{

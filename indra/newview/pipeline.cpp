@@ -295,6 +295,8 @@ void glh_set_last_projection(const LLMatrix4a& mat)
 void display_update_camera(bool tiling=false);
 //----------------------------------------
 
+S32		LLPipeline::sCompiles = 0;
+
 BOOL	LLPipeline::sPickAvatar = TRUE;
 BOOL	LLPipeline::sDynamicLOD = TRUE;
 BOOL	LLPipeline::sShowHUDAttachments = TRUE;
@@ -571,6 +573,7 @@ void LLPipeline::destroyGL()
 	unloadShaders();
 	mHighlightFaces.clear();
 	
+	resetDrawOrders();
 
 	releaseVertexBuffers();
 
@@ -1770,6 +1773,8 @@ void LLPipeline::resetFrameStats()
 {
 	assertInitialized();
 
+	sCompiles = 0;
+
 	LLViewerStats::getInstance()->mTrianglesDrawnStat.addValue(mTrianglesDrawn/1000.f);
 
 	if (mBatchCount > 0)
@@ -2516,7 +2521,7 @@ void LLPipeline::doOcclusion(LLCamera& camera, LLRenderTarget& source, LLRenderT
 
 void LLPipeline::doOcclusion(LLCamera& camera)
 {
-	if (LLGLSLShader::sNoFixedFunction && LLPipeline::sUseOcclusion > 1 && sCull->hasOcclusionGroups())
+	if (LLGLSLShader::sNoFixedFunction && LLPipeline::sUseOcclusion > 1 && !LLSpatialPartition::sTeleportRequested && sCull->hasOcclusionGroups())
 	{
 		LLVertexBuffer::unbind();
 
@@ -2611,8 +2616,6 @@ void LLPipeline::updateGL()
 	}
 }
 
-static LLTrace::BlockTimerStatHandle FTM_REBUILD_PRIORITY_GROUPS("Rebuild Priority Groups");
-
 void LLPipeline::clearRebuildGroups()
 {
 	LLSpatialGroup::sg_vector_t	hudGroups;
@@ -2670,6 +2673,54 @@ void LLPipeline::clearRebuildGroups()
 	mGroupQ2.assign(hudGroups.begin(), hudGroups.end());
 	mGroupQ2Locked = false;
 }
+
+void LLPipeline::clearRebuildDrawables()
+{
+	// Clear all drawables on the priority build queue,
+	for (LLDrawable::drawable_list_t::iterator iter = mBuildQ1.begin();
+		 iter != mBuildQ1.end(); ++iter)
+	{
+		LLDrawable* drawablep = *iter;
+		if (drawablep && !drawablep->isDead())
+		{
+			drawablep->clearState(LLDrawable::IN_REBUILD_Q2);
+			drawablep->clearState(LLDrawable::IN_REBUILD_Q1);
+		}
+	}
+	mBuildQ1.clear();
+
+	// clear drawables on the non-priority build queue
+	for (LLDrawable::drawable_list_t::iterator iter = mBuildQ2.begin();
+		 iter != mBuildQ2.end(); ++iter)
+	{
+		LLDrawable* drawablep = *iter;
+		if (!drawablep->isDead())
+		{
+			drawablep->clearState(LLDrawable::IN_REBUILD_Q2);
+		}
+	}	
+	mBuildQ2.clear();
+	
+	//clear all moving bridges
+	for (LLDrawable::drawable_vector_t::iterator iter = mMovedBridge.begin();
+		 iter != mMovedBridge.end(); ++iter)
+	{
+		LLDrawable *drawablep = *iter;
+		drawablep->clearState(LLDrawable::EARLY_MOVE | LLDrawable::MOVE_UNDAMPED | LLDrawable::ON_MOVE_LIST | LLDrawable::ANIMATED_CHILD);
+	}
+	mMovedBridge.clear();
+
+	//clear all moving drawables
+	for (LLDrawable::drawable_vector_t::iterator iter = mMovedList.begin();
+		 iter != mMovedList.end(); ++iter)
+	{
+		LLDrawable *drawablep = *iter;
+		drawablep->clearState(LLDrawable::EARLY_MOVE | LLDrawable::MOVE_UNDAMPED | LLDrawable::ON_MOVE_LIST | LLDrawable::ANIMATED_CHILD);
+	}
+	mMovedList.clear();
+}
+
+static LLTrace::BlockTimerStatHandle FTM_REBUILD_PRIORITY_GROUPS("Rebuild Priority Groups");
 
 void LLPipeline::rebuildPriorityGroups()
 {
@@ -2784,6 +2835,11 @@ void LLPipeline::updateGeom(F32 max_dtime, LLCamera& camera)
 				}
 			}
 
+			if (drawablep->isUnload())
+			{
+				drawablep->unload();
+				drawablep->clearState(LLDrawable::FOR_UNLOAD);
+			}
 			if (updateDrawableGeom(drawablep, TRUE))
 			{
 				drawablep->clearState(LLDrawable::IN_REBUILD_Q1);
@@ -6590,16 +6646,37 @@ void LLPipeline::resetVertexBuffers()
 
 static LLTrace::BlockTimerStatHandle FTM_RESET_VB("Reset VB");
 
-void LLPipeline::doResetVertexBuffers()
+void LLPipeline::doResetVertexBuffers(bool forced)
 {
 	if ( !mResetVertexBuffers)
 	{
 		return;
 	}
-	mResetVertexBuffers = false;
+	if(!forced && LLSpatialPartition::sTeleportRequested)
+	{
+		if(gAgent.getTeleportState() != LLAgent::TELEPORT_NONE)
+		{
+			return; //wait for teleporting to finish
+		}
+		else
+		{
+			//teleporting aborted
+			LLSpatialPartition::sTeleportRequested = FALSE;
+			mResetVertexBuffers = false;
+			return;
+		}
+	}
 
 	LL_RECORD_BLOCK_TIME(FTM_RESET_VB);
+	mResetVertexBuffers = false;
 	releaseVertexBuffers();
+	if(LLSpatialPartition::sTeleportRequested)
+	{
+		LLSpatialPartition::sTeleportRequested = FALSE;
+
+		LLWorld::getInstance()->clearAllVisibleObjects();
+		clearRebuildDrawables();
+	}
 
 	refreshCachedSettings();
 
@@ -7842,6 +7919,12 @@ void LLPipeline::renderDeferredLighting()
 						}
 					}
 
+					const LLViewerObject *vobj = drawablep->getVObj();
+					if(vobj && vobj->getAvatar()
+						&& (vobj->getAvatar()->isTooComplex()))
+					{
+						continue;
+					}
 
 					LLVector4a center;
 					center.load3(drawablep->getPositionAgent().mV);
@@ -10580,11 +10663,11 @@ void LLPipeline::generateImpostor(LLVOAvatar* avatar)
 
 	avatar->setImpostorDim(tdim);
 
-	LLVOAvatar::sUseImpostors = true; // @TODO ???
+	LLVOAvatar::sUseImpostors = true;
 	sUseOcclusion = occlusion;
-	sReflectionRender = FALSE;
-	sImpostorRender = FALSE;
-	sShadowRender = FALSE;
+	sReflectionRender = false;
+	sImpostorRender = false;
+	sShadowRender = false;
 	popRenderTypeMask();
 
 	gGL.matrixMode(LLRender::MM_PROJECTION);
@@ -10594,6 +10677,7 @@ void LLPipeline::generateImpostor(LLVOAvatar* avatar)
 
 	avatar->mNeedsImpostorUpdate = FALSE;
 	avatar->cacheImpostorValues();
+	avatar->mLastImpostorUpdateFrameTime = gFrameTimeSeconds;
 
 	LLVertexBuffer::unbind();
 	LLGLStateValidator::checkStates();

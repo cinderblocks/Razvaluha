@@ -863,9 +863,9 @@ void LLFloaterModelPreview::onPhysicsParamCommit(LLUICtrl* ctrl, void* data)
 		return;
 	}
 
-	if (instanceExists())
+	auto sInstance(getIfExists());
+	if (sInstance)
 	{
-		auto sInstance = getInstance();
 		LLCDParam* param = (LLCDParam*) data;
 		std::string name(param->mName);
 
@@ -904,9 +904,9 @@ void LLFloaterModelPreview::onPhysicsStageExecute(LLUICtrl* ctrl, void* data)
 	LLCDStageData* stage_data = (LLCDStageData*) data;
 	std::string stage = stage_data->mName;
 
-	if (instanceExists())
+	auto sInstance(getIfExists());
+	if (sInstance)
 	{
-		auto sInstance = getInstance();
 		if (!sInstance->mCurRequest.empty())
 		{
 			LL_INFOS() << "Decomposition request still pending." << LL_ENDL;
@@ -988,18 +988,19 @@ void LLFloaterModelPreview::onPhysicsUseLOD(LLUICtrl* ctrl, void* userdata)
 //static 
 void LLFloaterModelPreview::onCancel(LLUICtrl* ctrl, void* data)
 {
-	if (instanceExists())
+	auto sInstance(getIfExists());
+	if (sInstance)
 	{
-		instance().close();
+		sInstance->close();
 	}
 }
 
 //static
 void LLFloaterModelPreview::onPhysicsStageCancel(LLUICtrl* ctrl, void*data)
 {
-	if (instanceExists())
+	auto sInstance(getIfExists());
+	if (sInstance)
 	{
-		auto sInstance = getInstance();
 		for (std::set<LLPointer<DecompRequest> >::iterator iter = sInstance->mCurRequest.begin();
 			iter != sInstance->mCurRequest.end(); ++iter)
 		{
@@ -1219,12 +1220,12 @@ LLModelPreview::LLModelPreview(S32 width, S32 height, LLFloater* fmp)
 : LLViewerDynamicTexture(width, height, 3, ORDER_MIDDLE, FALSE), LLMutex()
 , mLodsQuery()
 , mLodsWithParsingError()
+, mPelvisZOffset( 0.0f )
+, mLegacyRigValid( false )
+, mRigValidJointUpload( false )
 , mPhysicsSearchLOD( LLModel::LOD_PHYSICS )
 , mResetJoints( false )
 , mModelNoErrors( true )
-, mPelvisZOffset( 0.0f )
-, mRigValidJointUpload( false )
-, mLegacyRigValid( false )
 , mLastJointUpdate( false )
 {
 	mNeedsUpdate = TRUE;
@@ -1381,7 +1382,11 @@ U32 LLModelPreview::calcResourceCost()
 
 			F32 radius = scale.length()*0.5f*debug_scale;
 
-			streaming_cost += LLMeshRepository::getStreamingCost(ret, radius);
+			LLMeshCostData costs;
+			if (LLMeshRepository::getCostData(ret, costs))
+			{
+				streaming_cost += costs.getRadiusBasedStreamingCost(radius);
+			}
 		}
 	}
 
@@ -1781,16 +1786,24 @@ void LLModelPreview::clearModel(S32 lod)
 
 void LLModelPreview::getJointAliases( JointMap& joint_map)
 {
-    // Get all standard skeleton joints from the preview avatar.
-    LLVOAvatar *av = getPreviewAvatar();
-    
-    //Joint names and aliases come from avatar_skeleton.xml
-    
-    joint_map = av->getJointAliases();
-    for (S32 i = 0; i < av->mNumCollisionVolumes; i++)
-    {
-        joint_map[av->mCollisionVolumes[i].getName()] = av->mCollisionVolumes[i].getName();
-    }
+	// Get all standard skeleton joints from the preview avatar.
+	LLVOAvatar *av = getPreviewAvatar();
+
+	//Joint names and aliases come from avatar_skeleton.xml
+
+	joint_map = av->getJointAliases();
+
+	std::vector<std::string> cv_names, attach_names;
+	av->getSortedJointNames(1, cv_names);
+	av->getSortedJointNames(2, attach_names);
+	for (std::vector<std::string>::iterator it = cv_names.begin(); it != cv_names.end(); ++it)
+	{
+		joint_map[*it] = *it;
+	}
+	for (std::vector<std::string>::iterator it = attach_names.begin(); it != attach_names.end(); ++it)
+	{
+		joint_map[*it] = *it;
+	}
 }
 
 void LLModelPreview::loadModel(std::string filename, S32 lod, bool force_disable_slm)
@@ -1974,9 +1987,9 @@ void LLModelPreview::loadModelCallback(S32 loaded_lod)
 	if (getLoadState() >= LLModelLoader::ERROR_PARSING)
 	{
 		mLoading = false;
-		mModelLoader = nullptr;
+		mModelLoader = NULL;
 		mLodsWithParsingError.push_back(loaded_lod);
-		return;
+		return ;
 	}
 
 	mLodsWithParsingError.erase(std::remove(mLodsWithParsingError.begin(), mLodsWithParsingError.end(), loaded_lod), mLodsWithParsingError.end());
@@ -3585,24 +3598,19 @@ LLVector3 LLModelPreview::getTranslationForJointOffset(std::string joint)
 //-----------------------------------------------------------------------------
 // createPreviewAvatar
 //-----------------------------------------------------------------------------
-void LLModelPreview::createPreviewAvatar(void)
+void LLModelPreview::createPreviewAvatar( void )
 {
-	mPreviewAvatar = (LLVOAvatar*)gObjectList.createObjectViewer( LL_PCODE_LEGACY_AVATAR, gAgent.getRegion() );
-	if (mPreviewAvatar)
+	mPreviewAvatar = (LLVOAvatar*)gObjectList.createObjectViewer( LL_PCODE_LEGACY_AVATAR, gAgent.getRegion(), LLViewerObject::CO_FLAG_UI_AVATAR );
+	if ( mPreviewAvatar )
 	{
-		mPreviewAvatar->createDrawable(&gPipeline);
-		mPreviewAvatar->mIsDummy = TRUE;
+		mPreviewAvatar->createDrawable( &gPipeline );
 		mPreviewAvatar->mSpecialRenderMode = 1;
-		mPreviewAvatar->setPositionAgent(LLVector3::zero);
-		mPreviewAvatar->slamPosition();
-		mPreviewAvatar->updateJointLODs();
-		mPreviewAvatar->updateGeometry(mPreviewAvatar->mDrawable);
-		mPreviewAvatar->startMotion(ANIM_AGENT_STAND);
+		mPreviewAvatar->startMotion( ANIM_AGENT_STAND );
 		mPreviewAvatar->hideSkirt();
 	}
 	else
 	{
-		LL_INFOS() <<"Failed to create preview avatar for upload model window"<<LL_ENDL;
+		LL_INFOS() << "Failed to create preview avatar for upload model window" << LL_ENDL;
 	}
 }
 
@@ -4643,13 +4651,13 @@ S32 LLFloaterModelPreview::DecompRequest::statusCallback(const char* status, S32
 
 void LLFloaterModelPreview::DecompRequest::completed()
 {	//called from the main thread
+	auto sInstance(getIfExists());
 	if (mContinue)
 	{
 		mModel->setConvexHullDecomposition(mHull);
 
-		if (instanceExists())
+		if (sInstance)
 		{
-			auto sInstance(getInstance());
 			if (mContinue)
 			{
 				if (sInstance->mModelPreview)
@@ -4663,9 +4671,8 @@ void LLFloaterModelPreview::DecompRequest::completed()
 		}
 	}
 #ifdef SHOW_ASSERT
-	else if (instanceExists())
+	else if (sInstance)
 	{
-		auto sInstance(getInstance());
 		llassert(sInstance->mCurRequest.find(this) == sInstance->mCurRequest.end());
 	}
 #endif

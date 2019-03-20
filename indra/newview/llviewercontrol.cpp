@@ -129,6 +129,16 @@ static bool handleTerrainScaleChanged(const LLSD& inputvalue)
 	return true;
 }
 
+extern bool sInwlfPanelUpdate;
+static bool handleAvatarHoverOffsetChanged(const LLSD& newvalue)
+{
+	if (!sInwlfPanelUpdate && isAgentAvatarValid())
+	{
+		gAgentAvatarp->setHoverIfRegionEnabled();
+	}
+	return true;
+}
+
 static bool handleSetShaderChanged(const LLSD& newvalue)
 {
 	// changing shader level may invalidate existing cached bump maps, as the shader type determines the format of the bump map it expects - clear and repopulate the bump cache
@@ -656,7 +666,9 @@ void handleHighResChanged(const LLSD& val)
 		gSavedSettings.setBOOL("RenderUIInSnapshot", false);
 }
 
+void handleRenderAutoMuteByteLimitChanged(const LLSD& new_value);
 ////////////////////////////////////////////////////////////////////////////
+
 void settings_setup_listeners()
 {
 	gSavedSettings.getControl("FirstPersonAvatarVisible")->getSignal()->connect(boost::bind(&handleRenderAvatarMouselookChanged, _2));
@@ -819,7 +831,8 @@ void settings_setup_listeners()
 	gSavedSettings.getControl("SkyUseClassicClouds")->getSignal()->connect(boost::bind(&handleCloudSettingsChanged, _2));
 	gSavedSettings.getControl("RenderTransparentWater")->getSignal()->connect(boost::bind(&handleRenderTransparentWaterChanged, _2));
 	gSavedSettings.getControl("AlchemyWLCloudTexture")->getSignal()->connect(boost::bind(&handleWindlightCloudChanged, _2));
-	
+	gSavedSettings.getControl("RenderAutoMuteByteLimit")->getSignal()->connect(boost::bind(&handleRenderAutoMuteByteLimitChanged, _2));
+	gSavedPerAccountSettings.getControl("AvatarHoverOffsetZ")->getCommitSignal()->connect(boost::bind(&handleAvatarHoverOffsetChanged, _2));
 	gSavedSettings.getControl("AscentAvatarXModifier")->getSignal()->connect(boost::bind(&handleAscentAvatarModifier, _2));
 	gSavedSettings.getControl("AscentAvatarYModifier")->getSignal()->connect(boost::bind(&handleAscentAvatarModifier, _2));
 	gSavedSettings.getControl("AscentAvatarZModifier")->getSignal()->connect(boost::bind(&handleAscentAvatarModifier, _2));

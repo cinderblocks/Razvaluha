@@ -276,6 +276,24 @@ public:
 	static S64 sGlobalRawMemory;
 	static S32 sRawImageCount;
 
+	static S32 sRawImageCachedCount;
+	S32 mCacheEntries = 0;
+	void setInCache(bool in_cache)
+	{
+		if(in_cache)
+		{
+			if(!mCacheEntries)
+				sRawImageCachedCount++;
+			mCacheEntries++;
+		}
+		else if(mCacheEntries)
+		{
+			mCacheEntries--;
+			if(!mCacheEntries)
+				sRawImageCachedCount--;
+		}
+	}
+
 private:
 	bool validateSrcAndDst(const std::string& func, LLImageRaw* src, LLImageRaw* dst);
 };

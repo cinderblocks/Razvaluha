@@ -151,6 +151,7 @@ set(viewer_SOURCE_FILES
     llcompilequeue.cpp
     llconfirmationmanager.cpp
     llconsole.cpp
+    llcontrolavatar.cpp
     llcurrencyuimanager.cpp
     llcylinder.cpp
     lldaycyclemanager.cpp
@@ -464,6 +465,7 @@ set(viewer_SOURCE_FILES
     llsavedsettingsglue.cpp
     llscrollingpanelparam.cpp
     llscrollingpanelparambase.cpp
+    llsculptidsize.cpp
     llsecapi.cpp
     llsechandler_basic.cpp
     llselectmgr.cpp
@@ -507,6 +509,7 @@ set(viewer_SOURCE_FILES
     lltoolselectrect.cpp
     lltoolview.cpp
     lltracker.cpp
+    lluiavatar.cpp
     lluploaddialog.cpp
     llurl.cpp
     llurldispatcher.cpp
@@ -696,6 +699,7 @@ set(viewer_HEADER_FILES
     llcompilequeue.h
     llconfirmationmanager.h
     llconsole.h
+    llcontrolavatar.h
     llcurrencyuimanager.h
     llcylinder.h
     lldaycyclemanager.h
@@ -1011,6 +1015,7 @@ set(viewer_HEADER_FILES
     llsavedsettingsglue.h
     llscrollingpanelparam.h
     llscrollingpanelparambase.h
+    llsculptidsize.h
     llsecapi.h
     llsechandler_basic.h
     llselectmgr.h
@@ -1057,6 +1062,7 @@ set(viewer_HEADER_FILES
     lltracker.h
     lltranslate.h
     lluiconstants.h
+    lluiavatar.h
     lluploaddialog.h
     lluploadfloaterobservers.h
     llurl.h

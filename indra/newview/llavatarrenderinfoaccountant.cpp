@@ -63,7 +63,6 @@ static const F32 SECS_BETWEEN_REGION_REPORTS = 60.0;		// Update each region ever
 
 // Send data updates about once per minute, only need per-frame resolution
 LLFrameTimer LLAvatarRenderInfoAccountant::sRenderInfoReportTimer;
-//LLCore::HttpRequest::ptr_t LLAvatarRenderInfoAccountant::sHttpRequest;
 
 //=========================================================================
 void LLAvatarRenderInfoAccountant::avatarRenderInfoGetCoro(std::string url, U64 regionHandle)
@@ -82,6 +81,7 @@ void LLAvatarRenderInfoAccountant::avatarRenderInfoGetCoro(std::string url, U64 
                 << regionHandle << LL_ENDL;
         return;
 	}
+
 
     LLSD httpResults = result["http_result"];
     LLCore::HttpStatus status = LLCoreHttpUtil::HttpCoroutineAdapter::getStatusFromLLSD(httpResults);
@@ -103,8 +103,13 @@ void LLAvatarRenderInfoAccountant::avatarRenderInfoGetCoro(std::string url, U64 
                  )
 			{
                 LLUUID target_agent_id = LLUUID(agent_iter->first);
-				LLViewerObject* avatarp = gObjectList.findObject(target_agent_id);
-                if (avatarp && avatarp->isAvatar())
+                LLViewerObject* vobjp = gObjectList.findObject(target_agent_id);
+                LLVOAvatar *avatarp = NULL;
+                if (vobjp)
+                {
+                    avatarp = vobjp->asAvatar();
+                }
+                if (avatarp && !avatarp->isControlAvatar())
                 {
 					const LLSD & agent_info_map = agent_iter->second;
                     if (agent_info_map.isMap())
@@ -136,7 +141,6 @@ void LLAvatarRenderInfoAccountant::avatarRenderInfoGetCoro(std::string url, U64 
         }
         else
         {
-
 			if (LLAvatarRenderInfoAccountant::logRenderInfo())
             LL_WARNS("AvatarRenderInfo") << "malformed get response '" << KEY_AGENTS << "' is not map" << LL_ENDL;
 		}
@@ -184,12 +188,9 @@ void LLAvatarRenderInfoAccountant::avatarRenderInfoReportCoro(std::string url, U
         return;
 	}
 
-	if (logRenderInfo())
-	{
     LL_DEBUGS("AvatarRenderInfoAccountant")
         << "Sending avatar render info for region " << regionp->getName()
         << " to " << url << LL_ENDL;
-	}
 
 	// Build the render info to POST to the region
 	LLSD agents = LLSD::emptyMap();
@@ -201,6 +202,7 @@ void LLAvatarRenderInfoAccountant::avatarRenderInfoReportCoro(std::string url, U
 		if (avatar &&
 			avatar->getRezzedStatus() >= 2 &&					// Mostly rezzed (maybe without baked textures downloaded)
 			!avatar->isDead() &&								// Not dead yet
+            !avatar->isControlAvatar() &&						// Not part of an animated object
 			avatar->getObjectHost() == regionp->getHost())		// Ensure it's on the same region
 		{
             avatar->calculateUpdateRenderComplexity();			// Make sure the numbers are up-to-date
@@ -219,9 +221,6 @@ void LLAvatarRenderInfoAccountant::avatarRenderInfoReportCoro(std::string url, U
 				{
 	                LL_DEBUGS("AvatarRenderInfo") << "Sending avatar render info for " << avatar->getID()
 						<< ": " << info << LL_ENDL;
-                    LL_INFOS("AvatarRenderInfoAccountant") << "LRI: other info geometry " << avatar->getAttachmentGeometryBytes()
-						<< ", area " << avatar->getAttachmentSurfaceArea()
-						<< LL_ENDL;
 				}
 			}
 		}
@@ -297,6 +296,8 @@ void LLAvatarRenderInfoAccountant::sendRenderInfoToRegion(LLViewerRegion * regio
 //        && regionp->getRenderInfoReportTimer().hasExpired() // Time to make request)
         )
 	{
+
+
         LLCoros::instance().launch("LLAvatarRenderInfoAccountant::avatarRenderInfoReportCoro",
             boost::bind(&LLAvatarRenderInfoAccountant::avatarRenderInfoReportCoro, url, regionp->getHandle()));
 	}
@@ -331,9 +332,6 @@ void LLAvatarRenderInfoAccountant::idle()
 {
 	if (sRenderInfoReportTimer.hasExpired())
 	{
-		const F32 SECS_BETWEEN_REGION_SCANS   =  5.f;		// Scan the region list every 5 seconds
-		const F32 SECS_BETWEEN_REGION_REQUEST = 60.0;		// Update each region every 60 seconds
-	
 		S32 num_avs = LLCharacter::sInstances.size();
 
 		if (logRenderInfo())

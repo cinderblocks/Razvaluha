@@ -62,7 +62,9 @@ class LLXfer_File : public LLXfer
 
 	S32 processEOF() override;
 
-	S32 startSend (U64 xfer_id, const LLHost &remote_host) override;
+	S32 startSend(U64 xfer_id, const LLHost &remote_host) override;
+	void closeFileHandle() override;
+	S32 reopenFileHandle() override;
 
 	S32 suck(S32 start_position) override;
 	S32 flush() override;

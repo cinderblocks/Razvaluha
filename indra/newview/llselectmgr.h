@@ -337,6 +337,9 @@ public:
 	// returns TRUE is any node is currenly worn as an attachment
 	BOOL isAttachment();
 
+	bool checkAnimatedObjectEstTris();
+	bool checkAnimatedObjectLinkable();
+
 	// Apply functors to various subsets of the selected objects
 	// If firstonly is FALSE, returns the AND of all apply() calls.
 	// Else returns TRUE immediately if any apply() call succeeds (i.e. OR with early exit)
@@ -455,7 +458,7 @@ public:
 	//
 	// *NOTE: You must hold on to the object selection handle, otherwise
 	// the objects will be automatically deselected in 1 frame.
-	LLObjectSelectionHandle selectObjectAndFamily(LLViewerObject* object, BOOL add_to_end = FALSE);
+	LLObjectSelectionHandle selectObjectAndFamily(LLViewerObject* object, BOOL add_to_end = FALSE, BOOL ignore_select_owned = FALSE);
 
 	// For when you want just a child object.
 	LLObjectSelectionHandle selectObjectOnly(LLViewerObject* object, S32 face = SELECT_ALL_TES);
@@ -527,7 +530,7 @@ public:
 	void			clearGridObjects();
 	void			setGridMode(EGridMode mode);
 	EGridMode		getGridMode() { return mGridMode; }
-	void			getGrid(LLVector3& origin, LLQuaternion& rotation, LLVector3 &scale);
+	void			getGrid(LLVector3& origin, LLQuaternion& rotation, LLVector3 &scale, bool for_snap_guides = false);
 
 	BOOL getTEMode()		{ return mTEMode; }
 	void setTEMode(BOOL b)	{ mTEMode = b; }
@@ -611,7 +614,7 @@ public:
 	void validateSelection();
 
 	// returns TRUE if it is possible to select this object
-	BOOL canSelectObject(LLViewerObject* object);
+	BOOL canSelectObject(LLViewerObject* object, BOOL ignore_select_owned = FALSE);
 
 	// Returns TRUE if the viewer has information on all selected objects
 	BOOL selectGetAllRootsValid();
@@ -740,6 +743,8 @@ public:
 	LLVector3d		getSelectionCenterGlobal() const	{ return mSelectionCenterGlobal; }
 	void			updateSelectionCenter();
 
+	void pauseAssociatedAvatars();
+
 	void resetAgentHUDZoom();
 	void setAgentHUDZoom(F32 target_zoom, F32 current_zoom);
 	void getAgentHUDZoom(F32 &target_zoom, F32 &current_zoom) const;
@@ -843,7 +848,7 @@ private:
 	LLFrameTimer			mEffectsTimer;
 	BOOL					mForceSelection;
 
-	LLAnimPauseRequest		mPauseRequest;
+    std::vector<LLAnimPauseRequest>	mPauseRequests;
 
 	friend class LLObjectBackup;
 };

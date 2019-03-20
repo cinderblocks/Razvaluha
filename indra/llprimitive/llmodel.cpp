@@ -1463,12 +1463,13 @@ LLSD LLMeshSkinInfo::asLLSD(bool include_joints, bool lock_scale_if_joint_positi
 	{
 		ret["joint_names"][i] = mJointNames[i];
 
-		const F32* invbindmat = mInvBindMatrix[i].getF32ptr();
+		const auto& matrix = mInvBindMatrix[i].mMatrix;
+		auto& ret_index = ret["inverse_bind_matrix"][i];
 		for (U32 j = 0; j < 4; j++)
 		{
 			for (U32 k = 0; k < 4; k++)
 			{
-				ret["inverse_bind_matrix"][i][j * 4 + k] = invbindmat[j * 4 + k];
+				ret_index[j * 4 + k] = matrix[j][k];
 			}
 		}
 	}

@@ -511,7 +511,7 @@ protected:
 
 public:
 	static LLVolumeMgr* sVolumeManager;
-
+public:
 	enum
 	{
 		NO_LOD = -1

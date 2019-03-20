@@ -82,8 +82,12 @@
 #include "lldatapacker.h"
 #include "llviewershadermgr.h"
 #include "llvoavatar.h"
+#include "llcontrolavatar.h"
+#include "llvoavatarself.h"
 #include "llvocache.h"
 #include "llmaterialmgr.h"
+#include "llsculptidsize.h"
+
 // [RLVa:KB] - Checked: 2011-05-22 (RLVa-1.3.1a)
 #include "rlvhandler.h"
 #include "rlvlocks.h"
@@ -223,6 +227,9 @@ LLVOVolume::LLVOVolume(const LLUUID &id, const LLPCode pcode, LLViewerRegion *re
 
 	mFaceMappingChanged = FALSE;
 	mLOD = MIN_LOD;
+	mLODDistance = 0.0f;
+	mLODAdjustedDistance = 0.0f;
+	mLODRadius = 0.0f;
 	mTextureAnimp = NULL;
 	mVolumeChanged = FALSE;
 	mVObjRadius = LLVector3(1,1,0.5f).length();
@@ -235,6 +242,7 @@ LLVOVolume::LLVOVolume(const LLUUID &id, const LLPCode pcode, LLViewerRegion *re
 	mLastFetchedMediaVersion = -1;
 	mIndexInTex = 0;
 	mMDCImplCount = 0;
+	mLastRiggingInfoLOD = -1;
 }
 
 LLVOVolume::~LLVOVolume()
@@ -260,6 +268,7 @@ void LLVOVolume::markDead()
 {
 	if (!mDead)
 	{
+		LLSculptIDSize::instance().rem(getVolume()->getParams().getSculptID());
 		if(getMDCImplCount() > 0)
 		{
 			LLMediaDataClientObject::ptr_t obj = new LLMediaDataClientObjectImpl(const_cast<LLVOVolume*>(this), false);
@@ -478,7 +487,7 @@ U32 LLVOVolume::processUpdateMessage(LLMessageSystem *mesgsys,
 			{
 				U8							tdpbuffer[1024];
 				LLDataPackerBinaryBuffer	tdp(tdpbuffer, 1024);
-				mesgsys->getBinaryDataFast(_PREHASH_ObjectData, _PREHASH_TextureEntry, tdpbuffer, 0, block_num);
+				mesgsys->getBinaryDataFast(_PREHASH_ObjectData, _PREHASH_TextureEntry, tdpbuffer, 0, block_num, 1024);
 				S32 result = unpackTEMessage(tdp);
 				if (result & teDirtyBits)
 				{
@@ -969,13 +978,14 @@ BOOL LLVOVolume::setVolume(const LLVolumeParams &params_in, const S32 detail, bo
 		// if it's a mesh
 		if ((volume_params.getSculptType() & LL_SCULPT_TYPE_MASK) == LL_SCULPT_TYPE_MESH)
 		{ //meshes might not have all LODs, get the force detail to best existing LOD
-			LLUUID mesh_id = volume_params.getSculptID();
-
-			lod = gMeshRepo.getActualMeshLOD(volume_params, lod);
-			if (lod == -1)
+			if (NO_LOD != lod)
 			{
-				is404 = TRUE;
-				lod = 0;
+				lod = gMeshRepo.getActualMeshLOD(volume_params, lod);
+				if (lod == -1)
+				{
+					is404 = TRUE;
+					lod = 0;
+				}
 			}
 		}
 	}
@@ -1077,8 +1087,10 @@ BOOL LLVOVolume::setVolume(const LLVolumeParams &params_in, const S32 detail, bo
 
 		return TRUE;
 	}
-
-
+	else if (NO_LOD == lod) 
+	{
+		LLSculptIDSize::instance().resetSizeSum(volume_params.getSculptID());
+	}
 
 	return FALSE;
 }
@@ -1112,7 +1124,21 @@ void LLVOVolume::updateSculptTexture()
 			mSculptTexture->addVolume(this);
 		}
 	}
+	
+}
 
+void LLVOVolume::updateVisualComplexity()
+{
+    LLVOAvatar* avatar = getAvatarAncestor();
+    if (avatar)
+    {
+        avatar->updateVisualComplexity();
+    }
+    LLVOAvatar* rigged_avatar = getAvatar();
+    if(rigged_avatar && (rigged_avatar != avatar))
+    {
+        rigged_avatar->updateVisualComplexity();
+    }
 }
 
 void LLVOVolume::notifyMeshLoaded()
@@ -1120,11 +1146,15 @@ void LLVOVolume::notifyMeshLoaded()
 	mSculptChanged = TRUE;
 	gPipeline.markRebuild(mDrawable, LLDrawable::REBUILD_GEOMETRY, TRUE);
 
-	LLVOAvatar* avatar = getAvatar();
-	if (avatar)
-	{
-		avatar->updateVisualComplexity();
-	}
+    if (getAvatar() && !isAnimatedObject())
+    {
+        getAvatar()->addAttachmentOverridesForObject(this);
+    }
+    if (getControlAvatar() && isAnimatedObject())
+    {
+        getControlAvatar()->addAttachmentOverridesForObject(this);
+    }
+    updateVisualComplexity();
 }
 
 // sculpt replaces generate() for sculpted surfaces
@@ -1223,18 +1253,18 @@ void LLVOVolume::sculpt()
 	}
 }
 
-S32	LLVOVolume::computeLODDetail(F32 distance, F32 radius)
+S32	LLVOVolume::computeLODDetail(F32 distance, F32 radius, F32 lod_factor)
 {
 	S32	cur_detail;
 	if (LLPipeline::sDynamicLOD)
 	{
 		// We've got LOD in the profile, and in the twist.  Use radius.
-		F32 tan_angle = (LLVOVolume::sLODFactor*radius)/distance;
+		F32 tan_angle = (lod_factor*radius)/distance;
 		cur_detail = LLVolumeLODGroup::getDetailFromTan(ll_round(tan_angle, 0.01f));
 	}
 	else
 	{
-		cur_detail = llclamp((S32) (sqrtf(radius)*LLVOVolume::sLODFactor*4.f), 0, 3);		
+		cur_detail = llclamp((S32) (sqrtf(radius)*lod_factor*4.f), 0, 3);
 	}
 	return cur_detail;
 }
@@ -1250,11 +1280,11 @@ BOOL LLVOVolume::calcLOD()
 	
 	F32 radius;
 	F32 distance;
+	F32 lod_factor = LLVOVolume::sLODFactor;
 
 	if (mDrawable->isState(LLDrawable::RIGGED) && getAvatar() && getAvatar()->mDrawable)
 	{
 		LLVOAvatar* avatar = getAvatar();
-		
 		// Not sure how this can really happen, but alas it does. Better exit here than crashing.
 		if( !avatar || !avatar->mDrawable )
 		{
@@ -1262,17 +1292,49 @@ BOOL LLVOVolume::calcLOD()
 		}
 
 		distance = avatar->mDrawable->mDistanceWRTCamera;
-		radius = avatar->getBinRadius();
+
+
+		if (avatar->isControlAvatar())
+		{
+            // MAINT-7926 Handle volumes in an animated object as a special case
+            const LLVector3* box = avatar->getLastAnimExtents();
+            LLVector3 diag = box[1] - box[0];
+            radius = diag.magVec() * 0.5f;
+            LL_DEBUGS("DynamicBox") << avatar->getFullname() << " diag " << diag << " radius " << radius << LL_ENDL;
+        }
+        else
+        {
+            // Volume in a rigged mesh attached to a regular avatar.
+            // Note this isn't really a radius, so distance calcs are off by factor of 2
+            //radius = avatar->getBinRadius();
+            // SL-937: add dynamic box handling for rigged mesh on regular avatars.
+            const LLVector3* box = avatar->getLastAnimExtents();
+            LLVector3 diag = box[1] - box[0];
+            radius = diag.magVec(); // preserve old BinRadius behavior - 2x off
+            LL_DEBUGS("DynamicBox") << avatar->getFullname() << " diag " << diag << " radius " << radius << LL_ENDL;
+        }
+        if (distance <= 0.f || radius <= 0.f)
+        {
+            LL_DEBUGS("DynamicBox","CalcLOD") << "avatar distance/radius uninitialized, skipping" << LL_ENDL;
+            return FALSE;
+        }
 	}
 	else
 	{
 		distance = mDrawable->mDistanceWRTCamera;
 		radius = getVolume() ? getVolume()->mLODScaleBias.scaledVec(getScale()).length() : getScale().length();
+        if (distance <= 0.f || radius <= 0.f)
+        {
+            LL_DEBUGS("DynamicBox","CalcLOD") << "non-avatar distance/radius uninitialized, skipping" << LL_ENDL;
+            return FALSE;
+        }
 	}
 	
 	//hold onto unmodified distance for debugging
 	//F32 debug_distance = distance;
 
+    mLODDistance = distance;
+    mLODRadius = radius;
 	distance *= sDistanceFactor;
 
 	F32 rampDist = LLVOVolume::sLODFactor * 2;
@@ -1280,22 +1342,33 @@ BOOL LLVOVolume::calcLOD()
 	if (distance < rampDist)
 	{
 		// Boost LOD when you're REALLY close
-		distance *= distance/rampDist;
+		distance *= 1.0f/rampDist;
+		distance *= distance;
+		distance *= rampDist;
 	}
 	
 	// DON'T Compensate for field of view changing on FOV zoom.
 	distance *= F_PI/3.f;
 
-	cur_detail = computeLODDetail(ll_round(distance, 0.01f), 
-									ll_round(radius, 0.01f));
+
+    mLODAdjustedDistance = distance;
+
+    if (isHUDAttachment())
+    {
+        // HUDs always show at highest detail
+        cur_detail = 3;
+    }
+    else
+    {
+        cur_detail = computeLODDetail(ll_round(distance, 0.01f), ll_round(radius, 0.01f), lod_factor);
+    }
 
 
 	if (gPipeline.hasRenderDebugMask(LLPipeline::RENDER_DEBUG_LOD_INFO) &&
 		mDrawable->getFace(0))
 	{
-		//setDebugText(llformat("%.2f:%.2f, %d", debug_distance, radius, cur_detail));
-
-		setDebugText(llformat("%d", mDrawable->getFace(0)->getTextureIndex()));
+        // This is a debug display for LODs. Please don't put the texture index here.
+        setDebugText(llformat("%d", cur_detail));
 	}
 
 	if (cur_detail != mLOD)
@@ -1304,7 +1377,6 @@ BOOL LLVOVolume::calcLOD()
 		mLOD = cur_detail;		
 		return TRUE;
 	}
-
 	return FALSE;
 }
 
@@ -1315,7 +1387,16 @@ BOOL LLVOVolume::updateLOD()
 		return FALSE;
 	}
 	
-	BOOL lod_changed = calcLOD();
+	BOOL lod_changed = FALSE;
+
+	if (!LLSculptIDSize::instance().isUnloaded(getVolume()->getParams().getSculptID())) 
+	{
+		lod_changed = calcLOD();
+	}
+	else
+	{
+		return FALSE;
+	}
 
 	if (lod_changed)
 	{
@@ -1393,7 +1474,8 @@ void LLVOVolume::updateFaceFlags()
 BOOL LLVOVolume::setParent(LLViewerObject* parent)
 {
 	BOOL ret = FALSE ;
-	if (parent != getParent())
+    LLViewerObject *old_parent = (LLViewerObject*) getParent();
+	if (parent != old_parent)
 	{
 		ret = LLViewerObject::setParent(parent);
 		if (ret && mDrawable)
@@ -1401,6 +1483,7 @@ BOOL LLVOVolume::setParent(LLViewerObject* parent)
 			gPipeline.markMoved(mDrawable);
 			gPipeline.markRebuild(mDrawable, LLDrawable::REBUILD_VOLUME, TRUE);
 		}
+        onReparent(old_parent, parent);
 	}
 
 	return ret ;
@@ -1465,17 +1548,32 @@ BOOL LLVOVolume::genBBoxes(BOOL force_global)
 
 	BOOL rebuild = mDrawable->isState(LLDrawable::REBUILD_VOLUME | LLDrawable::REBUILD_POSITION | LLDrawable::REBUILD_RIGGED);
 
-	//	bool rigged = false;
+    if (getRiggedVolume())
+    {
+        // MAINT-8264 - better to use the existing call in calling
+        // func LLVOVolume::updateGeometry() if we can detect when
+        // updates needed, set REBUILD_RIGGED accordingly.
+
+        // Without the flag, this will remove unused rigged volumes, which we are not currently very aggressive about.
+        updateRiggedVolume();
+    }
+    
 	LLVolume* volume = mRiggedVolume;
 	if (!volume)
 	{
 		volume = getVolume();
 	}
 
+    bool any_valid_boxes = false;
+    
+    if (getRiggedVolume())
+    {
+        LL_DEBUGS("RiggedBox") << "rebuilding box, volume face count " << getVolume()->getNumVolumeFaces() << " drawable face count " << mDrawable->getNumFaces() << LL_ENDL;
+    }
 	// There's no guarantee that getVolume()->getNumFaces() == mDrawable->getNumFaces()
 	for (S32 i = 0;
 		 i < getVolume()->getNumVolumeFaces() && i < mDrawable->getNumFaces() && i < getNumTEs();
-		 i++)
+		 ++i)
 	{
 		LLFace *face = mDrawable->getFace(i);
 		if (!face)
@@ -1486,12 +1584,22 @@ BOOL LLVOVolume::genBBoxes(BOOL force_global)
 										mRelativeXform,
 										(mVolumeImpl && mVolumeImpl->isVolumeGlobal()) || force_global);
 		
+        // MAINT-8264 - ignore bboxes of ill-formed faces.
+        if (!res)
+        {
+            continue;
+        }
 		if (rebuild)
 		{
-			if (i == 0)
+            if (getRiggedVolume())
+            {
+                LL_DEBUGS("RiggedBox") << "rebuilding box, face " << i << " extents " << face->mExtents[0] << ", " << face->mExtents[1] << LL_ENDL;
+            }
+			if (!any_valid_boxes)
 			{
 				min = face->mExtents[0];
 				max = face->mExtents[1];
+				any_valid_boxes = true;
 			}
 			else
 			{
@@ -1500,18 +1608,29 @@ BOOL LLVOVolume::genBBoxes(BOOL force_global)
 			}
 		}
 	}
-	
-	if (rebuild)
+
+	if (any_valid_boxes)
 	{
-		mDrawable->setSpatialExtents(min,max);
-		min.add(max);
-		min.mul(0.5f);
-		mDrawable->setPositionGroup(min);	
+		if (rebuild)
+		{
+			if (getRiggedVolume())
+			{
+				LL_DEBUGS("RiggedBox") << "rebuilding got extents " << min << ", " << max << LL_ENDL;
+			}
+			mDrawable->setSpatialExtents(min, max);
+			min.add(max);
+			min.mul(0.5f);
+			mDrawable->setPositionGroup(min);
+		}
+
+		updateRadius();
+		mDrawable->movePartition();
+	}
+	else
+	{
+		LL_DEBUGS("RiggedBox") << "genBBoxes failed to find any valid face boxes" << LL_ENDL;
 	}
 
-	updateRadius();
-	mDrawable->movePartition();
-			
 	return res;
 }
 
@@ -1592,7 +1711,7 @@ static LLTrace::BlockTimerStatHandle FTM_GEN_FLEX("Generate Flexies");
 static LLTrace::BlockTimerStatHandle FTM_UPDATE_PRIMITIVES("Update Primitives");
 static LLTrace::BlockTimerStatHandle FTM_UPDATE_RIGGED_VOLUME("Update Rigged");
 
-bool LLVOVolume::lodOrSculptChanged(LLDrawable *drawable)
+bool LLVOVolume::lodOrSculptChanged(LLDrawable *drawable, BOOL &compiled)
 {
 	bool regen_faces = false;
 
@@ -1618,6 +1737,12 @@ bool LLVOVolume::lodOrSculptChanged(LLDrawable *drawable)
 
 	if ((new_lod != old_lod) || mSculptChanged)
 	{
+        if (mDrawable->isState(LLDrawable::RIGGED))
+        {
+            updateVisualComplexity();
+        }
+
+		compiled = TRUE;
 		sNumLODChanges += new_num_faces ;
 
 		if((S32)getNumTEs() != getVolume()->getNumFaces())
@@ -1629,8 +1754,9 @@ bool LLVOVolume::lodOrSculptChanged(LLDrawable *drawable)
 
 		{
 			LL_RECORD_BLOCK_TIME(FTM_GEN_TRIANGLES);
-			regen_faces = new_num_faces != old_num_faces || mNumFaces != (S32)getNumTEs();
-			if (regen_faces)
+			sNumLODChanges += new_num_faces ;
+	
+			if((S32)getNumTEs() != getVolume()->getNumFaces())
 			{
 				regenFaces();
 			}
@@ -1682,6 +1808,8 @@ BOOL LLVOVolume::updateGeometry(LLDrawable *drawable)
 		group->dirtyMesh();
 	}
 
+	BOOL compiled = FALSE;
+			
 	updateRelativeXform();
 	
 	if (mDrawable.isNull()) // Not sure why this is happening, but it is...
@@ -1697,12 +1825,13 @@ BOOL LLVOVolume::updateGeometry(LLDrawable *drawable)
 
 		if (mVolumeChanged)
 		{
-			was_regen_faces = lodOrSculptChanged(drawable);
+			was_regen_faces = lodOrSculptChanged(drawable, compiled);
 			drawable->setState(LLDrawable::REBUILD_VOLUME);
 		}
 		else if (mSculptChanged || mLODChanged)
 		{
-			was_regen_faces = lodOrSculptChanged(drawable);
+			compiled = TRUE;
+			was_regen_faces = lodOrSculptChanged(drawable, compiled);
 		}
 		
 		if (!was_regen_faces) {
@@ -1715,12 +1844,19 @@ BOOL LLVOVolume::updateGeometry(LLDrawable *drawable)
 	else if (mLODChanged || mSculptChanged)
 	{
 		dirtySpatialGroup(drawable->isState(LLDrawable::IN_REBUILD_Q1));
-		lodOrSculptChanged(drawable);
+		compiled = TRUE;
+		lodOrSculptChanged(drawable, compiled);
+		
+		if(drawable->isState(LLDrawable::REBUILD_RIGGED | LLDrawable::RIGGED)) 
+		{
+			updateRiggedVolume(false);
+		}
 		genBBoxes(FALSE);
 	}
 	// it has its own drawable (it's moved) or it has changed UVs or it has changed xforms from global<->local
 	else
 	{
+		compiled = TRUE;
 		// All it did was move or we changed the texture coordinate offset
 		LL_RECORD_BLOCK_TIME(FTM_GEN_TRIANGLES);
 		genBBoxes(FALSE);
@@ -1728,6 +1864,11 @@ BOOL LLVOVolume::updateGeometry(LLDrawable *drawable)
 
 	// Update face flags
 	updateFaceFlags();
+	
+	if(compiled)
+	{
+		LLPipeline::sCompiles++;
+	}
 		
 	mVolumeChanged = FALSE;
 	mLODChanged = FALSE;
@@ -2481,7 +2622,9 @@ void LLVOVolume::mediaNavigateBounceBack(U8 texture_index)
 			LL_WARNS("MediaOnAPrim") << "FAILED to bounce back URL \"" << url << "\" -- unloading impl" << LL_ENDL;
 			impl->setMediaFailed(true);
 		}
-		else {
+		// Make sure we are not bouncing to url we came from
+		else if (impl->getCurrentMediaURL() != url) 
+		{
 			// Okay, navigate now
             LL_INFOS("MediaOnAPrim") << "bouncing back to URL: " << url << LL_ENDL;
             impl->navigateTo(url, "", false, true);
@@ -3225,6 +3368,208 @@ BOOL LLVOVolume::setIsFlexible(BOOL is_flexible)
 	return res;
 }
 
+const LLMeshSkinInfo* LLVOVolume::getSkinInfo() const
+{
+    if (getVolume())
+    {
+        return gMeshRepo.getSkinInfo(getVolume()->getParams().getSculptID(), this);
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+// virtual
+BOOL LLVOVolume::isRiggedMesh() const
+{
+    return isMesh() && getSkinInfo();
+}
+
+//----------------------------------------------------------------------------
+U32 LLVOVolume::getExtendedMeshFlags() const
+{
+	const LLExtendedMeshParams *param_block = 
+        (const LLExtendedMeshParams *)getParameterEntry(LLNetworkData::PARAMS_EXTENDED_MESH);
+	if (param_block)
+	{
+		return param_block->getFlags();
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+void LLVOVolume::onSetExtendedMeshFlags(U32 flags)
+{
+
+    // The isAnySelected() check was needed at one point to prevent
+    // graphics problems. These are now believed to be fixed so the
+    // check has been disabled.
+	if (/*!getRootEdit()->isAnySelected() &&*/ mDrawable.notNull())
+    {
+        // Need to trigger rebuildGeom(), which is where control avatars get created/removed
+        getRootEdit()->recursiveMarkForUpdate(TRUE);
+    }
+    if (isAttachment() && getAvatarAncestor())
+    {
+        updateVisualComplexity();
+        if (flags & LLExtendedMeshParams::ANIMATED_MESH_ENABLED_FLAG)
+        {
+            // Making a rigged mesh into an animated object
+            getAvatarAncestor()->updateAttachmentOverrides();
+        }
+        else
+        {
+            // Making an animated object into a rigged mesh
+            getAvatarAncestor()->updateAttachmentOverrides();
+        }
+    }
+}
+
+void LLVOVolume::setExtendedMeshFlags(U32 flags)
+{
+    U32 curr_flags = getExtendedMeshFlags();
+    if (curr_flags != flags)
+    {
+        bool in_use = true;
+        setParameterEntryInUse(LLNetworkData::PARAMS_EXTENDED_MESH, in_use, true);
+        LLExtendedMeshParams *param_block = 
+            (LLExtendedMeshParams *)getParameterEntry(LLNetworkData::PARAMS_EXTENDED_MESH);
+        if (param_block)
+        {
+            param_block->setFlags(flags);
+        }
+        parameterChanged(LLNetworkData::PARAMS_EXTENDED_MESH, true);
+        LL_DEBUGS("AnimatedObjects") << this
+                                     << " new flags " << flags << " curr_flags " << curr_flags
+                                     << ", calling onSetExtendedMeshFlags()"
+                                     << LL_ENDL;
+        onSetExtendedMeshFlags(flags);
+    }
+}
+
+bool LLVOVolume::canBeAnimatedObject() const
+{
+    F32 est_tris = recursiveGetEstTrianglesMax();
+    if (est_tris < 0 || est_tris > getAnimatedObjectMaxTris())
+    {
+        return false;
+    }
+    return true;
+}
+
+bool LLVOVolume::isAnimatedObject() const
+{
+    LLVOVolume *root_vol = (LLVOVolume*)getRootEdit();
+    bool root_is_animated_flag = root_vol->getExtendedMeshFlags() & LLExtendedMeshParams::ANIMATED_MESH_ENABLED_FLAG;
+    return root_is_animated_flag;
+}
+
+// Called any time parenting changes for a volume. Update flags and
+// control av accordingly.  This is called after parent has been
+// changed to new_parent, but before new_parent's mChildList has changed.
+
+// virtual
+void LLVOVolume::onReparent(LLViewerObject *old_parent, LLViewerObject *new_parent)
+{
+    LLVOVolume *old_volp = dynamic_cast<LLVOVolume*>(old_parent);
+
+    if (new_parent && !new_parent->isAvatar())
+    {
+        if (mControlAvatar.notNull())
+        {
+            // Here an animated object is being made the child of some
+            // other prim. Should remove the control av from the child.
+            LLControlAvatar *av = mControlAvatar;
+            mControlAvatar = NULL;
+            av->markForDeath();
+        }
+    }
+    if (old_volp && old_volp->isAnimatedObject())
+    {
+        if (old_volp->getControlAvatar())
+        {
+            // We have been removed from an animated object, need to do cleanup.
+            old_volp->getControlAvatar()->updateAttachmentOverrides();
+            old_volp->getControlAvatar()->updateAnimations();
+        }
+    }
+}
+
+// This needs to be called after onReparent(), because mChildList is
+// not updated until the end of LLViewerObject::addChild()
+
+// virtual
+void LLVOVolume::afterReparent()
+{
+    {
+        LL_DEBUGS("AnimatedObjects") << "new child added for parent " 
+            << ((LLViewerObject*)getParent())->getID() << LL_ENDL;
+    }
+                                                                                             
+    if (isAnimatedObject() && getControlAvatar())
+    {
+        LL_DEBUGS("AnimatedObjects") << "adding attachment overrides, parent is animated object " 
+            << ((LLViewerObject*)getParent())->getID() << LL_ENDL;
+
+        // MAINT-8239 - doing a full rebuild whenever parent is set
+        // makes the joint overrides load more robustly. In theory,
+        // addAttachmentOverrides should be sufficient, but in
+        // practice doing a full rebuild helps compensate for
+        // notifyMeshLoaded() not being called reliably enough.
+        
+        // was: getControlAvatar()->addAttachmentOverridesForObject(this);
+        //getControlAvatar()->rebuildAttachmentOverrides();
+        getControlAvatar()->updateAnimations();
+    }
+    else
+    {
+        LL_DEBUGS("AnimatedObjects") << "not adding overrides, parent: " 
+                                     << ((LLViewerObject*)getParent())->getID() 
+                                     << " isAnimated: "  << isAnimatedObject() << " cav "
+                                     << getControlAvatar() << LL_ENDL;
+    }
+}
+
+//----------------------------------------------------------------------------
+static LLTrace::BlockTimerStatHandle FTM_VOVOL_RIGGING_INFO("VOVol Rigging Info");
+
+void LLVOVolume::updateRiggingInfo()
+{
+    LL_RECORD_BLOCK_TIME(FTM_VOVOL_RIGGING_INFO);
+    if (isRiggedMesh())
+    {
+        const LLMeshSkinInfo* skin = getSkinInfo();
+        LLVOAvatar *avatar = getAvatar();
+        LLVolume *volume = getVolume();
+        if (skin && avatar && volume)
+        {
+            LL_DEBUGS("RigSpammish") << "starting, vovol " << this << " lod " << getLOD() << " last " << mLastRiggingInfoLOD << LL_ENDL;
+            if (getLOD()>mLastRiggingInfoLOD || getLOD()==3)
+            {
+                // Rigging info may need update
+                mJointRiggingInfoTab.clear();
+                for (S32 f = 0; f < volume->getNumVolumeFaces(); ++f)
+                {
+                    LLVolumeFace& vol_face = volume->getVolumeFace(f);
+                    LLSkinningUtil::updateRiggingInfo(skin, avatar, vol_face);
+                    if (vol_face.mJointRiggingInfoTab.size()>0)
+                    {
+                        mJointRiggingInfoTab.merge(vol_face.mJointRiggingInfoTab);
+                    }
+                }
+                // Keep the highest LOD info available.
+                mLastRiggingInfoLOD = getLOD();
+                LL_DEBUGS("RigSpammish") << "updated rigging info for LLVOVolume " 
+                                         << this << " lod " << mLastRiggingInfoLOD 
+                                         << LL_ENDL;
+            }
+        }
+    }
+}
+
 //----------------------------------------------------------------------------
 
 void LLVOVolume::generateSilhouette(LLSelectNode* nodep, const LLVector3& view_point)
@@ -3238,7 +3583,7 @@ void LLVOVolume::generateSilhouette(LLSelectNode* nodep, const LLVector3& view_p
 
 		//transform view vector into volume space
 		view_vector -= getRenderPosition();
-		mDrawable->mDistanceWRTCamera = view_vector.length();
+		//mDrawable->mDistanceWRTCamera = view_vector.length();
 		LLQuaternion worldRot = getRenderRotation();
 		view_vector = view_vector * ~worldRot;
 		if (!isVolumeGlobal())
@@ -3286,7 +3631,7 @@ void LLVOVolume::updateRadius()
 
 BOOL LLVOVolume::isAttachment() const
 {
-	return mState != 0 ;
+	return mAttachmentState != 0 ;
 }
 
 BOOL LLVOVolume::isHUDAttachment() const
@@ -3294,7 +3639,7 @@ BOOL LLVOVolume::isHUDAttachment() const
 	// *NOTE: we assume hud attachment points are in defined range
 	// since this range is constant for backwards compatibility
 	// reasons this is probably a reasonable assumption to make
-	S32 attachment_id = ATTACHMENT_ID_FROM_STATE(mState);
+	S32 attachment_id = ATTACHMENT_ID_FROM_STATE(mAttachmentState);
 	return ( attachment_id >= 31 && attachment_id <= 38 );
 }
 
@@ -3343,6 +3688,7 @@ U32 LLVOVolume::getRenderCost(texture_cost_t &textures) const
 	static const F32 ARC_BUMP_MULT = 1.25f; // tested based on performance
 	static const F32 ARC_FLEXI_MULT = 5; // tested based on performance
 	static const F32 ARC_SHINY_MULT = 1.6f; // tested based on performance
+	static const F32 ARC_INVISI_COST = 1.2f; // tested based on performance
 	static const F32 ARC_WEIGHTED_MESH = 1.2f; // tested based on performance
 
 	static const F32 ARC_PLANAR_COST = 1.0f; // tested based on performance to have negligible impact
@@ -3351,6 +3697,7 @@ U32 LLVOVolume::getRenderCost(texture_cost_t &textures) const
 
 	F32 shame = 0;
 
+	U32 invisi = 0;
 	U32 shiny = 0;
 	U32 glow = 0;
 	U32 alpha = 0;
@@ -3372,16 +3719,25 @@ U32 LLVOVolume::getRenderCost(texture_cost_t &textures) const
 		path_params = volume_params.getPathParams();
 		profile_params = volume_params.getProfileParams();
 
-		F32 weighted_triangles = -1.0;
-		getStreamingCost(NULL, NULL, &weighted_triangles);
-
-		if (weighted_triangles > 0.0)
+        LLMeshCostData costs;
+		if (getCostData(costs))
 		{
-			num_triangles = (U32)(weighted_triangles); 
+            if (isAnimatedObject() && isRiggedMesh())
+            {
+                // Scaling here is to make animated object vs
+                // non-animated object ARC proportional to the
+                // corresponding calculations for streaming cost.
+                num_triangles = (ANIMATED_OBJECT_COST_PER_KTRI * 0.001 * costs.getEstTrisForStreamingCost())/0.06;
+            }
+            else
+            {
+                F32 radius = getScale().length()*0.5f;
+                num_triangles = costs.getRadiusWeightedTris(radius);
+            }
 		}
 	}
 
-	if (num_triangles == 0)
+	if (num_triangles <= 0)
 	{
 		num_triangles = 4;
 	}
@@ -3392,15 +3748,14 @@ U32 LLVOVolume::getRenderCost(texture_cost_t &textures) const
 		{
 			// base cost is dependent on mesh complexity
 			// note that 3 is the highest LOD as of the time of this coding.
-			S32 size = gMeshRepo.getMeshSize(volume_params.getSculptID(),3);
+			S32 size = gMeshRepo.getMeshSize(volume_params.getSculptID(), getLOD());
 			if ( size > 0)
 			{
-				if (gMeshRepo.getSkinInfo(volume_params.getSculptID(), this))
+				if (isRiggedMesh())
 				{
 					// weighted attachment - 1 point for every 3 bytes
 					weighted_mesh = 1;
 				}
-
 			}
 			else
 			{
@@ -3458,6 +3813,10 @@ U32 LLVOVolume::getRenderCost(texture_cost_t &textures) const
 		{
 			alpha = 1;
 		}
+		else if (img && img->getPrimaryFormat() == GL_ALPHA)
+		{
+			invisi = 1;
+		}
 		if (face->hasMedia())
 		{
 			media_faces++;
@@ -3511,6 +3870,11 @@ U32 LLVOVolume::getRenderCost(texture_cost_t &textures) const
 		shame *= alpha * ARC_ALPHA_COST;
 	}
 
+	if(invisi)
+	{
+		shame *= invisi * ARC_INVISI_COST;
+	}
+
 	if (glow)
 	{
 		shame *= glow * ARC_GLOW_MULT;
@@ -3560,6 +3924,13 @@ U32 LLVOVolume::getRenderCost(texture_cost_t &textures) const
 		shame += media_faces * ARC_MEDIA_FACE_COST;
 	}
 
+    // Streaming cost for animated objects includes a fixed cost
+    // per linkset. Add a corresponding charge here translated into
+    // triangles, but not weighted by any graphics properties.
+    if (isAnimatedObject() && isRootEdit())
+    {
+        shame += (ANIMATED_OBJECT_BASE_COST/0.06) * 5.0f;
+    }
 	if (shame > mRenderComplexity_current)
 	{
 		mRenderComplexity_current = (S32)shame;
@@ -3568,15 +3939,65 @@ U32 LLVOVolume::getRenderCost(texture_cost_t &textures) const
 	return (U32)shame;
 }
 
-F32 LLVOVolume::getStreamingCost(S32* bytes, S32* visible_bytes, F32* unscaled_value) const
+F32 LLVOVolume::getEstTrianglesMax() const
+{
+	if (isMesh() && getVolume())
+	{
+		return gMeshRepo.getEstTrianglesMax(getVolume()->getParams().getSculptID());
+	}
+    return 0.f;
+}
+
+F32 LLVOVolume::getEstTrianglesStreamingCost() const
+{
+	if (isMesh() && getVolume())
+	{
+		return gMeshRepo.getEstTrianglesStreamingCost(getVolume()->getParams().getSculptID());
+	}
+    return 0.f;
+}
+
+F32 LLVOVolume::getStreamingCost() const
 {
 	F32 radius = getScale().length()*0.5f;
+    F32 linkset_base_cost = 0.f;
 
+    LLMeshCostData costs;
+    if (getCostData(costs))
+    {
+        if (isAnimatedObject() && isRootEdit())
+        {
+            // Root object of an animated object has this to account for skeleton overhead.
+            linkset_base_cost = ANIMATED_OBJECT_BASE_COST;
+        }
+        if (isMesh())
+        {
+            if (isAnimatedObject() && isRiggedMesh())
+            {
+                return linkset_base_cost + costs.getTriangleBasedStreamingCost();
+            }
+            else
+            {
+                return linkset_base_cost + costs.getRadiusBasedStreamingCost(radius);
+            }
+        }
+        else
+        {
+            return linkset_base_cost + costs.getRadiusBasedStreamingCost(radius);
+        }
+    }
+    else
+    {
+        return 0.f;
+    }
+}
+
+// virtual
+bool LLVOVolume::getCostData(LLMeshCostData& costs) const
+{
 	if (isMesh())
-	{	
-		LLSD& header = gMeshRepo.getMeshHeader(getVolume()->getParams().getSculptID());
-
-		return LLMeshRepository::getStreamingCost(header, radius, bytes, visible_bytes, mLOD, unscaled_value);
+	{
+		return gMeshRepo.getCostData(getVolume()->getParams().getSculptID(), costs);
 	}
 	else
 	{
@@ -3590,8 +4011,8 @@ F32 LLVOVolume::getStreamingCost(S32* bytes, S32* visible_bytes, F32* unscaled_v
 		header["medium_lod"]["size"] = counts[2] * 10;
 		header["high_lod"]["size"] = counts[3] * 10;
 
-		return LLMeshRepository::getStreamingCost(header, radius, NULL, NULL, -1, unscaled_value);
-	}	
+		return LLMeshRepository::getCostData(header, costs);
+	}
 }
 
 //static 
@@ -3661,6 +4082,21 @@ void LLVOVolume::parameterChanged(U16 param_type, LLNetworkData* data, BOOL in_u
 	{
 		mVolumeImpl->onParameterChanged(param_type, data, in_use, local_origin);
 	}
+    if (!local_origin && param_type == LLNetworkData::PARAMS_EXTENDED_MESH)
+    {
+        U32 extended_mesh_flags = getExtendedMeshFlags();
+        bool enabled =  (extended_mesh_flags & LLExtendedMeshParams::ANIMATED_MESH_ENABLED_FLAG);
+        bool was_enabled = (getControlAvatar() != NULL);
+        if (enabled != was_enabled)
+        {
+            LL_DEBUGS("AnimatedObjects") << this
+                                         << " calling onSetExtendedMeshFlags, enabled " << (U32) enabled
+                                         << " was_enabled " << (U32) was_enabled
+                                         << " local_origin " << (U32) local_origin
+                                         << LL_ENDL;
+            onSetExtendedMeshFlags(extended_mesh_flags);
+        }
+    }
 	if (mDrawable.notNull())
 	{
 		BOOL is_light = getIsLight();
@@ -3674,10 +4110,17 @@ void LLVOVolume::parameterChanged(U16 param_type, LLNetworkData* data, BOOL in_u
 void LLVOVolume::setSelected(BOOL sel)
 {
 	LLViewerObject::setSelected(sel);
-	if (mDrawable.notNull())
-	{
-		markForUpdate(TRUE);
-	}
+    if (isAnimatedObject())
+    {
+        getRootEdit()->recursiveMarkForUpdate(TRUE);
+    }
+    else
+    {
+        if (mDrawable.notNull())
+        {
+            markForUpdate(TRUE);
+        }
+    }
 }
 
 void LLVOVolume::updateSpatialExtents(LLVector4a& newMin, LLVector4a& newMax)
@@ -3747,7 +4190,12 @@ F32 LLVOVolume::getBinRadius()
 	}
 	else if (mDrawable->isStatic())
 	{
-		radius = llmax((S32) mDrawable->getRadius(), 1)*size_factor;
+		F32 szf = size_factor;
+
+		radius = llmax(mDrawable->getRadius(), szf);
+		
+		radius = powf(radius, 1.f+szf/radius);
+
 		radius *= 1.f + mDrawable->mDistanceWRTCamera * distance_factor[1];
 		radius += mDrawable->mDistanceWRTCamera * distance_factor[0];
 	}
@@ -3791,6 +4239,12 @@ const LLMatrix4a& LLVOVolume::getWorldMatrix(LLXformMatrix* xform) const
 		return mVolumeImpl->getWorldMatrix(xform);
 	}
 	return xform->getWorldMatrix();
+}
+
+void LLVOVolume::markForUpdate(BOOL priority)
+{ 
+    LLViewerObject::markForUpdate(priority); 
+    mVolumeChanged = TRUE; 
 }
 
 LLVector3 LLVOVolume::agentPositionToVolume(const LLVector3& pos) const
@@ -4053,7 +4507,7 @@ BOOL LLVOVolume::lineSegmentIntersect(const LLVector4a& start, const LLVector4a&
 bool LLVOVolume::treatAsRigged()
 {
 	return (gFloaterTools->getVisible() || LLFloaterInspect::findInstance()) &&
-			isAttachment() && 
+			(isAttachment() || isAnimatedObject()) && 
 			mDrawable.notNull() &&
 			mDrawable->isState(LLDrawable::RIGGED);
 }
@@ -4085,9 +4539,7 @@ void LLVOVolume::updateRiggedVolume(bool force_update)
 	}
 
 	LLVolume* volume = getVolume();
-
-	const LLMeshSkinInfo* skin = gMeshRepo.getSkinInfo(volume->getParams().getSculptID(), this);
-
+	const LLMeshSkinInfo* skin = getSkinInfo();
 	if (!skin)
 	{
 		clearRiggedVolume();
@@ -4140,6 +4592,18 @@ void LLRiggedVolume::update(const LLMeshSkinInfo* skin, LLVOAvatar* avatar, cons
 	{
 		copyVolumeFaces(volume);	
 	}
+    else
+    {
+        bool is_paused = avatar && avatar->areAnimationsPaused();
+		if (is_paused)
+		{
+            S32 frames_paused = LLFrameTimer::getFrameCount() - avatar->getMotionController().getPausedFrame();
+            if (frames_paused > 2)
+            {
+                return;
+            }
+		}
+    }
 
 	//build matrix palette
 	static const size_t kMaxJoints = LL_MAX_JOINTS_PER_MESH_OBJECT;
@@ -4148,6 +4612,7 @@ void LLRiggedVolume::update(const LLMeshSkinInfo* skin, LLVOAvatar* avatar, cons
 	U32 maxJoints = LLSkinningUtil::getMeshJointCount(skin);
 	LLSkinningUtil::initSkinningMatrixPalette(mat, maxJoints, skin, avatar, true);
 
+	
 	LLMatrix4a bind_shape_matrix;
 	bind_shape_matrix.loadu(skin->mBindShapeMatrix);
 
@@ -4188,7 +4653,7 @@ void LLRiggedVolume::update(const LLMeshSkinInfo* skin, LLVOAvatar* avatar, cons
 				LLVector4a t;
 				bind_shape_matrix.affineTransform(v, t);
 				final_mat.affineTransform(t, pos[j]);
-				pos[j].add(av_pos);
+				pos[j].add(av_pos); // Algorithm tweaked to stop hosing up normals.
 			}
 
 				//update bounding box
@@ -4667,6 +5132,81 @@ static LLDrawPoolAvatar* get_avatar_drawpool(LLViewerObject* vobj)
 	return NULL;
 }
 
+void handleRenderAutoMuteByteLimitChanged(const LLSD& new_value)
+{
+	static LLCachedControl<U32> render_auto_mute_byte_limit(gSavedSettings, "RenderAutoMuteByteLimit", 0U);
+
+	if (0 != render_auto_mute_byte_limit)
+	{
+		//for unload
+		LLSculptIDSize::container_BY_SIZE_view::iterator
+			itL = LLSculptIDSize::instance().getSizeInfo().get<LLSculptIDSize::tag_BY_SIZE>().lower_bound(render_auto_mute_byte_limit),
+			itU = LLSculptIDSize::instance().getSizeInfo().get<LLSculptIDSize::tag_BY_SIZE>().end();
+
+		for (; itL != itU; ++itL)
+		{
+			const LLSculptIDSize::Info &nfo = *itL;
+			LLVOVolume *pVVol = nfo.getPtrLLDrawable()->getVOVolume();
+			if (pVVol
+				&& !pVVol->isDead()
+				&& pVVol->isAttachment()
+				&& !pVVol->getAvatar()->isSelf()
+				&& LLVOVolume::NO_LOD != pVVol->getLOD()
+				)
+			{
+				//postponed
+				pVVol->markForUnload();
+				LLSculptIDSize::instance().addToUnloaded(nfo.getSculptId());
+			}
+		}
+
+		//for load if it was unload
+		itL = LLSculptIDSize::instance().getSizeInfo().get<LLSculptIDSize::tag_BY_SIZE>().begin();
+		itU = LLSculptIDSize::instance().getSizeInfo().get<LLSculptIDSize::tag_BY_SIZE>().upper_bound(render_auto_mute_byte_limit);
+
+		for (; itL != itU; ++itL)
+		{
+			const LLSculptIDSize::Info &nfo = *itL;
+			LLVOVolume *pVVol = nfo.getPtrLLDrawable()->getVOVolume();
+			if (pVVol
+				&& !pVVol->isDead()
+				&& pVVol->isAttachment()
+				&& !pVVol->getAvatar()->isSelf()
+				&& LLVOVolume::NO_LOD == pVVol->getLOD()
+				)
+			{
+				LLSculptIDSize::instance().remFromUnloaded(nfo.getSculptId());
+				pVVol->updateLOD();
+				pVVol->markForUpdate(TRUE);
+			}
+		}
+	}
+	else
+	{
+		LLSculptIDSize::instance().clearUnloaded();
+
+		LLSculptIDSize::container_BY_SIZE_view::iterator
+			itL = LLSculptIDSize::instance().getSizeInfo().get<LLSculptIDSize::tag_BY_SIZE>().begin(),
+			itU = LLSculptIDSize::instance().getSizeInfo().get<LLSculptIDSize::tag_BY_SIZE>().end();
+
+		for (; itL != itU; ++itL)
+		{
+			const LLSculptIDSize::Info &nfo = *itL;
+			LLVOVolume *pVVol = nfo.getPtrLLDrawable()->getVOVolume();
+			if (pVVol
+				&& !pVVol->isDead()
+				&& pVVol->isAttachment()
+				&& !pVVol->getAvatar()->isSelf()
+				&& LLVOVolume::NO_LOD == pVVol->getLOD()
+				) 
+			{
+				pVVol->updateLOD();
+				pVVol->markForUpdate(TRUE);
+			}
+		}
+	}
+}
+
 void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 {
 	if (LLPipeline::sSkipUpdate) return;
@@ -4691,28 +5231,19 @@ void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 
 	group->mBuilt = 1.f;
 	
-	LLVOAvatar* pAvatarVO = NULL;
-
 	LLSpatialBridge* bridge = group->getSpatialPartition()->asBridge();
+    LLViewerObject *vobj = NULL;
+    LLVOVolume *vol_obj = NULL;
+
 	if (bridge)
 	{
-		if (bridge->mAvatar.isNull())
-		{
-			LLViewerObject* vobj = bridge->mDrawable->getVObj();
-			if (vobj)
-			{
-				bridge->mAvatar = vobj->getAvatar();
-			}
-		}
-
-		pAvatarVO = bridge->mAvatar;
+        vobj = bridge->mDrawable->getVObj();
+        vol_obj = dynamic_cast<LLVOVolume*>(vobj);
 	}
-
-	if (pAvatarVO)
-	{
-		pAvatarVO->mAttachmentGeometryBytes -= group->mGeometryBytes;
-		pAvatarVO->mAttachmentSurfaceArea -= group->mSurfaceArea;
-	}
+    if (vol_obj)
+    {
+        vol_obj->updateVisualComplexity();
+    }
 
 	group->mGeometryBytes = 0;
 	group->mSurfaceArea = 0;
@@ -4792,27 +5323,28 @@ void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 				group->mSurfaceArea += volume->getSurfaceArea() * llmax(llmax(scale.mV[0], scale.mV[1]), scale.mV[2]);
 			}
 
+			vobj->updateControlAvatar();
 			llassert_always(vobj);
 			vobj->updateTextureVirtualSize(true);
 			vobj->preRebuild();
 
 			drawablep->clearState(LLDrawable::HAS_ALPHA);
 
-			bool rigged = vobj->isAttachment() && 
-						vobj->isMesh() && 
-						gMeshRepo.getSkinInfo(vobj->getVolume()->getParams().getSculptID(), vobj);
+            if (vobj->isRiggedMesh() &&
+                ((vobj->isAnimatedObject() && vobj->getControlAvatar()) ||
+                 (!vobj->isAnimatedObject() && vobj->getAvatar())))
+            {
+                vobj->getAvatar()->addAttachmentOverridesForObject(vobj, NULL, false);
+            }
+            
+            // Standard rigged mesh attachments: 
+			bool rigged = !vobj->isAnimatedObject() && vobj->isRiggedMesh() && vobj->isAttachment();
+            // Animated objects. Have to check for isRiggedMesh() to
+            // exclude static objects in animated object linksets.
+			rigged = rigged || (vobj->isAnimatedObject() && vobj->isRiggedMesh() &&
+                vobj->getControlAvatar() && vobj->getControlAvatar()->mPlaying);
 
-			bool is_rigged = false;
-
-			if (rigged && pAvatarVO)
-			{
-				pAvatarVO->addAttachmentOverridesForObject(vobj);
-				/*if (!LLApp::isExiting() && pAvatarVO->isSelf() && debugLoggingEnabled("AvatarAttachments"))
-				{
-					bool verbose = true;
-					pAvatarVO->showAttachmentOverrides(verbose);
-				}*/
-			}
+			bool any_rigged_face = false;
 
 			static const LLCachedControl<bool> alt_batching("SHAltBatching",true);
 			
@@ -4840,7 +5372,7 @@ void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 					}
 		
 					facep->setState(LLFace::RIGGED);
-					is_rigged = true;
+					any_rigged_face = true;
 				
 					//get drawpool of avatar with rigged face
 					LLDrawPoolAvatar* pool = get_avatar_drawpool(vobj);
@@ -5425,7 +5957,7 @@ void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 				}		
 			}
 
-			if (is_rigged)
+			if (any_rigged_face)
 			{
 				if (!drawablep->isState(LLDrawable::RIGGED))
 				{
@@ -5439,6 +5971,7 @@ void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 			else
 			{
 				drawablep->clearState(LLDrawable::RIGGED);
+				vobj->updateRiggedVolume();
 			}
 		}
 	}
@@ -5499,12 +6032,6 @@ void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 	}
 
 	mFaceList.clear();
-
-	if (pAvatarVO)
-	{
-		pAvatarVO->mAttachmentGeometryBytes += group->mGeometryBytes;
-		pAvatarVO->mAttachmentSurfaceArea += group->mSurfaceArea;
-	}
 }
 
 static LLTrace::BlockTimerStatHandle FTM_REBUILD_MESH_FLUSH("Flush Mesh");
@@ -5535,6 +6062,8 @@ void LLVolumeGeometryManager::rebuildMesh(LLSpatialGroup* group)
 			if (drawablep && !drawablep->isDead() && drawablep->isState(LLDrawable::REBUILD_ALL) && !drawablep->isState(LLDrawable::RIGGED) )
 			{
 				LLVOVolume* vobj = drawablep->getVOVolume();
+				if (vobj->isNoLOD()) continue;
+
 				vobj->preRebuild();
 
 				if (drawablep->isState(LLDrawable::ANIMATED_CHILD))

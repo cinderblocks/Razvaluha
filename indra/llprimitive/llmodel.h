@@ -39,7 +39,6 @@ class domMesh;
 
 #define MAX_MODEL_FACES 8
 
-
 class LLMeshSkinInfo 
 {
 public:
@@ -51,7 +50,7 @@ public:
 	LLUUID mMeshID;
 	std::vector<std::string> mJointNames;
     mutable std::vector<S32> mJointNums;
-	std::vector<LLMatrix4a, boost::alignment::aligned_allocator<LLMatrix4a, 64>> mInvBindMatrix;
+	std::vector<LLMatrix4, boost::alignment::aligned_allocator<LLMatrix4, 64>> mInvBindMatrix;
 	std::vector<LLMatrix4> mAlternateBindMatrix;
 
 	LLMatrix4 mBindShapeMatrix;

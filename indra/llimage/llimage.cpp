@@ -818,6 +818,7 @@ U8* LLImageBase::allocateDataSize(S32 width, S32 height, S32 ncomponents, S32 si
 
 S64 LLImageRaw::sGlobalRawMemory = 0;
 S32 LLImageRaw::sRawImageCount = 0;
+S32 LLImageRaw::sRawImageCachedCount = 0;
 
 LLImageRaw::LLImageRaw()
 	: LLImageBase()

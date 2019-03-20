@@ -284,10 +284,10 @@ int	LLFile::rename_nowarn(const std::string& filename, const std::string& newnam
 	return rc;
 }
 
-int	LLFile::rename(const std::string& filename, const std::string& newname)
+int	LLFile::rename(const std::string& filename, const std::string& newname, int supress_error)
 {
 	int rc = LLFile::rename_nowarn(filename, newname);
-	return warnif(STRINGIZE("rename to '" << newname << "' from"), filename, rc);
+	return warnif(STRINGIZE("rename to '" << newname << "' from"), filename, rc, supress_error);
 }
 
 bool LLFile::copy(const std::string& from, const std::string& to)

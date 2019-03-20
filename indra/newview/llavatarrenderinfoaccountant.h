@@ -58,8 +58,6 @@ private:
 
     static void avatarRenderInfoGetCoro(std::string url, U64 regionHandle);
     static void avatarRenderInfoReportCoro(std::string url, U64 regionHandle);
-
-
 };
 
 #endif /* ! defined(LL_llavatarrenderinfoaccountant_H) */

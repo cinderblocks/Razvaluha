@@ -1575,7 +1575,7 @@ void LLDAELoader::processDomModel(LLModel* model, DAE* dae, daeElement* root, do
 			//and store it in the alternate bind matrix
 			if ( mJointMap.find( lookingForJoint ) != mJointMap.end() )
 			{
-				LLMatrix4 newInverse(model->mSkinInfo.mInvBindMatrix[i].getF32ptr());
+				LLMatrix4 newInverse = model->mSkinInfo.mInvBindMatrix[i];
 				newInverse.setTranslation( mJointList[lookingForJoint].getTranslation() );
 				model->mSkinInfo.mAlternateBindMatrix.push_back( newInverse );
             }
@@ -1701,6 +1701,7 @@ void LLDAELoader::processDomModel(LLModel* model, DAE* dae, daeElement* root, do
 			}
 
 		}
+
 		//add instance to scene for this model
 
 		LLMatrix4 transformation;
@@ -2649,4 +2650,3 @@ bool LLDAELoader::createVolumeFacesFromDomMesh(LLModel* pModel, domMesh* mesh)
 
 	return false;
 }
-
