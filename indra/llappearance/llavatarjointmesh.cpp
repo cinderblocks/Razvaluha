@@ -114,11 +114,11 @@ BOOL LLSkinJoint::setupSkinJoint( LLAvatarJoint *joint)
 	}
 
 	// compute the inverse root skin matrix
-	mRootToJointSkinOffset = totalSkinOffset(joint);
+	mRootToJointSkinOffset = totalSkinOffset(mJoint);
     mRootToJointSkinOffset = -mRootToJointSkinOffset;
 
 	//mRootToParentJointSkinOffset = totalSkinOffset((LLAvatarJoint*)joint->getParent());
-	mRootToParentJointSkinOffset = totalSkinOffset(getBaseSkeletonAncestor(joint));
+	mRootToParentJointSkinOffset = totalSkinOffset(getBaseSkeletonAncestor(mJoint));
 	mRootToParentJointSkinOffset = -mRootToParentJointSkinOffset;
 
 	return TRUE;
