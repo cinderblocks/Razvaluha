@@ -1476,6 +1476,11 @@ void LLDrawPoolAvatar::updateRiggedFaceVertexBuffer(LLVOAvatar* avatar, LLFace* 
 	LLPointer<LLVertexBuffer> buffer = face->getVertexBuffer();
 	LLDrawable* drawable = face->getDrawable();
 
+	if (drawable->getVOVolume() && drawable->getVOVolume()->isNoLOD())
+	{
+		return;
+	}
+
 	U32 data_mask = face->getRiggedVertexBufferDataMask();
 
 	if (!vol_face.mWeightsScrubbed)
@@ -1576,9 +1581,15 @@ void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 		{
 			if (sShaderLevel > 0)
 			{
-				auto& mesh_cache = avatar->getRiggedMatrixCache();
-				auto& mesh_id = skin->mMeshID;
-				auto rigged_matrix_data_iter = find_if(mesh_cache.begin(), mesh_cache.end(), [&mesh_id](decltype(mesh_cache[0]) & entry) { return entry.first == mesh_id; });
+				static LLCachedControl<bool> sh_use_rigging_cache("SHUseRiggedMatrixCache", true);
+				auto& mesh_cache = avatar->getRiggedMatrixCache();;
+				auto rigged_matrix_data_iter = mesh_cache.cend();
+				if (sh_use_rigging_cache)
+				{
+					auto& mesh_id = skin->mMeshID;
+					rigged_matrix_data_iter = find_if(mesh_cache.begin(), mesh_cache.end(), [&mesh_id](decltype(mesh_cache[0]) & entry) { return entry.first == mesh_id; });
+					
+				}
 				if (rigged_matrix_data_iter != avatar->getRiggedMatrixCache().cend())
 				{
 					LLDrawPoolAvatar::sVertexProgram->uniformMatrix3x4fv(LLViewerShaderMgr::AVATAR_MATRIX,
@@ -1586,8 +1597,6 @@ void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 						FALSE,
 						(GLfloat*)rigged_matrix_data_iter->second.second.data());
 					LLDrawPoolAvatar::sVertexProgram->uniform1f(LLShaderMgr::AVATAR_MAX_WEIGHT, F32(rigged_matrix_data_iter->second.first - 1));
-
-					stop_glerror();
 				}
 				else
 				{
@@ -1619,7 +1628,8 @@ void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 						mp[idx + 10] = m[10];
 						mp[idx + 11] = m[14];
 					}
-					mesh_cache.emplace_back(std::make_pair( skin->mMeshID, std::make_pair(count, mp) ) );
+					if (sh_use_rigging_cache)
+						mesh_cache.emplace_back(std::make_pair( skin->mMeshID, std::make_pair(count, mp) ) );
 					LLDrawPoolAvatar::sVertexProgram->uniformMatrix3x4fv(LLViewerShaderMgr::AVATAR_MATRIX,
 						count,
 						FALSE,
