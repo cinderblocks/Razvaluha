@@ -304,8 +304,11 @@ void LLKeyboardSDL2::scanKeyboard()
 	// Reset edges for next frame
 	for (S32 key = 0; key < KEY_COUNT; key++)
 	{
-		mKeyUp[key] = FALSE;
-		mKeyDown[key] = FALSE;
+		if (!mControllerKeys[key])
+		{
+			mKeyUp[key] = FALSE;
+			mKeyDown[key] = FALSE;
+		}
 		if (mKeyLevel[key])
 		{
 			mKeyLevelFrameCount[key]++;
