@@ -51,6 +51,8 @@
 #include "llwlparammanager.h"
 #include "llwaterparammanager.h"
 
+static const LLUUID IMG_BLOOM1("3c59f7fe-9dc8-47f9-8aaf-a9dd1fbc3bef"); // Singu TODO: Remove this with more of EEP
+
 #undef min
 #undef max
 

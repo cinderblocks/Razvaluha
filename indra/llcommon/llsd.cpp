@@ -134,6 +134,7 @@ public:
 	
 	virtual bool has(const String&) const		{ return false; }
 	virtual LLSD get(const String&) const		{ return LLSD(); }
+	virtual LLSD getKeys() const				{ return LLSD::emptyArray(); }
 	virtual void erase(const String&)			{ }
 	virtual const LLSD& ref(const String&) const{ return undef(); }
 	
@@ -385,6 +386,7 @@ namespace
 		using LLSD::Impl::erase; // Unhiding erase(LLSD::Integer)
 		using LLSD::Impl::ref; // Unhiding ref(LLSD::Integer)
 		LLSD get(const LLSD::String&) const override; 
+		LLSD getKeys() const override; 
 		void insert(const LLSD::String& k, const LLSD& v);
 		void erase(const LLSD::String&) override;
 		              LLSD& ref(const LLSD::String&);
@@ -427,6 +429,18 @@ namespace
 		return (i != mData.end()) ? i->second : LLSD();
 	}
 	
+	LLSD ImplMap::getKeys() const
+	{ 
+		LLSD keys = LLSD::emptyArray();
+		DataMap::const_iterator iter = mData.begin();
+		while (iter != mData.end())
+		{
+			keys.append((*iter).first);
+			iter++;
+		}
+		return keys;
+	}
+
 	void ImplMap::insert(const LLSD::String& k, const LLSD& v)
 	{
 		mData.insert(DataMap::value_type(k, v));
@@ -507,7 +521,7 @@ namespace
 		LLSD get(LLSD::Integer) const override;
 		        void set(LLSD::Integer, const LLSD&);
 		        void insert(LLSD::Integer, const LLSD&);
-		        void append(const LLSD&);
+		        LLSD& append(const LLSD&);
 		void erase(LLSD::Integer) override;
 		              LLSD& ref(LLSD::Integer);
 		const LLSD& ref(LLSD::Integer) const override; 
@@ -575,9 +589,10 @@ namespace
 		mData.insert(mData.begin() + index, v);
 	}
 	
-	void ImplArray::append(const LLSD& v)
+	LLSD& ImplArray::append(const LLSD& v)
 	{
 		mData.push_back(v);
+		return mData.back();
 	}
 	
 	void ImplArray::erase(LLSD::Integer i)
@@ -868,6 +883,7 @@ LLSD LLSD::emptyMap()
 
 bool LLSD::has(const String& k) const	{ return safe(impl).has(k); }
 LLSD LLSD::get(const String& k) const	{ return safe(impl).get(k); } 
+LLSD LLSD::getKeys() const				{ return safe(impl).getKeys(); } 
 void LLSD::insert(const String& k, const LLSD& v) {	makeMap(impl).insert(k, v); }
 
 LLSD& LLSD::with(const String& k, const LLSD& v)
@@ -901,7 +917,7 @@ LLSD& LLSD::with(Integer i, const LLSD& v)
 											makeArray(impl).insert(i, v); 
 											return *this;
 										}
-void LLSD::append(const LLSD& v)		{ makeArray(impl).append(v); }
+LLSD& LLSD::append(const LLSD& v)		{ return makeArray(impl).append(v); }
 void LLSD::erase(Integer i)				{ makeArray(impl).erase(i); }
 
 LLSD&		LLSD::operator[](Integer i)

@@ -31,17 +31,17 @@
 #include "llinventorytype.h"
 #include "llinventorydefines.h"
 
-static LLTranslationBridge* sTrans = nullptr;
+static LLTranslationBridge::ptr_t sTrans = NULL;
 
 // static
-void LLWearableType::initClass(LLTranslationBridge* trans)
+void LLWearableType::initClass(LLTranslationBridge::ptr_t &trans)
 {
 	sTrans = trans;
 }
 
 void LLWearableType::cleanupClass()
 {
-	delete sTrans;
+	sTrans.reset();
 }
 
 struct WearableEntry : public LLDictionaryEntry
@@ -54,8 +54,8 @@ struct WearableEntry : public LLDictionaryEntry
 				  BOOL allow_multiwear = TRUE) :
 		LLDictionaryEntry(name),
 		mAssetType(assetType),
-		mLabel(sTrans->getString(name)),
 		mDefaultNewName(default_new_name),
+		mLabel(sTrans->getString(name)),
 		mIconName(iconName),
 		mDisableCameraSwitch(disable_camera_switch),
 		mAllowMultiwear(allow_multiwear)
@@ -106,7 +106,7 @@ LLWearableDictionary::LLWearableDictionary()
 //	addEntry(LLWearableType::WT_PHYSICS,      new WearableEntry("physics",     "New Physics",		LLAssetType::AT_CLOTHING, 	LLInventoryType::ICONNAME_CLOTHING_PHYSICS, TRUE, TRUE));
 
 	addEntry(LLWearableType::WT_UNKNOWN,      new WearableEntry("unknown",     "Clothing",			LLAssetType::AT_CLOTHING, 	LLInventoryType::ICONNAME_CLOTHING_UNKNOWN, FALSE, TRUE));
-	addEntry(LLWearableType::WT_INVALID,      new WearableEntry("invalid",     "Invalid Wearable", 	LLAssetType::AT_NONE, 		LLInventoryType::ICONNAME_NONE, FALSE, FALSE));
+	addEntry(LLWearableType::WT_INVALID,      new WearableEntry("invalid",     "Invalid Wearable", 	LLAssetType::AT_NONE, 		LLInventoryType::ICONNAME_UNKNOWN, FALSE, FALSE));
 	addEntry(LLWearableType::WT_NONE,      	  new WearableEntry("none",        "Invalid Wearable", 	LLAssetType::AT_NONE, 		LLInventoryType::ICONNAME_NONE, FALSE, FALSE));
 }
 
@@ -184,6 +184,6 @@ BOOL LLWearableType::getAllowMultiwear(LLWearableType::EType type)
 // static
 LLWearableType::EType LLWearableType::inventoryFlagsToWearableType(U32 flags)
 {
-    return  (LLWearableType::EType)(flags & LLInventoryItemFlags::II_FLAGS_WEARABLES_MASK);
+    return  (LLWearableType::EType)(flags & LLInventoryItemFlags::II_FLAGS_SUBTYPE_MASK);
 }
 

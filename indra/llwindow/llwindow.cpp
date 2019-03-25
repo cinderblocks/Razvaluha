@@ -86,7 +86,7 @@ S32 OSMessageBox(const std::string& text, const std::string& caption, U32 type)
 	S32 result = 0;
 #if LL_MESA_HEADLESS // !!! *FIX: (?)
 	LL_WARNS() << "OSMessageBox: " << text << LL_ENDL;
-	return OSBTN_OK;
+	result = OSBTN_OK;
 #elif LL_SDL2
 	result = OSMessageBoxSDL2(text, caption, type);
 #elif LL_SDL
@@ -265,17 +265,46 @@ BOOL LLWindow::copyTextToPrimary(const LLWString &src)
 	return FALSE; // fail
 }
 
+#if LL_WINDOWS
+#include <shellapi.h>
+#endif
+
 int LLWindow::ShellEx(const std::string& command)
 {
-	constexpr auto&& open =
 #if LL_WINDOWS
-	"start \"\" \""; // Quoted first argument is the title of the command prompt
+	llutf16string url_utf16 = L'"' + utf8str_to_utf16str(command) + L'"';
+	SHELLEXECUTEINFO sei = { sizeof( sei ) };
+	sei.fMask = SEE_MASK_NOASYNC;
+	sei.nShow = SW_SHOWNORMAL;
+	sei.lpVerb = L"open";
+	sei.lpFile = url_utf16.c_str();
+	const auto& code = ShellExecuteEx(&sei) ? 0 : GetLastError();
 #elif LL_DARWIN
-	"open \"";
+	CFURLRef urlRef;
+	CFStringRef stringRef = CFStringCreateWithCString(NULL, command.c_str(), kCFStringEncodingUTF8);
+	if (stringRef)
+	{
+		// This will succeed if the string is a full URL, including the http://
+		// Note that URLs specified this way need to be properly percent-escaped.
+		urlRef = CFURLCreateWithString(NULL, stringRef, NULL);
+
+		// Don't use CRURLCreateWithFileSystemPath -- only want valid URLs
+		CFRelease(stringRef);
+	}
+
+	OSStatus code;
+	if (urlRef)
+	{
+		code = LSOpenCFURLRef(urlRef, NULL);
+		CFRelease(urlRef);
+	}
+	else code = -1;
 #else // LL_LINUX or other modern unix, pray it has xdg-open
-	"xdg-open \"";
+	const auto& code = std::system(("xdg-open \"" + command + '"').c_str());
 #endif
-	return std::system((open + command + '"').c_str());
+
+	if (code) LL_WARNS() << "Failed to open \"" << command << "\" return code: " << code << LL_ENDL;
+	return code;
 }
 
 // static

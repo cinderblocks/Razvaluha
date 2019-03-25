@@ -59,6 +59,7 @@
 #include "llstylemap.h"
 #include "lltrans.h"
 #include "lluictrlfactory.h"
+#include "llversioninfo.h"
 #include "llviewerobjectlist.h"
 #include "llviewerregion.h"
 #include "llviewerstats.h"
@@ -66,6 +67,7 @@
 #include "llviewerwindow.h"
 #include "llvoicechannel.h"
 
+#include <boost/algorithm/string.hpp>
 #include <boost/lambda/lambda.hpp>
 
 // [RLVa:KB] - Checked: 2013-05-10 (RLVa-1.4.9)
@@ -276,7 +278,8 @@ LLFloaterIMPanel::LLFloaterIMPanel(
 		{
 			static LLCachedControl<bool> concise("UseConciseGroupChatButtons");
 			xml_filename = concise ? "floater_instant_message_group_concisebuttons.xml" : "floater_instant_message_group.xml";
-			mSessionType = GROUP_SESSION;
+			bool support = boost::starts_with(mLogLabel, LLTrans::getString("SHORT_APP_NAME") + ' ');
+			mSessionType = support ? SUPPORT_SESSION : GROUP_SESSION;
 		}
 		else
 		{
@@ -495,7 +498,6 @@ BOOL LLFloaterIMPanel::postBuild()
 
 		mHistoryEditor = getChild<LLViewerTextEditor>("im_history");
 		mHistoryEditor->setParseHTML(TRUE);
-		mHistoryEditor->setParseHighlights(TRUE);
 
 		sTitleString = getString("title_string");
 		sTypingStartString = getString("typing_start_string");
@@ -506,10 +508,20 @@ BOOL LLFloaterIMPanel::postBuild()
 			mSpeakerPanel->refreshSpeakers();
 		}
 
-		if (mSessionType == P2P_SESSION)
+		switch (mSessionType)
+		{
+		case P2P_SESSION:
 		{
 			getChild<LLUICtrl>("mute_btn")->setCommitCallback(boost::bind(&LLFloaterIMPanel::onClickMuteVoice, this));
 			getChild<LLUICtrl>("speaker_volume")->setCommitCallback(boost::bind(&LLVoiceClient::setUserVolume, LLVoiceClient::getInstance(), mOtherParticipantUUID, _2));
+		}
+		break;
+		case SUPPORT_SESSION:
+			getChildView("Support Check")->setVisible(true);
+			// Singu Note: We could make a button feature for dumping Help->About contents for support, too.
+		break;
+		default:
+		break;
 		}
 
 		setDefaultBtn("send_btn");
@@ -1034,6 +1046,7 @@ void LLFloaterIMPanel::onFlyoutCommit(LLComboBox* flyout, const LLSD& value)
 	{
 		switch (mSessionType)
 		{
+			case SUPPORT_SESSION:
 			case GROUP_SESSION: LLGroupActions::show(mOtherParticipantUUID); return;
 			case P2P_SESSION: LLAvatarActions::showProfile(mOtherParticipantUUID); return;
 			default: onClickHistory(); return; // If there's no profile for this type, we should be the history button.
@@ -1220,6 +1233,8 @@ void LLFloaterIMPanel::onSendMsg()
 					case GROUP_SESSION:	// Group chat
 						fRlvFilter = !RlvActions::canSendIM(mSessionUUID);
 						break;
+					case SUPPORT_SESSION: // Support Group, never filter, they may need help!!
+						break;
 					case ADHOC_SESSION:	// Conference chat: allow if all participants can be sent an IM
 						{
 							if (!mSpeakers)
@@ -1253,6 +1268,11 @@ void LLFloaterIMPanel::onSendMsg()
 				}
 			}
 // [/RLVa:KB]
+
+			if (mSessionType == SUPPORT_SESSION && getChildView("Support Check")->getValue())
+			{
+				utf8_text.insert(action ? 3 : 0, llformat(action ? " (%d)" : "(%d): ", LLVersionInfo::getBuild()));
+			}
 
 			if ( mSessionInitialized )
 			{
@@ -1313,7 +1333,7 @@ void LLFloaterIMPanel::onSendMsg()
 					// Look for actions here.
 					if (action)
 					{
-						utf8_text.replace(0,3,"");
+						utf8_text.erase(0,3);
 					}
 					else
 					{
