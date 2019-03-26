@@ -176,18 +176,7 @@ LLDir_Win32::LLDir_Win32()
 
 //	LL_INFOS() << "mAppRODataDir = " << mAppRODataDir << LL_ENDL;
 
-	auto build_dir_pos = mExecutableDir.rfind("build-");
-	if (build_dir_pos != std::string::npos)
-	{
-		// ...we're in a dev checkout
-		mSkinBaseDir = add(mExecutableDir.substr(0, build_dir_pos), "indra", "newview", "skins");
-		if (LLFile::isdir(mSkinBaseDir))
-			LL_INFOS() << "Running in dev checkout with mSkinBaseDir " << mSkinBaseDir << LL_ENDL;
-		else mSkinBaseDir.clear();
-	}
-
-	if (mSkinBaseDir.empty()) // ...normal installation running
-		mSkinBaseDir = add(mAppRODataDir, "skins");
+	mSkinBaseDir = mAppRODataDir + mDirDelimiter + "skins";
 
 	// Build the default cache directory
 	mDefaultCacheDir = buildSLOSCacheDir();

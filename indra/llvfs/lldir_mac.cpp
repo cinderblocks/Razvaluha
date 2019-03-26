@@ -86,30 +86,8 @@ LLDir_Mac::LLDir_Mac()
 		// mAppRODataDir
 		std::string resourcepath = getSystemResourceFolder();
 		mAppRODataDir = resourcepath;
-		
-		// *NOTE: When running in a dev tree, use the copy of
-		// skins in indra/newview/ rather than in the application bundle.  This
-		// mirrors Windows dev environment behavior and allows direct checkin
-		// of edited skins/xui files. JC
-		
-		// MBW -- This keeps the mac application from finding other things.
-		// If this is really for skins, it should JUST apply to skins.
-		
-		size_t build_dir_pos = mExecutableDir.rfind("/build-darwin-");
-		if (build_dir_pos != std::string::npos)
-		{
-			// ...we're in a dev checkout
-			mSkinBaseDir = mExecutableDir.substr(0, build_dir_pos)
-			+ "/indra/newview/skins";
-			LL_INFOS() << "Running in dev checkout with mSkinBaseDir "
-			<< mSkinBaseDir << LL_ENDL;
-		}
-		else
-		{
-			// ...normal installation running
-			mSkinBaseDir = mAppRODataDir + mDirDelimiter + "skins";
-		}
-		
+		mSkinBaseDir = mAppRODataDir + mDirDelimiter + "skins";
+
 		// mOSUserDir
 		std::string appdir = getSystemApplicationSupportFolder();
 		std::string rootdir;
