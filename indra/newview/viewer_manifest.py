@@ -906,7 +906,7 @@ class DarwinManifest(ViewerManifest):
 
     def construct(self):
         # copy over the build result (this is a no-op if run within the xcode script)
-        self.path(self.args['configuration'] + "/" + self.app_name() + ".app", dst="")
+        self.path(self.args['configuration'] + "/" + self.app_name_oneword() + ".app", dst="")
 
         pkgdir = os.path.join(self.args['build'], os.pardir, 'packages')
         relpkgdir = os.path.join(pkgdir, "lib", "release")
@@ -1155,7 +1155,7 @@ class DarwinManifest(ViewerManifest):
         # This may be desirable for the final release.  Or not.
         if ("package" in self.args['actions'] or
             "unpacked" in self.args['actions']):
-            self.run_command(['strip', '-S', self.dst_path_of('Contents/MacOS/%s' % self.viewer_branding_id())])
+            self.run_command(['strip', '-S', self.dst_path_of('Contents/MacOS/%s' % self.app_name_oneword())])
 
     def copy_finish(self):
         # Force executable permissions to be set for scripts
@@ -1200,7 +1200,7 @@ class DarwinManifest(ViewerManifest):
 
             # Copy everything in to the mounted .dmg
 
-            app_name = self.app_name()
+            app_name = self.app_name_one_word()
 
             # Hack:
             # Because there is no easy way to coerce the Finder into positioning
@@ -1258,7 +1258,7 @@ class DarwinManifest(ViewerManifest):
             # the signature are preserved; moving the files using python will leave them behind
             # and invalidate the signatures.
             if 'signature' in self.args:
-                app_in_dmg=os.path.join(volpath,self.app_name()+".app")
+                app_in_dmg=os.path.join(volpath,self.app_name_one_word()+".app")
                 print "Attempting to sign '%s'" % app_in_dmg
                 identity = self.args['signature']
                 if identity == '':
@@ -1313,7 +1313,7 @@ class DarwinManifest(ViewerManifest):
                                 raise
                     self.run_command(['spctl', '-a', '-texec', '-vv', app_in_dmg])
 
-            imagename= self.app_name() + "_" + '_'.join(self.args['version'])
+            imagename= self.app_name_one_word() + "_" + '_'.join(self.args['version'])
 
 
         finally:

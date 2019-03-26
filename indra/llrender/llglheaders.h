@@ -371,6 +371,20 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 
 #include <OpenGL/gl3.h>
 
+// Shyotl/Bitten Note: Work around missing extensions on mac for OpenGL 3
+#ifndef GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT
+#define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT 0x8CD9
+#endif
+
+#ifndef GL_FRAMEBUFFER_EXT
+#define GL_FRAMEBUFFER_EXT GL_FRAMEBUFFER
+#endif
+
+#ifndef GL_COMPARE_R_TO_TEXTURE
+#define GL_COMPARE_R_TO_TEXTURE GL_COMPARE_REF_TO_TEXTURE
+#endif
+// End Shyotl/Bitten Note
+
 #define GL_EXT_separate_specular_color 1
 #include <OpenGL/gl3ext.h>
 

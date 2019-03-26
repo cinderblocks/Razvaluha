@@ -290,6 +290,10 @@ public:
 	virtual void disable() = 0;
 };
 
+#if LL_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundefined-var-template"
+#endif
 template <LLGLenum state>
 class LLGLState : public LLGLStateIface
 {
@@ -355,6 +359,10 @@ private:
 		}
 	}
 };
+#if LL_CLANG
+# pragma clang diagnostic pop
+#endif
+
 #define initLLGLState(state, value, disabler_ptr) \
 	template <> \
     LLGLStateStaticData LLGLState<state>::staticData = {#state, state, value, 0, nullptr, disabler_ptr}; \
@@ -363,6 +371,7 @@ private:
 template <>
 class LLGLState<0> : public LLGLStateIface
 {
+public:
 	LLGLState(S8 newState = CURRENT_STATE) { }
 	virtual ~LLGLState() { }
 	virtual void enable() { }
