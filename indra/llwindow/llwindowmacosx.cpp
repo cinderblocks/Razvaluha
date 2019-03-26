@@ -1252,7 +1252,8 @@ LLWindow::LLWindowResolution* LLWindowMacOSX::getSupportedResolutions(S32 &num_r
 {
 	if (!mSupportedResolutions)
 	{
-		CFArrayRef modes = CGDisplayCopyAllDisplayModes(mDisplay, NULL);
+		LL_COMPILE_TIME_MESSAGE("CGDisplayAvailableModes is deprecated and needs replaced.");
+		CFArrayRef modes = CGDisplayAvailableModes(mDisplay);
 
 		if(modes != NULL)
 		{
