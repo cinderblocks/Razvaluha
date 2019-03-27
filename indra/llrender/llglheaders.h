@@ -408,7 +408,7 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 #define glGetUniformLocationARB glGetUniformLocation
 #define glBeginQueryARB glBeginQuery
 #define glEndQueryARB glEndQuery
-#define glGenQuerriesARB glGenQueries
+#define glGenQueriesARB glGenQueries
 #define glDeleteQueriesARB glDeleteQueries
 #define glCreateShaderObjectARB glCreateShader
 #define glShaderSourceARB glShaderSource
