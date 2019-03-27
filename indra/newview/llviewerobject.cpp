@@ -2327,7 +2327,7 @@ void LLViewerObject::processTerseData(LLMessageSystem *mesgsys, void **user_data
 #if LL_DARWIN
 		if (length == 76)
 		{
-			setAngularVelocity(LLVector3::zero);
+			setAngularVelocity(LLVector3::zero); // Wtf is this for?
 		}
 #endif
 		break;

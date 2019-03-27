@@ -149,6 +149,8 @@ if (WINDOWS)
     add_definitions(/WX)
   endif (NOT DISABLE_FATAL_WARNINGS)
 
+  add_compile_definitions(LL_GL_CORE=3.2)
+
   # configure win32 API for windows Vista+ compatibility
   set(WINVER "0x0600" CACHE STRING "Win32 API Target version (see http://msdn.microsoft.com/en-us/library/aa383745%28v=VS.85%29.aspx)")
   add_definitions("/DWINVER=${WINVER}" "/D_WIN32_WINNT=${WINVER}")

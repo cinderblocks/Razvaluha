@@ -103,7 +103,6 @@ public:
 	S32  mNumTextureImageUnits;
 	BOOL mHasOcclusionQuery;
 	BOOL mHasOcclusionQuery2;
-	BOOL mHasPointParameters;
 	BOOL mHasDrawBuffers;
 	BOOL mHasDepthClamp;
 	BOOL mHasTransformFeedback;
