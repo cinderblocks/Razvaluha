@@ -1200,7 +1200,7 @@ class DarwinManifest(ViewerManifest):
 
             # Copy everything in to the mounted .dmg
 
-            app_name = self.app_name_one_word()
+            app_name = self.app_name_oneword()
 
             # Hack:
             # Because there is no easy way to coerce the Finder into positioning
@@ -1258,7 +1258,7 @@ class DarwinManifest(ViewerManifest):
             # the signature are preserved; moving the files using python will leave them behind
             # and invalidate the signatures.
             if 'signature' in self.args:
-                app_in_dmg=os.path.join(volpath,self.app_name_one_word()+".app")
+                app_in_dmg=os.path.join(volpath,self.app_name_oneword()+".app")
                 print "Attempting to sign '%s'" % app_in_dmg
                 identity = self.args['signature']
                 if identity == '':
@@ -1313,7 +1313,7 @@ class DarwinManifest(ViewerManifest):
                                 raise
                     self.run_command(['spctl', '-a', '-texec', '-vv', app_in_dmg])
 
-            imagename= self.app_name_one_word() + "_" + '_'.join(self.args['version'])
+            imagename= self.app_name_oneword() + "_" + '_'.join(self.args['version'])
 
 
         finally:
