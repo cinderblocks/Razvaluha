@@ -202,10 +202,6 @@ extern PFNGLGETQUERYOBJECTUIVARBPROC glGetQueryObjectuivARB;
 
 extern PFNGLGETQUERYOBJECTUI64VEXTPROC glGetQueryObjectui64vEXT;
 
-// GL_ARB_point_parameters
-extern PFNGLPOINTPARAMETERFARBPROC glPointParameterfARB;
-extern PFNGLPOINTPARAMETERFVARBPROC glPointParameterfvARB;
-
 // GL_ARB_shader_objects
 extern PFNGLDELETEOBJECTARBPROC glDeleteShader;
 extern PFNGLDELETEOBJECTARBPROC glDeleteProgram;
@@ -379,6 +375,7 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 #include <AvailabilityMacros.h>
 
 #define ARB_FN(fn)
+#define glGetQueryObjectui64vEXT glGetQueryObjectui64v;
 #define glUniform1iARB glUniform1i
 #define glUniform1ivARB glUniform1iv
 #define glUniform1fARB glUniform1f
@@ -397,6 +394,7 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 #define glGetUniformLocationARB glGetUniformLocation
 #define glBeginQueryARB glBeginQuery
 #define glEndQueryARB glEndQuery
+#define glGenQuerriesARB glGenQueries
 #define glDeleteQueriesARB glDeleteQueries
 #define glCreateShaderObjectARB glCreateShader
 #define glShaderSourceARB glShaderSource

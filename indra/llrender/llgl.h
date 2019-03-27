@@ -103,7 +103,6 @@ public:
 	S32  mNumTextureImageUnits;
 	BOOL mHasOcclusionQuery;
 	BOOL mHasOcclusionQuery2;
-	BOOL mHasPointParameters;
 	BOOL mHasDrawBuffers;
 	BOOL mHasDepthClamp;
 	BOOL mHasTransformFeedback;
@@ -363,6 +362,7 @@ private:
 template <>
 class LLGLState<0> : public LLGLStateIface
 {
+public:
 	LLGLState(S8 newState = CURRENT_STATE) { }
 	virtual ~LLGLState() { }
 	virtual void enable() { }

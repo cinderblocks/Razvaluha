@@ -45,6 +45,9 @@ class LLPhysicsMotionController :
 	public LLMotion
 {
 public:
+
+	std::string getString();
+
 	// Constructor
 	LLPhysicsMotionController(const LLUUID &id);
 
@@ -112,6 +115,8 @@ private:
 
 	typedef std::vector<LLPhysicsMotion *> motion_vec_t;
 	motion_vec_t mMotions;
+
+	bool mIsDefault;
 };
 
 #endif // LL_LLPHYSICSMOTION_H

@@ -34,13 +34,6 @@
 #include "llcontrol.h"
 #include "llvertexbuffer.h"
 
-#if LL_DARWIN
-#include "OpenGL/OpenGL.h"
-#include <OpenGL/gl.h> //OS x libs
-#include <OpenGL/glu.h>
-#include <GLUT/glut.h>
-#endif
-
 #ifdef LL_RELEASE_FOR_DOWNLOAD
 #define UNIFORM_ERRS LL_WARNS_ONCE("Shader")
 #else
@@ -395,11 +388,6 @@ BOOL LLGLSLShader::createShader(std::vector<LLStaticHashedString> * attributes,
 	// Create program
 	mProgramObject = glCreateProgramObjectARB();
 	
-#if LL_DARWIN
-    // work-around missing mix(vec3,vec3,bvec3)
-    mDefines["OLD_SELECT"] = "1";
-#endif
-	
 	//compile new source
 	vector< pair<string,GLenum> >::iterator fileIter = mShaderFiles.begin();
 	for ( ; fileIter != mShaderFiles.end(); fileIter++ )
@@ -587,7 +575,6 @@ void LLGLSLShader::mapUniform(const gl_uniform_data_t& gl_uniform, const vector<
 {
 	GLint size = gl_uniform.size;
 	char* name = (char*)gl_uniform.name.c_str(); //blegh
-#if !LL_DARWIN
 	if (size > 0)
 	{
 		switch(gl_uniform.type)
@@ -629,7 +616,6 @@ void LLGLSLShader::mapUniform(const gl_uniform_data_t& gl_uniform, const vector<
 		}
 		mTotalUniformSize += size;
 	}
-#endif
 
 	S32 location = glGetUniformLocationARB(mProgramObject, name);
 	if (location != -1)
