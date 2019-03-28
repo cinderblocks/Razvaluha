@@ -773,6 +773,7 @@ void gl_stippled_line_3d( const LLVector3& start, const LLVector3& end, const LL
 #ifndef LL_GL_CORE
 	if (!LLGLSLShader::sNoFixedFunction)
 	{
+		S32 shift = S32(phase * 4.f) % 4;
 		glLineStipple(2, 0x3333 << shift);
 	}
 #endif
