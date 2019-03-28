@@ -400,6 +400,10 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 #define GL_OBJECT_ACTIVE_UNIFORMS_ARB     0x8B86
 #endif
 
+#ifndef GL_SAMPLES_PASSED_ARB
+#define GL_SAMPLES_PASSED_ARB GL_SAMPLES_PASSED
+#endif
+
 // End Shyotl/Bitten Note
 
 #define GL_EXT_separate_specular_color 1
