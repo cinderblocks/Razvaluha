@@ -39,7 +39,6 @@
 #include "xform.h"
 #include "llvertexbuffer.h"
 #include "llviewertexture.h"
-#include "llstat.h"
 #include "lldrawable.h"
 
 class LLFacePool;

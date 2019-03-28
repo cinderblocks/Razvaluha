@@ -38,6 +38,7 @@
 #include "llfontgl.h"
 #include "llglheaders.h"
 #include "llhudrender.h"
+#include "lltracerecording.h"
 #include "llui.h"
 #include "llviewercamera.h"
 #include "llviewertexturelist.h"
@@ -886,8 +887,8 @@ void LLHUDNameTag::updateAll()
 //		}
 	}
 
-	LLStat* camera_vel_stat = LLViewerCamera::getInstance()->getVelocityStat();
-	F32 camera_vel = camera_vel_stat->getCurrent();
+	LLTrace::CountStatHandle<>* camera_vel_stat = LLViewerCamera::getVelocityStat();
+	F32 camera_vel = LLTrace::get_frame_recording().getLastRecording().getPerSec(*camera_vel_stat);
 	if (camera_vel > MAX_STABLE_CAMERA_VELOCITY)
 	{
 		return;

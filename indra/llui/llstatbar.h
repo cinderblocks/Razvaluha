@@ -2,31 +2,25 @@
  * @file llstatbar.h
  * @brief A little map of the world with network information
  *
- * $LicenseInfo:firstyear=2001&license=viewergpl$
- * 
- * Copyright (c) 2001-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2001&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -35,45 +29,92 @@
 
 #include "llview.h"
 #include "llframetimer.h"
-
-class LLStat;
+#include "lltracerecording.h"
 
 class LLStatBar : public LLView
 {
-	enum STAT_MODE_FLAG
-	{
-		STAT_BAR_FLAG = 1,
-		STAT_HISTORY_FLAG = 2
-	};
-	
 public:
-	LLStatBar(const std::string& name, const LLRect& rect, const std::string& setting = std::string(),
-			  BOOL default_bar = FALSE, BOOL default_history = FALSE);
 
-	virtual void draw();
-	virtual BOOL handleMouseDown(S32 x, S32 y, MASK mask);
+	struct Params : public LLInitParam::Block<Params, LLView::Params>
+	{
+		Optional<std::string>	label,
+								unit_label;
 
-	void setUnitLabel(const std::string& unit_label);
-	/*virtual*/ LLRect getRequiredRect();	// Return the height of this object, given the set options.
+		Optional<F32>			bar_min,
+								bar_max,
+								tick_spacing;
 
-	F32 mMinBar;
-	F32 mMaxBar;
-	F32 mTickSpacing;
-	F32 mLabelSpacing;
-	U32 mPrecision;
-	F32 mUpdatesPerSec;
-	BOOL mPerSec;				// Use the per sec stats.
-	BOOL mDisplayBar;			// Display the bar graph.
-	BOOL mDisplayHistory;
-	BOOL mDisplayMean;			// If true, display mean, if false, display current value
+		Optional<bool>			show_bar,
+								show_history,
+								scale_range;
 
-	LLStat *mStatp;
+		Optional<S32>			decimal_digits,
+								num_frames,
+								num_frames_short,
+								max_height;
+		Optional<std::string>	stat, setting;
+		//Optional<EOrientation>	orientation;
+
+		Params();
+	};
+	LLStatBar(const Params&);
+
+	void draw() override;
+	BOOL handleMouseDown(S32 x, S32 y, MASK mask) override;
+	BOOL handleToolTip(S32 x, S32 y, std::string& message, LLRect* sticky_rect) override;
+
+	void setStat(const std::string& stat_name);
+
+	void setRange(F32 bar_min, F32 bar_max);
+	void getRange(F32& bar_min, F32& bar_max) { bar_min = mTargetMinBar; bar_max = mTargetMaxBar; }
+	
+	/*virtual*/ LLRect getRequiredRect() override;	// Return the height of this object, given the set options.
+
 private:
-	LLFrameTimer mUpdateTimer;
-	LLUIString mLabel;
-	std::string mUnitLabel;
-	F32 mValue;
-	std::string mSetting;
+	void drawLabelAndValue( F32 mean, std::string &unit_label, LLRect &bar_rect, S32 decimal_digits );
+	void drawTicks( F32 min, F32 max, F32 value_scale, LLRect &bar_rect );
+
+	F32          mTargetMinBar,
+				 mTargetMaxBar,
+				 mFloatingTargetMinBar,
+				 mFloatingTargetMaxBar,
+				 mCurMaxBar,
+				 mCurMinBar,
+				 mTickSpacing;
+	S32          mDecimalDigits,
+				 mNumHistoryFrames,
+				 mNumShortHistoryFrames;
+	S32			 mMaxHeight;
+	//EOrientation mOrientation;
+	F32			 mLastDisplayValue;
+	LLFrameTimer mLastDisplayValueTimer;
+
+	enum
+	{
+		STAT_NONE,
+		STAT_COUNT,
+		STAT_EVENT,
+		STAT_SAMPLE,
+		STAT_MEM
+	} mStatType;
+
+	union
+	{
+		void*														valid;
+		const LLTrace::StatType<LLTrace::CountAccumulator>*		countStatp;
+		const LLTrace::StatType<LLTrace::EventAccumulator>*		eventStatp;
+		const LLTrace::StatType<LLTrace::SampleAccumulator>*		sampleStatp;
+		const LLTrace::StatType<LLTrace::MemAccumulator>*		memStatp;
+	} mStat;
+
+	LLControlVariable* mSetting;
+	LLUIString   mLabel;
+	std::string  mUnitLabel;
+
+	bool         mDisplayBar,			// Display the bar graph.
+				 mDisplayHistory,
+				 mAutoScaleMax,
+				 mAutoScaleMin;
 };
 
 #endif

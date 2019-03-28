@@ -18,9 +18,11 @@
 #ifndef SGMEMSTAT_H
 #define SGMEMSTAT_H
 
+#include "lltrace.h"
+
 namespace SGMemStat{
 
-bool haveStat();
+LLTrace::SampleStatHandle<F64Megabytes>* getStat();
 
 F32 getMalloc();
 

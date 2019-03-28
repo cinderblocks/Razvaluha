@@ -52,6 +52,7 @@ class LLTextureFetchDebugger;
 class LLTextureCache;
 
 // Interface class
+
 class LLTextureFetch : public LLWorkerThread
 {
 	friend class LLTextureFetchWorker;
@@ -88,6 +89,7 @@ public:
 	//
 	// Threads:  T*
 	void deleteRequest(const LLUUID& id, bool cancel);
+
 	void deleteAllRequests();
 
 	// Threads:  T*
@@ -123,6 +125,7 @@ public:
 
 	// Debug utility - generally not safe
 	void dump();
+
 	// Threads:  T*
 	S32 getNumRequests();
 
@@ -157,7 +160,7 @@ public:
 	void commandSendMetrics(const std::string & caps_url,
 							const LLUUID & session_id,
 							const LLUUID & agent_id,
-							LLViewerAssetStats * main_stats);
+							LLSD& stats_sd);
 
 	// Threads:  T*
 	void commandDataBreak();
@@ -309,11 +312,8 @@ private:
 	LLMutex mQueueMutex;        //to protect mRequestMap and mCommands only
 	LLMutex mNetworkQueueMutex; //to protect mNetworkQueue, mHTTPTextureQueue and mCancelQueue.
 
-	//static LLTrace::EventStatHandle<LLUnit<F32, LLUnits::Percent> > sCacheHitRate;
-	//static LLTrace::EventStatHandle<F64Milliseconds > sCacheReadLatency;
-public:
-	static LLStat sCacheHitRate;
-	static LLStat sCacheReadLatency;
+	static LLTrace::EventStatHandle<LLUnit<F32, LLUnits::Percent> > sCacheHitRate;
+	static LLTrace::EventStatHandle<F64Milliseconds > sCacheReadLatency;
 
 	LLTextureCache* mTextureCache;
 	LLImageDecodeThread* mImageDecodeThread;
@@ -539,7 +539,7 @@ private:
 	S32 mNbCurlRequests;
 	S32 mNbCurlCompleted;
 
-	std::map< LLPointer<LLViewerFetchedTexture>, std::vector<S32> > mRefetchList;
+	std::map< LLPointer<LLViewerFetchedTexture>, std::vector<S32> > mRefetchList; // treats UI textures as normal textures
 	std::vector< LLPointer<LLViewerFetchedTexture> > mTempTexList;
 	S32 mTempIndex;
 	S32 mHistoryListIndex;

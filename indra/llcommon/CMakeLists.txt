@@ -110,7 +110,6 @@ set(llcommon_SOURCE_FILES
     llsdutil.cpp
     llsingleton.cpp
     llstacktrace.cpp
-    llstat.cpp
     llstreamqueue.cpp
     llstreamtools.cpp
     llstring.cpp
@@ -122,6 +121,8 @@ set(llcommon_SOURCE_FILES
     lltimer.cpp
     lltrace.cpp
     lltraceaccumulators.cpp
+    lltracerecording.cpp
+    lltracethreadrecorder.cpp
     lluri.cpp
     lluriparser.cpp
     lluuid.cpp
@@ -232,7 +233,6 @@ set(llcommon_HEADER_FILES
     llsingleton.h
     llsortedvector.h
     llstacktrace.h
-    llstat.h
     llstl.h
     llstreamqueue.h
     llstreamtools.h
@@ -248,6 +248,8 @@ set(llcommon_HEADER_FILES
     lltimer.h
     lltrace.h
     lltraceaccumulators.h
+    lltracerecording.h
+    lltracethreadrecorder.h
     lltreeiterators.h
     llunits.h
     llunittype.h

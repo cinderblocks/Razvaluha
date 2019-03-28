@@ -40,7 +40,6 @@
 
 #include "llwind.h"
 #include "llcloud.h"
-#include "llstat.h"
 #include "v3dmath.h"
 #include "llstring.h"
 #include "llregionflags.h"
@@ -414,9 +413,8 @@ public:
 #endif
 	LLViewerParcelOverlay	*mParcelOverlay;
 
-	LLStat	mBitStat;
-	LLStat	mPacketsStat;
-	LLStat	mPacketsLostStat;
+	F32Bits	mBitsReceived;
+	F32		mPacketsReceived;
 
 	LL_ALIGN_16(LLMatrix4a mRenderMatrix);
 

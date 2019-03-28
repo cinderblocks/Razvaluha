@@ -133,9 +133,11 @@ void LLHoverView::updateHover(LLTool* current_tool)
 				&& !mTyping;
 	if (mUseHover)
 	{
-		if ((gViewerWindow->getMouseVelocityStat()->getPrev(0) < 0.01f)
-			&& (LLViewerCamera::getInstance()->getAngularVelocityStat()->getPrev(0) < 0.01f)
-			&& (LLViewerCamera::getInstance()->getVelocityStat()->getPrev(0) < 0.01f))
+		auto& recording(LLTrace::get_frame_recording().getLastRecording());
+		auto& camera(LLViewerCamera::instance());
+		if (recording.getLastValue(*gViewerWindow->getMouseVelocityStat()) < 0.01f
+			&& (recording.getSum(*camera.getAngularVelocityStat()) < 0.01f)
+			&& (recording.getSum(*camera.getVelocityStat()) < 0.01f))
 		{
 			if (!mStartHoverPickTimer)
 			{

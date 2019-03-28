@@ -66,7 +66,6 @@
 #include "llface.h"
 #include "llfeaturemanager.h"
 #include "llfloatertelehub.h"
-#include "llframestats.h"
 #include "llgldbg.h"
 #include "llhudmanager.h"
 #include "llhudnametag.h"
@@ -417,7 +416,6 @@ void LLPipeline::init()
 	getPool(LLDrawPool::POOL_MATERIALS);
 	getPool(LLDrawPool::POOL_GLOW);
 
-	LLViewerStats::getInstance()->mTrianglesDrawnStat.reset();
 	resetFrameStats();
 
 	if (gSavedSettings.getBOOL("DisableAllRenderFeatures"))
@@ -1766,7 +1764,7 @@ void LLPipeline::resetFrameStats()
 
 	sCompiles = 0;
 
-	LLViewerStats::getInstance()->mTrianglesDrawnStat.addValue(mTrianglesDrawn/1000.f);
+	add(LLStatViewer::TRIANGLES_DRAWN, LLUnits::Triangles::fromValue(mTrianglesDrawn));
 
 	if (mBatchCount > 0)
 	{
@@ -4059,7 +4057,6 @@ void LLPipeline::renderGeom(LLCamera& camera, BOOL forceVBOUpdate)
 	//
 
 	stop_glerror();
-	gFrameStats.start(LLFrameStats::RENDER_SYNC);
 
 	LLVertexBuffer::unbind();
 
@@ -4076,8 +4073,6 @@ void LLPipeline::renderGeom(LLCamera& camera, BOOL forceVBOUpdate)
 	}
 
 	LLAppViewer::instance()->pingMainloopTimeout("Pipeline:ForceVBO");
-	
-	gFrameStats.start(LLFrameStats::RENDER_GEOM);
 
 	// Initialize lots of GL state to "safe" values
 	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
@@ -10175,10 +10170,12 @@ void LLPipeline::generateSunShadow(LLCamera& camera)
 
 	if (gen_shadow)
 	{
-		F32 fade_amt = gFrameIntervalSeconds * llmax(LLViewerCamera::getInstance()->getVelocityStat()->getCurrentPerSec(), 1.f);
+		LLTrace::CountStatHandle<>* velocity_stat = LLViewerCamera::getVelocityStat();
+		F32 fade_amt = gFrameIntervalSeconds.value()
+			* llmax(LLTrace::get_frame_recording().getLastRecording().getSum(*velocity_stat) / LLTrace::get_frame_recording().getLastRecording().getDuration().value(), 1.0);
 
 		//update shadow targets
-		for (U32 i = 0; i < 2; i++)
+		for (U32 i = 0; i < 2; ++i)
 		{ //for each current shadow
 			LLViewerCamera::sCurCameraID = (LLViewerCamera::eCameraID)(LLViewerCamera::CAMERA_SHADOW4+i);
 

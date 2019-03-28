@@ -86,8 +86,8 @@ protected:
 			{
 				// Okay, it appears this request was used for useful things.  Record
 				// the expected dequeue and duration of request processing.
-	            LLViewerAssetStatsFF::record_dequeue_main(mType, mWithHTTP, false);
-	            LLViewerAssetStatsFF::record_response_main(mType, mWithHTTP, false,
+	            LLViewerAssetStatsFF::record_dequeue(mType, mWithHTTP, false);
+	            LLViewerAssetStatsFF::record_response(mType, mWithHTTP, false,
 												  (LLViewerAssetStatsFF::get_timestamp()
                                                    - mMetricsStartTime),
                                                   mBytesFetched);
@@ -492,7 +492,7 @@ void LLViewerAssetStorage::assetRequestCoro(
 			LLTransferTargetChannel *ttcp = gTransferManager.getTargetChannel(mUpstreamHost, LLTCT_ASSET);
 			ttcp->requestTransfer(spa, tpvf, 100.f + (req->mIsPriority ? 1.f : 0.f));
 
-			LLViewerAssetStatsFF::record_enqueue_main(atype, req->mWithHTTP, req->mIsTemp);
+			LLViewerAssetStatsFF::record_enqueue(atype, req->mWithHTTP, req->mIsTemp);
 		}
 		else
 		{
@@ -504,7 +504,7 @@ void LLViewerAssetStorage::assetRequestCoro(
 		return;
 	}
 
-    LLViewerAssetStatsFF::record_enqueue_main(atype, req->mWithHTTP, req->mIsTemp);
+    LLViewerAssetStatsFF::record_enqueue(atype, req->mWithHTTP, req->mIsTemp);
 
     std::string url = getAssetURL(mViewerAssetUrl, uuid,atype);
     LL_DEBUGS("ViewerAsset") << "request url: " << url << LL_ENDL;

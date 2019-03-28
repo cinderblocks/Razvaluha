@@ -48,7 +48,6 @@
 #include "llpanel.h"
 #include "llwindowcallbacks.h"
 #include "lltimer.h"
-#include "llstat.h"
 #include "llmousehandler.h"
 #include "llmousehandler.h"
 #include "llhandle.h"
@@ -235,7 +234,7 @@ public:
 	S32				getCurrentMouseDX()		const	{ return mCurrentMouseDelta.mX; }
 	S32				getCurrentMouseDY()		const	{ return mCurrentMouseDelta.mY; }
 	LLCoordGL		getCurrentMouseDelta()	const	{ return mCurrentMouseDelta; }
-	LLStat*			getMouseVelocityStat()		{ return &mMouseVelocityStat; }
+	static LLTrace::SampleStatHandle<>*	getMouseVelocityStat() { return &sMouseVelocityStat; }
 	BOOL			getLeftMouseDown()	const	{ return mLeftMouseDown; }
 	BOOL			getMiddleMouseDown()	const	{ return mMiddleMouseDown; }
 	BOOL			getRightMouseDown()	const	{ return mRightMouseDown; }
@@ -424,7 +423,6 @@ protected:
 	LLCoordGL		mCurrentMousePoint;			// last mouse position in GL coords
 	LLCoordGL		mLastMousePoint;		// Mouse point at last frame.
 	LLCoordGL		mCurrentMouseDelta;		//amount mouse moved this frame
-	LLStat			mMouseVelocityStat;
 	BOOL			mLeftMouseDown;
 	BOOL			mMiddleMouseDown;
 	BOOL			mRightMouseDown;
@@ -475,6 +473,7 @@ protected:
 
 	// Object temporarily hovered over while dragging
 	LLPointer<LLViewerObject>	mDragHoveredObject;
+	static LLTrace::SampleStatHandle<>	sMouseVelocityStat;
 };	
 
 class LLBottomPanel : public LLPanel

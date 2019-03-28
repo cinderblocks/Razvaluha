@@ -75,7 +75,6 @@
 #endif // LL_WINDOWS
 
 extern LLMemoryInfo gSysMemory;
-extern U32 gPacketsIn;
 
 ///----------------------------------------------------------------------------
 /// Local function declarations, constants, enums, and typedefs
@@ -289,15 +288,14 @@ LLFloaterAbout::LLFloaterAbout()
 	support << '\n';
 #endif
 
-
-	if (gPacketsIn > 0)
+	auto& recording = LLViewerStats::instance().getRecording();
+	const auto& packets_in = recording.getSum(LLStatViewer::PACKETS_IN);
+	if (packets_in > 0)
 	{
-		const auto current = LLViewerStats::getInstance()->mPacketsLostStat.getCurrent();
+		const auto& lost = recording.getSum(LLStatViewer::PACKETS_LOST);
 		support << llformat("Packets Lost: %.0f/%.0f (%.1f%%)", 
-			current,
-			F32(gPacketsIn),
-			100.f*current / F32(gPacketsIn) )
-				<< '\n';
+			lost, packets_in, 100.f*lost / packets_in)
+			<< '\n';
 	}
 
 	support_widget->appendText(support.str(), false, false);

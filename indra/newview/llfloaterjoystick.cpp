@@ -47,6 +47,22 @@
 #include "llviewerjoystick.h"
 #include "llcheckboxctrl.h"
 
+static LLTrace::SampleStatHandle<>	sJoystickAxis0("Joystick axis 0"),
+									sJoystickAxis1("Joystick axis 1"),
+									sJoystickAxis2("Joystick axis 2"),
+									sJoystickAxis3("Joystick axis 3"),
+									sJoystickAxis4("Joystick axis 4"),
+									sJoystickAxis5("Joystick axis 5");
+static LLTrace::SampleStatHandle<>* sJoystickAxes[6] =
+{
+	&sJoystickAxis0,
+	&sJoystickAxis1,
+	&sJoystickAxis2,
+	&sJoystickAxis3,
+	&sJoystickAxis4,
+	&sJoystickAxis5
+};
+
 LLFloaterJoystick::LLFloaterJoystick(const LLSD& data)
 	: LLFloater("floater_joystick")
 	, mCheckJoystickEnabled(nullptr)
@@ -72,16 +88,16 @@ void LLFloaterJoystick::draw()
 	for (U32 i = 0; i < 6; ++i)
 	{
 		F32 value = joystick->getJoystickAxis(i);
-		mAxisStats[i]->addValue(value * gFrameIntervalSeconds);
-		auto& bar = mAxisStatsBar[i];
-
-		if (bar->mMinBar > value)
+		sample(*sJoystickAxes[i], value * gFrameIntervalSeconds.value());
+		if (auto& bar = mAxisStatsBar[i])
 		{
-			bar->mMinBar = value;
-		}
-		if (bar->mMaxBar < value)
-		{
-			bar->mMaxBar = value;
+			F32 minbar, maxbar;
+			mAxisStatsBar[i]->getRange(minbar, maxbar);
+			F32 range = llabs(value);
+			if (range > maxbar)
+			{
+				mAxisStatsBar[i]->setRange(-range, range);
+			}
 		}
 	}
 
@@ -113,16 +129,15 @@ BOOL LLFloaterJoystick::postBuild()
 	params.label(joystick);
 	mAxisStatsView = LLUICtrlFactory::create<LLStatView>(params);
 
-	for (U32 i = 0; i < 6; i++)
+	LLStatBar::Params p;
+	p.bar_min(-range).bar_max(range).tick_spacing(range*0.25f);
+	for (U32 i = 0; i < 6; ++i)
 	{
 		axis.setArg("[NUM]", llformat("%d", i));
 		std::string stat_name(llformat("Joystick axis %d", i));
-		mAxisStats[i] = new LLStat(stat_name,4);
-		mAxisStatsBar[i] = mAxisStatsView->addStat(axis, mAxisStats[i]);
-		mAxisStatsBar[i]->mMinBar = -range;
-		mAxisStatsBar[i]->mMaxBar = range;
-		mAxisStatsBar[i]->mLabelSpacing = range * 0.5f;
-		mAxisStatsBar[i]->mTickSpacing = range * 0.25f;			
+		p.label(axis).name(axis);
+		p.stat(stat_name);
+		mAxisStatsBar[i] = mAxisStatsView->addStat(p);
 	}
 
 	addChild(mAxisStatsView);

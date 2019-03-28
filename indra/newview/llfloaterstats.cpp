@@ -53,8 +53,6 @@ const S32 LL_SCROLL_BORDER = 1;
 void LLFloaterStats::buildStats()
 {
 	LLRect rect;
-	LLStatBar *stat_barp;
-
 	//
 	// Viewer advanced stats
 	//
@@ -73,51 +71,43 @@ void LLFloaterStats::buildStats()
 	stat_viewp = LLUICtrlFactory::create<LLStatView>(params);
 	addStatView(stat_viewp);
 
-	stat_barp = stat_viewp->addStat("FPS", &(LLViewerStats::getInstance()->mFPSStat),
-									"DebugStatModeFPS", TRUE, TRUE);
-	stat_barp->setUnitLabel(" fps");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 60.f;
-	stat_barp->mTickSpacing = 3.f;
-	stat_barp->mLabelSpacing = 15.f;
-	stat_barp->mPrecision = 1;
+	LLStatBar::Params p;
+	p.label("FPS").name("FPS");
+	p.stat(LLStatViewer::FPS.getName());
+	p.setting("DebugStatModeFPS").show_bar(true).show_history(true);
+	p.bar_max(0.f);
+	p.bar_max(60.f);
+	p.unit_label("fps");
+	p.tick_spacing(3.f);
+	p.decimal_digits(1);
+	//stat_barp->mLabelSpacing = 15.f;
+	stat_viewp->addStat(p);
 
-	stat_barp = stat_viewp->addStat("Bandwidth", &(LLViewerStats::getInstance()->mKBitStat),
-									"DebugStatModeBandwidth", TRUE, FALSE);
-	stat_barp->setUnitLabel(" kbps");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 900.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 300.f;
+	p.label("UDP Bandwidth").name("Bandwidth");
+	p.stat(LLStatViewer::ACTIVE_MESSAGE_DATA_RECEIVED.getName()).setting("DebugStatModeBandwidth").show_history(false);
+	p.unit_label("kbps");
+	p.bar_max(900.f);
+	p.tick_spacing(100.f).decimal_digits(0);
+	//stat_barp->mLabelSpacing = 300.f;
+	stat_viewp->addStat(p);
 
-	stat_barp = stat_viewp->addStat("Packet Loss", &(LLViewerStats::getInstance()->mPacketsLostPercentStat), "DebugStatModePacketLoss");
-	stat_barp->setUnitLabel(" %");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 5.f;
-	stat_barp->mTickSpacing = 1.f;
-	stat_barp->mLabelSpacing = 1.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = TRUE;
-	stat_barp->mPrecision = 1;
+	p.label("Packet Loss").name("Packet Loss");
+	p.stat(LLStatViewer::PACKETS_LOST.getName()).setting("DebugStatModePacketLoss").show_bar(false);
+	p.unit_label("%").bar_max(5.f).tick_spacing(1.f).decimal_digits(1);
+	stat_viewp->addStat(p);
 
-	stat_barp = stat_viewp->addStat("Ping Sim", &(LLViewerStats::getInstance()->mSimPingStat), "DebugStatMode");
-	stat_barp->setUnitLabel(" msec");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1000.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 200.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
-	
-	if(SGMemStat::haveStat()) {
-		stat_barp = stat_viewp->addStat("Allocated memory", &(LLViewerStats::getInstance()->mMallocStat), "DebugStatModeMalloc");
-		stat_barp->setUnitLabel(" MB");
-		stat_barp->mMinBar = 0.f;
-		stat_barp->mMaxBar = 2048.f;
-		stat_barp->mTickSpacing = 128.f;
-		stat_barp->mLabelSpacing = 512.f;
-		stat_barp->mPerSec = FALSE;
-		stat_barp->mDisplayMean = FALSE;
+	p.label("Ping Sim").name("Ping Sim");
+	p.stat(LLStatViewer::SIM_PING.getName()).setting("DebugStatMode").show_bar(false);
+	p.unit_label("msec").bar_max(1000.f).tick_spacing(100.f).decimal_digits(0);
+	stat_viewp->addStat(p);
+
+	if (auto malloc_stat = SGMemStat::getStat()) {
+		p.label("Allocated memory").name("Allocated memory");
+		p.stat(malloc_stat->getName()).setting("DebugStatModeMalloc");
+		p.unit_label("MB");
+		p.bar_max(2048.f);
+		p.tick_spacing(128.f);
+		stat_viewp->addStat(p);
 	}
 
 	params.name("advanced stat view");
@@ -135,45 +125,29 @@ void LLFloaterStats::buildStats()
 	params.rect(rect);
 	LLStatView *render_statviewp = stat_viewp->addStatView(params);
 
-	stat_barp = render_statviewp->addStat("KTris Drawn", &(LLViewerStats::getInstance()->mTrianglesDrawnStat), "DebugStatModeKTrisDrawnFr");
-	stat_barp->setUnitLabel("/fr");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 3000.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 500.f;
-	stat_barp->mPrecision = 1;
-	stat_barp->mPerSec = FALSE;
+	p.label("KTris Drawn").name("KTris Drawn");
+	p.stat(LLStatViewer::TRIANGLES_DRAWN_PER_FRAME.getName()).setting("DebugStatModeKTrisDrawnFr");
+	p.unit_label("/fr").bar_max(3000.f).tick_spacing(100.f).decimal_digits(1);
+	render_statviewp->addStat(p);
 
-	stat_barp = render_statviewp->addStat("KTris Drawn", &(LLViewerStats::getInstance()->mTrianglesDrawnStat), "DebugStatModeKTrisDrawnSec");
-	stat_barp->setUnitLabel("/sec");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 100000.f;
-	stat_barp->mTickSpacing = 4000.f;
-	stat_barp->mLabelSpacing = 20000.f;
-	stat_barp->mPrecision = 1;
+	p.stat(LLStatViewer::TRIANGLES_DRAWN.getName()).setting("DebugStatModeKTrisDrawnSec");
+	p.unit_label("/sec").bar_max(100000.f).tick_spacing(4000.f);
+	render_statviewp->addStat(p);
 
-	stat_barp = render_statviewp->addStat("Total Objs", &(LLViewerStats::getInstance()->mNumObjectsStat), "DebugStatModeTotalObjs");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 10000.f;
-	stat_barp->mTickSpacing = 2500.f;
-	stat_barp->mLabelSpacing = 5000.f;
-	stat_barp->mPerSec = FALSE;
+	p.label("Total Objs").name("Total Objs");
+	p.stat(LLStatViewer::NUM_OBJECTS.getName()).setting("DebugStatModeTotalObjs");
+	p.bar_max(10000.f).tick_spacing(2500.f).decimal_digits(0).unit_label(LLStringUtil::null);
+	render_statviewp->addStat(p);
 
-	stat_barp = render_statviewp->addStat("New Objs", &(LLViewerStats::getInstance()->mNumNewObjectsStat), "DebugStatModeNewObjs");
-	stat_barp->setUnitLabel("/sec");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1000.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 500.f;
-	stat_barp->mPerSec = TRUE;
+	p.label("New Objs").name("New Objs");
+	p.stat(LLStatViewer::NUM_NEW_OBJECTS.getName()).setting("DebugStatModeNewObjs");
+	p.bar_max(1000.f).tick_spacing(100.f).unit_label("/sec");
+	render_statviewp->addStat(p);
 
-	stat_barp = render_statviewp->addStat("Object Cache Hit Rate", &(LLViewerStats::getInstance()->mNumNewObjectsStat), std::string(), false, true);
-	stat_barp->setUnitLabel("%");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 100.f;
-	stat_barp->mTickSpacing = 20.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;	
+	p.label("Object Cache Hit Rate").name("Object Cache Hit Rate");
+	p.stat(LLStatViewer::OBJECT_CACHE_HIT_RATE.getName()).setting(LLStringUtil::null);
+	p.show_history(true).unit_label("%").tick_spacing(20.f).bar_max(100.f);
+	render_statviewp->addStat(p);
 
 	// Texture statistics
 	params.name("texture stat view");
@@ -183,75 +157,40 @@ void LLFloaterStats::buildStats()
 	params.rect(rect);
 	LLStatView *texture_statviewp = render_statviewp->addStatView(params);
 
-	stat_barp = texture_statviewp->addStat("Cache Hit Rate", &(LLTextureFetch::sCacheHitRate), std::string(), false, true);
-	stat_barp->setUnitLabel("%");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 100.f;
-	stat_barp->mTickSpacing = 20.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;	
+	p.label("Cache Hit Rate").name("Cache Hit Rate");
+	p.stat(LLTextureFetch::sCacheHitRate.getName());
+	texture_statviewp->addStat(p);
 
-	stat_barp = texture_statviewp->addStat("Cache Read Latency", &(LLTextureFetch::sCacheReadLatency), std::string(), false, true);
-	stat_barp->setUnitLabel("msec");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1000.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 200.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Cache Read Latency").name("Cache Read Latency");
+	p.stat(LLTextureFetch::sCacheReadLatency.getName()).unit_label("msec").bar_max(1000.f).tick_spacing(100.f);
+	texture_statviewp->addStat(p);
 
-	stat_barp = texture_statviewp->addStat("Count", &(LLViewerStats::getInstance()->mNumImagesStat), "DebugStatModeTextureCount");
-	stat_barp->setUnitLabel("");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 8000.f;
-	stat_barp->mTickSpacing = 2000.f;
-	stat_barp->mLabelSpacing = 4000.f;
-	stat_barp->mPerSec = FALSE;
+	p.label("Count").name("Count");
+	p.stat(LLStatViewer::NUM_IMAGES.getName()).setting("DebugStatModeTextureCount").show_history(false);
+	p.unit_label(LLStringUtil::null).bar_max(8000.f).tick_spacing(2000.f);
+	texture_statviewp->addStat(p);
 
-	stat_barp = texture_statviewp->addStat("Raw Count", &(LLViewerStats::getInstance()->mNumRawImagesStat), "DebugStatModeRawCount");
-	stat_barp->setUnitLabel("");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 8000.f;
-	stat_barp->mTickSpacing = 2000.f;
-	stat_barp->mLabelSpacing = 4000.f;
-	stat_barp->mPerSec = FALSE;
+	p.label("Raw Count").name("Raw Count");
+	p.stat(LLStatViewer::NUM_RAW_IMAGES.getName()).setting("DebugStatModeRawCount");
+	texture_statviewp->addStat(p);
 
-	stat_barp = texture_statviewp->addStat("GL Mem", &(LLViewerStats::getInstance()->mGLTexMemStat), "DebugStatModeGLMem");
-	stat_barp->setUnitLabel("");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 400.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 200.f;
-	stat_barp->mPrecision = 1;
-	stat_barp->mPerSec = FALSE;
+	p.label("GL Mem").name("GL Mem");
+	p.bar_max(400.f).tick_spacing(100.f).stat(LLStatViewer::GL_TEX_MEM.getName()).setting("DebugStatModeGLMem")
+		.decimal_digits(1);
+	texture_statviewp->addStat(p);
 
-	stat_barp = texture_statviewp->addStat("Formatted Mem", &(LLViewerStats::getInstance()->mFormattedMemStat), "DebugStatModeFormattedMem");
-	stat_barp->setUnitLabel("");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 400.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 200.f;
-	stat_barp->mPrecision = 1;
-	stat_barp->mPerSec = FALSE;
+	p.label("GL Mem").name("GL Mem");
+	p.stat(LLStatViewer::FORMATTED_MEM.getName()).setting("DebugStatModeFormattedMem");
+	texture_statviewp->addStat(p);
 
-	stat_barp = texture_statviewp->addStat("Raw Mem", &(LLViewerStats::getInstance()->mRawMemStat), "DebugStatModeRawMem");
-	stat_barp->setUnitLabel("");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 400.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 200.f;
-	stat_barp->mPrecision = 1;
-	stat_barp->mPerSec = FALSE;
+	p.label("Raw Mem").name("Raw Mem");
+	p.stat(LLStatViewer::RAW_MEM.getName()).setting("DebugStatModeRawMem");
+	texture_statviewp->addStat(p);
 
-	stat_barp = texture_statviewp->addStat("Bound Mem", &(LLViewerStats::getInstance()->mGLBoundMemStat), "DebugStatModeBoundMem");
-	stat_barp->setUnitLabel("");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 400.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 200.f;
-	stat_barp->mPrecision = 1;
-	stat_barp->mPerSec = FALSE;
-	
+	p.label("Bound Mem").name("Bound Mem");
+	p.stat(LLStatViewer::GL_BOUND_MEM.getName()).setting("DebugStatModeBoundMem");
+	texture_statviewp->addStat(p);
+
 	// Network statistics
 	params.name("network stat view");
 	params.show_label(true);
@@ -260,60 +199,45 @@ void LLFloaterStats::buildStats()
 	params.rect(rect);
 	LLStatView *net_statviewp = stat_viewp->addStatView(params);
 
-	stat_barp = net_statviewp->addStat("UDP Packets In", &(LLViewerStats::getInstance()->mPacketsInStat), "DebugStatModePacketsIn");
-	stat_barp->setUnitLabel("/sec");
+	p = LLStatBar::Params();
+	p.label("UDP Packets In").name("UDP Packets In");
+	p.stat(LLStatViewer::PACKETS_IN.getName()).setting("DebugStatModePacketsIn")
+		.unit_label("/sec");
+	net_statviewp->addStat(p);
 
-	stat_barp = net_statviewp->addStat("UDP Packets Out", &(LLViewerStats::getInstance()->mPacketsOutStat), "DebugStatModePacketsOut");
-	stat_barp->setUnitLabel("/sec");
+	p.label("UDP Packets Out").name("UDP Packets Out");
+	p.stat(LLStatViewer::PACKETS_OUT.getName()).setting("DebugStatModePacketsOut");
+	net_statviewp->addStat(p);
 
-	stat_barp = net_statviewp->addStat("UDP Textures", &(LLViewerStats::getInstance()->mUDPTextureKBitStat), "DebugStatModeUDPTexture");
-	stat_barp->setUnitLabel(" kbps");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1024.f;
-	stat_barp->mTickSpacing = 128.f;
-	stat_barp->mLabelSpacing = 256.f;
+	p.label("UDP Textures").name("UDP Textures");
+	p.bar_min(0.f).bar_max(1024.f).tick_spacing(128.f)
+	.unit_label("kbps").stat(LLStatViewer::TEXTURE_NETWORK_DATA_RECEIVED.getName()).setting("DebugStatModeUDPTexture");
+	net_statviewp->addStat(p);
 
-	stat_barp = net_statviewp->addStat("Objects (UDP)", &(LLViewerStats::getInstance()->mObjectKBitStat), "DebugStatModeObjects");
-	stat_barp->setUnitLabel(" kbps");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1024.f;
-	stat_barp->mTickSpacing = 128.f;
-	stat_barp->mLabelSpacing = 256.f;
+	p.label("Objects (UDP)").name("Objects (UDP)");
+	p.stat(LLStatViewer::TEXTURE_NETWORK_DATA_RECEIVED.getName()).setting("DebugStatModeObjects");
+	net_statviewp->addStat(p);
 
-	stat_barp = net_statviewp->addStat("Assets (UDP)", &(LLViewerStats::getInstance()->mAssetKBitStat), "DebugStatModeAsset");
-	stat_barp->setUnitLabel(" kbps");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1024.f;
-	stat_barp->mTickSpacing = 128.f;
-	stat_barp->mLabelSpacing = 256.f;
+	p.label("Assets (UDP)").name("Assets (UDP)");
+	p.stat(LLStatViewer::ASSET_UDP_DATA_RECEIVED.getName()).setting("DebugStatModeAsset");
+	net_statviewp->addStat(p);
 
-	stat_barp = net_statviewp->addStat("Layers (UDP)", &(LLViewerStats::getInstance()->mLayersKBitStat), "DebugStatModeLayers");
-	stat_barp->setUnitLabel(" kbps");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1024.f;
-	stat_barp->mTickSpacing = 128.f;
-	stat_barp->mLabelSpacing = 256.f;
+	p.label("Layers (UDP)").name("Layers (UDP)");
+	p.stat(LLStatViewer::LAYERS_NETWORK_DATA_RECEIVED.getName()).setting("DebugStatModeLayers");
+	net_statviewp->addStat(p);
 
-	stat_barp = net_statviewp->addStat("Actual In (UDP)", &(LLViewerStats::getInstance()->mActualInKBitStat),
-									   "DebugStatModeActualIn", TRUE, FALSE);
-	stat_barp->setUnitLabel(" kbps");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1024.f;
-	stat_barp->mTickSpacing = 128.f;
-	stat_barp->mLabelSpacing = 256.f;
+	p.label("Actual In (UDP)").name("Actual In (UDP)");
+	p.stat(LLStatViewer::MESSAGE_SYSTEM_DATA_IN.getName()).setting("DebugStatModeActualIn");
+	p.show_bar(true);
+	net_statviewp->addStat(p);
 
-	stat_barp = net_statviewp->addStat("Actual Out (UDP)", &(LLViewerStats::getInstance()->mActualOutKBitStat),
-									   "DebugStatModeActualOut", TRUE, FALSE);
-	stat_barp->setUnitLabel(" kbps");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 512.f;
-	stat_barp->mTickSpacing = 128.f;
-	stat_barp->mLabelSpacing = 256.f;
+	p.label("Actual Out (UDP)").name("Actual Out (UDP)");
+	p.stat(LLStatViewer::MESSAGE_SYSTEM_DATA_OUT.getName()).setting("DebugStatModeActualOut");
+	net_statviewp->addStat(p);
 
-	stat_barp = net_statviewp->addStat("VFS Pending Ops", &(LLViewerStats::getInstance()->mVFSPendingOperations),
-									   "DebugStatModeVFSPendingOps");
-	stat_barp->setUnitLabel(" ");
-	stat_barp->mPerSec = FALSE;
+	p.label("VFS Pending Ops").name("VFS Pending Ops");
+	p.stat(LLStatViewer::PENDING_VFS_OPERATIONS.getName()).setting("DebugStatModeVFSPendingOps").show_bar(false).unit_label(LLStringUtil::null);
+	net_statviewp->addStat(p);
 
 
 	// Simulator stats
@@ -325,31 +249,20 @@ void LLFloaterStats::buildStats()
 	LLStatView *sim_statviewp = LLUICtrlFactory::create<LLStatView>(params);
 	addStatView(sim_statviewp);
 
-	stat_barp = sim_statviewp->addStat("Time Dilation", &(LLViewerStats::getInstance()->mSimTimeDilation), "DebugStatModeTimeDialation");
-	stat_barp->mPrecision = 2;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1.f;
-	stat_barp->mTickSpacing = 0.25f;
-	stat_barp->mLabelSpacing = 0.5f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Time Dilation").name("Time Dilation");
+	p.stat(LLStatViewer::SIM_TIME_DILATION.getName()).setting("DebugStatModeTimeDialation");
+	p.decimal_digits(2).tick_spacing(0.25f).bar_max(1.f);
+	sim_statviewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Sim FPS", &(LLViewerStats::getInstance()->mSimFPS), "DebugStatModeSimFPS");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 200.f;
-	stat_barp->mTickSpacing = 20.f;
-	stat_barp->mLabelSpacing = 100.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Sim FPS").name("Sim FPS");
+	p.decimal_digits(0).stat(LLStatViewer::SIM_FPS.getName()).setting("DebugStatModeSimFPS");
+	p.tick_spacing(20.f).bar_max(200.f);
+	sim_statviewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Physics FPS", &(LLViewerStats::getInstance()->mSimPhysicsFPS), "DebugStatModePhysicsFPS");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 66.f;
-	stat_barp->mTickSpacing = 33.f;
-	stat_barp->mLabelSpacing = 33.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Physics FPS").name("Physics FPS");
+	p.decimal_digits(0).stat(LLStatViewer::SIM_PHYSICS_FPS.getName()).setting("DebugStatModePhysicsFPS");
+	p.tick_spacing(33.f).bar_max(66.f);
+	sim_statviewp->addStat(p);
 
 	params.name("phys detail view");
 	params.show_label(true);
@@ -358,106 +271,59 @@ void LLFloaterStats::buildStats()
 	params.rect(rect);
 	LLStatView *phys_details_viewp = sim_statviewp->addStatView(params);
 
-	stat_barp = phys_details_viewp->addStat("Pinned Objects", &(LLViewerStats::getInstance()->mPhysicsPinnedTasks), "DebugStatModePinnedObjects");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 500.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 40.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Pinned Objects").name("Pinned Objects");
+	p.stat(LLStatViewer::SIM_PHYSICS_PINNED_TASKS.getName()).setting("DebugStatModePinnedObjects");
+	p.bar_max(500.f).tick_spacing(10.f);
+	phys_details_viewp->addStat(p);
 
-	stat_barp = phys_details_viewp->addStat("Low LOD Objects", &(LLViewerStats::getInstance()->mPhysicsLODTasks), "DebugStatModeLowLODObjects");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 500.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 40.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Low LOD Objects").name("Low LOD Objects");
+	p.stat(LLStatViewer::SIM_PHYSICS_LOD_TASKS.getName()).setting("DebugStatModeLowLODObjects");
+	phys_details_viewp->addStat(p);
 
-	stat_barp = phys_details_viewp->addStat("Memory Allocated", &(LLViewerStats::getInstance()->mPhysicsMemoryAllocated), "DebugStatModeMemoryAllocated");
-	stat_barp->setUnitLabel(" MB");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 1024.f;
-	stat_barp->mTickSpacing = 128.f;
-	stat_barp->mLabelSpacing = 256.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Memory Allocated").name("Memory Allocated");
+	p.stat(LLStatViewer::SIM_PHYSICS_MEM.getName()).setting("DebugStatModeMemoryAllocated");
+	p.unit_label("MB").bar_max(1024.f).tick_spacing(128.f);
+	phys_details_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Agent Updates/Sec", &(LLViewerStats::getInstance()->mSimAgentUPS), "DebugStatModeAgentUpdatesSec");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 100.f;
-	stat_barp->mTickSpacing = 25.f;
-	stat_barp->mLabelSpacing = 50.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Agent Updates/Sec").name("Agent Updates/Sec");
+	p.stat(LLStatViewer::SIM_AGENT_UPS.getName()).setting("DebugStatModeAgentUpdatesSec");
+	p.unit_label(LLStringUtil::null).bar_max(100.f).tick_spacing(25.f).decimal_digits(1);
+	phys_details_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Main Agents", &(LLViewerStats::getInstance()->mSimMainAgents), "DebugStatModeMainAgents");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 80.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 40.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Main Agents").name("Main Agents");
+	p.stat(LLStatViewer::SIM_MAIN_AGENTS.getName()).setting("DebugStatModeMainAgents");
+	p.bar_max(80.f).tick_spacing(10.f).decimal_digits(0);
+	phys_details_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Child Agents", &(LLViewerStats::getInstance()->mSimChildAgents), "DebugStatModeChildAgents");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 5.f;
-	stat_barp->mLabelSpacing = 10.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Child Agents").name("Child Agents");
+	p.stat(LLStatViewer::SIM_CHILD_AGENTS.getName()).setting("DebugStatModeChildAgents");
+	p.bar_max(40.f).tick_spacing(5.f);
+	phys_details_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Objects", &(LLViewerStats::getInstance()->mSimObjects), "DebugStatModeSimObjects");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 30000.f;
-	stat_barp->mTickSpacing = 5000.f;
-	stat_barp->mLabelSpacing = 10000.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Objects").name("Objects");
+	p.stat(LLStatViewer::SIM_OBJECTS.getName()).setting("DebugStatModeSimObjects");
+	p.bar_max(30000.f).tick_spacing(5000.f);
+	phys_details_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Active Objects", &(LLViewerStats::getInstance()->mSimActiveObjects), "DebugStatModeSimActiveObjects");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 800.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 200.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Active Objects").name("Active Objects");
+	p.stat(LLStatViewer::SIM_ACTIVE_OBJECTS.getName()).setting("DebugStatModeSimActiveObjects");
+	p.bar_max(800.f).tick_spacing(100.f);
+	phys_details_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Active Scripts", &(LLViewerStats::getInstance()->mSimActiveScripts), "DebugStatModeSimActiveScripts");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 800.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 200.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Active Scripts").name("Active Scripts");
+	p.stat(LLStatViewer::SIM_ACTIVE_SCRIPTS.getName()).setting("DebugStatModeSimActiveScripts");
+	p.bar_max(800.f).tick_spacing(100.f);
+	phys_details_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Scripts Run", &(LLViewerStats::getInstance()->mSimPctScriptsRun), std::string(), false, true);
-	stat_barp->setUnitLabel("%");
-	stat_barp->mPrecision = 3;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 100.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;	
+	p.label("Scripts Run").name("Scripts Run");
+	p.stat(LLStatViewer::SIM_PERCENTAGE_SCRIPTS_RUN.getName()).setting(LLStringUtil::null).show_history(true);
+	p.bar_max(100.f).tick_spacing(10.f).unit_label("%").decimal_digits(3);
+	phys_details_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Script Events", &(LLViewerStats::getInstance()->mSimScriptEPS), "DebugStatModeSimScriptEvents");
-	stat_barp->setUnitLabel(" eps");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 20000.f;
-	stat_barp->mTickSpacing = 2500.f;
-	stat_barp->mLabelSpacing = 5000.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Scripts Events").name("Scripts Events");
+	p.stat(LLStatViewer::SIM_SCRIPT_EPS.getName()).setting("DebugStatModeSimScriptEvents").show_history(false);
+	p.bar_max(20000.f).tick_spacing(2500.f).unit_label("eps").decimal_digits(0);
+	phys_details_viewp->addStat(p);
 
 	params.name("pathfinding view");
 	params.show_label(true);
@@ -465,81 +331,44 @@ void LLFloaterStats::buildStats()
 	params.rect(rect);
 	LLStatView *pathfinding_viewp = sim_statviewp->addStatView(params);
 
-	stat_barp = pathfinding_viewp->addStat("AI Step Time", &(LLViewerStats::getInstance()->mSimSimAIStepMsec));
-	stat_barp->setUnitLabel("ms");
-	stat_barp->mPrecision = 3;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("AI Step Time").name("AI Step Time");
+	p.stat(LLStatViewer::SIM_AI_TIME.getName()).setting(LLStringUtil::null);
+	p.bar_max(40.f).tick_spacing(10.f).unit_label("ms").decimal_digits(3);
+	pathfinding_viewp->addStat(p);
 
-	stat_barp = render_statviewp->addStat("Skipped Silhouette Steps", &(LLViewerStats::getInstance()->mSimSimSkippedSilhouetteSteps));
-	stat_barp->setUnitLabel("/sec");
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 45.f;
-	stat_barp->mTickSpacing = 4.f;
-	stat_barp->mLabelSpacing = 8.f;
-	stat_barp->mPrecision = 0;
+	p.label("Skipped Silhouette Steps").name("Skipped Silhouette Steps");
+	p.stat(LLStatViewer::SIM_SKIPPED_SILHOUETTE.getName());
+	p.bar_max(45.f).tick_spacing(4.f).unit_label("/sec").decimal_digits(0);
+	pathfinding_viewp->addStat(p);
 
-	stat_barp = pathfinding_viewp->addStat("Characters Updated", &(LLViewerStats::getInstance()->mSimSimPctSteppedCharacters));
-	stat_barp->setUnitLabel("%");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 100.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = TRUE;
+	p.label("Characters Updated").name("Characters Updated");
+	p.stat(LLStatViewer::SIM_SKIPPED_CHARACTERS_PERCENTAGE.getName());
+	p.bar_max(100.f).tick_spacing(10.f).unit_label("$").decimal_digits(1);
+	pathfinding_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Packets In", &(LLViewerStats::getInstance()->mSimInPPS), "DebugStatModeSimInPPS");
-	stat_barp->setUnitLabel(" pps");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 2000.f;
-	stat_barp->mTickSpacing = 250.f;
-	stat_barp->mLabelSpacing = 1000.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Packets In").name("Packets In");
+	p.stat(LLStatViewer::SIM_IN_PACKETS_PER_SEC.getName()).setting("DebugStatModeSimInPPS");
+	p.bar_max(2000.f).tick_spacing(250.f).unit_label("pps").decimal_digits(0);
+	pathfinding_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Packets Out", &(LLViewerStats::getInstance()->mSimOutPPS), "DebugStatModeSimOutPPS");
-	stat_barp->setUnitLabel(" pps");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 2000.f;
-	stat_barp->mTickSpacing = 250.f;
-	stat_barp->mLabelSpacing = 1000.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Packets Out").name("Packets Out");
+	p.stat(LLStatViewer::SIM_OUT_PACKETS_PER_SEC.getName()).setting("DebugStatModeSimOutPPS");
+	pathfinding_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Pending Downloads", &(LLViewerStats::getInstance()->mSimPendingDownloads), "DebugStatModeSimPendingDownloads");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 800.f;
-	stat_barp->mTickSpacing = 100.f;
-	stat_barp->mLabelSpacing = 200.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Pending Downloads").name("Pending Downloads");
+	p.stat(LLStatViewer::SIM_PENDING_DOWNLOADS.getName()).setting("DebugStatModeSimPendingDownloads");
+	p.bar_max(800.f).tick_spacing(100.f).unit_label(LLStringUtil::null);
+	pathfinding_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Pending Uploads", &(LLViewerStats::getInstance()->mSimPendingUploads), "SimPendingUploads");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 100.f;
-	stat_barp->mTickSpacing = 25.f;
-	stat_barp->mLabelSpacing = 50.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Pending Uploads").name("Pending Uploads");
+	p.stat(LLStatViewer::SIM_PENDING_UPLOADS.getName()).setting("SimPendingUploads");
+	p.bar_max(100.f).tick_spacing(25.f);
+	pathfinding_viewp->addStat(p);
 
-	stat_barp = sim_statviewp->addStat("Total Unacked Bytes", &(LLViewerStats::getInstance()->mSimTotalUnackedBytes), "DebugStatModeSimTotalUnackedBytes");
-	stat_barp->setUnitLabel(" kb");
-	stat_barp->mPrecision = 0;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 100000.f;
-	stat_barp->mTickSpacing = 25000.f;
-	stat_barp->mLabelSpacing = 50000.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Total Unacked Bytes").name("Total Unacked Bytes");
+	p.stat(LLStatViewer::SIM_UNACKED_BYTES.getName()).setting("DebugStatModeSimTotalUnackedBytes");
+	p.bar_max(100000.f).tick_spacing(25000.f).unit_label("kb");
+	pathfinding_viewp->addStat(p);
 
 	params.name("sim perf view");
 	params.show_label(true);
@@ -548,85 +377,38 @@ void LLFloaterStats::buildStats()
 	params.rect(rect);
 	LLStatView *sim_time_viewp = sim_statviewp->addStatView(params);
 
-	stat_barp = sim_time_viewp->addStat("Total Frame Time", &(LLViewerStats::getInstance()->mSimFrameMsec), "DebugStatModeSimFrameMsec");
-	stat_barp->setUnitLabel("ms");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Total Frame Time").name("Total Frame Time");
+	p.stat(LLStatViewer::SIM_FRAME_TIME.getName()).setting("DebugStatModeSimFrameMsec");
+	p.bar_max(40.f).tick_spacing(10.f).unit_label("ms").decimal_digits(1);
+	sim_time_viewp->addStat(p);
 
-	stat_barp = sim_time_viewp->addStat("Net Time", &(LLViewerStats::getInstance()->mSimNetMsec), "DebugStatModeSimNetMsec");
-	stat_barp->setUnitLabel("ms");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Net Time").name("Net Time");
+	p.stat(LLStatViewer::SIM_NET_TIME.getName()).setting("DebugStatModeSimNetMsec");
+	sim_time_viewp->addStat(p);
 
-	stat_barp = sim_time_viewp->addStat("Physics Time", &(LLViewerStats::getInstance()->mSimSimPhysicsMsec), "DebugStatModeSimSimPhysicsMsec");
-	stat_barp->setUnitLabel("ms");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Physics Time").name("Physics Time");
+	p.stat(LLStatViewer::SIM_PHYSICS_TIME.getName()).setting("DebugStatModeSimSimPhysicsMsec");
+	sim_time_viewp->addStat(p);
 
-	stat_barp = sim_time_viewp->addStat("Simulation Time", &(LLViewerStats::getInstance()->mSimSimOtherMsec), "DebugStatModeSimSimOtherMsec");
-	stat_barp->setUnitLabel("ms");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Simulation Time").name("Simulation Time");
+	p.stat(LLStatViewer::SIM_OTHER_TIME.getName()).setting("DebugStatModeSimSimOtherMsec");
+	sim_time_viewp->addStat(p);
 
-	stat_barp = sim_time_viewp->addStat("Agent Time", &(LLViewerStats::getInstance()->mSimAgentMsec), "DebugStatModeSimAgentMsec");
-	stat_barp->setUnitLabel("ms");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Agent Time").name("Agent Time");
+	p.stat(LLStatViewer::SIM_AGENTS_TIME.getName()).setting("DebugStatModeSimAgentMsec");
+	sim_time_viewp->addStat(p);
 
-	stat_barp = sim_time_viewp->addStat("Images Time", &(LLViewerStats::getInstance()->mSimImagesMsec), "DebugStatModeSimImagesMsec");
-	stat_barp->setUnitLabel("ms");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Images Time").name("Images Time");
+	p.stat(LLStatViewer::SIM_IMAGES_TIME.getName()).setting("DebugStatModeSimImagesMsec");
+	sim_time_viewp->addStat(p);
 
-	stat_barp = sim_time_viewp->addStat("Script Time", &(LLViewerStats::getInstance()->mSimScriptMsec), "DebugStatModeSimScriptMsec");
-	stat_barp->setUnitLabel("ms");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Script Time").name("Script Time");
+	p.stat(LLStatViewer::SIM_SCRIPTS_TIME.getName()).setting("DebugStatModeSimScriptMsec");
+	sim_time_viewp->addStat(p);
 
-	stat_barp = sim_time_viewp->addStat("Spare Time", &(LLViewerStats::getInstance()->mSimSpareMsec), "DebugStatModeSimSpareMsec");
-	stat_barp->setUnitLabel("ms");
-	stat_barp->mPrecision = 1;
-	stat_barp->mMinBar = 0.f;
-	stat_barp->mMaxBar = 40.f;
-	stat_barp->mTickSpacing = 10.f;
-	stat_barp->mLabelSpacing = 20.f;
-	stat_barp->mPerSec = FALSE;
-	stat_barp->mDisplayMean = FALSE;
+	p.label("Spare Time").name("Spare Time");
+	p.stat(LLStatViewer::SIM_SPARE_TIME.getName()).setting("DebugStatModeSimSpareMsec");
+	sim_time_viewp->addStat(p);
 
 	
 	// 2nd level time blocks under 'Details' second
@@ -637,55 +419,25 @@ void LLFloaterStats::buildStats()
 	params.rect(rect);
 	LLStatView *detailed_time_viewp = sim_time_viewp->addStatView(params);
 	{
-		stat_barp = detailed_time_viewp->addStat("  Physics Step", &(LLViewerStats::getInstance()->mSimSimPhysicsStepMsec), "DebugStatModeSimSimPhysicsStepMsec");
-		stat_barp->setUnitLabel("ms");
-		stat_barp->mPrecision = 1;
-		stat_barp->mMinBar = 0.f;
-		stat_barp->mMaxBar = 40.f;
-		stat_barp->mTickSpacing = 10.f;
-		stat_barp->mLabelSpacing = 20.f;
-		stat_barp->mPerSec = FALSE;
-		stat_barp->mDisplayMean = FALSE;
+		p.label("  Physics Step").name("  Physics Step");
+		p.stat(LLStatViewer::SIM_PHYSICS_STEP_TIME.getName()).setting("DebugStatModeSimSimPhysicsStepMsec");
+		detailed_time_viewp->addStat(p);
 
-		stat_barp = detailed_time_viewp->addStat("  Update Physics Shapes", &(LLViewerStats::getInstance()->mSimSimPhysicsShapeUpdateMsec), "DebugStatModeSimSimPhysicsShapeUpdateMsec");
-		stat_barp->setUnitLabel("ms");
-		stat_barp->mPrecision = 1;
-		stat_barp->mMinBar = 0.f;
-		stat_barp->mMaxBar = 40.f;
-		stat_barp->mTickSpacing = 10.f;
-		stat_barp->mLabelSpacing = 20.f;
-		stat_barp->mPerSec = FALSE;
-		stat_barp->mDisplayMean = FALSE;
+		p.label("  Update Physics Shapes").name("  Update Physics Shapes");
+		p.stat(LLStatViewer::SIM_PHYSICS_SHAPE_UPDATE_TIME.getName()).setting("DebugStatModeSimSimPhysicsShapeUpdateMsec");
+		detailed_time_viewp->addStat(p);
 
-		stat_barp = detailed_time_viewp->addStat("  Physics Other", &(LLViewerStats::getInstance()->mSimSimPhysicsOtherMsec), "DebugStatModeSimSimPhysicsOtherMsec");
-		stat_barp->setUnitLabel("ms");
-		stat_barp->mPrecision = 1;
-		stat_barp->mMinBar = 0.f;
-		stat_barp->mMaxBar = 40.f;
-		stat_barp->mTickSpacing = 10.f;
-		stat_barp->mLabelSpacing = 20.f;
-		stat_barp->mPerSec = FALSE;
-		stat_barp->mDisplayMean = FALSE;
+		p.label("  Physics Other").name("  Physics Other");
+		p.stat(LLStatViewer::SIM_PHYSICS_OTHER_TIME.getName()).setting("DebugStatModeSimSimPhysicsOtherMsec");
+		detailed_time_viewp->addStat(p);
 
-		stat_barp = detailed_time_viewp->addStat("  Sleep Time", &(LLViewerStats::getInstance()->mSimSleepMsec), "DebugStatModeSimSleepMsec");
-		stat_barp->setUnitLabel("ms");
-		stat_barp->mPrecision = 1;
-		stat_barp->mMinBar = 0.f;
-		stat_barp->mMaxBar = 40.f;
-		stat_barp->mTickSpacing = 10.f;
-		stat_barp->mLabelSpacing = 20.f;
-		stat_barp->mPerSec = FALSE;
-		stat_barp->mDisplayMean = FALSE;
+		p.label("  Sleep Time").name("  Sleep Time");
+		p.stat(LLStatViewer::SIM_SLEEP_TIME.getName()).setting("DebugStatModeSimSleepMsec");
+		detailed_time_viewp->addStat(p);
 
-		stat_barp = detailed_time_viewp->addStat("  Pump IO", &(LLViewerStats::getInstance()->mSimPumpIOMsec), "DebugStatModeSimPumpIOMsec");
-		stat_barp->setUnitLabel("ms");
-		stat_barp->mPrecision = 1;
-		stat_barp->mMinBar = 0.f;
-		stat_barp->mMaxBar = 40.f;
-		stat_barp->mTickSpacing = 10.f;
-		stat_barp->mLabelSpacing = 20.f;
-		stat_barp->mPerSec = FALSE;
-		stat_barp->mDisplayMean = FALSE;
+		p.label("  Pump IO").name("  Pump IO");
+		p.stat(LLStatViewer::SIM_PUMP_IO_TIME.getName()).setting("DebugStatModeSimPumpIOMsec");
+		detailed_time_viewp->addStat(p);
 	}
 
 	LLRect r = getRect();

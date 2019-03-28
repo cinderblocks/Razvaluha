@@ -16719,17 +16719,6 @@ This should be as low as possible, but too low may break functionality</string>
       <key>Value</key>
       <integer>0</integer>
     </map>
-    <key>StatsFile</key>
-    <map>
-      <key>Comment</key>
-      <string>Filename for stats logging output</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>String</string>
-      <key>Value</key>
-      <string>fs.txt</string>
-    </map>
     <key>StatsNumRuns</key>
     <map>
       <key>Comment</key>
@@ -16762,28 +16751,6 @@ This should be as low as possible, but too low may break functionality</string>
       <string>Boolean</string>
       <key>Value</key>
       <integer>0</integer>
-    </map>
-    <key>StatsSessionTrackFrameStats</key>
-    <map>
-      <key>Comment</key>
-      <string>Track rendering and network statistics</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>Boolean</string>
-      <key>Value</key>
-      <integer>0</integer>
-    </map>
-    <key>StatsSummaryFile</key>
-    <map>
-      <key>Comment</key>
-      <string>Filename for stats logging summary</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>String</string>
-      <key>Value</key>
-      <string>fss.txt</string>
     </map>
     <key>StatusBarHeight</key>
     <map>

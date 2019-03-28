@@ -1294,9 +1294,8 @@ void LLViewerRegion::updateNetStats()
 	mPacketsLost =				cdp->getPacketsLost();
 	mPingDelay =				cdp->getPingDelay();
 
-	mBitStat.addValue((mBitsIn - mLastBitsIn).value());
-	mPacketsStat.addValue(mPacketsIn - mLastPacketsIn);
-	mPacketsLostStat.addValue(mPacketsLost);
+	mBitsReceived += mBitsIn - mLastBitsIn;
+	mPacketsReceived += mPacketsIn - mLastPacketsIn;
 }
 
 

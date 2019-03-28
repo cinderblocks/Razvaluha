@@ -104,7 +104,6 @@
 #include "llfloaterwebcontent.h"
 #include "llfloaterwindlight.h"
 #include "llfloaterworldmap.h"
-#include "llframestatview.h"
 #include "llmakeoutfitdialog.h"
 #include "llmoveview.h" // LLFloaterMove
 #include "lltextureview.h"
@@ -156,7 +155,6 @@ struct MenuFloaterDict : public LLSingleton<MenuFloaterDict>
 	{
 		registerConsole("debug console", gDebugView->mDebugConsolep);
 		registerConsole("fast timers", gDebugView->mFastTimerView);
-		registerConsole("frame console", gDebugView->mFrameStatView);
 		registerConsole("texture console", gTextureView);
 		if (gAuditTexture)
 		{

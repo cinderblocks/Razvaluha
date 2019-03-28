@@ -3700,9 +3700,7 @@ bool LLSelectMgr::confirmDelete(const LLSD& notification, const LLSD& response, 
 			gAgentCamera.setLookAt(LOOKAT_TARGET_CLEAR);
 
 			// Keep track of how many objects have been deleted.
-			F64 obj_delete_count = LLViewerStats::getInstance()->getStat(LLViewerStats::ST_OBJECT_DELETE_COUNT);
-			obj_delete_count += LLSelectMgr::getInstance()->mSelectedObjects->getObjectCount();
-			LLViewerStats::getInstance()->setStat(LLViewerStats::ST_OBJECT_DELETE_COUNT, obj_delete_count );
+			add(LLStatViewer::DELETE_OBJECT, LLSelectMgr::getInstance()->mSelectedObjects->getObjectCount());
 		}
 		break;
 	case 1:

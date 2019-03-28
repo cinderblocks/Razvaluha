@@ -84,7 +84,6 @@ private:
 
 	// stats view 
 	LLStatView*		mAxisStatsView;
-	LLStat*			mAxisStats[6];
 	std::array<LLStatBar*, 6> mAxisStatsBar;
 };
 

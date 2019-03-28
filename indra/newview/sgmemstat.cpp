@@ -20,8 +20,8 @@
 #include "apr_dso.h"
 
 #if (!LL_LINUX && !LL_USE_TCMALLOC)
-bool SGMemStat::haveStat() {
-	return false;
+LLTrace::SampleStatHandle<F64Megabytes>* SGMemStat::getStat() {
+	return nullptr;
 }
 
 F32 SGMemStat::getMalloc() {
@@ -33,7 +33,7 @@ U32 SGMemStat::getNumObjects() {
 }
 
 std::string SGMemStat::getPrintableStat() {
-	return std::string();
+	return LLStringUtil::null;
 }
 
 #else
@@ -64,9 +64,12 @@ static void initialize() {
 	}	
 }
 
-bool SGMemStat::haveStat() {
+LLTrace::SampleStatHandle<F64Megabytes> MEMSTAT("mallocstat");
+
+LLTrace::SampleStatHandle<F64Megabytes>* SGMemStat::getStat() {
 	initialize();
-	return MallocExtension_GetNumericProperty;
+	return MallocExtension_GetNumericProperty ? &MEMSTAT : nullptr;
+
 }
 
 F32 SGMemStat::getMalloc() {
@@ -90,7 +93,7 @@ std::string SGMemStat::getPrintableStat() {
 		MallocExtension_GetStats(buffer, 4095);
 		return std::string(buffer);
 	}
-	else return std::string();
+	return LLStringUtil::null;
 }
 
 #endif

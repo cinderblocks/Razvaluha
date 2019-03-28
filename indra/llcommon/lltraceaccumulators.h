@@ -36,7 +36,6 @@
 #include "llrefcount.h"
 #include "llthreadlocalstorage.h"
 #include "llmemory.h"
-#include "llfasttimer.h"
 #include <limits>
 
 namespace LLTrace
@@ -485,23 +484,25 @@ namespace LLTrace
 		//
 		// members
 		//
-		BlockTimerStatHandle*	mParent;		// last acknowledged parent of this time block
-		BlockTimerStatHandle*	mLastCaller;	// used to bootstrap tree construction
 		U64							mTotalTimeCounter,
 									mSelfTimeCounter;
 		S32							mCalls;
+		class BlockTimerStatHandle*	mParent;		// last acknowledged parent of this time block
+		class BlockTimerStatHandle*	mLastCaller;	// used to bootstrap tree construction
 		U16							mActiveCount;	// number of timers with this ID active on stack
 		bool						mMoveUpTree;	// needs to be moved up the tree of timers at the end of frame
 
 	};
+
+	class BlockTimerStatHandle;
 
 	class TimeBlockTreeNode
 	{
 	public:
 		TimeBlockTreeNode();
 
-		//void setParent(BlockTimerStatHandle* parent);
-		//BlockTimerStatHandle* getParent() { return mParent; }
+		void setParent(BlockTimerStatHandle* parent);
+		BlockTimerStatHandle* getParent() { return mParent; }
 
 		BlockTimerStatHandle*					mBlock;
 		BlockTimerStatHandle*					mParent;	
@@ -512,8 +513,8 @@ namespace LLTrace
 	
 	struct BlockTimerStackRecord
 	{
-		BlockTimer*	mActiveTimer;
-		BlockTimerStatHandle*	mTimeBlock;
+		class BlockTimer*	mActiveTimer;
+		class BlockTimerStatHandle*	mTimeBlock;
 		U64					mChildTime;
 	};
 

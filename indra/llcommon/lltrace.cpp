@@ -28,8 +28,8 @@
 #include "linden_common.h"
 
 #include "lltrace.h"
-//#include "lltracerecording.h"
-//#include "lltracethreadrecorder.h"
+#include "lltracerecording.h"
+#include "lltracethreadrecorder.h"
 #include "llfasttimer.h"
 
 namespace LLTrace
@@ -39,13 +39,13 @@ MemStatHandle gTraceMemStat("LLTrace");
 
 StatBase::StatBase( const char* name, const char* description ) 
 :	mName(name),
-	mDescription(description ? description : "")
+	mDescription(description ? description : LLStringUtil::null)
 {
 #ifndef LL_RELEASE_FOR_DOWNLOAD
-/*	if (LLTrace::get_thread_recorder().notNull())
+	if (LLTrace::get_thread_recorder().notNull())
 	{
 		LL_ERRS() << "Attempting to declare trace object after program initialization.  Trace objects should be statically initialized." << LL_ENDL;
-	}*/
+	}
 #endif
 }
 
@@ -61,7 +61,6 @@ TimeBlockTreeNode::TimeBlockTreeNode()
     mNeedsSorting(false)
 {}
 
-/* Singu TODO
 void TimeBlockTreeNode::setParent( BlockTimerStatHandle* parent )
 {
 	llassert_always(parent != mBlock);
@@ -72,8 +71,8 @@ void TimeBlockTreeNode::setParent( BlockTimerStatHandle* parent )
 
 	if (mParent)
 	{
-		std::vector<BlockTimerStatHandle*>& children = mParent->getChildren();
-		std::vector<BlockTimerStatHandle*>::iterator found_it = std::find(children.begin(), children.end(), mBlock);
+		auto& children = mParent->getChildren();
+		auto found_it = std::find(children.begin(), children.end(), mBlock);
 		if (found_it != children.end())
 		{
 			children.erase(found_it);
@@ -85,6 +84,5 @@ void TimeBlockTreeNode::setParent( BlockTimerStatHandle* parent )
 	parent_tree_node->mChildren.push_back(mBlock);
 	parent_tree_node->mNeedsSorting = true;
 }
-*/
 
 }

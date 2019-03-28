@@ -37,7 +37,6 @@
 #include <set>
 
 // common includes
-#include "llstat.h"
 #include "llstring.h"
 
 // project includes
@@ -209,8 +208,6 @@ public:
 	std::vector<U64>	mOrphanParents;	// LocalID/ip,port of orphaned objects
 	std::vector<OrphanInfo> mOrphanChildren;	// UUID's of orphaned objects
 	S32 mNumOrphans;
-
-	static LLStat sCacheHitRate;
 
 	typedef std::vector<LLPointer<LLViewerObject> > vobj_list_t;
 

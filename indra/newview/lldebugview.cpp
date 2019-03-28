@@ -35,7 +35,6 @@
 #include "lldebugview.h"
 
 // library includes
-#include "llframestatview.h"
 #include "llfasttimerview.h"
 #include "llconsole.h"
 #include "lltextureview.h"
@@ -66,13 +65,6 @@ LLDebugView::LLDebugView(const std::string& name, const LLRect &rect)
 	mDebugConsolep->setFollowsLeft();
 	mDebugConsolep->setVisible( FALSE );
 	addChild(mDebugConsolep);
-
-	r.set(150 - 25, rect.getHeight() - 50, rect.getWidth()/2 - 25, rect.getHeight() - 450);
-	mFrameStatView = new LLFrameStatView("frame stat", r);
-	mFrameStatView->setFollowsTop();
-	mFrameStatView->setFollowsLeft();
-	mFrameStatView->setVisible(FALSE);			// start invisible
-	addChild(mFrameStatView);
 
 	r.setLeftTopAndSize(25, rect.getHeight() - 50,
 						(S32) (gViewerWindow->getVirtualWindowRect().getWidth() * 0.75f), 

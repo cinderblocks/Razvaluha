@@ -1353,7 +1353,7 @@ void LLFloaterIMPanel::onSendMsg()
 			}
 		}
 
-		LLViewerStats::getInstance()->incStat(LLViewerStats::ST_IM_COUNT);
+		add(LLStatViewer::IM_COUNT, 1);
 
 		mInputEditor->setText(LLStringUtil::null);
 	}

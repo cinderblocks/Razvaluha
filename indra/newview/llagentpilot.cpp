@@ -38,7 +38,6 @@
 
 #include "llagentpilot.h"
 #include "llagent.h"
-#include "llframestats.h"
 #include "llappviewer.h"
 #include "llviewercontrol.h"
 
@@ -199,7 +198,6 @@ void LLAgentPilot::updateTarget()
 					{
 						LL_INFOS() << "At start, beginning playback" << LL_ENDL;
 						mTimer.reset();
-						LLFrameStats::startLogging(NULL);
 						mStarted = TRUE;
 					}
 				}
@@ -216,7 +214,6 @@ void LLAgentPilot::updateTarget()
 				else
 				{
 					stopPlayback();
-					LLFrameStats::stopLogging(NULL);
 					mNumRuns--;
 					if (sLoop)
 					{

@@ -1124,7 +1124,7 @@ void LLToolDragAndDrop::dropTextureAllFaces(LLViewerObject* hit_obj,
 		return;
 	}
 	//LLViewerTexture* image = LLViewerTextureManager::getFetchedTexture(asset_id);
-	LLViewerStats::getInstance()->incStat(LLViewerStats::ST_EDIT_TEXTURE_COUNT );
+	add(LLStatViewer::EDIT_TEXTURE, 1);
 	S32 num_faces = hit_obj->getNumTEs();
 	for( S32 face = 0; face < num_faces; face++ )
 	{
@@ -1194,7 +1194,7 @@ void LLToolDragAndDrop::dropTextureOneFace(LLViewerObject* hit_obj,
 	}
 	// update viewer side image in anticipation of update from simulator
 	//LLViewerTexture* image = LLViewerTextureManager::getFetchedTexture(asset_id);
-	LLViewerStats::getInstance()->incStat(LLViewerStats::ST_EDIT_TEXTURE_COUNT );
+	add(LLStatViewer::EDIT_TEXTURE, 1);
 
 	LLTextureEntry* tep = hit_obj ? (hit_obj->getTE(hit_face)) : NULL;
 
@@ -1505,7 +1505,7 @@ void LLToolDragAndDrop::dropObject(LLViewerObject* raycast_target,
 	}
 	// </edit>
 
-	LLViewerStats::getInstance()->incStat(LLViewerStats::ST_REZ_COUNT);
+	add(LLStatViewer::OBJECT_REZ, 1);
 }
 
 void LLToolDragAndDrop::dropInventory(LLViewerObject* hit_obj,

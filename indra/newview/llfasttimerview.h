@@ -2,31 +2,25 @@
  * @file llfasttimerview.h
  * @brief LLFastTimerView class definition
  *
- * $LicenseInfo:firstyear=2004&license=viewergpl$
- * 
- * Copyright (c) 2004-2009, Linden Research, Inc.
- * 
+ * $LicenseInfo:firstyear=2004&license=viewerlgpl$
  * Second Life Viewer Source Code
- * The source code in this file ("Source Code") is provided by Linden Lab
- * to you under the terms of the GNU General Public License, version 2.0
- * ("GPL"), unless you have obtained a separate licensing agreement
- * ("Other License"), formally executed by you and Linden Lab.  Terms of
- * the GPL can be found in doc/GPL-license.txt in this distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/gplv2
+ * Copyright (C) 2010, Linden Research, Inc.
  * 
- * There are special exceptions to the terms and conditions of the GPL as
- * it is applied to this Source Code. View the full text of the exception
- * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at
- * http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 of the License only.
  * 
- * By copying, modifying or distributing this software, you acknowledge
- * that you have read and understood your obligations described above,
- * and agree to abide by those obligations.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * ALL LINDEN LAB SOURCE CODE IS PROVIDED "AS IS." LINDEN LAB MAKES NO
- * WARRANTIES, EXPRESS, IMPLIED OR OTHERWISE, REGARDING ITS ACCURACY,
- * COMPLETENESS OR PERFORMANCE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
 
@@ -35,12 +29,20 @@
 
 #include "llfloater.h"
 #include "llfasttimer.h"
+#include "llunits.h"
+#include "lltracerecording.h"
+#include <deque>
+
+class LLComboBox;
+class LLLayoutPanel;
+class LLPanel;
 
 class LLFastTimerView : public LLFloater
 {
 public:
 	LLFastTimerView(const std::string& name, const LLRect& rect);
-	/*virtual*/ BOOL postBuild();
+	~LLFastTimerView();
+	BOOL postBuild() override;
 
 	static BOOL sAnalyzePerformance;
 
@@ -52,58 +54,114 @@ private:
 	static LLSD analyzePerformanceLogDefault(std::istream& is) ;
 	static void exportCharts(const std::string& base, const std::string& target);
 	void onPause();
-	static void onPauseHandler(void *data);
 
 public:
 
-	virtual BOOL handleMouseDown(S32 x, S32 y, MASK mask);
-	virtual BOOL handleDoubleClick(S32 x, S32 y, MASK mask);
-	virtual BOOL handleRightMouseDown(S32 x, S32 y, MASK mask);
-	virtual BOOL handleMouseUp(S32 x, S32 y, MASK mask);
-	virtual BOOL handleHover(S32 x, S32 y, MASK mask);
-	virtual BOOL handleToolTip(S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen);
-	virtual BOOL handleScrollWheel(S32 x, S32 y, S32 clicks);
-	virtual void draw();
+	BOOL handleMouseDown(S32 x, S32 y, MASK mask) override;
+	BOOL handleDoubleClick(S32 x, S32 y, MASK mask) override;
+	BOOL handleRightMouseDown(S32 x, S32 y, MASK mask) override;
+	BOOL handleMouseUp(S32 x, S32 y, MASK mask) override;
+	BOOL handleHover(S32 x, S32 y, MASK mask) override;
+	BOOL handleToolTip(S32 x, S32 y, std::string& tooltip, LLRect* screen_rect) override;
+	BOOL handleScrollWheel(S32 x, S32 y, S32 clicks) override;
+	void draw() override;
+	void onOpen() override;
+	void onClose(bool app_quitting) override;
+	LLTrace::BlockTimerStatHandle* getLegendID(S32 y);
 
-	LLFastTimer::NamedTimer* getLegendID(S32 y);
-	F64 getTime(const std::string& name);
-
-protected:
-	virtual	void	onClose(bool app_quitting);
 private:	
-	typedef std::vector<std::vector<S32> > bar_positions_t;
-	bar_positions_t mBarStart;
-	bar_positions_t mBarEnd;
-	S32 mDisplayMode;
+	void drawTicks();
+	void drawLineGraph();
+	void drawLegend();
+	void drawHelp(S32 y);
+	void drawBorders( S32 y, const S32 x_start, S32 barh, S32 dy);
+	void drawBars();
 
-	typedef enum child_alignment
+	void printLineStats();
+	void generateUniqueColors();
+	void updateTotalTime();
+
+	struct TimerBar
 	{
-		ALIGN_LEFT,
-		ALIGN_CENTER,
-		ALIGN_RIGHT,
-		ALIGN_COUNT
-	} ChildAlignment;
+		TimerBar()
+		:	mTotalTime(0),
+			mSelfTime(0),
+			mTimeBlock(nullptr),
+			mFirstChild(false),
+			mLastChild(false),
+			mStartFraction(0.f),
+			mEndFraction(1.f)
+		{}
+		F32Seconds			mTotalTime,
+							mSelfTime,
+							mChildrenStart,
+							mChildrenEnd,
+							mSelfStart,
+							mSelfEnd;
+		LLTrace::BlockTimerStatHandle* mTimeBlock;
+		bool				mVisible,
+							mFirstChild,
+							mLastChild;
+		F32					mStartFraction,
+							mEndFraction;
+	};
 
-	ChildAlignment mDisplayCenter;
-	S32 mDisplayCalls;
-	S32 mDisplayHz;
-	U64 mAvgCountTotal;
-	U64 mMaxCountTotal;
-	LLRect mBarRect;
-	S32	mScrollIndex;
-	LLFastTimer::NamedTimer* mHoverID;
-	LLFastTimer::NamedTimer* mHoverTimer;
-	LLRect					mToolTipRect;
-	S32 mHoverBarIndex;
-	LLFrameTimer mHighlightTimer;
-	S32 mPrintStats;
-	S32 mAverageCyclesPerTimer;
-	LLRect mGraphRect;
+	struct TimerBarRow
+	{
+		TimerBarRow() 
+		:	mBottom(0),
+			mTop(0),
+			mBars(nullptr)
+		{}
+		~TimerBarRow();
+		S32			mBottom,
+					mTop;
+		TimerBar*	mBars;
+	};
 
-	// <FS:LO> Making the ledgend part of fast timers scrollable
-	bool mOverLegend;
-	S32 mScrollOffset;
-	// </FS:LO>
+	F32Seconds updateTimerBarWidths(LLTrace::BlockTimerStatHandle* time_block, TimerBarRow& row, S32 history_index, U32& bar_index);
+	S32 updateTimerBarOffsets(LLTrace::BlockTimerStatHandle* time_block, TimerBarRow& row, S32 timer_bar_index = 0);
+	S32 drawBar(LLRect bar_rect, TimerBarRow& row, S32 image_width, S32 image_height, bool hovered = false, bool visible = true, S32 bar_index = 0);
+	void setPauseState(bool pause_state);
+
+	std::deque<TimerBarRow> mTimerBarRows;
+	TimerBarRow				mAverageTimerRow;
+
+	enum EDisplayType
+	{
+		DISPLAY_TIME,
+		DISPLAY_CALLS,
+		DISPLAY_HZ
+	}								mDisplayType;
+	bool							mPauseHistory;
+	F64Seconds						mAllTimeMax,
+									mTotalTimeDisplay;
+	S32								mScrollIndex,
+									mHoverBarIndex,
+									mStatsIndex;
+	S32								mDisplayMode;
+	LLTrace::BlockTimerStatHandle*				mHoverID;
+	LLTrace::BlockTimerStatHandle*				mHoverTimer;
+	LLRect							mToolTipRect,
+									mGraphRect,
+									mBarRect,
+									mLegendRect;
+	LLFrameTimer					mHighlightTimer;
+	LLTrace::PeriodicRecording		mRecording;
+	
+	S32 mScrollPos;
+
+	// Widgets
+	LLComboBox*						mMetricCombo;
+	LLComboBox*						mTimeScaleCombo;
+
+	LLLayoutPanel*					mBarsPanel;
+	LLLayoutPanel*					mLinesPanel;
+
+	LLPanel*						mLegendPanel;
+
+	// UI Resources
+	LLUIImagePtr					mBarImage;
 };
 
 #endif

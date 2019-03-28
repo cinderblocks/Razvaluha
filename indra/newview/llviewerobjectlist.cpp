@@ -120,7 +120,6 @@ extern LLPipeline	gPipeline;
 U32						LLViewerObjectList::sSimulatorMachineIndex = 1; // Not zero deliberately, to speed up index check.
 std::map<U64, U32>			LLViewerObjectList::sIPAndPortToIndex;
 std::map<U64, LLUUID>	LLViewerObjectList::sIndexAndLocalIDToUUID;
-LLStat					LLViewerObjectList::sCacheHitRate("object_cache_hits", 128);
 
 LLViewerObjectList::LLViewerObjectList()
 {
@@ -585,8 +584,6 @@ void LLViewerObjectList::processObjectUpdate(LLMessageSystem *mesgsys,
 			}
 			justCreated = TRUE;
 			mNumNewObjects++;
-			sCacheHitRate.addValue(cached ? 100.f : 0.f);
-
 		}
 
 
@@ -871,7 +868,7 @@ void LLViewerObjectList::update(LLAgent &agent, LLWorld &world)
 	// don't factor frames that were paused into the stats
 	if (! mWasPaused)
 	{
-		LLViewerStats::getInstance()->updateFrameStats(time_diff.value());
+		LLViewerStats::getInstance()->updateFrameStats(time_diff);
 	}
 
 	/*
@@ -923,10 +920,11 @@ void LLViewerObjectList::update(LLAgent &agent, LLWorld &world)
 	}
 	*/
 
-	LLViewerStats::getInstance()->mNumObjectsStat.addValue((S32) mObjects.size() - mNumDeadObjects);
-	LLViewerStats::getInstance()->mNumActiveObjectsStat.addValue(idle_count);
+	sample(LLStatViewer::NUM_OBJECTS, mObjects.size());
+	sample(LLStatViewer::NUM_ACTIVE_OBJECTS, idle_count);
+	/* Singu TODO: Reimplement?
 	LLViewerStats::getInstance()->mNumSizeCulledStat.addValue(mNumSizeCulled);
-	LLViewerStats::getInstance()->mNumVisCulledStat.addValue(mNumVisCulled);
+	LLViewerStats::getInstance()->mNumVisCulledStat.addValue(mNumVisCulled);*/
 }
 
 void LLViewerObjectList::fetchObjectCosts()

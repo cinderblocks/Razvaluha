@@ -29,15 +29,15 @@
 
 #include "lluuid.h"
 #include "lltextureinfodetails.h"
-#include <map>
+#include "lltracerecording.h"
 
 class LLTextureInfo
 {
 public:
-	LLTextureInfo();
+	LLTextureInfo(bool postponeStartRecoreder = true);
 	~LLTextureInfo();
 
-	void setUpLogging(bool writeToViewerLog, bool sendToSim, U32Bytes textureLogThreshold);
+	void setLogging(bool log_info);
 	bool has(const LLUUID& id);
 	void setRequestStartTime(const LLUUID& id, U64 startTime);
 	void setRequestSize(const LLUUID& id, U32 size);
@@ -52,23 +52,19 @@ public:
 	void resetTextureStatistics();
 	U32 getTextureInfoMapSize();
 	LLSD getAverages();
+	void startRecording();
+	void stopRecording();
 
 private:
 	void addRequest(const LLUUID& id);
 
 	std::map<LLUUID, LLTextureInfoDetails *> mTextures;
-
 	LLSD mAverages;
-
-	bool										mLogTextureDownloadsToViewerLog,
-												mLogTextureDownloadsToSimulator;
-	U32Bytes mTotalBytes;
-	U32Milliseconds mTotalMilliseconds;
-	S32 mTextureDownloadsStarted;
-	S32 mTextureDownloadsCompleted;
+	bool										mLoggingEnabled;
 	std::string mTextureDownloadProtocol;
-	U32Bytes mTextureLogThreshold; // in bytes
 	U64Microseconds mCurrentStatsBundleStartTime;
+	LLTrace::Recording							mRecording;
+
 };
 
 #endif // LL_LLTEXTUREINFO_H

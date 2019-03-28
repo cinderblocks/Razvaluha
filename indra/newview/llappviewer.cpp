@@ -64,7 +64,7 @@
 #include "llcalc.h"
 #include "lltexturestats.h"
 #include "lltrace.h"
-//#include "lltracethreadrecorder.h"
+#include "lltracethreadrecorder.h"
 #include "llviewerwindow.h"
 #include "llviewerdisplay.h"
 #include "llviewermedia.h"
@@ -190,7 +190,6 @@
 #include "llvotree.h"
 #include "llfolderview.h"
 #include "lltoolbar.h"
-#include "llframestats.h"
 #include "llagentpilot.h"
 #include "llvovolume.h"
 #include "llflexibleobject.h" 
@@ -526,7 +525,6 @@ static void settings_to_globals()
 	LLSelectMgr::sRenderHiddenSelections = gSavedSettings.getBOOL("RenderHiddenSelections");
 	LLSelectMgr::sRenderLightRadius = gSavedSettings.getBOOL("RenderLightRadius");
 
-	gFrameStats.setTrackStats(gSavedSettings.getBOOL("StatsSessionTrackFrameStats"));
 	gAgentPilot.mNumRuns		= gSavedSettings.getS32("StatsNumRuns");
 	gAgentPilot.mQuitAfterRuns	= gSavedSettings.getBOOL("StatsQuitAfterRuns");
 	gAgent.setHideGroupTitle(gSavedSettings.getBOOL("RenderHideGroupTitle"));
@@ -1294,11 +1292,11 @@ bool LLAppViewer::frame()
 	LLTimer debugTime;
 
 		LL_RECORD_BLOCK_TIME(FTM_FRAME);
-		/*LLTrace::BlockTimer::processTimes();
-		LLTrace::get_frame_recording().nextPeriod();
-		LLTrace::BlockTimer::logStats();
+	LLTrace::BlockTimer::processTimes();
+	LLTrace::get_frame_recording().nextPeriod();
+	LLTrace::BlockTimer::logStats();
 
-		LLTrace::get_thread_recorder()->pullFromChildren();*/
+	LLTrace::get_thread_recorder()->pullFromChildren();
 
 			//clear call stack records
 			LL_CLEAR_CALLSTACKS();
@@ -4222,7 +4220,6 @@ void LLAppViewer::idle()
 		// of SEND_STATS_PERIOD so that the initial stats report will
 		// be sent immediately.
 		static LLFrameStatsTimer viewer_stats_timer(SEND_STATS_PERIOD);
-		reset_statistics();
 
 		// Update session stats every large chunk of time
 		// *FIX: (?) SAMANTHA
@@ -4253,13 +4250,7 @@ void LLAppViewer::idle()
 				LL_INFOS() << "Unknown object updates: " << gObjectList.mNumUnknownUpdates << LL_ENDL;
 				gObjectList.mNumUnknownUpdates = 0;
 			}
-
-			// ViewerMetrics FPS piggy-backing on the debug timer.
-			// The 5-second interval is nice for this purpose.  If the object debug
-			// bit moves or is disabled, please give this a suitable home.
-			LLViewerAssetStatsFF::record_fps_main(gFPSClamped);
 		}
-		gFrameStats.addFrameData();
 	}
 
 	if (!gDisconnected)
@@ -4275,12 +4266,9 @@ void LLAppViewer::idle()
 		//
 		idleNameCache();
 
-		gFrameStats.start(LLFrameStats::IDLE_NETWORK);
 		stop_glerror();
 		idleNetwork();
 		stop_glerror();
-
-		gFrameStats.start(LLFrameStats::AGENT_MISC);
 
 		// Check for away from keyboard, kick idle agents.
 		idle_afk_check();
@@ -4373,7 +4361,6 @@ void LLAppViewer::idle()
 	//
 
 	{
-		gFrameStats.start(LLFrameStats::CLEAN_DEAD);
 		LL_RECORD_BLOCK_TIME(FTM_CLEANUP);
 		{
 			LL_RECORD_BLOCK_TIME(FTM_CLEANUP_OBJECTS);
@@ -4399,7 +4386,6 @@ void LLAppViewer::idle()
 	//
 
 	{
-		gFrameStats.start(LLFrameStats::UPDATE_EFFECTS);
 		LL_RECORD_BLOCK_TIME(FTM_HUD_EFFECTS);
 		LLSelectMgr::getInstance()->updateEffects();
 		LLHUDManager::getInstance()->cleanupEffects();
@@ -4476,10 +4462,8 @@ void LLAppViewer::idle()
 	//
 
 	LL_RECORD_BLOCK_TIME(FTM_WORLD_UPDATE);
-	gFrameStats.start(LLFrameStats::UPDATE_MOVE);
 	gPipeline.updateMove();
 
-	gFrameStats.start(LLFrameStats::UPDATE_PARTICLES);
 	LLWorld::getInstance()->updateParticles();
 	stop_glerror();
 
@@ -4811,7 +4795,7 @@ void LLAppViewer::idleNetwork()
 			gPrintMessagesThisFrame = FALSE;
 		}
 	}
-	LLViewerStats::getInstance()->mNumNewObjectsStat.addValue(gObjectList.mNumNewObjects);
+	add(LLStatViewer::NUM_NEW_OBJECTS, gObjectList.mNumNewObjects);
 
 	// Retransmit unacknowledged packets.
 	gXferManager->retransmitUnackedPackets();
@@ -4837,7 +4821,6 @@ void LLAppViewer::idleNetwork()
 
 void LLAppViewer::idleAudio()
 {
-	gFrameStats.start(LLFrameStats::AUDIO);
 	LL_RECORD_BLOCK_TIME(FTM_AUDIO_UPDATE);
 	
 	if (gAudiop)
@@ -4874,9 +4857,6 @@ void LLAppViewer::disconnectViewer()
 	// Save snapshot for next time, if we made it through initialization
 
 	LL_INFOS() << "Disconnecting viewer!" << LL_ENDL;
-
-	// Dump our frame statistics
-	gFrameStats.dump();
 
 	// Remember if we were flying
 	gSavedSettings.setBOOL("FlyingAtExit", gAgent.getFlying() );
@@ -5107,16 +5087,11 @@ void LLAppViewer::metricsUpdateRegion(U64 region_handle)
 {
 	if (0 != region_handle)
 	{
-		LLViewerAssetStatsFF::set_region_main(region_handle);
+		LLViewerAssetStatsFF::set_region(region_handle);
 		if (LLAppViewer::sTextureFetch)
 		{
 			// Send a region update message into 'thread1' to get the new region.
 			LLAppViewer::sTextureFetch->commandSetRegion(region_handle);
-		}
-		else
-		{
-			// No 'thread1', a.k.a. TextureFetch, so update directly
-			LLViewerAssetStatsFF::set_region_thread1(region_handle);
 		}
 	}
 }
@@ -5127,7 +5102,7 @@ void LLAppViewer::metricsUpdateRegion(U64 region_handle)
  */
 void LLAppViewer::metricsSend(bool enable_reporting)
 {
-	if (! gViewerAssetStatsMain)
+	if (! gViewerAssetStats)
 		return;
 
 	if (LLAppViewer::sTextureFetch)
@@ -5138,17 +5113,14 @@ void LLAppViewer::metricsSend(bool enable_reporting)
 		{
 			std::string	caps_url = regionp->getCapability("ViewerMetrics");
 
-			// Make a copy of the main stats to send into another thread.
-			// Receiving thread takes ownership.
-			LLViewerAssetStats * main_stats(new LLViewerAssetStats(*gViewerAssetStatsMain));
+			LLSD sd = gViewerAssetStats->asLLSD(true);
 			
 			// Send a report request into 'thread1' to get the rest of the data
 			// and provide some additional parameters while here.
 			LLAppViewer::sTextureFetch->commandSendMetrics(caps_url,
 														   gAgentSessionID,
 														   gAgentID,
-														   main_stats);
-			main_stats = 0;		// Ownership transferred
+														   sd);
 		}
 		else
 		{
@@ -5159,6 +5131,6 @@ void LLAppViewer::metricsSend(bool enable_reporting)
 	// Reset even if we can't report.  Rather than gather up a huge chunk of
 	// data, we'll keep to our sampling interval and retain the data
 	// resolution in time.
-	gViewerAssetStatsMain->reset();
+	gViewerAssetStats->reset();
 }
 

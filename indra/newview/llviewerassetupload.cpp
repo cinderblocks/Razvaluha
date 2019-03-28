@@ -289,13 +289,13 @@ void LLResourceUploadInfo::incrementUploadStats() const
 	switch (mAssetType)
 	{
 		case LLAssetType::AT_SOUND:
-			LLViewerStats::getInstance()->incStat(LLViewerStats::ST_UPLOAD_SOUND_COUNT);
+			add(LLStatViewer::UPLOAD_SOUND, 1);
 		break;
 		case LLAssetType::AT_TEXTURE:
-			LLViewerStats::getInstance()->incStat(LLViewerStats::ST_UPLOAD_TEXTURE_COUNT);
+			add(LLStatViewer::UPLOAD_TEXTURE, 1);
 		break;
 		case LLAssetType::AT_ANIMATION:
-			LLViewerStats::getInstance()->incStat(LLViewerStats::ST_UPLOAD_ANIM_COUNT);
+			add(LLStatViewer::ANIMATION_UPLOADS, 1);
 		break;
 		default: break;
 	}

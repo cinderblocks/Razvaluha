@@ -47,7 +47,6 @@
 #include "lldrawpoolalpha.h"
 #include "llfeaturemanager.h"
 #include "llfirstuse.h"
-#include "llframestats.h"
 #include "llhudmanager.h"
 #include "llimagebmp.h"
 #include "llimagegl.h"
@@ -360,7 +359,6 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 		// Clean up memory the pools may have allocated
 		if (rebuild)
 		{
-			gFrameStats.start(LLFrameStats::REBUILD);
 			stop_glerror();
 			gPipeline.rebuildPools();
 			stop_glerror();
@@ -424,7 +422,6 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 	//
 
 	LLAppViewer::instance()->pingMainloopTimeout("Display:TextureStats");
-	gFrameStats.start(LLFrameStats::UPDATE_TEX_STATS);
 	stop_glerror();
 
 	LLImageGL::updateStats(gFrameTimeSeconds);
@@ -724,7 +721,6 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 		if(!tiling)
 		{
 			LL_RECORD_BLOCK_TIME(FTM_DISPLAY_UPDATE_GEOM);
-			gFrameStats.start(LLFrameStats::UPDATE_GEOM);
 			const F32 max_geom_update_time = 0.005f*10.f*gFrameIntervalSeconds; // 50 ms/second update time
 			gPipeline.createObjects(max_geom_update_time);
 			gPipeline.processPartitionQ();
@@ -736,7 +732,6 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 
 		stop_glerror();
 		
-		gFrameStats.start(LLFrameStats::UPDATE_CULL);
 		S32 water_clip = 0;
 		if ((LLViewerShaderMgr::instance()->getVertexShaderLevel(LLViewerShaderMgr::SHADER_ENVIRONMENT) > 1) &&
 			 (gPipeline.hasRenderType(LLPipeline::RENDER_TYPE_WATER) ||
@@ -869,15 +864,16 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 		LLAppViewer::instance()->pingMainloopTimeout("Display:UpdateImages");
 		LLError::LLCallStacks::clear() ;
 		LL_PUSH_CALLSTACKS();
-		gFrameStats.start(LLFrameStats::IMAGE_UPDATE);
 
 		{
 			LL_RECORD_BLOCK_TIME(FTM_IMAGE_UPDATE);
 			
 			{
 				LL_RECORD_BLOCK_TIME(FTM_IMAGE_UPDATE_CLASS);
-				LLViewerTexture::updateClass(LLViewerCamera::getInstance()->getVelocityStat()->getMean(),
-											LLViewerCamera::getInstance()->getAngularVelocityStat()->getMean());
+				LLTrace::CountStatHandle<>* velocity_stat = LLViewerCamera::getVelocityStat();
+				LLTrace::CountStatHandle<>* angular_velocity_stat = LLViewerCamera::getAngularVelocityStat();
+				LLViewerTexture::updateClass(LLTrace::get_frame_recording().getPeriodMeanPerSec(*velocity_stat),
+					LLTrace::get_frame_recording().getPeriodMeanPerSec(*angular_velocity_stat));
 			}
 
 			
@@ -916,7 +912,6 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 		LLAppViewer::instance()->pingMainloopTimeout("Display:StateSort");
 		{
 			LLViewerCamera::sCurCameraID = LLViewerCamera::CAMERA_WORLD;
-			gFrameStats.start(LLFrameStats::STATE_SORT);
 			gPipeline.stateSort(*LLViewerCamera::getInstance(), result);
 			stop_glerror();
 				
@@ -927,7 +922,6 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 				// rebuildPools
 				//
 				//
-				gFrameStats.start(LLFrameStats::REBUILD);
 				gPipeline.rebuildPools();
 				stop_glerror();
 			}
@@ -1166,7 +1160,6 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 		if (!for_snapshot || LLPipeline::sRenderDeferred)
 		{
 			LL_RECORD_BLOCK_TIME(FTM_RENDER_UI);
-			gFrameStats.start(LLFrameStats::RENDER_UI);
 			render_ui();
 		}
 
@@ -1179,7 +1172,6 @@ void display(BOOL rebuild, F32 zoom_factor, int subfield, BOOL for_snapshot, boo
 
 	LLAppViewer::instance()->pingMainloopTimeout("Display:FrameStats");
 	
-	gFrameStats.start(LLFrameStats::MISC_END);
 	stop_glerror();
 
 	if (LLPipeline::sRenderFrameTest)

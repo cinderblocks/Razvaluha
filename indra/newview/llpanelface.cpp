@@ -1786,7 +1786,7 @@ BOOL LLPanelFace::onDragTexture(LLUICtrl*, LLInventoryItem* item)
 
 void LLPanelFace::onCommitTexture( const LLSD& data )
 {
-	LLViewerStats::getInstance()->incStat(LLViewerStats::ST_EDIT_TEXTURE_COUNT );
+	add(LLStatViewer::EDIT_TEXTURE, 1);
 	sendTexture();
 }
 

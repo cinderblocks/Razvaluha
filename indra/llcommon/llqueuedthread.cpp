@@ -30,7 +30,7 @@
 
 #include "llstl.h"
 #include "lltimer.h"	// ms_sleep()
-//#include "lltracethreadrecorder.h"
+#include "lltracethreadrecorder.h"
 
 //============================================================================
 
@@ -472,7 +472,7 @@ S32 LLQueuedThread::processNextRequest()
 			}
 		}
 		
-		//LLTrace::get_thread_recorder()->pushToParent();
+		LLTrace::get_thread_recorder()->pushToParent();
 	}
 
 	S32 pending = getPending();
@@ -505,7 +505,7 @@ void LLQueuedThread::run()
 		
 		if (isQuitting())
 		{
-			//LLTrace::get_thread_recorder()->pushToParent();
+			LLTrace::get_thread_recorder()->pushToParent();
 			endThread();
 			break;
 		}

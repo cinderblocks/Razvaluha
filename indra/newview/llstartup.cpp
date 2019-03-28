@@ -120,8 +120,6 @@
 #include "llfloatertopobjects.h"
 #include "llfloatertos.h"
 #include "llfloaterworldmap.h"
-#include "llframestats.h"
-#include "llframestatview.h"
 #include "llgesturemgr.h"
 #include "llgroupmgr.h"
 #include "llhudeffecttrail.h"
@@ -303,7 +301,6 @@ bool update_dialog_callback(const LLSD& notification, const LLSD& response);
 void login_packet_failed(void**, S32 result);
 void use_circuit_callback(void**, S32 result);
 void register_viewer_callbacks(LLMessageSystem* msg);
-void init_stat_view();
 void asset_callback_nothing(LLVFS*, const LLUUID&, LLAssetType::EType, void*, S32);
 bool callback_choose_gender(const LLSD& notification, const LLSD& response);
 void init_start_screen(S32 location_id);
@@ -524,8 +521,6 @@ bool idle_startup()
 
 		// Load autopilot and stats stuff
 		gAgentPilot.load(gSavedSettings.getString("StatsPilotFile"));
-		gFrameStats.setFilename(gSavedSettings.getString("StatsFile"));
-		gFrameStats.setSummaryFilename(gSavedSettings.getString("StatsSummaryFile"));
 
 		//gErrorStream.setTime(gSavedSettings.getBOOL("LogTimestamps"));
 
@@ -1460,7 +1455,7 @@ bool idle_startup()
 				{
 					// Couldn't login because user/password is wrong
 					// Clear the password
-					password = "";
+					password.clear();
 				}
 				/*if(reason_response == "update")
 				{
@@ -1541,7 +1536,7 @@ bool idle_startup()
 				// create the default proximal channel
 				LLVoiceChannel::initClass();
 				LLStartUp::setStartupState( STATE_WORLD_INIT);
-//				LLTrace::get_frame_recording().reset();
+				LLTrace::get_frame_recording().reset();
 			}
 			else
 			{
@@ -1791,10 +1786,6 @@ bool idle_startup()
 
 		//reset statistics
 		LLViewerStats::instance().resetStats();
-
-		// Set up all of our statistics UI stuff.
-		display_startup();
-		init_stat_view();
 
 		display_startup();
 		//
@@ -2547,7 +2538,7 @@ bool idle_startup()
 		if (wearables_time > MAX_WEARABLES_TIME)
 		{
 			LLNotificationsUtil::add("ClothingLoading");
-			LLViewerStats::getInstance()->incStat(LLViewerStats::ST_WEARABLES_TOO_LONG);
+			record(LLStatViewer::LOADING_WEARABLES_LONG_DELAY, wearables_time);
 			LLStartUp::setStartupState( STATE_CLEANUP );
 			return TRUE;
 		}
@@ -3107,13 +3098,6 @@ void register_viewer_callbacks(LLMessageSystem* msg)
 	msg->setHandlerFuncFast(_PREHASH_FeatureDisabled, process_feature_disabled_message);
 }
 
-
-void init_stat_view()
-{
-	LLFrameStatView *frameviewp = gDebugView->mFrameStatView;
-	frameviewp->setup(gFrameStats);
-	frameviewp->mShowPercent = FALSE;
-}
 
 void asset_callback_nothing(LLVFS*, const LLUUID&, LLAssetType::EType, void*, S32)
 {

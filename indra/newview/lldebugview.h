@@ -42,7 +42,6 @@
 class LLButton;
 class LLToolView;
 class LLStatusPanel;
-class LLFrameStatView;
 class LLFastTimerView;
 class LLMemoryView;
 class LLConsole;
@@ -55,7 +54,6 @@ public:
 	LLDebugView(const std::string& name, const LLRect &rect);
 	~LLDebugView();
 
-	LLFrameStatView* mFrameStatView;
 	LLFastTimerView* mFastTimerView;
 	LLMemoryView*	 mMemoryView;
 	LLConsole*		 mDebugConsolep;

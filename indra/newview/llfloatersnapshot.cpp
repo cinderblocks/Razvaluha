@@ -1413,7 +1413,7 @@ void LLSnapshotLivePreview::saveTexture()
 	}
 
 	gViewerWindow->playSnapshotAnimAndSound();
-	LLViewerStats::getInstance()->incStat(LLViewerStats::ST_SNAPSHOT_COUNT );
+	add(LLStatViewer::SNAPSHOT, 1);
 }
 
 void LLSnapshotLivePreview::saveLocal()

@@ -854,10 +854,10 @@ void really_send_chat_from_viewer(const std::string& utf8_out_text, EChatType ty
 	{
 		msg->newMessage("ScriptDialogReply");
 		msg->nextBlock("AgentData");
-		msg->addUUID("AgentID", gAgent.getID());
-		msg->addUUID("SessionID", gAgent.getSessionID());
+		msg->addUUID("AgentID", gAgentID);
+		msg->addUUID("SessionID", gAgentSessionID);
 		msg->nextBlock("Data");
-		msg->addUUID("ObjectID", gAgent.getID());
+		msg->addUUID("ObjectID", gAgentID);
 		msg->addS32("ChatChannel", channel);
 		msg->addS32("ButtonIndex", 0);
 		msg->addString("ButtonLabel", utf8_out_text);
@@ -865,7 +865,7 @@ void really_send_chat_from_viewer(const std::string& utf8_out_text, EChatType ty
 	// </edit>
 	gAgent.sendReliableMessage();
 
-	LLViewerStats::getInstance()->incStat(LLViewerStats::ST_CHAT_COUNT);
+	add(LLStatViewer::CHAT_COUNT, 1);
 }
 
 

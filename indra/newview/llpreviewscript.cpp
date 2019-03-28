@@ -1166,7 +1166,7 @@ void LLScriptEdCore::onBtnInsertFunction(LLUICtrl *ui, void* userdata)
 
 void LLScriptEdCore::doSave( BOOL close_after_save)
 {
-	LLViewerStats::getInstance()->incStat( LLViewerStats::ST_LSL_SAVE_COUNT );
+	add(LLStatViewer::LSL_SAVES, 1);
 
 	if( mSaveCallback )
 	{

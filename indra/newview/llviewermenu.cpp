@@ -92,7 +92,6 @@
 #include "llfloatertools.h"
 #include "llfloaterworldmap.h"
 #include "llfloatermemleak.h"
-#include "llframestats.h"
 #include "llavataractions.h"
 #include "llgivemoney.h"
 #include "llgroupmgr.h"
@@ -798,12 +797,6 @@ void init_client_menu(LLMenuGL* menu)
 		LLMenuGL* sub = new LLMenuGL("Consoles");
 		sub->setCanTearOff(TRUE);
 		menu->addChild(sub);
-		sub->addChild(new LLMenuItemCheckGL("Frame Console", 
-										&toggle_visibility,
-										nullptr,
-										&get_visibility,
-										(void*)gDebugView->mFrameStatView,
-										'2', MASK_CONTROL|MASK_SHIFT ) );
 		sub->addChild(new LLMenuItemCheckGL("Texture Console", 
 										&toggle_visibility,
 										nullptr,
@@ -1007,15 +1000,6 @@ void init_client_menu(LLMenuGL* menu)
 		LLMenuGL* sub = nullptr;
 		sub = new LLMenuGL("Recorder");
 		sub->setCanTearOff(TRUE);
-
-		sub->addChild(new LLMenuItemCheckGL("Full Session Logging", &menu_toggle_control, nullptr, &menu_check_control, (void*)"StatsSessionTrackFrameStats"));
-
-		sub->addChild(new LLMenuItemCallGL("Start Logging",	&LLFrameStats::startLogging, nullptr));
-		sub->addChild(new LLMenuItemCallGL("Stop Logging",	&LLFrameStats::stopLogging, nullptr));
-		sub->addChild(new LLMenuItemCallGL("Log 10 Seconds", &LLFrameStats::timedLogging10, nullptr));
-		sub->addChild(new LLMenuItemCallGL("Log 30 Seconds", &LLFrameStats::timedLogging30, nullptr));
-		sub->addChild(new LLMenuItemCallGL("Log 60 Seconds", &LLFrameStats::timedLogging60, nullptr));
-		sub->addSeparator();
 		sub->addChild(new LLMenuItemCallGL("Start Playback", &LLAgentPilot::startPlayback, nullptr));
 		sub->addChild(new LLMenuItemCallGL("Stop Playback",	&LLAgentPilot::stopPlayback, nullptr));
 		sub->addChild(new LLMenuItemToggleGL("Loop Playback", &LLAgentPilot::sLoop) );
@@ -1173,6 +1157,7 @@ void init_debug_ui_menu(LLMenuGL* menu)
 	menu->addChild(new LLMenuItemCallGL( "Dump Focus Holder", &handle_dump_focus, nullptr, nullptr, 'F', MASK_ALT | MASK_CONTROL));
 	menu->addChild(new LLMenuItemCallGL( "Print Selected Object Info",	&print_object_info, nullptr, nullptr, 'P', MASK_CONTROL|MASK_SHIFT ));
 	menu->addChild(new LLMenuItemCallGL( "Print Agent Info",			&print_agent_nvpairs, nullptr, nullptr, 'P', MASK_SHIFT ));
+	void output_statistics(void*);
 	menu->addChild(new LLMenuItemCallGL( "Memory Stats",  &output_statistics, nullptr, nullptr, 'M', MASK_SHIFT | MASK_ALT | MASK_CONTROL));
 	menu->addChild(new LLMenuItemCheckGL("Double-Click Auto-Pilot", 
 		menu_toggle_double_click_control, nullptr, menu_check_control,

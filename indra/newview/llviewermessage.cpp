@@ -5413,139 +5413,15 @@ void process_sim_stats(LLMessageSystem *msg, void **user_data)
 		F32 stat_value;
 		msg->getU32("Stat", "StatID", stat_id, i);
 		msg->getF32("Stat", "StatValue", stat_value, i);
-		switch (stat_id)
+		LLStatViewer::SimMeasurementSampler* measurementp = LLStatViewer::SimMeasurementSampler::getInstance((ESimStatID)stat_id);
+
+		if (measurementp)
 		{
-		case LL_SIM_STAT_TIME_DILATION:
-			LLViewerStats::getInstance()->mSimTimeDilation.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_FPS:
-			LLViewerStats::getInstance()->mSimFPS.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_PHYSFPS:
-			LLViewerStats::getInstance()->mSimPhysicsFPS.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_AGENTUPS:
-			LLViewerStats::getInstance()->mSimAgentUPS.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_FRAMEMS:
-			LLViewerStats::getInstance()->mSimFrameMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_NETMS:
-			LLViewerStats::getInstance()->mSimNetMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SIMOTHERMS:
-			LLViewerStats::getInstance()->mSimSimOtherMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SIMPHYSICSMS:
-			LLViewerStats::getInstance()->mSimSimPhysicsMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_AGENTMS:
-			LLViewerStats::getInstance()->mSimAgentMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_IMAGESMS:
-			LLViewerStats::getInstance()->mSimImagesMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SCRIPTMS:
-			LLViewerStats::getInstance()->mSimScriptMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_NUMTASKS:
-			LLViewerStats::getInstance()->mSimObjects.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_NUMTASKSACTIVE:
-			LLViewerStats::getInstance()->mSimActiveObjects.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_NUMAGENTMAIN:
-			LLViewerStats::getInstance()->mSimMainAgents.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_NUMAGENTCHILD:
-			LLViewerStats::getInstance()->mSimChildAgents.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_NUMSCRIPTSACTIVE:
-			if (gSavedSettings.getBOOL("AscentDisplayTotalScriptJumps"))
-			{
-				if(abs(stat_value-gSavedSettings.getF32("Ascentnumscripts"))>gSavedSettings.getF32("Ascentnumscriptdiff"))
-				{
-					LLChat chat;
-					std::stringstream os;
-					os << (U32)gSavedSettings.getF32("Ascentnumscripts");
-					std::stringstream ns;
-					ns << (U32)stat_value;
-					std::stringstream diff;
-					S32 tdiff = (stat_value-gSavedSettings.getF32("Ascentnumscripts"));
-					diff << tdiff;
-					std::string change_type = "";
-					if (tdiff > 0) change_type = "+";
-					chat.mText = "Total scripts jumped from " + os.str() + " to " + ns.str() + " ("+change_type+diff.str()+")";
-					LLFloaterChat::addChat(chat, FALSE,FALSE);
-				}
-				gSavedSettings.setF32("Ascentnumscripts",stat_value);
-			}
-			LLViewerStats::getInstance()->mSimActiveScripts.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SCRIPT_EPS:
-			LLViewerStats::getInstance()->mSimScriptEPS.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_INPPS:
-			LLViewerStats::getInstance()->mSimInPPS.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_OUTPPS:
-			LLViewerStats::getInstance()->mSimOutPPS.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_PENDING_DOWNLOADS:
-			LLViewerStats::getInstance()->mSimPendingDownloads.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_PENDING_UPLOADS:
-			LLViewerStats::getInstance()->mSimPendingUploads.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_PENDING_LOCAL_UPLOADS:
-			LLViewerStats::getInstance()->mSimPendingLocalUploads.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_TOTAL_UNACKED_BYTES:
-			LLViewerStats::getInstance()->mSimTotalUnackedBytes.addValue(stat_value / 1024.f);
-			break;
-		case LL_SIM_STAT_PHYSICS_PINNED_TASKS:
-			LLViewerStats::getInstance()->mPhysicsPinnedTasks.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_PHYSICS_LOD_TASKS:
-			LLViewerStats::getInstance()->mPhysicsLODTasks.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SIMPHYSICSSTEPMS:
-			LLViewerStats::getInstance()->mSimSimPhysicsStepMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SIMPHYSICSSHAPEMS:
-			LLViewerStats::getInstance()->mSimSimPhysicsShapeUpdateMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SIMPHYSICSOTHERMS:
-			LLViewerStats::getInstance()->mSimSimPhysicsOtherMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SIMPHYSICSMEMORY:
-			LLViewerStats::getInstance()->mPhysicsMemoryAllocated.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SIMSPARETIME:
-			LLViewerStats::getInstance()->mSimSpareMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SIMSLEEPTIME:
-			LLViewerStats::getInstance()->mSimSleepMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_IOPUMPTIME:
-			LLViewerStats::getInstance()->mSimPumpIOMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_PCTSCRIPTSRUN:
-			LLViewerStats::getInstance()->mSimPctScriptsRun.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SIMAISTEPTIMEMS:
-			LLViewerStats::getInstance()->mSimSimAIStepMsec.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_SKIPPEDAISILSTEPS_PS:
-			LLViewerStats::getInstance()->mSimSimSkippedSilhouetteSteps.addValue(stat_value);
-			break;
-		case LL_SIM_STAT_PCTSTEPPEDCHARACTERS:
-			LLViewerStats::getInstance()->mSimSimPctSteppedCharacters.addValue(stat_value);
-			break;
-		default:
-			// Used to be a commented out warning.
- 			LL_DEBUGS("Messaging") << "Unknown stat id" << stat_id << LL_ENDL;
-		  break;
+			measurementp->sample(stat_value);
+		}
+		else
+		{
+			LL_WARNS() << "Unknown sim stat identifier: " << stat_id << LL_ENDL;
 		}
 	}
 
@@ -6692,7 +6568,7 @@ bool attempt_standard_notification(LLMessageSystem* msgsystem)
 		}
 		else if (notificationID == "YouDiedAndGotTPHome")
 		{
-			LLViewerStats::getInstance()->incStat(LLViewerStats::ST_KILLED_COUNT);
+			add(LLStatViewer::KILLED, 1);
 		}
 		else if (notificationID == "RegionRestartMinutes" || notificationID == "RegionRestartSeconds")
 		{
@@ -6740,7 +6616,7 @@ static void process_special_alert_messages(const std::string& message)
 	// text should be altered in the notifications.xml files.
 	if ( message == "You died and have been teleported to your home location")
 	{
-		LLViewerStats::getInstance()->incStat(LLViewerStats::ST_KILLED_COUNT);
+		add(LLStatViewer::KILLED, 1);
 	}
 	else if( message == "Home position set." )
 	{

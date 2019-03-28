@@ -249,30 +249,25 @@ mIsNavMeshDirty(false)
 	S32 y = 0;
 	LLRect r;
 	r.set( x-SIM_STAT_WIDTH, y+MENU_BAR_HEIGHT-1, x, y+1);
-	mSGBandwidth = new LLStatGraph("BandwidthGraph", r);
-	mSGBandwidth->setFollows(FOLLOWS_BOTTOM | FOLLOWS_RIGHT);
-	mSGBandwidth->setStat(&LLViewerStats::getInstance()->mKBitStat);
-	mSGBandwidth->setLabel(getString("bandwidth_tooltip") + " ");
-	mSGBandwidth->setUnits("Kbps");
-	mSGBandwidth->setPrecision(0);
-	mSGBandwidth->setMouseOpaque(FALSE);
+	LLStatGraph::Params p;
+	p.label(getString("bandwidth_tooltip") + ' ').name("BandwidthGraph").rect(r).mouse_opaque(false)
+		.follows.flags(FOLLOWS_BOTTOM | FOLLOWS_RIGHT);
+	p.decimal_digits(0).unit_label("Kbps").stat(LLStatViewer::ACTIVE_MESSAGE_DATA_RECEIVED.getName());
+	mSGBandwidth = new LLStatGraph(p);
 	addChild(mSGBandwidth);
 	x -= SIM_STAT_WIDTH + 2;
 
 	r.set( x-SIM_STAT_WIDTH, y+MENU_BAR_HEIGHT-1, x, y+1);
-	mSGPacketLoss = new LLStatGraph("PacketLossPercent", r);
-	mSGPacketLoss->setFollows(FOLLOWS_BOTTOM | FOLLOWS_RIGHT);
-	mSGPacketLoss->setStat(&LLViewerStats::getInstance()->mPacketsLostPercentStat);
-	mSGPacketLoss->setLabel(getString("packet_loss_tooltip") + " ");
-	mSGPacketLoss->setUnits("%");
-	mSGPacketLoss->setMin(0.f);
-	mSGPacketLoss->setMax(5.f);
-	mSGPacketLoss->setThreshold(0, 0.5f);
-	mSGPacketLoss->setThreshold(1, 1.f);
-	mSGPacketLoss->setThreshold(2, 3.f);
-	mSGPacketLoss->setPrecision(1);
-	mSGPacketLoss->setMouseOpaque(FALSE);
-	mSGPacketLoss->mPerSec = FALSE;
+	p.label(getString("packet_loss_tooltip") + ' ').name("PacketLossPercent").rect(r);
+	p.unit_label("%");
+	p.decimal_digits(1).min(0.f).max(5.f).stat(LLStatViewer::PACKETS_LOST_PERCENT.getName());
+	mSGPacketLoss = new LLStatGraph(p);
+	mSGPacketLoss->setThresholds(
+	{
+		{ 0.5f, LLColor4::green },
+		{ 1.f, LLColor4::yellow },
+		{ 3.f, LLColor4::red }
+	});
 	addChild(mSGPacketLoss);
 
 	mStatBtn = getChild<LLTextBox>("stat_btn");
@@ -324,9 +319,12 @@ void LLStatusBar::refresh()
 	F32 bwtotal = gViewerThrottle.getMaxBandwidth() / 1000.f;
 	mSGBandwidth->setMin(0.f);
 	mSGBandwidth->setMax(bwtotal*1.25f);
-	mSGBandwidth->setThreshold(0, bwtotal*0.75f);
-	mSGBandwidth->setThreshold(1, bwtotal);
-	mSGBandwidth->setThreshold(2, bwtotal);
+	mSGPacketLoss->setThresholds(
+	{
+		{ bwtotal*0.75f, LLColor4::green },
+		{ bwtotal, LLColor4::yellow },
+		{ bwtotal, LLColor4::red }
+	});
 
 	// Singu Note: Use system's time if the user desires, otherwise use server time
 	static const LLCachedControl<bool> show_local_time("LiruLocalTime");

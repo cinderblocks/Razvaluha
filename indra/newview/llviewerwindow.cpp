@@ -105,7 +105,6 @@
 #include "llfloatertools.h"
 #include "llfloaterworldmap.h"
 #include "llfocusmgr.h"
-#include "llframestatview.h"
 #include "llgesturemgr.h"
 #include "llglheaders.h"
 #include "llhoverview.h"
@@ -153,6 +152,7 @@
 #include "lltoolplacer.h"
 #include "lltoolselectland.h"
 #include "lltoolview.h"
+#include "lltracerecording.h"
 #include "lltrans.h"
 #include "lluictrlfactory.h"
 #include "llurldispatcher.h"		// SLURL from other app instance
@@ -256,6 +256,8 @@ std::string	LLViewerWindow::sSnapshotDir;
 
 std::string	LLViewerWindow::sMovieBaseName;
 
+LLTrace::SampleStatHandle<> LLViewerWindow::sMouseVelocityStat("Mouse Velocity");
+
 extern void toggle_debug_menus(void*);
 
 ////////////////////////////////////////////////////////////////////////////
@@ -322,7 +324,7 @@ public:
 		static const LLCachedControl<bool> slb_show_fps("SLBShowFPS");
 		if (slb_show_fps)
 		{
-			addText(xpos+280, ypos+5, llformat("FPS %3.1f", LLViewerStats::getInstance()->mFPSStat.getMeanPerSec()));
+			addText(xpos+280, ypos+5, llformat("FPS %3.1f", LLViewerStats::instance().getRecording().getPerSec(LLStatViewer::FPS)));
 			ypos += y_inc;
 		}
 
@@ -1496,10 +1498,12 @@ BOOL LLViewerWindow::handlePaint(LLWindow *window,  S32 x,  S32 y, S32 width,  S
 		FillRect(hdc, &wnd_rect, CreateSolidBrush(RGB(255, 255, 255)));
 
 		std::string temp_str;
+		LLTrace::Recording& recording = LLViewerStats::instance().getRecording();
 		temp_str = llformat( "FPS %3.1f Phy FPS %2.1f Time Dil %1.3f",		/* Flawfinder: ignore */
-				LLViewerStats::getInstance()->mFPSStat.getMeanPerSec(),
-				LLViewerStats::getInstance()->mSimPhysicsFPS.getPrev(0),
-				LLViewerStats::getInstance()->mSimTimeDilation.getPrev(0));
+			recording.getPerSec(LLStatViewer::FPS), //mFPSStat.getMeanPerSec(),
+			recording.getLastValue(LLStatViewer::SIM_PHYSICS_FPS),
+			recording.getLastValue(LLStatViewer::SIM_TIME_DILATION));
+
 		S32 len = temp_str.length();
 		TextOutW(hdc, 0, 0, utf8str_to_utf16str(temp_str).c_str(), len);
 
@@ -2452,8 +2456,9 @@ void LLViewerWindow::reshape(S32 width, S32 height)
 			}
 		}
 
-		LLViewerStats::getInstance()->setStat(LLViewerStats::ST_WINDOW_WIDTH, (F64)width);
-		LLViewerStats::getInstance()->setStat(LLViewerStats::ST_WINDOW_HEIGHT, (F64)height);
+		sample(LLStatViewer::WINDOW_WIDTH, width);
+		sample(LLStatViewer::WINDOW_HEIGHT, height);
+
 		gResizeScreenTexture = TRUE;
 		LLLayoutStack::updateClass();
 	}
@@ -3608,7 +3613,7 @@ void LLViewerWindow::updateMouseDelta()
 		mouse_vel.setVec((F32) dx, (F32) dy);
 	}
 
-	mMouseVelocityStat.addValue(mouse_vel.magVec());
+	sample(sMouseVelocityStat, mouse_vel.magVec());
 }
 
 void LLViewerWindow::updateKeyboardFocus()

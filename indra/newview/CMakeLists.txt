@@ -303,8 +303,6 @@ set(viewer_SOURCE_FILES
     llfolderview.cpp
     llfolderviewitem.cpp
     llfollowcam.cpp
-    llframestats.cpp
-    llframestatview.cpp
     llgesturemgr.cpp
     llgiveinventory.cpp
     llgivemoney.cpp
@@ -852,8 +850,6 @@ set(viewer_HEADER_FILES
     llfoldervieweventlistener.h
     llfolderviewitem.h
     llfollowcam.h
-    llframestats.h
-    llframestatview.h
     llgesturemgr.h
     llgiveinventory.h
     llgivemoney.h

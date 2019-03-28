@@ -66,7 +66,7 @@
 #include "llagent.h"
 #include "llappviewer.h"
 #include "llxuiparser.h"
-//#include "lltracerecording.h"
+#include "lltracerecording.h"
 #include "llviewerdisplay.h"
 #include "llviewerwindow.h"
 #include "llprogressview.h"
@@ -757,15 +757,18 @@ void LLViewerTextureList::updateImages(F32 max_time)
 	}
 	cleared = FALSE;
 
+	LLAppViewer::getTextureFetch()->setTextureBandwidth(LLTrace::get_frame_recording().getPeriodMeanPerSec(LLStatViewer::TEXTURE_NETWORK_DATA_RECEIVED).value());
 
 	{
-		LLViewerStats::getInstance()->mNumImagesStat.addValue(sNumImages);
-		LLViewerStats::getInstance()->mNumRawImagesStat.addValue(LLImageRaw::sRawImageCount);
-		LLViewerStats::getInstance()->mGLTexMemStat.addValue((F32)LLImageGL::sGlobalTextureMemory.valueInUnits<LLUnits::Megabytes>());
-		LLViewerStats::getInstance()->mGLBoundMemStat.addValue((F32)LLImageGL::sBoundTextureMemory.valueInUnits<LLUnits::Megabytes>());
-		LLViewerStats::getInstance()->mRawMemStat.addValue((F32)BYTES_TO_MEGA_BYTES(LLImageRaw::sGlobalRawMemory));
-		LLViewerStats::getInstance()->mFormattedMemStat.addValue((F32)BYTES_TO_MEGA_BYTES(LLImageFormatted::sGlobalFormattedMemory));
+		using namespace LLStatViewer;
+		sample(NUM_IMAGES, sNumImages);
+		sample(NUM_RAW_IMAGES, LLImageRaw::sRawImageCount);
+		sample(GL_TEX_MEM, LLImageGL::sGlobalTextureMemory);
+		sample(GL_BOUND_MEM, LLImageGL::sBoundTextureMemory);
+		sample(RAW_MEM, F64Bytes(LLImageRaw::sGlobalRawMemory));
+		sample(FORMATTED_MEM, F64Bytes(LLImageFormatted::sGlobalFormattedMemory));
 	}
+
 
 	{
 		//loading from fast cache 

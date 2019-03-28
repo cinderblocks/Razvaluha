@@ -33,7 +33,7 @@
 
 #include "lltimer.h"
 #include "lltrace.h"
-//#include "lltracethreadrecorder.h"
+#include "lltracethreadrecorder.h"
 #include "llexception.h"
 
 #include <chrono>
@@ -108,7 +108,7 @@ void LLThread::runWrapper()
 #endif
 
 	// for now, hard code all LLThreads to report to single master thread recorder, which is known to be running on main thread
-	//mRecorder = std::make_unique<LLTrace::ThreadRecorder>(*LLTrace::get_master_thread_recorder());
+	mRecorder = std::make_unique<LLTrace::ThreadRecorder>(*LLTrace::get_master_thread_recorder());
 
     try
     {
@@ -135,7 +135,7 @@ void LLThread::runWrapper()
 
         //LL_INFOS() << "LLThread::staticRun() Exiting: " << mName << LL_ENDL;
 
-		//mRecorder.reset(nullptr);
+	mRecorder.reset(nullptr);
 
         // We're done with the run function, this thread is done executing now.
         //NB: we are using this flag to sync across threads...we really need memory barriers here
@@ -270,7 +270,7 @@ void LLThread::shutdown()
 		}
 	}
 
-	//mRecorder.reset();
+	mRecorder.reset();
 
 	if (mIsLocalPool && mAPRPoolp)
 	{

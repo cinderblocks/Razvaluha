@@ -104,7 +104,7 @@ protected:
 	boost::thread	mThread;
 	BOOL				mIsLocalPool;
 	EThreadStatus	mStatus;
-	//std::unique_ptr<LLTrace::ThreadRecorder> mRecorder;
+	std::unique_ptr<LLTrace::ThreadRecorder> mRecorder;
 
     //a local apr_pool for APRFile operations in this thread. If it exists, LLAPRFile::sAPRFilePoolp should not be used.
     //Note: this pool is used by APRFile ONLY, do NOT use it for any other purposes.
