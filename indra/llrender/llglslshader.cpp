@@ -33,6 +33,7 @@
 #include "llrender.h"
 #include "llcontrol.h"
 #include "llvertexbuffer.h"
+#include "llglheaders.h"
 
 #ifdef LL_RELEASE_FOR_DOWNLOAD
 #define UNIFORM_ERRS LL_WARNS_ONCE("Shader")

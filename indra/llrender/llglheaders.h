@@ -379,6 +379,27 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 #ifndef GL_COMPARE_R_TO_TEXTURE
 #define GL_COMPARE_R_TO_TEXTURE GL_COMPARE_REF_TO_TEXTURE
 #endif
+
+#ifndef glCreateProgramObjectARB
+#define glCreateProgramObjectARB glCreateProgram
+#endif
+
+#ifndef glGetAttribLocationARB
+#define glGetAttribLocationARB glGetAttribLocation
+#endif
+
+#ifndef GL_SAMPLER_1D_ARB
+#define GL_SAMPLER_1D_ARB 0x8B5D
+#endif
+
+#ifndef GL_SAMPLE_2D_RECT_SHADOW_ARB
+#define GL_SAMPLER_2D_RECT_SHADOW_ARB     0x8B64
+#endif
+
+#ifndef GL_OBJECT_ACTIVE_UNIFORMS_ARB
+#define GL_OBJECT_ACTIVE_UNIFORMS_ARB     0x8B86
+#endif
+
 // End Shyotl/Bitten Note
 
 #define GL_EXT_separate_specular_color 1
