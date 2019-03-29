@@ -188,7 +188,7 @@ LLFloaterAbout::LLFloaterAbout()
 			const LLVector3d& coords(region->getOriginGlobal());
 			support << llformat("in %s (%.0f, %.0f) located at ", region->getName().c_str(), coords.mdV[VX]/REGION_WIDTH_METERS, coords.mdV[VY]/REGION_WIDTH_METERS)
 					<< region->getHost().getHostName()
-					<< " (" << region->getHost().getString() << ")";
+					<< " (" << region->getHost().getString() << ')';
 		}
 		}
 		else
@@ -199,17 +199,13 @@ LLFloaterAbout::LLFloaterAbout()
 		support << gLastVersionChannel
 				<< '\n';
 
-		support_widget->appendColoredText(support.str(), FALSE, FALSE, gColors.getColor("TextFgReadOnlyColor"));
-
 		const std::string url(region->getCapability("ServerReleaseNotes"));
 		if (!url.empty())
 		{
-			LLStyleSP server_link_style(new LLStyle(*viewer_link_style));
-			server_link_style->setLinkHREF(url);
-			support_widget->appendText(LLTrans::getString("ReleaseNotes"), false, false, server_link_style);
+			support << '[' << url << ' ' << LLTrans::getString("ReleaseNotes") << ']';
 		}
 
-		support.str("\n\n");
+		support << "\n\n";
 	}
 
 	// *NOTE: Do not translate text like GPU, Graphics Card, etc -
@@ -304,7 +300,7 @@ LLFloaterAbout::LLFloaterAbout()
 				<< '\n';
 	}
 
-	support_widget->appendColoredText(support.str(), FALSE, FALSE, gColors.getColor("TextFgReadOnlyColor"));
+	support_widget->appendText(support.str(), false, false);
 
 	// Fix views
 	support_widget->setCursorPos(0);
