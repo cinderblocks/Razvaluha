@@ -156,7 +156,7 @@ LLCoros::LLCoros():
     // Previously we used
     // boost::context::guarded_stack_allocator::default_stacksize();
     // empirically this is 64KB on Windows and Linux. Try quadrupling.
-#if ADDRESS_SIZE == 64
+#if defined(LL_DARWIN) || defined(_WIN64) || defined(__amd64__) || defined(__x86_64__)
     mStackSize(512*1024)
 #else
     mStackSize(256*1024)
