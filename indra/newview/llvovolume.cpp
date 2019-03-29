@@ -4524,7 +4524,7 @@ BOOL LLVOVolume::lineSegmentIntersect(const LLVector4a& start, const LLVector4a&
 
 bool LLVOVolume::treatAsRigged()
 {
-	return (gFloaterTools->getVisible() || LLFloaterInspect::findInstance()) &&
+	return isSelected() &&
 			(isAttachment() || isAnimatedObject()) && 
 			mDrawable.notNull() &&
 			mDrawable->isState(LLDrawable::RIGGED);
