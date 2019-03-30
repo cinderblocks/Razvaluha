@@ -762,8 +762,6 @@ bool LLVivoxVoiceClient::startAndLaunchDaemon()
         std::string exe_path = gDirUtilp->getExecutableDir();
         exe_path += gDirUtilp->getDirDelimiter();
 #if LL_WINDOWS
-        exe_path += "voice";
-        exe_path += gDirUtilp->getDirDelimiter();
         exe_path += "SLVoice.exe";
 #elif LL_DARWIN
         exe_path += "../Resources/SLVoice";
@@ -812,7 +810,7 @@ bool LLVivoxVoiceClient::startAndLaunchDaemon()
 			if (gSavedSettings.getBOOL("VoiceMultiInstance"))
 			{
 				// Set TEMPORARY random voice port
-				LLControlVariable* voice_port = gSavedSettings.getControl("VoicePort");
+				LLControlVariable* voice_port = gSavedSettings.getControl("VivoxVoicePort");
 				if (voice_port)
 				{
 					S32 port_nr = 30000 + ll_rand(20000);
@@ -820,7 +818,7 @@ bool LLVivoxVoiceClient::startAndLaunchDaemon()
 				}
 				// Tell voice gateway to listen to a specific port
 				params.args.add("-i");
-				params.args.add(llformat("127.0.0.1:%u", gSavedSettings.getU32("VoicePort")));
+				params.args.add(llformat("%s:%u", gSavedSettings.getString("VivoxVoiceHost"), voice_port.get().asU32()));
 			}
 
             params.cwd = gDirUtilp->getAppRODataDir();
@@ -853,7 +851,7 @@ bool LLVivoxVoiceClient::startAndLaunchDaemon()
         // To do this, launch the gateway on a nearby host like this:
         //  vivox-gw.exe -p tcp -i 0.0.0.0:44125
         // and put that host's IP address here.
-        mDaemonHost = LLHost(gSavedSettings.getString("VivoxVoiceHost"), gSavedSettings.getU32("VivoxVoicePort"));
+        //mDaemonHost = LLHost(gSavedSettings.getString("VivoxVoiceHost"), gSavedSettings.getU32("VivoxVoicePort"));
 #endif
 
         // Dirty the states we'll need to sync with the daemon when it comes up.
