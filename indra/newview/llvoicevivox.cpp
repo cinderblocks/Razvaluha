@@ -818,7 +818,7 @@ bool LLVivoxVoiceClient::startAndLaunchDaemon()
 				}
 				// Tell voice gateway to listen to a specific port
 				params.args.add("-i");
-				params.args.add(llformat("%s:%d", gSavedSettings.getString("VivoxVoiceHost"), voice_port->get().asInteger()));
+				params.args.add(llformat("%s:%d", gSavedSettings.getString("VivoxVoiceHost").c_str(), voice_port->get().asInteger()));
 			}
 
             params.cwd = gDirUtilp->getAppRODataDir();
