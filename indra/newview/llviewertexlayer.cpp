@@ -384,7 +384,6 @@ void LLViewerTexLayerSetBuffer::doUpload()
 {
 	LLViewerTexLayerSet* layer_set = getViewerTexLayerSet();
 	LL_INFOS() << "Uploading baked " << layer_set->getBodyRegionName() << LL_ENDL;
-	LLViewerStats::getInstance()->incStat(LLViewerStats::ST_TEX_BAKES);
 
 	// Don't need caches since we're baked now.  (note: we won't *really* be baked 
 	// until this image is sent to the server and the Avatar Appearance message is received.)
