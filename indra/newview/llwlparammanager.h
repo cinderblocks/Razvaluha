@@ -333,7 +333,7 @@ private:
 	static std::string getUserDir();
 
 	LLSINGLETON(LLWLParamManager);
-	/*virtual*/ void initSingleton();
+	/*virtual*/ void initSingleton() override;
 	~LLWLParamManager();
 
 	// list of all the parameters, listed by name

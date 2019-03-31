@@ -56,7 +56,7 @@ public:
 	// do not call these directly
 	virtual ~LLFloaterAvatarPicker();
 
-	virtual	BOOL postBuild();
+	virtual	BOOL postBuild() override;
 
 	void setOkBtnEnableCb(validate_callback_t cb);
 
@@ -66,7 +66,7 @@ public:
 	BOOL handleDragAndDrop(S32 x, S32 y, MASK mask,
 						   BOOL drop, EDragAndDropType cargo_type,
 						   void *cargo_data, EAcceptance *accept,
-						   std::string& tooltip_msg);
+						   std::string& tooltip_msg) override;
 
 	void openFriendsTab();
 	BOOL isExcludeAgentFromSearchResults() { return mExcludeAgentFromSearchResults; }
@@ -93,8 +93,8 @@ private:
 	LLScrollListCtrl* getActiveList();
 
 	void drawFrustum();
-	virtual void draw();
-	virtual BOOL handleKeyHere(KEY key, MASK mask);
+	virtual void draw() override;
+	virtual BOOL handleKeyHere(KEY key, MASK mask) override;
 
 	LLUUID				mQueryID;
 	int				mNumResultsReturned;

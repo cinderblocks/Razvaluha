@@ -344,7 +344,7 @@ public:
 
 private:
 	LLSINGLETON(LLWaterParamManager);
-	/*virtual*/ void initSingleton();
+	/*virtual*/ void initSingleton() override;
 	~LLWaterParamManager();
 
 	void loadAllPresets();

@@ -11,7 +11,7 @@ class NamedTimerFactory : public LLSingleton<NamedTimerFactory>
 	{}
 public:
 
-	/*virtual */ void initSingleton()
+	/*virtual */ void initSingleton() override
 	{
 		mTimerRoot = new LLFastTimer::NamedTimer("root");
 

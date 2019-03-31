@@ -81,7 +81,7 @@ class LLFloaterBuyLandUI
 public:
 	virtual ~LLFloaterBuyLandUI();
 	
-	/*virtual*/ void onClose(bool app_quitting);
+	/*virtual*/ void onClose(bool app_quitting) override;
 
 	// Left padding for maturity rating icon.
 	static const S32 ICON_PAD = 2;
@@ -192,7 +192,7 @@ public:
 	
 	void tellUserError(const std::string& message, const std::string& uri);
 
-	virtual BOOL postBuild();
+	virtual BOOL postBuild() override;
 	
 	void startBuyPreConfirm();
 	void startBuyPostConfirm(const std::string& password);
@@ -201,8 +201,8 @@ public:
 	void onClickCancel();
 	 void onClickErrorWeb();
 	
-	virtual void draw();
-	virtual BOOL canClose();
+	virtual void draw() override;
+	virtual BOOL canClose() override;
 
 	void onVisibilityChange ( const LLSD& new_visibility );
 	

@@ -434,8 +434,8 @@ public:
 	void deselect() override;
 	BOOL canDeselect() const override;
 
-	virtual void duplicate();
-	virtual BOOL canDuplicate() const;
+	virtual void duplicate() override;
+	virtual BOOL canDuplicate() const override;
 
 	void clearSelections();
 	void update();

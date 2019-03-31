@@ -803,7 +803,7 @@ public:
 	std::string getGlobalString(const std::string& key) const;
 
 private:
-	/*virtual*/ void initSingleton();
+	/*virtual*/ void initSingleton() override;
 
 	TemplateMap mTemplates;
 

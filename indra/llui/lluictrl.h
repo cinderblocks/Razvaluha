@@ -153,8 +153,8 @@ public:
 
 public:
 	// LLView interface
-	/*virtual*/ void	initFromXML(LLXMLNodePtr node, LLView* parent);
-	/*virtual*/ LLXMLNodePtr getXML(bool save_children = true) const;
+	/*virtual*/ void	initFromXML(LLXMLNodePtr node, LLView* parent) override;
+	/*virtual*/ LLXMLNodePtr getXML(bool save_children = true) const override;
 	/*virtual*/ BOOL	setLabelArg( const std::string& key, const LLStringExplicit& text ) override;
 	/*virtual*/ BOOL	isCtrl() const override;
 	/*virtual*/ void	onMouseEnter(S32 x, S32 y, MASK mask) override;
@@ -182,10 +182,10 @@ public:
 	void setMakeVisibleControlVariable(LLControlVariable* control);
 	void setMakeInvisibleControlVariable(LLControlVariable* control);
 
-	virtual void	setTentative(BOOL b);
-	virtual BOOL	getTentative() const;
-	virtual void	setValue(const LLSD& value);
-	virtual LLSD	getValue() const;
+	virtual void	setTentative(BOOL b) override;
+	virtual BOOL	getTentative() const override;
+	virtual void	setValue(const LLSD& value) override;
+	virtual LLSD	getValue() const override;
 	/// When two widgets are displaying the same data (e.g. during a skin
 	/// change), share their ViewModel.
 	virtual void    shareViewModelFrom(const LLUICtrl& other);

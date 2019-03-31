@@ -729,7 +729,7 @@ class LLUICtrl::DefaultTabGroupFirstSorter : public LLQuerySorter, public LLSing
 {
 	LLSINGLETON_EMPTY_CTOR(DefaultTabGroupFirstSorter);
 public:
-	/*virtual*/ void operator() (LLView * parent, viewList_t &children) const
+	/*virtual*/ void operator() (LLView * parent, viewList_t &children) const override
 	{
 		children.sort(CompareByDefaultTabGroup(parent->getCtrlOrder(), parent->getDefaultTabGroup()));
 	}

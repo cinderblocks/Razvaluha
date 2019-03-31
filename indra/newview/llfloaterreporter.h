@@ -79,8 +79,8 @@ class LLFloaterReporter
 	LLSINGLETON(LLFloaterReporter);
 public:
 	/*virtual*/ ~LLFloaterReporter();
-	/*virtual*/ BOOL postBuild();
-	virtual void draw();
+	/*virtual*/ BOOL postBuild() override;
+	virtual void draw() override;
 
 	void setReportType(EReportType type) { mReportType = type; }
 

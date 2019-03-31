@@ -258,7 +258,7 @@ public:
     void 					getAssociatedVolumes(std::vector<LLVOVolume*>& volumes);
 
     // virtual
-    void 					updateRiggingInfo();
+    void 					updateRiggingInfo() override;
 	// This encodes mesh id and LOD, so we can see whether display is up-to-date.
 	std::map<LLUUID,S32>	mLastRiggingInfoKey;
 	
@@ -1180,4 +1180,3 @@ constexpr U32 NUM_ATTACHMENT_GROUPS = 24;
 void dump_sequential_xml(const std::string& outprefix, const LLSD& content);
 
 #endif // LL_VOAVATAR_H
-
