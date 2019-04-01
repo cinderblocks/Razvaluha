@@ -27,11 +27,13 @@ if(WINDOWS)
         list(APPEND vivox_files
             vivoxsdk_x64.dll
             ortp_x64.dll
+            vivoxplatform.dll
             )
     else (ADDRESS_SIZE EQUAL 64)
         list(APPEND vivox_files
         vivoxsdk.dll
         ortp.dll
+        vivoxplatform.dll
         )
     endif (ADDRESS_SIZE EQUAL 64)
 

@@ -142,7 +142,7 @@ if (WINDOWS)
   elseif (USE_AVX2)
     add_compile_options(/arch:AVX2)
   elseif (ADDRESS_SIZE EQUAL 32)
-    add_compile_options(/arch:SSE3)
+    add_compile_options(/arch:SSE2)
   endif (USE_AVX)
 
   if (NOT DISABLE_FATAL_WARNINGS)
