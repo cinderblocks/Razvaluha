@@ -46,7 +46,9 @@ public:
 	enum
 	{
 		// Correspond to LLPipeline render type
-		POOL_GROUND = 1,
+		POOL_SKY = 1,
+        POOL_WL_SKY,
+        POOL_GROUND,
 		POOL_TERRAIN,
 		POOL_SIMPLE,
 		POOL_FULLBRIGHT,
@@ -55,8 +57,6 @@ public:
 		POOL_TREE,	// Singu Note: Before sky for zcull.
 		POOL_ALPHA_MASK,
 		POOL_FULLBRIGHT_ALPHA_MASK,
-		POOL_SKY,
-		POOL_WL_SKY,
 		POOL_GRASS,
 		POOL_AVATAR,
 		POOL_VOIDWATER,
