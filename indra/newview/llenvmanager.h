@@ -230,7 +230,7 @@ public:
 	void onRegionSettingsApplyResponse(bool ok);
 
 private:
-	/*virtual*/ void initSingleton();
+	/*virtual*/ void initSingleton() override;
 
 	void loadUserPrefs();
 	void saveUserPrefs();

@@ -138,7 +138,7 @@ protected:
 	}
 	friend class LLUICtrlFactory;
 public:
-	virtual LLXMLNodePtr getXML(bool save_children = true) const;
+	virtual LLXMLNodePtr getXML(bool save_children = true) const override;
 	static LLView* fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFactory *factory);
 
 	// Add a user to the list by name.  It will be added, the name 

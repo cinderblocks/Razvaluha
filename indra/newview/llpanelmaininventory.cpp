@@ -573,7 +573,7 @@ public:
 		addEntry(0x1 << LLInventoryType::IT_SNAPSHOT,		new FilterEntry(view->getString("filter_type_snapshot")));
 		addEntry(0xffffffff,								new FilterEntry(view->getString("filter_type_all")));
 	}
-	virtual U32 notFound() const
+	virtual U32 notFound() const override
 	{
 		return 0;
 	}

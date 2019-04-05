@@ -38,7 +38,7 @@ class LLFloaterWhiteListEntry :
 	public:	
 		~LLFloaterWhiteListEntry();
 	
-		BOOL postBuild();
+		BOOL postBuild() override;
 
 	private:
 		LLLineEditor* mWhiteListEdit;

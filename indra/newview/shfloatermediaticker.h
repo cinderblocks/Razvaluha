@@ -11,11 +11,11 @@ class SHFloaterMediaTicker : public LLFloater, public LLSingleton<SHFloaterMedia
 public:
 
 	virtual ~SHFloaterMediaTicker() {}
-	/*virtual*/ BOOL postBuild();
-	/*virtual*/ void draw();
-	/*virtual*/ void onOpen();
-	/*virtual*/ void onClose(bool app_quitting);
-	/*virtual*/ void reshape(S32 width, S32 height, BOOL called_from_parent = TRUE);
+	/*virtual*/ BOOL postBuild() override;
+	/*virtual*/ void draw() override;
+	/*virtual*/ void onOpen() override;
+	/*virtual*/ void onClose(bool app_quitting) override;
+	/*virtual*/ void reshape(S32 width, S32 height, BOOL called_from_parent = TRUE) override;
 	static void showInstance();	//use to create.
 private:
 	void updateTickerText(); //called via draw.

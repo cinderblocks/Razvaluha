@@ -158,9 +158,9 @@ public:
 				BOOL	getVolumeChanged() const				{ return mVolumeChanged; }
 				
 	/*virtual*/ F32  	getRadius() const						{ return mVObjRadius; };
-				const LLMatrix4a& getWorldMatrix(LLXformMatrix* xform) const;
+				const LLMatrix4a& getWorldMatrix(LLXformMatrix* xform) const override;
 
-				void	markForUpdate(BOOL priority);
+				void	markForUpdate(BOOL priority) override;
 				void	markForUnload()							{ LLViewerObject::markForUnload(TRUE); mVolumeChanged = TRUE; }
 				void	faceMappingChanged()					{ mFaceMappingChanged=TRUE; };
 
@@ -276,12 +276,12 @@ public:
     void onSetExtendedMeshFlags(U32 flags);
     void setExtendedMeshFlags(U32 flags);
     bool canBeAnimatedObject() const;
-    bool isAnimatedObject() const;
-    virtual void onReparent(LLViewerObject *old_parent, LLViewerObject *new_parent);
-    virtual void afterReparent();
+    bool isAnimatedObject() const override;
+    virtual void onReparent(LLViewerObject *old_parent, LLViewerObject *new_parent) override;
+    virtual void afterReparent() override;
 
     //virtual
-    void updateRiggingInfo();
+    void updateRiggingInfo() override;
     S32 mLastRiggingInfoLOD;
     
     // Functions that deal with media, or media navigation

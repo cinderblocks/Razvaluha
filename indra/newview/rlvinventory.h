@@ -38,7 +38,7 @@ public:
 	~RlvInventory();
 
 	// LLInventoryObserver override
-	/*virtual*/ void changed(U32 mask);
+	/*virtual*/ void changed(U32 mask) override;
 
 	/*
 	 * #RLV Shared inventory

@@ -69,9 +69,9 @@ public:
 	/// show the search floater with a new search
 	/// see search() for details on the key parameter.
 	/// Singu Note: Leave the browser (and position) alone, here, we'll call search() directly with a SearchQuery if opening the floater through showInstance()
-	/*virtual*/ void onOpen(/*const LLSD& key*/) {}
+	/*virtual*/ void onOpen(/*const LLSD& key*/)  override {}
 
-	/*virtual*/ void onClose(bool app_quitting);
+	/*virtual*/ void onClose(bool app_quitting) override;
 
 	/// perform a search with the specific search term.
 	/// The key should be a map that can contain the following keys:
@@ -81,7 +81,7 @@ public:
 	static void search(const SearchQuery& query, LLMediaCtrl* mWebBrowser);
 
 private:
-	/*virtual*/ BOOL postBuild();
+	/*virtual*/ BOOL postBuild() override;
 };
 
 #endif  // LL_LLFLOATERSEARCH_H

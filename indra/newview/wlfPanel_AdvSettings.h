@@ -48,8 +48,8 @@ class wlfPanel_AdvSettings : public LLPanel, public LLSingleton<wlfPanel_AdvSett
 public:
 	
 	~wlfPanel_AdvSettings();
-	BOOL postBuild();
-	void draw();
+	BOOL postBuild() override;
+	void draw() override;
 
 	void updateRlvVisibility();
 	void onRlvBehaviorChange(ERlvBehaviour eBhvr, ERlvParamType eType);

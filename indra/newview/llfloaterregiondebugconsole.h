@@ -43,7 +43,7 @@ public:
 
 	// virtual
 	BOOL postBuild() override;
-	void onClose(bool app_quitting);
+	void onClose(bool app_quitting) override;
 	
 	void onInput(LLUICtrl* ctrl, const LLSD& param);
 

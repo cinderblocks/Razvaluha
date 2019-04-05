@@ -323,7 +323,7 @@ public:
 	/*virtual*/ BOOL	handleMiddleMouseDown(S32 x, S32 y, MASK mask) override { return FALSE; };
 	/*virtual*/ BOOL	handleMiddleMouseUp(S32 x, S32 y, MASK mask) override {return FALSE; };
 	/*virtual*/ const std::string& getName() const override;
-	/*virtual*/ BOOL isView() const { return FALSE; };
+	/*virtual*/ BOOL isView() const  override { return FALSE; };
 
 	/*virtual*/ void	screenPointToLocal(S32 screen_x, S32 screen_y, S32* local_x, S32* local_y) const override {};
 	/*virtual*/ void	localPointToScreen(S32 local_x, S32 local_y, S32* screen_x, S32* screen_y) const override {};

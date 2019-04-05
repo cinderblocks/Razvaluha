@@ -47,8 +47,8 @@ class LLFloaterSettingsDebug
 	virtual ~LLFloaterSettingsDebug();
 public:
 
-	virtual BOOL postBuild();
-	virtual void draw();
+	virtual BOOL postBuild() override;
+	virtual void draw() override;
 
 	void updateControl();
 

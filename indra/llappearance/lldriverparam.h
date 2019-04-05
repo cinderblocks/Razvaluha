@@ -121,7 +121,7 @@ public:
 	/*virtual*/ void				stopAnimating(BOOL upload_bake = false) override;
 	/*virtual*/ BOOL				linkDrivenParams(visual_param_mapper mapper, BOOL only_cross_params) override;
 	/*virtual*/ void				resetDrivenParams() override;
-	/*virtual*/ char const*			getTypeString(void) const { return "param_driver"; }
+	/*virtual*/ char const*			getTypeString(void) const override { return "param_driver"; }
 	
 	// LLViewerVisualParam Virtual functions
 	/*virtual*/ F32					getTotalDistortion() override;

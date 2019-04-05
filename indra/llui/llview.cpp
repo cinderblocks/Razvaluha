@@ -2126,7 +2126,7 @@ const LLCtrlQuery & LLView::getTabOrderQuery()
 class LLFocusRootsFilter : public LLQueryFilter, public LLSingleton<LLFocusRootsFilter>
 {
 	LLSINGLETON_EMPTY_CTOR(LLFocusRootsFilter);
-	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const 
+	/*virtual*/ filterResult_t operator() (const LLView* const view, const viewList_t & children) const override
 	{
 		return filterResult_t(view->isCtrl() && view->isFocusRoot(), !view->isFocusRoot());
 	}
@@ -3513,4 +3513,3 @@ LLWidgetClassRegistry::factory_func_t LLWidgetClassRegistry::getCreatorFunc(cons
 	}
 	return found_it->second;
 }
-

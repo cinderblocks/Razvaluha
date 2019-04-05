@@ -50,18 +50,18 @@ public:
 		F32 increment,
 		const std::string& control_name = LLStringUtil::null );
 
-	virtual LLXMLNodePtr getXML(bool save_children = true) const;
+	virtual LLXMLNodePtr getXML(bool save_children = true) const override;
 	static  LLView* fromXML(LLXMLNodePtr node, LLView *parent, class LLUICtrlFactory *factory);
 
 	virtual ~LLSlider();
 	void			setValue( F32 value, BOOL from_event = FALSE );
 	F32				getValueF32() const { return mValue; }
 
-	virtual void	setValue(const LLSD& value )	{ setValue((F32)value.asReal(), TRUE); }
-	virtual LLSD	getValue() const		{ return LLSD(getValueF32()); }
+	virtual void	setValue(const LLSD& value )	override { setValue((F32)value.asReal(), TRUE); }
+	virtual LLSD	getValue() const	override	{ return LLSD(getValueF32()); }
 
-	virtual void	setMinValue(LLSD min_value)	{ setMinValue((F32)min_value.asReal()); }
-	virtual void	setMaxValue(LLSD max_value)	{ setMaxValue((F32)max_value.asReal());  }
+	virtual void	setMinValue(LLSD min_value)	override { setMinValue((F32)min_value.asReal()); }
+	virtual void	setMaxValue(LLSD max_value)	override { setMaxValue((F32)max_value.asReal());  }
 
 	F32				getInitialValue() const { return mInitialValue; }
 	F32				getMinValue() const		{ return mMinValue; }

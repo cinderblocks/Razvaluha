@@ -56,9 +56,9 @@ public:
 	virtual ~LLFloaterCustomize();
 
 	// Inherited methods
-	/*virtual*/ BOOL 	postBuild();
-	/*virtual*/ void	onClose(bool app_quitting);
-	/*virtual*/ void	draw();
+	/*virtual*/ BOOL 	postBuild() override;
+	/*virtual*/ void	onClose(bool app_quitting) override;
+	/*virtual*/ void	draw() override;
 	
 	void refreshCurrentOutfitName(const std::string& name = "");
 

@@ -179,13 +179,13 @@ class LLFloaterAvatarList : public LLFloater, public LLSingleton<LLFloaterAvatar
 public:
 	~LLFloaterAvatarList();
 
-	virtual BOOL	handleKeyHere(KEY key, MASK mask);
+	virtual BOOL	handleKeyHere(KEY key, MASK mask) override;
 
-	/*virtual*/ void onClose(bool app_quitting);
-	/*virtual*/ void onOpen();
-	/*virtual*/ BOOL postBuild();
-	/*virtual*/ void draw();
-	/*virtual*/ BOOL handleRightMouseDown(S32 x, S32 y, MASK mask);
+	/*virtual*/ void onClose(bool app_quitting) override;
+	/*virtual*/ void onOpen() override;
+	/*virtual*/ BOOL postBuild() override;
+	/*virtual*/ void draw() override;
+	/*virtual*/ BOOL handleRightMouseDown(S32 x, S32 y, MASK mask) override;
 	/**
 	 * @brief Toggles interface visibility
 	 * There is only one instance of the avatar scanner at any time.

@@ -188,11 +188,11 @@ public:
 
 	static void updateClass();
 
-	/*virtual*/ BOOL postBuild();
-	/*virtual*/ void onClose(bool app_quitting);
-	/*virtual*/ void onOpen();
+	/*virtual*/ BOOL postBuild() override;
+	/*virtual*/ void onClose(bool app_quitting) override;
+	/*virtual*/ void onOpen() override;
 
-	virtual void handleReshape(const LLRect& new_rect, bool by_user);
+	virtual void handleReshape(const LLRect& new_rect, bool by_user) override;
 
 	LLPanelNearByMedia* getMediaPanel() { return mPanel; }
 private:
