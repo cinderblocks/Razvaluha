@@ -88,7 +88,7 @@ private:
 
 private:
 	// Object Queue
-	std::vector<LLUUID> mObjectIDs;
+	uuid_vec_t mObjectIDs;
 	LLUUID mCurrentObjectID;
 	BOOL mDone;
 

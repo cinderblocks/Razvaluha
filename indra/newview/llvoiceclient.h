@@ -140,7 +140,7 @@ public:
 	virtual LLVoiceDeviceList& getCaptureDevices()=0;
 	virtual LLVoiceDeviceList& getRenderDevices()=0;
 	
-	virtual void getParticipantList(std::set<LLUUID> &participants)=0;
+	virtual void getParticipantList(uuid_set_t &participants)=0;
 	virtual bool isParticipant(const LLUUID& speaker_id)=0;
 	//@}
 	
@@ -422,7 +422,7 @@ public:
 	/////////////////////////////
 	BOOL getAreaVoiceDisabled();		// returns true if the area the avatar is in is speech-disabled.
 													  // Use this to determine whether to show a "no speech" icon in the menu bar.
-	void getParticipantList(std::set<LLUUID> &participants);
+	void getParticipantList(uuid_set_t &participants);
 	bool isParticipant(const LLUUID& speaker_id);
 	
 	//////////////////////////

@@ -953,8 +953,8 @@ void LLMeshRepoThread::run()
 			mMutex->lock();
 			if (! mSkinRequests.empty() && mHttpRequestSet.size() < sRequestHighWater)
 			{
-				std::set<LLUUID> incomplete;
-				std::set<LLUUID>::iterator iter(mSkinRequests.begin());
+				uuid_set_t incomplete;
+				auto iter(mSkinRequests.begin());
 				while (iter != mSkinRequests.end() && mHttpRequestSet.size() < sRequestHighWater)
 				{
 					LLUUID mesh_id = *iter;
@@ -982,8 +982,8 @@ void LLMeshRepoThread::run()
 			// in these cases.
 			if (! mDecompositionRequests.empty() && mHttpRequestSet.size() < sRequestHighWater)
 			{
-				std::set<LLUUID> incomplete;
-				std::set<LLUUID>::iterator iter(mDecompositionRequests.begin());
+				uuid_set_t incomplete;
+				auto iter(mDecompositionRequests.begin());
 				while (iter != mDecompositionRequests.end() && mHttpRequestSet.size() < sRequestHighWater)
 				{
 					LLUUID mesh_id = *iter;
@@ -1008,8 +1008,8 @@ void LLMeshRepoThread::run()
 			// holding lock, final list
 			if (! mPhysicsShapeRequests.empty() && mHttpRequestSet.size() < sRequestHighWater)
 			{
-				std::set<LLUUID> incomplete;
-				std::set<LLUUID>::iterator iter(mPhysicsShapeRequests.begin());
+				uuid_set_t incomplete;
+				auto iter(mPhysicsShapeRequests.begin());
 				while (iter != mPhysicsShapeRequests.end() && mHttpRequestSet.size() < sRequestHighWater)
 				{
 					LLUUID mesh_id = *iter;
@@ -3658,7 +3658,7 @@ void LLMeshRepository::notifyLoadedMeshes()
 					for (mesh_load_map::iterator iter = mLoadingMeshes[i].begin();  iter != mLoadingMeshes[i].end(); ++iter)
 					{
 						F32 max_score = 0.f;
-						for (std::set<LLUUID>::iterator obj_iter = iter->second.begin(); obj_iter != iter->second.end(); ++obj_iter)
+						for (auto obj_iter = iter->second.begin(); obj_iter != iter->second.end(); ++obj_iter)
 						{
 							LLViewerObject* object = gObjectList.findObject(*obj_iter);
 	
@@ -3732,7 +3732,7 @@ void LLMeshRepository::notifySkinInfoReceived(LLMeshSkinInfo& info)
 	skin_load_map::iterator iter = mLoadingSkins.find(info.mMeshID);
 	if (iter != mLoadingSkins.end())
 	{
-		for (std::set<LLUUID>::iterator obj_id = iter->second.begin(); obj_id != iter->second.end(); ++obj_id)
+		for (auto obj_id = iter->second.begin(); obj_id != iter->second.end(); ++obj_id)
 		{
 			LLVOVolume* vobj = (LLVOVolume*) gObjectList.findObject(*obj_id);
 			if (vobj)
@@ -3885,7 +3885,7 @@ void LLMeshRepository::fetchPhysicsShape(const LLUUID& mesh_id)
 		{
 			LLMutexLock lock(mMeshMutex);
 			//add volume to list of loading meshes
-			std::set<LLUUID>::iterator iter = mLoadingPhysicsShapes.find(mesh_id);
+			auto iter = mLoadingPhysicsShapes.find(mesh_id);
 			if (iter == mLoadingPhysicsShapes.end())
 			{	//no request pending for this skin info
 				// *FIXME:  Nothing ever deletes entries, can't be right
@@ -3915,7 +3915,7 @@ LLModel::Decomposition* LLMeshRepository::getDecomposition(const LLUUID& mesh_id
 		{
 			LLMutexLock lock(mMeshMutex);
 			//add volume to list of loading meshes
-			std::set<LLUUID>::iterator iter = mLoadingDecompositions.find(mesh_id);
+			auto iter = mLoadingDecompositions.find(mesh_id);
 			if (iter == mLoadingDecompositions.end())
 			{	//no request pending for this skin info
 				mLoadingDecompositions.insert(mesh_id);

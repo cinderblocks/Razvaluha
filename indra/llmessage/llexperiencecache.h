@@ -118,7 +118,7 @@ private:
 	typedef std::map<LLUUID, signal_ptr> signal_map_t;
 	typedef std::map<LLUUID, LLSD> cache_t;
 	
-	typedef std::set<LLUUID> RequestQueue_t;
+	typedef uuid_set_t RequestQueue_t;
     typedef std::map<LLUUID, F64> PendingQueue_t;
 
 	//--------------------------------------------

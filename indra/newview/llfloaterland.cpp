@@ -1623,7 +1623,7 @@ void LLPanelLandObjects::processParcelObjectOwnersReply(LLMessageSystem *msg, vo
 		item_params.value = owner_id;
 		item_params.target = is_group_owned ? LLNameListCtrl::GROUP : LLNameListCtrl::INDIVIDUAL;
 
-		std::vector<LLUUID> avatar_ids;
+		uuid_vec_t avatar_ids;
 		LLWorld::instance().getAvatars(&avatar_ids, nullptr, gAgent.getPositionGlobal(), F32_MAX);
 
 		if (is_group_owned)

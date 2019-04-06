@@ -244,16 +244,16 @@ public:
 	};
 
 	//set of requested skin info
-	std::set<LLUUID> mSkinRequests;
+	uuid_set_t mSkinRequests;
 	
 	// list of completed skin info requests
 	std::list<LLMeshSkinInfo> mSkinInfoQ;
 
 	//set of requested decompositions
-	std::set<LLUUID> mDecompositionRequests;
+	uuid_set_t mDecompositionRequests;
 
 	//set of requested physics shapes
-	std::set<LLUUID> mPhysicsShapeRequests;
+	uuid_set_t mPhysicsShapeRequests;
 
 	// list of completed Decomposition info requests
 	std::list<LLModel::Decomposition*> mDecompositionQ;
@@ -578,7 +578,7 @@ public:
 	static void metricsProgress(unsigned int count);
 	static void metricsUpdate();
 	
-	typedef std::map<LLVolumeParams, std::set<LLUUID> > mesh_load_map;
+	typedef std::map<LLVolumeParams, uuid_set_t > mesh_load_map;
 	mesh_load_map mLoadingMeshes[4];
 
 	// <alchemy> - War on std::map
@@ -594,20 +594,20 @@ public:
 	std::vector<LLMeshRepoThread::LODRequest> mPendingRequests;
 	
 	//list of mesh ids awaiting skin info
-	typedef std::map<LLUUID, std::set<LLUUID> > skin_load_map;
+	typedef std::map<LLUUID, uuid_set_t > skin_load_map;
 	skin_load_map mLoadingSkins;
 
 	//list of mesh ids that need to send skin info fetch requests
 	std::queue<LLUUID> mPendingSkinRequests;
 
 	//list of mesh ids awaiting decompositions
-	std::set<LLUUID> mLoadingDecompositions;
+	uuid_set_t mLoadingDecompositions;
 
 	//list of mesh ids that need to send decomposition fetch requests
 	std::queue<LLUUID> mPendingDecompositionRequests;
 	
 	//list of mesh ids awaiting physics shapes
-	std::set<LLUUID> mLoadingPhysicsShapes;
+	uuid_set_t mLoadingPhysicsShapes;
 
 	//list of mesh ids that need to send physics shape fetch requests
 	std::queue<LLUUID> mPendingPhysicsShapeRequests;

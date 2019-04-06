@@ -213,7 +213,7 @@ void LLMotionController::purgeExcessMotions()
 		}
 	}
 
-	std::set<LLUUID> motions_to_kill;
+	uuid_set_t motions_to_kill;
 	if (mLoadedMotions.size() > MAX_MOTION_INSTANCES)
 	{
 		// too many motions active this frame, kill all blenders
@@ -232,7 +232,7 @@ void LLMotionController::purgeExcessMotions()
 	}
 	
 	// clean up all inactive, loaded motions
-	for (std::set<LLUUID>::iterator motion_it = motions_to_kill.begin();
+	for (auto motion_it = motions_to_kill.begin();
 		motion_it != motions_to_kill.end();
 		++motion_it)
 	{

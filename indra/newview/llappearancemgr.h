@@ -299,7 +299,7 @@ private:
 	boost::scoped_ptr<LLOutfitUnLockTimer> mUnlockOutfitTimer;
 
 	// Set of temp attachment UUIDs that should be removed
-	typedef std::set<LLUUID> doomed_temp_attachments_t;
+	typedef uuid_set_t doomed_temp_attachments_t;
 	doomed_temp_attachments_t	mDoomedTempAttachmentIDs;
 
 	void addDoomedTempAttachment(const LLUUID& id_to_remove);

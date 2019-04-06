@@ -634,10 +634,10 @@ void LLMarketplaceInventoryObserver::changed(U32 mask)
     // When things are added to the marketplace, we might need to re-validate and fix the containing listings
 	if (mask & LLInventoryObserver::ADD)
 	{
-        const std::set<LLUUID>& changed_items = gInventory.getChangedIDs();
+        const uuid_set_t& changed_items = gInventory.getChangedIDs();
         
-        std::set<LLUUID>::const_iterator id_it = changed_items.begin();
-        std::set<LLUUID>::const_iterator id_end = changed_items.end();
+        auto id_it = changed_items.begin();
+        auto id_end = changed_items.end();
         // First, count the number of items in this list...
         S32 count = 0;
         for (;id_it != id_end; ++id_it)
@@ -670,10 +670,10 @@ void LLMarketplaceInventoryObserver::changed(U32 mask)
     
 	if (mask & (LLInventoryObserver::INTERNAL | LLInventoryObserver::STRUCTURE))
 	{
-        const std::set<LLUUID>& changed_items = gInventory.getChangedIDs();
+        const auto& changed_items = gInventory.getChangedIDs();
     
-        std::set<LLUUID>::const_iterator id_it = changed_items.begin();
-        std::set<LLUUID>::const_iterator id_end = changed_items.end();
+        auto id_it = changed_items.begin();
+        auto id_end = changed_items.end();
         for (;id_it != id_end; ++id_it)
         {
             LLInventoryObject* obj = gInventory.getObject(*id_it);
@@ -1736,7 +1736,7 @@ bool LLMarketplaceData::isUpdating(const LLUUID& folder_id, S32 depth)
     else
     {
         const LLUUID marketplace_listings_uuid = gInventory.findCategoryUUIDForType(LLFolderType::FT_MARKETPLACE_LISTINGS, false);
-        std::set<LLUUID>::iterator it = mPendingUpdateSet.find(marketplace_listings_uuid);
+        auto it = mPendingUpdateSet.find(marketplace_listings_uuid);
         if (it != mPendingUpdateSet.end())
         {
             // If we're waiting for data for the marketplace listings root, we are in the updating process for all
@@ -1754,7 +1754,7 @@ bool LLMarketplaceData::isUpdating(const LLUUID& folder_id, S32 depth)
 
 void LLMarketplaceData::setUpdating(const LLUUID& folder_id, bool isUpdating)
 {
-    std::set<LLUUID>::iterator it = mPendingUpdateSet.find(folder_id);
+    auto it = mPendingUpdateSet.find(folder_id);
     if (it != mPendingUpdateSet.end())
     {
         mPendingUpdateSet.erase(it);

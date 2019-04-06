@@ -522,7 +522,7 @@ namespace tut
 		LLChannelDescriptors ch = mBuffer.nextChannel();
 		LLBufferStream bstr(ch, &mBuffer);
 		std::ostringstream ostr;
-		std::vector<LLUUID> ids;
+		uuid_vec_t ids;
 		LLUUID id;
 		for(int i = 0; i < 5; ++i)
 		{

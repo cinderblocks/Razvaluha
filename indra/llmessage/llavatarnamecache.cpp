@@ -76,7 +76,7 @@ namespace LLAvatarNameCache
 	std::string sNameLookupURL;
 
 	// Accumulated agent IDs for next query against service
-	typedef std::set<LLUUID> ask_queue_t;
+	typedef uuid_set_t ask_queue_t;
 	ask_queue_t sAskQueue;
 
 	// Agent IDs that have been requested, but with no reply.
@@ -148,7 +148,7 @@ namespace LLAvatarNameCache
     bool expirationFromCacheControl(const LLSD& headers, F64 *expires);
 
     // This is a coroutine.
-    void requestAvatarNameCache_(std::string url, std::vector<LLUUID> agentIds);
+    void requestAvatarNameCache_(std::string url, uuid_vec_t agentIds);
 
     void handleAvNameCacheSuccess(const LLSD &data, const LLSD &httpResult);
 }
@@ -195,10 +195,19 @@ namespace LLAvatarNameCache
 // Coroutine for sending and processing avatar name cache requests.  
 // Do not call directly.  See documentation in lleventcoro.h and llcoro.h for
 // further explanation.
-void LLAvatarNameCache::requestAvatarNameCache_(std::string url, std::vector<LLUUID> agentIds)
+void LLAvatarNameCache::requestAvatarNameCache_(std::string url, uuid_vec_t agentIds)
 {
     LL_DEBUGS("AvNameCache") << "Entering coroutine " << LLCoros::instance().getName()
         << " with url '" << url << "', requesting " << agentIds.size() << " Agent Ids" << LL_ENDL;
+
+    // Check pointer that can be cleaned up by cleanupClass()
+    if (!sHttpRequest || !sHttpOptions || !sHttpHeaders)
+    {
+        LL_WARNS("AvNameCache") << " Trying to request name cache when http pointers are not initialized." << LL_ENDL;
+        return;
+    }
+
+    LLSD httpResults;
 
     try
     {
@@ -206,7 +215,6 @@ void LLAvatarNameCache::requestAvatarNameCache_(std::string url, std::vector<LLU
 
         LLCoreHttpUtil::HttpCoroutineAdapter httpAdapter("NameCache", LLAvatarNameCache::sHttpPolicy);
         LLSD results = httpAdapter.getAndSuspend(sHttpRequest, url);
-        LLSD httpResults;
 
         LL_DEBUGS() << results << LL_ENDL;
 
@@ -229,7 +237,7 @@ void LLAvatarNameCache::requestAvatarNameCache_(std::string url, std::vector<LLU
         if (!success)
         {   // on any sort of failure add dummy records for any agent IDs 
             // in this request that we do not have cached already
-            std::vector<LLUUID>::const_iterator it = agentIds.begin();
+            auto it = agentIds.begin();
             for ( ; it != agentIds.end(); ++it)
             {
                 const LLUUID& agent_id = *it;
@@ -249,6 +257,7 @@ void LLAvatarNameCache::requestAvatarNameCache_(std::string url, std::vector<LLU
     {
         LOG_UNHANDLED_EXCEPTION(STRINGIZE("coroutine " << LLCoros::instance().getName()
                                           << "('" << url << "', " << agentIds.size()
+                                          << " http result: " << httpResults.asString()
                                           << " Agent Ids)"));
         throw;
     }
@@ -338,6 +347,11 @@ void LLAvatarNameCache::handleAgentError(const LLUUID& agent_id)
 
 void LLAvatarNameCache::processName(const LLUUID& agent_id, const LLAvatarName& av_name)
 {
+	if (agent_id.isNull())
+	{
+		return;
+	}
+
 	// Add to the cache
 	sCache[agent_id] = av_name;
 
@@ -372,7 +386,7 @@ void LLAvatarNameCache::requestNamesViaCapability()
 	std::string url;
 	url.reserve(NAME_URL_MAX);
 
-	std::vector<LLUUID> agent_ids;
+	uuid_vec_t agent_ids;
 	agent_ids.reserve(128);
 	
 	U32 ids = 0;
@@ -825,7 +839,7 @@ LLUUID LLAvatarNameCache::findIdByName(const std::string& name)
 
     // Legacy method
     LLUUID id;
-    if (gCacheName->getUUID(name, id))
+    if (gCacheName && gCacheName->getUUID(name, id))
     {
         return id;
     }

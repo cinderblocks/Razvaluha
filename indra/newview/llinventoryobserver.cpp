@@ -590,7 +590,7 @@ void LLInventoryCategoriesObserver::changed(U32 mask)
 	if (!mCategoryMap.size())
 		return;
 
-	std::vector<LLUUID> deleted_categories_ids;
+	uuid_vec_t deleted_categories_ids;
 
 	for (category_map_t::iterator iter = mCategoryMap.begin();
 		 iter != mCategoryMap.end();
@@ -666,7 +666,7 @@ void LLInventoryCategoriesObserver::changed(U32 mask)
 	}
 
 	// Remove deleed categories from the list
-	for (std::vector<LLUUID>::iterator deleted_id = deleted_categories_ids.begin(); deleted_id != deleted_categories_ids.end(); ++deleted_id)
+	for (auto deleted_id = deleted_categories_ids.begin(); deleted_id != deleted_categories_ids.end(); ++deleted_id)
 	{
 		removeCategory(*deleted_id);
 	}

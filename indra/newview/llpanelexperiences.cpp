@@ -102,7 +102,7 @@ void LLPanelExperiences::setExperienceList( const LLSD& experiences )
 	mExperiencesList->sort();
 }
 
-void LLPanelExperiences::getExperienceIdsList(std::vector<LLUUID>& result)
+void LLPanelExperiences::getExperienceIdsList(uuid_vec_t& result)
 {
     std::vector<LLSD> ids;
     mExperiencesList->getValues(ids);

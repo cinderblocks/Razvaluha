@@ -1529,7 +1529,7 @@ bool validate_marketplacelistings(LLInventoryCategory* cat, validation_callback_
 	gInventory.getDirectDescendentsOf(cat->getUUID(),cat_array,item_array);
     
     // We use a composite (type,permission) key on that map to store UUIDs of items of same (type,permissions)
-    std::map<U32, std::vector<LLUUID> > items_vector;
+    std::map<U32, uuid_vec_t > items_vector;
 
     // Parse the items and create vectors of item UUIDs sorting copyable items and stock items of various types
     bool has_bad_items = false;
@@ -1635,7 +1635,7 @@ bool validate_marketplacelistings(LLInventoryCategory* cat, validation_callback_
                 ((folder_type != LLFolderType::FT_MARKETPLACE_STOCK) && (unique_key != default_key)))
             {
                 // Create one folder per vector at the right depth and of the right type
-                std::map<U32, std::vector<LLUUID> >::iterator items_vector_it = items_vector.begin();
+                auto items_vector_it = items_vector.begin();
                 while (items_vector_it != items_vector.end())
                 {
                     // Create a new folder
@@ -1721,7 +1721,7 @@ bool validate_marketplacelistings(LLInventoryCategory* cat, validation_callback_
             }
             // Scan each item and report if there's a problem
             LLInventoryModel::item_array_t item_array_copy = *item_array;
-            for (LLInventoryModel::item_array_t::iterator iter = item_array_copy.begin(); iter != item_array_copy.end(); iter++)
+            for (LLInventoryModel::item_array_t::iterator iter = item_array_copy.begin(); iter != item_array_copy.end(); ++iter)
             {
                 LLInventoryItem* item = *iter;
                 LLViewerInventoryItem * viewer_inv_item = (LLViewerInventoryItem *) item;

@@ -167,9 +167,7 @@ void LLAvatarActions::offerTeleport(const LLUUID& invitee)
 	if (invitee.isNull())
 		return;
 
-	std::vector<LLUUID> ids;
-	ids.push_back(invitee);
-	offerTeleport(ids);
+	offerTeleport(uuid_vec_t{invitee});
 }
 
 // static
@@ -647,7 +645,7 @@ namespace action_give_inventory
 		return acceptable;
 	}
 
-	static void build_items_string(const boost::unordered_set<LLUUID>& inventory_selected_uuids, std::string& items_string)
+	static void build_items_string(const uuid_set_t& inventory_selected_uuids, std::string& items_string)
 	{
 		llassert(inventory_selected_uuids.size() > 0);
 
@@ -844,10 +842,10 @@ void LLAvatarActions::buildResidentsString(const uuid_vec_t& avatar_uuids, std::
 }
 
 //static
-boost::unordered_set<LLUUID> LLAvatarActions::getInventorySelectedUUIDs()
+uuid_set_t LLAvatarActions::getInventorySelectedUUIDs()
 {
 	LLInventoryPanel* active_panel = action_give_inventory::get_active_inventory_panel();
-	return active_panel ? active_panel->getRootFolder()->getSelectionList() : boost::unordered_set<LLUUID>(); 
+	return active_panel ? active_panel->getRootFolder()->getSelectionList() : uuid_set_t(); 
 	/*std::set<LLFolderViewItem*> inventory_selected;
 
 	LLInventoryPanel* active_panel = action_give_inventory::get_active_inventory_panel();
@@ -865,7 +863,7 @@ boost::unordered_set<LLUUID> LLAvatarActions::getInventorySelectedUUIDs()
 		}
 	}
 
-	boost::unordered_set<LLUUID> inventory_selected_uuids;
+	uuid_set_t inventory_selected_uuids;
 	for (auto it = inventory_selected.begin(), end_it = inventory_selected.end();
 		it != end_it;
 		++it)

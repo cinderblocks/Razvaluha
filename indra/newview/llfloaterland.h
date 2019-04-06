@@ -32,7 +32,6 @@
 #include "llpointer.h"	// LLPointer<>
 #include "llsafehandle.h"
 
-typedef std::set<LLUUID, lluuid_less> uuid_list_t;
 const F32 CACHE_REFRESH_TIME	= 2.5f;
 
 class LLButton;

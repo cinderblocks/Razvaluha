@@ -169,7 +169,7 @@ void startConfrenceCoro(std::string url, LLUUID tempSessionId, LLUUID creatorId,
 bool send_start_session_messages(
 	const LLUUID& temp_session_id,
 	const LLUUID& other_participant_id,
-	const std::vector<LLUUID>& ids,
+	const uuid_vec_t& ids,
 	EInstantMessage dialog)
 {
 	if ( dialog == IM_SESSION_GROUP_START )
@@ -227,7 +227,7 @@ LLFloaterIMPanel::LLFloaterIMPanel(
 	const LLUUID& session_id,
 	const LLUUID& other_participant_id,
 	const EInstantMessage& dialog,
-	const std::vector<LLUUID>& ids) :
+	const uuid_vec_t& ids) :
 	LLFloater(log_label, LLRect(), log_label),
 	mStartCallOnInitialize(false),
 	mInputEditor(NULL),
@@ -632,7 +632,7 @@ void LLFloaterIMPanel::draw()
 	LLFloater::draw();
 }
 
-bool LLFloaterIMPanel::inviteToSession(const std::vector<LLUUID>& ids)
+bool LLFloaterIMPanel::inviteToSession(const uuid_vec_t& ids)
 {
 	LLViewerRegion* region = gAgent.getRegion();
 	if (!region)
@@ -877,9 +877,7 @@ BOOL LLFloaterIMPanel::dropCallingCard(LLInventoryItem* item, BOOL drop)
 	{
 		if (drop)
 		{
-			std::vector<LLUUID> ids;
-			ids.push_back(item->getCreatorUUID());
-			inviteToSession(ids);
+			inviteToSession({ item->getCreatorUUID() });
 		}
 		return true;
 	}
@@ -906,7 +904,7 @@ BOOL LLFloaterIMPanel::dropCategory(LLInventoryCategory* category, BOOL drop)
 		}
 		else if(drop)
 		{
-			std::vector<LLUUID> ids;
+			uuid_vec_t ids;
 			for(S32 i = 0; i < count; ++i)
 			{
 				ids.push_back(items.at(i)->getCreatorUUID());

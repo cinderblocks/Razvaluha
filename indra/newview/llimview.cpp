@@ -645,7 +645,7 @@ LLUUID LLIMMgr::addSession(
 	LLFloaterIMPanel* floater = findFloaterBySession(session_id);
 	if(!floater)
 	{
-		std::vector<LLUUID> ids;
+		uuid_vec_t ids;
 		ids.push_back(other_participant_id);
 
 		floater = createFloater(session_id, other_participant_id, name, dialog, ids, true);
@@ -689,7 +689,7 @@ LLUUID LLIMMgr::addSession(
 	const std::string& name,
 	EInstantMessage dialog,
 	const LLUUID& other_participant_id,
-	const std::vector<LLUUID>& ids)
+	const uuid_vec_t& ids)
 {
 	if (0 == ids.size())
 	{
@@ -1056,7 +1056,7 @@ LLFloaterIMPanel* LLIMMgr::createFloater(
 	const LLUUID& other_participant_id,
 	const std::string& session_label,
 	const EInstantMessage& dialog,
-	const std::vector<LLUUID>& ids,
+	const uuid_vec_t& ids,
 	bool user_initiated)
 {
 	if (session_id.isNull())
@@ -1116,7 +1116,7 @@ std::string LLIMMgr::getOfflineMessage(const LLUUID& id)
 
 void LLIMMgr::noteOfflineUsers(
 	LLFloaterIMPanel* floater,
-	const std::vector<LLUUID>& ids)
+	const uuid_vec_t& ids)
 {
 	if(ids.empty())
 	{
@@ -1141,7 +1141,7 @@ void LLIMMgr::noteOfflineUsers(
 }
 
 void LLIMMgr::noteMutedUsers(LLFloaterIMPanel* floater,
-								  const std::vector<LLUUID>& ids)
+								  const uuid_vec_t& ids)
 {
 	// Don't do this if we don't have a mute list.
 	LLMuteList *ml = LLMuteList::getInstance();

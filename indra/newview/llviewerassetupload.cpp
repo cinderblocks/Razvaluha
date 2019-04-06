@@ -949,7 +949,8 @@ void LLViewerAssetUpload::HandleUploadError(LLCore::HttpStatus status, LLSD &res
     LLNotificationsUtil::add(label, args);
 
     // unfreeze script preview
-    if (uploadInfo->getAssetType() == LLAssetType::AT_LSL_TEXT)
+    auto type(uploadInfo->getAssetType());
+    if (type == LLAssetType::AT_LSL_TEXT)
     {
         LLPreviewLSL* preview = static_cast<LLPreviewLSL*>(LLPreview::find(
             uploadInfo->getItemId()));
@@ -960,6 +961,10 @@ void LLViewerAssetUpload::HandleUploadError(LLCore::HttpStatus status, LLSD &res
             preview->callbackLSLCompileFailed(errors);
         }
     }
-
+    else if (type == LLAssetType::AT_NOTECARD)
+    {
+        if (LLPreviewNotecard* nc = (LLPreviewNotecard*)LLPreview::find(uploadInfo->getItemId()))
+            nc->setEnabled(true);
+    }
 }
 

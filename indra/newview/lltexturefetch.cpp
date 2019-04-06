@@ -3711,7 +3711,6 @@ void LLTextureFetch::releaseHttpWaiters()
 
 	// Quickly make a copy of all the LLUIDs.  Get off the
 	// mutex as early as possible.
-	typedef std::vector<LLUUID> uuid_vec_t;
 	uuid_vec_t tids;
 
 	{
@@ -4308,7 +4307,7 @@ bool LLTextureFetchDebugger::processStartDebug(F32 max_time)
 	//collect statistics
 	mTotalFetchingTime = gTextureTimer.getElapsedTimeF32() - mTotalFetchingTime;
 	
-	std::set<LLUUID> fetched_textures;
+	uuid_set_t fetched_textures;
 	S32 size = mFetchingHistory.size();
 	for(S32 i = 0 ; i < size; i++)
 	{
@@ -4490,7 +4489,7 @@ void LLTextureFetchDebugger::clearCache()
 {
 	S32 size = mFetchingHistory.size();
 	{
-		std::set<LLUUID> deleted_list;
+		uuid_set_t deleted_list;
 		for(S32 i = 0 ; i < size ; i++)
 		{
 			if(deleted_list.find(mFetchingHistory[i].mID) == deleted_list.end())

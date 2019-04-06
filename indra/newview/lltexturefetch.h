@@ -88,6 +88,7 @@ public:
 	//
 	// Threads:  T*
 	void deleteRequest(const LLUUID& id, bool cancel);
+
 	void deleteAllRequests();
 
 	// Threads:  T*
@@ -123,6 +124,7 @@ public:
 
 	// Debug utility - generally not safe
 	void dump();
+
 	// Threads:  T*
 	S32 getNumRequests();
 
@@ -244,20 +246,20 @@ protected:
 
 	// Overrides from the LLThread tree
 	// Locks:  Ct
-	bool runCondition();
+	bool runCondition() override;
 
 private:
     // Threads:  Tmain
 	void sendRequestListToSimulators();
 	
 	// Threads:  Ttf
-	/*virtual*/ void startThread(void);
+	/*virtual*/ void startThread(void) override;
 	
 	// Threads:  Ttf
-	/*virtual*/ void endThread(void);
+	/*virtual*/ void endThread(void) override;
 	
 	// Threads:  Ttf
-	/*virtual*/ void threadedUpdate(void);
+	/*virtual*/ void threadedUpdate(void) override;
 
 	// Threads:  Ttf
 	void commonUpdate();
@@ -323,10 +325,10 @@ public:
 	map_t mRequestMap;													// Mfq
 
 	// Set of requests that require network data
-	typedef std::set<LLUUID> queue_t;
+	typedef uuid_set_t queue_t;
 	queue_t mNetworkQueue;												// Mfnq
 	queue_t mHTTPTextureQueue;											// Mfnq
-	typedef std::map<LLHost,std::set<LLUUID> > cancel_queue_t;
+	typedef std::map<LLHost,uuid_set_t > cancel_queue_t;
 	cancel_queue_t mCancelQueue;										// Mfnq
 	F32 mTextureBandwidth;												// <none>
 	F32 mMaxBandwidth;													// Mfnq
@@ -376,7 +378,7 @@ public:
 	// exceed the high water level (but not go below zero).
 	LLAtomicS32							mHttpSemaphore;					// Ttf
 	
-	typedef std::set<LLUUID> wait_http_res_queue_t;
+	typedef uuid_set_t wait_http_res_queue_t;
 	wait_http_res_queue_t				mHttpWaitResource;				// Mfnq
 
 	// Cumulative stats on the states/requests issued by

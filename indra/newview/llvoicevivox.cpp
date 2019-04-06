@@ -4200,7 +4200,7 @@ void LLVivoxVoiceClient::sessionState::VerifySessions()
 }
 
 
-void LLVivoxVoiceClient::getParticipantList(std::set<LLUUID> &participants)
+void LLVivoxVoiceClient::getParticipantList(uuid_set_t &participants)
 {
 	if(mAudioSession)
 	{

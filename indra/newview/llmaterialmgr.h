@@ -113,7 +113,7 @@ private:
 
 
 	typedef boost::unordered_map<TEMaterialPair, get_callback_te_t*, TEMaterialPairHasher> get_callback_te_map_t;
-	typedef std::set<LLUUID> getall_queue_t;
+	typedef uuid_set_t getall_queue_t;
 	typedef std::map<LLUUID, F64> getall_pending_map_t;
 	typedef std::map<LLUUID, getall_callback_t*> getall_callback_map_t;
 	typedef std::map<U8, LLMaterial> facematerial_map_t;

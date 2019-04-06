@@ -107,7 +107,7 @@ public:
 	LLVoiceDeviceList& getRenderDevices() override;
 	//@}	
 
-	void getParticipantList(std::set<LLUUID> &participants) override;
+	void getParticipantList(uuid_set_t &participants) override;
 	bool isParticipant(const LLUUID& speaker_id) override;
 
 	// Send a text message to the specified user, initiating the session if necessary.

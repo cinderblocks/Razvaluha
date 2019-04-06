@@ -201,7 +201,7 @@ private:
 	std::string mFastCacheFileName;
 	EntriesInfo mHeaderEntriesInfo;
 	std::set<S32> mFreeList; // deleted entries
-	std::set<LLUUID> mLRU;
+	uuid_set_t mLRU;
 	typedef std::map<LLUUID,S32> id_map_t;
 	id_map_t mHeaderIDMap;
 
