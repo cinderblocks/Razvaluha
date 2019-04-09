@@ -154,7 +154,7 @@ LLGroupRoleData::~LLGroupRoleData()
 {	
 }
 
-S32 LLGroupRoleData::getMembersInRole(uuid_vec_t members,
+S32 LLGroupRoleData::getMembersInRole(uuid_vec_t& members,
 									  BOOL needs_sort)
 {
 	if (mRoleID.isNull())
