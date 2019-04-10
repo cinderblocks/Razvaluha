@@ -1261,8 +1261,7 @@ void LLViewerMedia::getOpenIDCookieCoro(std::string url)
 		
 	if (url.length())
 	{
-		LLFloaterDestinations* floater(LLFloaterDestinations::findInstance());
-		LLMediaCtrl* media_instance = floater ? floater->getChild<LLMediaCtrl>("destination_guide_contents") : nullptr;
+		LLMediaCtrl* media_instance = LLFloaterDestinations::getInstance()->getChild<LLMediaCtrl>("destination_guide_contents");
 		if (media_instance)
 		{
 			std::string cookie_host = authority.substr(hostStart, hostEnd - hostStart);
