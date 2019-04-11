@@ -26,20 +26,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
 $/LicenseInfo$
 """
-import sys
-import os
-import os.path
-import shutil
 import errno
 import json
+import os
+import os.path
 import plistlib
 import random
 import re
+import shutil
 import stat
 import subprocess
+import sys
 import tarfile
 import time
-
+import zipfile
 
 viewer_dir = os.path.dirname(__file__)
 # Add indra/lib/python to our path so we don't have to muck with PYTHONPATH.
@@ -97,6 +97,7 @@ class ViewerManifest(LLManifest):
                 self.path("windlight")
 
                 # ... and the included spell checking dictionaries
+                pkgdir = os.path.join(self.args['build'], os.pardir, 'packages')
                 self.path("dictionaries")
                 self.path("ca-bundle.crt")
 
@@ -109,8 +110,15 @@ class ViewerManifest(LLManifest):
                 self.path("*.tga")
 
             # Include our fonts
+            with self.prefix(src=os.path.join(pkgdir, "fonts"), dst="fonts"):
+                self.path("DejaVuSansCondensed*.ttf")
+                self.path("DejaVuSansMono.ttf")
+                self.path("DroidSans*.ttf")
+                self.path("NotoSansDisplay*.ttf")
+                self.path("SourceHanSans*.otf")
+
+            # Include our font licenses
             with self.prefix(src="fonts"):
-                self.path("*.ttf")
                 self.path("*.txt")
 
             # skins
@@ -500,6 +508,7 @@ class WindowsManifest(ViewerManifest):
         config = 'debug' if self.args['configuration'].lower() == 'debug' else 'release'
         with self.prefix(src=os.path.join(pkgdir, 'bin', config), dst="llplugin"):
                 self.path("chrome_elf.dll")
+                self.path("d3dcompiler_43.dll")
                 self.path("d3dcompiler_47.dll")
                 self.path("libcef.dll")
                 self.path("libEGL.dll")
@@ -508,18 +517,10 @@ class WindowsManifest(ViewerManifest):
                 self.path("natives_blob.bin")
                 self.path("snapshot_blob.bin")
                 self.path("v8_context_snapshot.bin")
-                self.path("widevinecdmadapter.dll")
 
-        # CEF runtime files for software rendering - debug
-        if self.args['configuration'].lower() == 'debug':
-            with self.prefix(src=os.path.join(pkgdir, 'bin', 'debug', 'swiftshader'), dst=os.path.join("llplugin", 'swiftshader')):
-                self.path("libEGL.dll")
-                self.path("libGLESv2.dll")
-        else:
-        # CEF runtime files for software rendering - not debug (release, relwithdebinfo etc.)
-            with self.prefix(src=os.path.join(pkgdir, 'bin', 'release', 'swiftshader'), dst=os.path.join("llplugin", 'swiftshader')):
-                self.path("libEGL.dll")
-                self.path("libGLESv2.dll")
+        with self.prefix(src=os.path.join(pkgdir, 'bin', config, 'swiftshader'), dst=os.path.join("llplugin", 'swiftshader')):
+            self.path("libEGL.dll")
+            self.path("libGLESv2.dll")
 
         # CEF files common to all configurations
         with self.prefix(src=os.path.join(pkgdir, 'resources'), dst="llplugin"):

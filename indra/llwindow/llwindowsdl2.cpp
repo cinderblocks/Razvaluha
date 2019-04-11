@@ -48,6 +48,7 @@
 #include "SDL2/SDL_syswm.h"
 
 #if LL_WINDOWS
+#include <commdlg.h>
 #include "../newview/res/resource.h"
 #endif
 

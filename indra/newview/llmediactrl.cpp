@@ -412,7 +412,7 @@ BOOL LLMediaCtrl::postBuild ()
 
 	setVisibleCallback(boost::bind(&LLMediaCtrl::onVisibilityChanged, this, _2));
 
-	return TRUE;
+	return true;
 }
 
 void LLMediaCtrl::onOpenWebInspector()
@@ -480,7 +480,7 @@ BOOL LLMediaCtrl::handleUnicodeCharHere(llwchar uni_char)
 	
 	if (mMediaSource)
 	{
-			result = mMediaSource->handleUnicodeCharHere(uni_char);
+		result = mMediaSource->handleUnicodeCharHere(uni_char);
 	}
 
 	if ( ! result )
@@ -491,7 +491,7 @@ BOOL LLMediaCtrl::handleUnicodeCharHere(llwchar uni_char)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-void LLMediaCtrl::onVisibilityChanged ( const LLSD& new_visibility )
+void LLMediaCtrl::onVisibilityChanged( const LLSD& new_visibility )
 {
 	// set state of frequent updates automatically if visibility changes
 	if ( new_visibility.asBoolean() )

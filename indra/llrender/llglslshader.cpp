@@ -972,6 +972,5 @@ void LLGLSLShader::vertexAttrib4f(U32 index, GLfloat x, GLfloat y, GLfloat z, GL
 
 void LLGLSLShader::setMinimumAlpha(F32 minimum)
 {
-	gGL.flush();
 	uniform1f(LLShaderMgr::MINIMUM_ALPHA, minimum);
 }

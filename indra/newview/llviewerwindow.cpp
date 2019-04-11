@@ -184,6 +184,7 @@
 #include "llviewernetwork.h"
 #include "llpostprocess.h"
 #include "llwearablelist.h"
+#include "llfloaterinspect.h"
 
 #include "llnotifications.h"
 #include "llnotificationsutil.h"
@@ -224,7 +225,9 @@ BOOL			gShowOverlayTitle = FALSE;
 BOOL			gPickTransparent = TRUE;
 
 LLViewerObject*  gDebugRaycastObject = nullptr;
+LLVOPartGroup* gDebugRaycastParticle = nullptr;
 LLVector4a       gDebugRaycastIntersection;
+LLVector4a		gDebugRaycastParticleIntersection;
 LLVector2        gDebugRaycastTexCoord;
 LLVector4a       gDebugRaycastNormal;
 LLVector4a       gDebugRaycastTangent;
@@ -697,7 +700,7 @@ public:
 					LLMeshRepository::sHTTPRetryCount));
 				ypos += y_inc;
 
-				addText(xpos, ypos, llformat("%d/%d Mesh LOD Pending/Processing", LLMeshRepository::sLODPending, LLMeshRepository::sLODProcessing));
+				addText(xpos, ypos, llformat("%d/%d Mesh LOD Pending/Processing", LLMeshRepository::sLODPending, (U32)LLMeshRepository::sLODProcessing));
 				ypos += y_inc;
 
 				addText(xpos, ypos, llformat("%.3f/%.3f MB Mesh Cache Read/Write ", LLMeshRepository::sCacheBytesRead/(1024.f*1024.f), LLMeshRepository::sCacheBytesWritten/(1024.f*1024.f)));
@@ -1100,7 +1103,9 @@ LLWindowCallbacks::DragNDropResult LLViewerWindow::handleDragNDrop( LLWindow *wi
 
 				if (prim_media_dnd_enabled)
 				{
-					LLPickInfo pick_info = pickImmediate( pos.mX, pos.mY,  TRUE /*BOOL pick_transparent*/ );
+					LLPickInfo pick_info = pickImmediate( pos.mX, pos.mY,
+                                                          TRUE /* pick_transparent */, 
+                                                          FALSE /* pick_rigged */);
 
 					LLUUID object_id = pick_info.getObjectID();
 					S32 object_face = pick_info.mObjectFace;
@@ -1628,6 +1633,17 @@ std::string LLViewerWindow::translateString(const char* tag,
 	return LLTrans::getString( std::string(tag), args_copy);
 }
 
+static const std::string font_dir()
+{
+	return gDirUtilp->getExecutableDir()
+        #if LL_DARWIN
+            + "../Resources/"
+        #elif !defined(LL_WINDOWS)
+            + "../"
+        #endif
+		;
+}
+
 //
 // Classes
 //
@@ -1796,7 +1812,7 @@ LLViewerWindow::LLViewerWindow(
 	LLFontGL::initClass( gSavedSettings.getF32("FontScreenDPI"),
 								mDisplayScale.mV[VX],
 								mDisplayScale.mV[VY],
-								gDirUtilp->getAppRODataDir());
+								font_dir());
 	}
 	// Create container for all sub-views
 	LLView::Params rvp;
@@ -3110,7 +3126,7 @@ void LLViewerWindow::updateUI()
 	if (gPipeline.hasRenderDebugMask(LLPipeline::RENDER_DEBUG_RAYCAST))
 	{
 		gDebugRaycastFaceHit = -1;
-		gDebugRaycastObject = cursorIntersect(-1, -1, 512.f, nullptr, -1, FALSE,
+		gDebugRaycastObject = cursorIntersect(-1, -1, 512.f, nullptr, -1, FALSE, FALSE,
 											  &gDebugRaycastFaceHit,
 											  &gDebugRaycastIntersection,
 											  &gDebugRaycastTexCoord,
@@ -3118,6 +3134,7 @@ void LLViewerWindow::updateUI()
 											  &gDebugRaycastTangent,
 											  &gDebugRaycastStart,
 											  &gDebugRaycastEnd);
+		gDebugRaycastParticle = gPipeline.lineSegmentIntersectParticle(gDebugRaycastStart, gDebugRaycastEnd, &gDebugRaycastParticleIntersection, NULL);
 	}
 
 	updateMouseDelta();
@@ -3254,6 +3271,7 @@ void LLViewerWindow::updateUI()
 
 	// only handle hover events when UI is enabled
 //	if (gPipeline.hasRenderDebugFeatureMask(LLPipeline::RENDER_DEBUG_FEATURE_UI))
+	if (mMouseInWindow)
 	{	
 
 		if( mouse_captor )
@@ -3963,6 +3981,8 @@ void LLViewerWindow::pickAsync( S32 x,
 								MASK mask,
 								void (*callback)(const LLPickInfo& info),
 								BOOL pick_transparent,
+								BOOL pick_rigged,
+								BOOL pick_unselectable,
 								BOOL get_surface_info)
 {
 	// push back pick info object
@@ -3973,8 +3993,7 @@ void LLViewerWindow::pickAsync( S32 x,
 		// "Show Debug Alpha" means no object actually transparent
 		pick_transparent = TRUE;
 	}
-
-	LLPickInfo pick_info(LLCoordGL(x, y_from_bot), mask, pick_transparent, get_surface_info, callback);
+	LLPickInfo pick_info(LLCoordGL(x, y_from_bot), mask, pick_transparent, pick_rigged, FALSE, get_surface_info, pick_unselectable, callback);
 	schedulePick(pick_info);
 }
 
@@ -4001,6 +4020,16 @@ void LLViewerWindow::schedulePick(LLPickInfo& pick_info)
 
 void LLViewerWindow::performPick()
 {
+	if (gNoRender)
+	{
+		return;
+	}
+
+	if (!gFocusMgr.getAppHasFocus())
+	{
+		return;
+	}
+
 	if (!mPicks.empty())
 	{
 		std::vector<LLPickInfo>::iterator pick_it;
@@ -4030,8 +4059,18 @@ void LLViewerWindow::returnEmptyPicks()
 }
 
 // Performs the GL object/land pick.
-LLPickInfo LLViewerWindow::pickImmediate(S32 x, S32 y_from_bot,  BOOL pick_transparent)
+LLPickInfo LLViewerWindow::pickImmediate(S32 x, S32 y_from_bot, BOOL pick_transparent, BOOL pick_rigged, BOOL pick_particle)
 {
+	if (gNoRender)
+	{
+		return LLPickInfo();
+	}
+
+	if (!gFocusMgr.getAppHasFocus())
+	{
+		return LLPickInfo();
+	}
+
 	// push back pick info object
 	BOOL in_build_mode = gFloaterTools && gFloaterTools->getVisible();
 	if (in_build_mode || LLDrawPoolAlpha::sShowDebugAlpha)
@@ -4040,10 +4079,9 @@ LLPickInfo LLViewerWindow::pickImmediate(S32 x, S32 y_from_bot,  BOOL pick_trans
 		// "Show Debug Alpha" means no object actually transparent
 		pick_transparent = TRUE;
 	}
-
 	// shortcut queueing in mPicks and just update mLastPick in place
 	MASK	key_mask = gKeyboard->currentMask(TRUE);
-	mLastPick = LLPickInfo(LLCoordGL(x, y_from_bot), key_mask, pick_transparent, TRUE, NULL);
+	mLastPick = LLPickInfo(LLCoordGL(x, y_from_bot), key_mask, pick_transparent, pick_rigged, pick_particle, TRUE, FALSE, NULL);
 	mLastPick.fetchResults();
 
 	return mLastPick;
@@ -4079,6 +4117,7 @@ LLViewerObject* LLViewerWindow::cursorIntersect(S32 mouse_x, S32 mouse_y, F32 de
 												LLViewerObject *this_object,
 												S32 this_face,
 												BOOL pick_transparent,
+												BOOL pick_rigged,
 												S32* face_hit,
 												LLVector4a *intersection,
 												LLVector2 *uv,
@@ -4149,7 +4188,7 @@ LLViewerObject* LLViewerWindow::cursorIntersect(S32 mouse_x, S32 mouse_y, F32 de
 	{
 		if (this_object->isHUDAttachment()) // is a HUD object?
 		{
-			if (this_object->lineSegmentIntersect(mh_start, mh_end, this_face, pick_transparent,
+			if (this_object->lineSegmentIntersect(mh_start, mh_end, this_face, pick_transparent, pick_rigged,
 												  face_hit, intersection, uv, normal, tangent))
 			{
 				found = this_object;
@@ -4157,7 +4196,7 @@ LLViewerObject* LLViewerWindow::cursorIntersect(S32 mouse_x, S32 mouse_y, F32 de
 		}
 		else // is a world object
 		{
-			if (this_object->lineSegmentIntersect(mw_start, mw_end, this_face, pick_transparent,
+			if (this_object->lineSegmentIntersect(mw_start, mw_end, this_face, pick_transparent, pick_rigged,
 												  face_hit, intersection, uv, normal, tangent))
 			{
 				found = this_object;
@@ -4178,7 +4217,7 @@ LLViewerObject* LLViewerWindow::cursorIntersect(S32 mouse_x, S32 mouse_y, F32 de
 
 		if (!found) // if not found in HUD, look in world:
 		{
-			found = gPipeline.lineSegmentIntersectInWorld(mw_start, mw_end, pick_transparent,
+			found = gPipeline.lineSegmentIntersectInWorld(mw_start, mw_end, pick_transparent, pick_rigged,
 														  face_hit, intersection, uv, normal, tangent);
 
 			if (found && !pick_transparent)
@@ -4323,7 +4362,7 @@ BOOL LLViewerWindow::mousePointOnPlaneGlobal(LLVector3d& point, const S32 x, con
 
 
 // Returns global position
-BOOL LLViewerWindow::mousePointOnLandGlobal(const S32 x, const S32 y, LLVector3d *land_position_global)
+BOOL LLViewerWindow::mousePointOnLandGlobal(const S32 x, const S32 y, LLVector3d *land_position_global, BOOL ignore_distance)
 {
 	LLVector3		mouse_direction_global = mouseDirectionGlobal(x,y);
 	F32				mouse_dir_scale;
@@ -4332,7 +4371,7 @@ BOOL LLViewerWindow::mousePointOnLandGlobal(const S32 x, const S32 y, LLVector3d
 	F32			land_z;
 	const F32	FIRST_PASS_STEP = 1.0f;		// meters
 	const F32	SECOND_PASS_STEP = 0.1f;	// meters
-	const F32	draw_distance = /*ignore_distance ? MAX_FAR_CLIP :*/ gAgentCamera.mDrawDistance*4;
+	const F32	draw_distance = ignore_distance ? MAX_FAR_CLIP : (gAgentCamera.mDrawDistance * 4);
 	LLVector3d	camera_pos_global;
 
 	camera_pos_global = gAgentCamera.getCameraPositionGlobal();
@@ -5354,7 +5393,7 @@ void LLViewerWindow::initFonts(F32 zoom_factor)
 	LLFontGL::initClass( gSavedSettings.getF32("FontScreenDPI"),
 								mDisplayScale.mV[VX] * zoom_factor,
 								mDisplayScale.mV[VY] * zoom_factor,
-								gDirUtilp->getAppRODataDir());
+								font_dir());
 	// Force font reloads, which can be very slow
 	LLFontGL::loadDefaultFonts();
 }
@@ -5827,41 +5866,49 @@ void* LLBottomPanel::createToolBar(void* data)
 //
 LLPickInfo::LLPickInfo()
 	: mKeyMask(MASK_NONE),
-	  mPickCallback(nullptr),
+	  mPickCallback(NULL),
 	  mPickType(PICK_INVALID),
+	  mWantSurfaceInfo(FALSE),
 	  mObjectFace(-1),
-	  mHUDIcon(nullptr),
-	  mIntersection(),
 	  mUVCoords(-1.f, -1.f),
 	  mSTCoords(-1.f, -1.f),
 	  mXYCoords(-1, -1),
+	  mIntersection(),
 	  mNormal(),
 	  mTangent(),
 	  mBinormal(),
+	  mHUDIcon(NULL),
 	  mPickTransparent(FALSE),
-	  mWantSurfaceInfo(FALSE)
+	  mPickRigged(FALSE),
+	  mPickParticle(FALSE)
 {
 }
 
 LLPickInfo::LLPickInfo(const LLCoordGL& mouse_pos, 
 						MASK keyboard_mask, 
-						BOOL pick_transparent,
-						BOOL pick_uv_coords,
-						void (*pick_callback)(const LLPickInfo& pick_info))
+		       BOOL pick_transparent,
+			   BOOL pick_rigged,
+			   BOOL pick_particle,
+		       BOOL pick_uv_coords,
+			   BOOL pick_unselectable,
+		       void (*pick_callback)(const LLPickInfo& pick_info))
 	: mMousePt(mouse_pos),
 	  mKeyMask(keyboard_mask),
 	  mPickCallback(pick_callback),
 	  mPickType(PICK_INVALID),
+	  mWantSurfaceInfo(pick_uv_coords),
 	  mObjectFace(-1),
-	  mHUDIcon(nullptr),
 	  mUVCoords(-1.f, -1.f),
 	  mSTCoords(-1.f, -1.f),
 	  mXYCoords(-1, -1),
 	  mNormal(),
 	  mTangent(),
 	  mBinormal(),
+	  mHUDIcon(NULL),
 	  mPickTransparent(pick_transparent),
-	  mWantSurfaceInfo(pick_uv_coords)
+	  mPickRigged(pick_rigged),
+	  mPickParticle(pick_particle),
+	  mPickUnselectable(pick_unselectable)
 {
 }
 
@@ -5879,6 +5926,10 @@ void LLPickInfo::fetchResults()
 	LLVector4a origin;
 	origin.load3(LLViewerCamera::getInstance()->getOrigin().mV);
 	F32 icon_dist = 0.f;
+	LLVector4a start;
+	LLVector4a end;
+	LLVector4a particle_end;
+
 	if (hit_icon)
 	{
 		LLVector4a delta;
@@ -5887,15 +5938,25 @@ void LLPickInfo::fetchResults()
 	}
 
 	LLViewerObject* hit_object = gViewerWindow->cursorIntersect(mMousePt.mX, mMousePt.mY, 512.f,
-									nullptr, -1, mPickTransparent, &face_hit,
-									&intersection, &uv, &normal, &tangent);
+									NULL, -1, mPickTransparent, mPickRigged, &face_hit,
+									&intersection, &uv, &normal, &tangent, &start, &end);
 	
 	mPickPt = mMousePt;
 
 	U32 te_offset = face_hit > -1 ? face_hit : 0;
 
-	//unproject relative clicked coordinate from window coordinate using GL
-	
+	if (mPickParticle)
+	{ //get the end point of line segement to use for particle raycast
+		if (hit_object)
+		{
+			particle_end = intersection;
+		}
+		else
+		{
+			particle_end = end;
+		}
+	}
+
 	LLViewerObject* objectp = hit_object;
 
 
@@ -5922,7 +5983,7 @@ void LLPickInfo::fetchResults()
 
 			// put global position into land_pos
 			LLVector3d land_pos;
-			if (!gViewerWindow->mousePointOnLandGlobal(mPickPt.mX, mPickPt.mY, &land_pos))
+			if (!gViewerWindow->mousePointOnLandGlobal(mPickPt.mX, mPickPt.mY, &land_pos, mPickUnselectable))
 			{
 				// The selected point is beyond the draw distance or is otherwise 
 				// not selectable. Return before calling mPickCallback().
@@ -5960,6 +6021,18 @@ void LLPickInfo::fetchResults()
 		}
 	}
 	
+	if (mPickParticle)
+	{ //search for closest particle to click origin out to intersection point
+		S32 part_face = -1;
+
+		LLVOPartGroup* group = gPipeline.lineSegmentIntersectParticle(start, particle_end, NULL, &part_face);
+		if (group)
+		{
+			mParticleOwnerID = group->getPartOwner(part_face);
+			mParticleSourceID = group->getPartSource(part_face);
+		}
+	}
+
 	if (mPickCallback)
 	{
 		mPickCallback(*this);
@@ -6010,7 +6083,7 @@ void LLPickInfo::getSurfaceInfo()
 	if (objectp)
 	{
 		if (gViewerWindow->cursorIntersect(ll_round((F32)mMousePt.mX), ll_round((F32)mMousePt.mY), 1024.f,
-										   objectp, -1, mPickTransparent,
+										   objectp, -1, mPickTransparent, mPickRigged,
 										   &mObjectFace,
 										   &intersection,
 										   &mSTCoords,

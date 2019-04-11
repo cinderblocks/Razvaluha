@@ -273,6 +273,7 @@ viewer_media_t LLViewerMedia::newMediaImpl(
 		media_impl->mMediaAutoScale = media_auto_scale;
 		media_impl->mMediaLoop = media_loop;
 	}
+	media_impl->setPageZoomFactor(media_impl->mZoomFactor);
 
 	return media_impl;
 }
@@ -1351,7 +1352,7 @@ void LLViewerMedia::openIDSetupCoro(std::string openidUrl, std::string openidTok
 	// post the token to the url 
 	// the responder will need to extract the cookie(s).
 	// Save the OpenID URL for later -- we may need the host when adding the cookie.
-    sOpenIDURL.init(openidUrl.c_str());
+	sOpenIDURL.init(openidUrl.c_str());
 	
 	// We shouldn't ever do this twice, but just in case this code gets repurposed later, clear existing cookies.
 	sOpenIDCookie.clear();
@@ -1388,7 +1389,7 @@ void LLViewerMedia::openIDSetupCoro(std::string openidUrl, std::string openidTok
 	// *TODO: What about bad status codes?  Does this destroy previous cookies?
     LLViewerMedia::openIDCookieResponse(openidUrl, cookie);
     LL_DEBUGS("MediaAuth") << "OpenID cookie set." << LL_ENDL;
-			
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1735,7 +1736,7 @@ LLPluginClassMedia* LLViewerMediaImpl::newSourceFromMediaType(std::string media_
 			media_source->setTarget(target);
 			media_source->setSize(default_width, default_height);
 			media_source->setZoomFactor(zoom_factor);
-						
+
 			return media_source;
 		}
 	}
@@ -1823,10 +1824,8 @@ LLPluginClassMedia* LLViewerMediaImpl::newSourceFromMediaType(std::string media_
 			}
 		}
 	}
-#if !LL_LINUX
 	LL_WARNS_ONCE("Plugin") << "plugin initialization failed for mime type: " << media_type << LL_ENDL;
-#endif
-	
+
 	if(gAgent.isInitialized())
 	{
 	    if (std::find(sMimeTypesFailed.begin(), sMimeTypesFailed.end(), media_type) == sMimeTypesFailed.end())
@@ -2573,7 +2572,6 @@ void LLViewerMediaImpl::navigateInternal()
 		return;
 	}
 	
-    
     if (!mMimeProbe.expired())
 	{
 		LL_WARNS() << "MIME type probe already in progress -- bailing out." << LL_ENDL;
@@ -2751,6 +2749,9 @@ bool LLViewerMediaImpl::handleKeyHere(KEY key, MASK mask)
 			case 'C': mMediaSource->copy(); break;
 			case 'V': mMediaSource->paste(); break;
 			case 'X': mMediaSource->cut(); break;
+			case '=': setPageZoomFactor(mZoomFactor + .1); break;
+			case '-': setPageZoomFactor(mZoomFactor - .1);  break;
+			case '0': setPageZoomFactor(1.0);  break;
 
 			default: result = false; break;
 			}
@@ -2775,7 +2776,7 @@ bool LLViewerMediaImpl::handleKeyHere(KEY key, MASK mask)
 			result = mMediaSource->keyEvent(LLPluginClassMedia::KEY_EVENT_DOWN, key, mask, native_key_data);
 		}
 	}
-	
+
 	return result;
 }
 //////////////////////////////////////////////////////////////////////////////////////////

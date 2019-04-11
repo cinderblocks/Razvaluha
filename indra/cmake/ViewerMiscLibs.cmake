@@ -15,6 +15,7 @@ else (NOT USESYSTEMLIBS)
   if(LINUX AND ${ARCH} STREQUAL "x86_64")
     use_prebuilt_binary(32bitcompatibilitylibs)
   endif(LINUX AND ${ARCH} STREQUAL "x86_64")
-  set(STANDALONE ON)
   set(USESYSTEMLIBS ON)
 endif(NOT USESYSTEMLIBS)
+
+use_prebuilt_binary(fonts)

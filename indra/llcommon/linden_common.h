@@ -57,5 +57,6 @@
 #include "lldefs.h"
 #include "llerror.h"
 #include "llfile.h"
+#include "llformat.h"
 
 #endif

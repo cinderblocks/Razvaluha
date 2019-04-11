@@ -33,6 +33,7 @@
 // ugh, this is ugly.  We need to straighten out our linking for this library
 #pragma comment(lib, "IPHLPAPI.lib")
 #include <iphlpapi.h>
+#include <nb30.h>
 #endif
 
 #include "lldefs.h"

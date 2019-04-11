@@ -1685,6 +1685,10 @@ void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 				{
 					sVertexProgram->setMinimumAlpha(mat->getAlphaMaskCutoff()/255.f);
 				}
+				else if (mat->getDiffuseAlphaMode() == LLMaterial::DIFFUSE_ALPHA_MODE_NONE || mat->getDiffuseAlphaMode() == LLMaterial::DIFFUSE_ALPHA_MODE_EMISSIVE)
+				{
+					sVertexProgram->setMinimumAlpha(0.f);
+				}
 				else
 				{
 					sVertexProgram->setMinimumAlpha(0.004f);
@@ -1708,6 +1712,10 @@ void LLDrawPoolAvatar::renderRigged(LLVOAvatar* avatar, U32 type, bool glow)
 					if (mat && mat->getDiffuseAlphaMode() == LLMaterial::DIFFUSE_ALPHA_MODE_MASK)
 					{
 						sVertexProgram->setMinimumAlpha(mat->getAlphaMaskCutoff()/255.f);
+					}
+					else if (mat && (mat->getDiffuseAlphaMode() == LLMaterial::DIFFUSE_ALPHA_MODE_NONE || mat->getDiffuseAlphaMode() == LLMaterial::DIFFUSE_ALPHA_MODE_EMISSIVE))
+					{
+						sVertexProgram->setMinimumAlpha(0.f);
 					}
 					else
 					{

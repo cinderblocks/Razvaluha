@@ -32,6 +32,7 @@
 #include "llcursortypes.h"
 #include "llinstancetracker.h"
 #include "llsd.h"
+#include "llinstancetracker.h"
 
 class LLSplashScreen;
 class LLPreeditor;

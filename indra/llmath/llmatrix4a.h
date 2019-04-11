@@ -34,9 +34,9 @@
 LL_ALIGN_PREFIX(16)
 class LLMatrix4a
 {
-private:
-	LL_ALIGN_16(LLVector4a mMatrix[4]);
 public:
+	LL_ALIGN_16(LLVector4a mMatrix[4]);
+
 	enum
 	{
 		ROW_FWD = 0,
@@ -88,27 +88,11 @@ public:
 		setMul(matb,mata);
 	}
 
-	LLMatrix4a(const LLMatrix4a& rhs)
-	{
-		mMatrix[0] = rhs.getRow<0>();
-		mMatrix[1] = rhs.getRow<1>();
-		mMatrix[2] = rhs.getRow<2>();
-		mMatrix[3] = rhs.getRow<3>();
-	}
+	LLMatrix4a(const LLMatrix4a& rhs) = default;
 
 	LLMatrix4a(const LLMatrix4& rhs)
 	{
 		loadu(rhs);
-	}
-
-	// Do NOT add aditional operators without consulting someone with SSE experience
-	inline const LLMatrix4a& operator= (const LLMatrix4a& rhs)
-	{
-		mMatrix[0] = rhs.getRow<0>();
-		mMatrix[1] = rhs.getRow<1>();
-		mMatrix[2] = rhs.getRow<2>();
-		mMatrix[3] = rhs.getRow<3>();
-		return *this;
 	}
 
 	inline F32* getF32ptr()
@@ -284,6 +268,15 @@ public:
 		return v;
 	}
 
+	// Set element-wise to mMatrix + (m*v)
+	inline void setMulAdd(const LLMatrix4a& m, const LLVector4a& v)
+	{
+		mMatrix[0] = _mm_add_ps(mMatrix[0], _mm_mul_ps(m.mMatrix[0], v));
+		mMatrix[1] = _mm_add_ps(mMatrix[1], _mm_mul_ps(m.mMatrix[1], v));
+		mMatrix[2] = _mm_add_ps(mMatrix[2], _mm_mul_ps(m.mMatrix[2], v));
+		mMatrix[3] = _mm_add_ps(mMatrix[3], _mm_mul_ps(m.mMatrix[3], v));
+	}
+
 	inline void setMul(const LLMatrix4a& m, const F32 s)
 	{
 		const LLVector4a ssss(s);
@@ -291,6 +284,14 @@ public:
 		mMatrix[1].setMul(m.mMatrix[1], ssss);
 		mMatrix[2].setMul(m.mMatrix[2], ssss);
 		mMatrix[3].setMul(m.mMatrix[3], ssss);
+	}
+
+	inline void setMul(const LLMatrix4a& m, const LLVector4a& v)
+	{
+		mMatrix[0].setMul(m.mMatrix[0], v);
+		mMatrix[1].setMul(m.mMatrix[1], v);
+		mMatrix[2].setMul(m.mMatrix[2], v);
+		mMatrix[3].setMul(m.mMatrix[3], v);
 	}
 
 	inline void setMul(const LLMatrix4a& m0, const LLMatrix4a& m1)
@@ -731,4 +732,6 @@ inline std::ostream& operator<<(std::ostream& s, const LLMatrix4a& m)
 } 
 
 void matMulBoundBox(const LLMatrix4a &a, const LLVector4a *in_extents, LLVector4a *out_extents);
+
+static_assert(std::is_trivially_copyable<LLMatrix4a>{}, "LLMatrix4a must be a trivially copyable type");
 #endif

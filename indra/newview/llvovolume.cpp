@@ -88,8 +88,6 @@
 #include "llmaterialmgr.h"
 #include "llsculptidsize.h"
 
-#include "llkeyboard.h" // For allow_rigged_pick()
-
 // [RLVa:KB] - Checked: 2011-05-22 (RLVa-1.3.1a)
 #include "rlvhandler.h"
 #include "rlvlocks.h"
@@ -4311,13 +4309,7 @@ LLVector3 LLVOVolume::volumeDirectionToAgent(const LLVector3& dir) const
 	return ret;
 }
 
-bool allow_rigged_pick()
-{
-	static const LLCachedControl<S32> allow_mesh_picking("SGAllowRiggedMeshSelection", 0);
-	return allow_mesh_picking && (gKeyboard->currentMask(true) == MASK_SHIFT || (allow_mesh_picking !=1 && (gFloaterTools->getVisible() || LLFloaterInspect::findInstance())));
-}
-
-BOOL LLVOVolume::lineSegmentIntersect(const LLVector4a& start, const LLVector4a& end, S32 face, BOOL pick_transparent, S32 *face_hitp,
+BOOL LLVOVolume::lineSegmentIntersect(const LLVector4a& start, const LLVector4a& end, S32 face, BOOL pick_transparent, BOOL pick_rigged, S32 *face_hitp,
 									  LLVector4a* intersection,LLVector2* tex_coord, LLVector4a* normal, LLVector4a* tangent)
 	
 {
@@ -4343,7 +4335,7 @@ BOOL LLVOVolume::lineSegmentIntersect(const LLVector4a& start, const LLVector4a&
 
 	if (mDrawable->isState(LLDrawable::RIGGED))
 	{
-		if (allow_rigged_pick())
+		if (pick_rigged)
 		{
 			updateRiggedVolume(true);
 			volume = mRiggedVolume;
@@ -4606,22 +4598,20 @@ void LLRiggedVolume::update(const LLMeshSkinInfo* skin, LLVOAvatar* avatar, cons
 		}
 	}
 
+	U32 frame = LLFrameTimer::getFrameCount();
 	if (copy)
 	{
 		copyVolumeFaces(volume);	
 	}
-    else
+    else if (avatar && avatar->areAnimationsPaused())
     {
-        bool is_paused = avatar && avatar->areAnimationsPaused();
-		if (is_paused)
-		{
-            S32 frames_paused = LLFrameTimer::getFrameCount() - avatar->getMotionController().getPausedFrame();
-            if (frames_paused > 2)
-            {
-                return;
-            }
-		}
+		frame = avatar->getMotionController().getPausedFrame();
     }
+	if (frame == mFrame)
+	{
+		return;
+	}
+	mFrame = frame;
 
 	//build matrix palette
 	static const size_t kMaxJoints = LL_MAX_JOINTS_PER_MESH_OBJECT;

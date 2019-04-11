@@ -1082,7 +1082,7 @@ bool idle_startup()
 
 		// Load URL History File
 		LLURLHistory::loadFile("url_history.xml");
-				
+
 		//-------------------------------------------------
 		// Handle startup progress screen
 		//-------------------------------------------------
