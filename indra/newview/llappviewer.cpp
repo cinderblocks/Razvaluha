@@ -114,9 +114,6 @@
 #include "llcoros.h"
 #include "llexception.h"
 #include "cef/dullahan.h"
-#if VLCPLUGIN
-#include "vlc/libvlc_version.h"
-#endif // LL_WINDOWS
 
 // Third party library includes
 #include <boost/algorithm/string.hpp>

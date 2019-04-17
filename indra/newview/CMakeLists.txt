@@ -1488,9 +1488,9 @@ endif (WINDOWS)
 set_source_files_properties(llstartup.cpp PROPERTIES COMPILE_FLAGS "${LLSTARTUP_COMPILE_FLAGS}")
 
 if (LIBVLCPLUGIN)
-    set_source_files_properties(llappviewer.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=1")
+    set_source_files_properties(llfloaterabout.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=1")
 else (LIBVLCPLUGIN)
-    set_source_files_properties(llappviewer.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=0")
+    set_source_files_properties(llfloaterabout.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=0")
 endif (LIBVLCPLUGIN)
 
 list(APPEND viewer_SOURCE_FILES ${viewer_HEADER_FILES})
