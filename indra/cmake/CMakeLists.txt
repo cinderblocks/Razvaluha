@@ -15,8 +15,8 @@ set(cmake_SOURCE_FILES
     BuildVersion.cmake
     CEFPlugin.cmake
     CMakeCopyIfDifferent.cmake
-    CURL.cmake
     ConfigurePkgConfig.cmake
+    CURL.cmake
     Copy3rdPartyLibs.cmake
     CXXFeatureDetection.cmake
     DBusGlib.cmake
@@ -24,7 +24,6 @@ set(cmake_SOURCE_FILES
     DragDrop.cmake
     EXPAT.cmake
     ExamplePlugin.cmake
-    FMODSTUDIO.cmake
     FindAPR.cmake
     FindAutobuild.cmake
     FindGLOD.cmake
@@ -34,9 +33,11 @@ set(cmake_SOURCE_FILES
     FindNDOF.cmake
     FindOpenJPEG.cmake
     FindTut.cmake
+    FindVCRedist.cmake
     FindURIPARSER.cmake
     FindXmlRpcEpi.cmake
     FindZLIB.cmake
+    FMODSTUDIO.cmake
     FreeType.cmake
     GLOD.cmake
     GStreamer010Plugin.cmake
@@ -81,7 +82,6 @@ set(cmake_SOURCE_FILES
     Prebuilt.cmake
     PulseAudio.cmake
     Python.cmake
-    RunBuildTest.cmake
     TemplateCheck.cmake
     Tut.cmake
     UI.cmake

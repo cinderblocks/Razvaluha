@@ -301,11 +301,8 @@ LLUserAuth::UserAuthcode LLUserAuth::authResponse()
 	case CURLE_COULDNT_RESOLVE_HOST:
 		mAuthResponse = E_COULDNT_RESOLVE_HOST;
 		break;
-	case CURLE_SSL_PEER_CERTIFICATE:
-		mAuthResponse = E_SSL_PEER_CERTIFICATE;
-		break;
-	case CURLE_SSL_CACERT:
-		mAuthResponse = E_SSL_CACERT;
+	case CURLE_PEER_FAILED_VERIFICATION:
+		mAuthResponse = E_SSL_PEER_FAILED_VERIFICATION;
 		break;
 	case CURLE_SSL_CONNECT_ERROR:
 		mAuthResponse = E_SSL_CONNECT_ERROR;

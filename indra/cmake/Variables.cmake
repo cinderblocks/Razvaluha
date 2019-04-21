@@ -24,14 +24,6 @@ set(VIEWER_PREFIX)
 set(INTEGRATION_TESTS_PREFIX)
 option(LL_TESTS "Build and run unit and integration tests (disable for build timing runs to reduce variation" OFF)
 
-# Compiler and toolchain options
-option(USESYSTEMLIBS "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
-option(STANDALONE "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
-if (USESYSTEMLIBS)
-    set(STANDALONE ON)
-elseif (STANDALONE)
-    set(USESYSTEMLIBS ON)
-endif (USESYSTEMLIBS)
 option(INCREMENTAL_LINK "Use incremental linking on win32 builds (enable for faster links on some machines)" OFF)
 option(USE_PRECOMPILED_HEADERS "Enable use of precompiled header directives where supported." ON)
 option(USE_LTO "Enable Whole Program Optimization and related folding and binary reduction routines" OFF)
@@ -40,6 +32,7 @@ option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
 # Media Plugins
 option(ENABLE_MEDIA_PLUGINS "Turn off building media plugins if they are imported by third-party library mechanism" ON)
 option(LIBVLCPLUGIN "Turn off building support for libvlc plugin" ON)
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LIBVLCPLUGIN OFF)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -47,8 +40,9 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Dar
 # Mallocs
 set(DISABLE_TCMALLOC OFF CACHE BOOL "Disable linkage of TCMalloc. (64bit builds automatically disable TCMalloc)")
 set(DISABLE_FATAL_WARNINGS TRUE CACHE BOOL "Set this to FALSE to enable fatal warnings.")
+
 # Audio Engines
-option(FMODSTUDIO "Build with support for the FMOD Studio audio engine" OFF)
+option(FMODSTUDIO "Build with support for the FMOD Studio audio engine" ON)
 
 # Window implementation
 option(LLWINDOW_SDL2 "Use SDL2 for window and input handling" OFF)
@@ -122,122 +116,87 @@ endif (ADDRESS_SIZE EQUAL 32)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(WINDOWS ON BOOL FORCE)
-  if (ADDRESS_SIZE EQUAL 64)
-    set(ARCH x86_64 CACHE STRING "Viewer Architecture")
-    set(LL_ARCH ${ARCH}_win64)
-    set(LL_ARCH_DIR ${ARCH}-win64)
-    set(ADDRESS_SIZE 64)
-    set(AUTOBUILD_PLATFORM_NAME "windows64" CACHE STRING "Autobuild Platform Name")
-  else (ADDRESS_SIZE EQUAL 64)
-    set(ARCH i686 CACHE STRING "Viewer Architecture")
-    set(LL_ARCH ${ARCH}_win32)
-    set(LL_ARCH_DIR ${ARCH}-win32)
-    set(ADDRESS_SIZE 32)
-    set(AUTOBUILD_PLATFORM_NAME "windows" CACHE STRING "Autobuild Platform Name")
-  endif (ADDRESS_SIZE EQUAL 64)
+  set(LL_ARCH ${ARCH}_win32)
+  set(LL_ARCH_DIR ${ARCH}-win32)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(LINUX ON BOOL FORCE)
 
-  # If someone has specified a word size, use that to determine the
-  # architecture.  Otherwise, let the architecture specify the word size.
   if (ADDRESS_SIZE EQUAL 32)
-    #message(STATUS "ADDRESS_SIZE is 32")
-    set(ARCH i686)
-    set(AUTOBUILD_PLATFORM_NAME "linux" CACHE STRING "Autobuild Platform Name")
-  elseif (ADDRESS_SIZE EQUAL 64)
-    #message(STATUS "ADDRESS_SIZE is 64")
-    set(ARCH x86_64)
-    set(AUTOBUILD_PLATFORM_NAME "linux64" CACHE STRING "Autobuild Platform Name")
+    set(DEB_ARCHITECTURE i386)
+    set(FIND_LIBRARY_USE_LIB64_PATHS OFF)
+    set(CMAKE_SYSTEM_LIBRARY_PATH /usr/lib32 ${CMAKE_SYSTEM_LIBRARY_PATH})
   else (ADDRESS_SIZE EQUAL 32)
-    #message(STATUS "ADDRESS_SIZE is UNDEFINED")
-    if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-      message(STATUS "Size of void pointer is detected as 8; ARCH is 64-bit")
-      set(ADDRESS_SIZE 64)
-      set(AUTOBUILD_PLATFORM_NAME "linux64" CACHE STRING "Autobuild Platform Name")
-    elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
-      message(STATUS "Size of void pointer is detected as 4; ARCH is 32-bit")
-      set(ADDRESS_SIZE 32)
-      set(AUTOBUILD_PLATFORM_NAME "linux" CACHE STRING "Autobuild Platform Name")
-    else()
-      message(FATAL_ERROR "Unknown Architecture!")
-    endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(DEB_ARCHITECTURE amd64)
+    set(FIND_LIBRARY_USE_LIB64_PATHS ON)
   endif (ADDRESS_SIZE EQUAL 32)
 
-  if (NOT STANDALONE AND MULTIARCH_HACK)
-    if (ADDRESS_SIZE EQUAL 32)
-      set(DEB_ARCHITECTURE i386)
-      set(FIND_LIBRARY_USE_LIB64_PATHS OFF)
-      set(CMAKE_SYSTEM_LIBRARY_PATH /usr/lib32 ${CMAKE_SYSTEM_LIBRARY_PATH})
-    else (ADDRESS_SIZE EQUAL 32)
-      set(DEB_ARCHITECTURE amd64)
-      set(FIND_LIBRARY_USE_LIB64_PATHS ON)
-    endif (ADDRESS_SIZE EQUAL 32)
+  execute_process(COMMAND dpkg-architecture -a${DEB_ARCHITECTURE} -qDEB_HOST_MULTIARCH 
+      RESULT_VARIABLE DPKG_RESULT
+      OUTPUT_VARIABLE DPKG_ARCH
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  #message (STATUS "DPKG_RESULT ${DPKG_RESULT}, DPKG_ARCH ${DPKG_ARCH}")
+  if (DPKG_RESULT EQUAL 0)
+    set(CMAKE_LIBRARY_ARCHITECTURE ${DPKG_ARCH})
+    set(CMAKE_SYSTEM_LIBRARY_PATH /usr/lib/${DPKG_ARCH} /usr/local/lib/${DPKG_ARCH} ${CMAKE_SYSTEM_LIBRARY_PATH})
+  endif (DPKG_RESULT EQUAL 0)
 
-    execute_process(COMMAND dpkg-architecture -a${DEB_ARCHITECTURE} -qDEB_HOST_MULTIARCH 
-        RESULT_VARIABLE DPKG_RESULT
-        OUTPUT_VARIABLE DPKG_ARCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-    #message (STATUS "DPKG_RESULT ${DPKG_RESULT}, DPKG_ARCH ${DPKG_ARCH}")
-    if (DPKG_RESULT EQUAL 0)
-      set(CMAKE_LIBRARY_ARCHITECTURE ${DPKG_ARCH})
-      set(CMAKE_SYSTEM_LIBRARY_PATH /usr/lib/${DPKG_ARCH} /usr/local/lib/${DPKG_ARCH} ${CMAKE_SYSTEM_LIBRARY_PATH})
-    endif (DPKG_RESULT EQUAL 0)
-
-    include(ConfigurePkgConfig)
-  endif (NOT STANDALONE AND MULTIARCH_HACK)
+  include(ConfigurePkgConfig)
 
   set(LL_ARCH ${ARCH}_linux)
   set(LL_ARCH_DIR ${ARCH}-linux)
+
+  if (INSTALL_PROPRIETARY)
+    # Only turn on headless if we can find osmesa libraries.
+    include(FindPkgConfig)
+    #pkg_check_modules(OSMESA osmesa)
+    #if (OSMESA_FOUND)
+    #  set(BUILD_HEADLESS ON CACHE BOOL "Build headless libraries.")
+    #endif (OSMESA_FOUND)
+  endif (INSTALL_PROPRIETARY)
+
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(DARWIN 1)
 
-  if (XCODE_VERSION LESS 8.0.0)
-    message( FATAL_ERROR "Xcode 8.0.0 or greater is required." )
-  endif (XCODE_VERSION LESS 8.0.0)
-  message( "Building with " ${CMAKE_OSX_SYSROOT} )
-  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.12)
+  # Architecture
+  set(CMAKE_OSX_SYSROOT macosx10.14)
+  set(CMAKE_OSX_ARCHITECTURES "x86_64")
+  set(CMAKE_XCODE_ATTRIBUTE_VALID_ARCHS "x86_64")
 
+  # Build Options
   set(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION "com.apple.compilers.llvm.clang.1_0")
-  set(CMAKE_XCODE_ATTRIBUTE_GCC_OPTIMIZATION_LEVEL 3)
-  set(CMAKE_XCODE_ATTRIBUTE_GCC_STRICT_ALIASING NO)
-  set(CMAKE_XCODE_ATTRIBUTE_GCC_FAST_MATH NO)
-  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++14")
-  if (USE_AVX2)
-    set(CMAKE_XCODE_ATTRIBUTE_CLANG_X86_VECTOR_INSTRUCTIONS avx2)
-  elseif (USE_AVX)
-    set(CMAKE_XCODE_ATTRIBUTE_CLANG_X86_VECTOR_INSTRUCTIONS avx)
-  else ()
+  set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Debug] "dwarf")
+  set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] "dwarf-with-dsym")
+
+  # Deployment
+  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
+
+  # Linking 
+  set(CMAKE_XCODE_ATTRIBUTE_DEAD_CODE_STRIPPING YES)
+
+  # Apple Clang - Code Gen
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS[variant=Release] YES)
   set(CMAKE_XCODE_ATTRIBUTE_CLANG_X86_VECTOR_INSTRUCTIONS sse4.1)
-  endif ()
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_STRICT_ALIASING NO)
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_OPTIMIZATION_LEVEL[variant=Debug] 0)
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_OPTIMIZATION_LEVEL[variant=Release] 3)
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_FAST_MATH NO)
 
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
-    set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT dwarf-with-dsym)
-  else (${CMAKE_BUILD_TYPE} STREQUAL "Release")
-    set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT dwarf)
-  endif (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+  # Apple Clang - Custom Compiler Flags
+  set(CMAKE_XCODE_ATTRIBUTE_WARNING_CFLAGS "-Wall -Wextra -Wno-reorder -Wno-sign-compare -Wno-ignored-qualifiers -Wno-unused-local-typedef -Wno-unused-parameter")
 
-  set(ADDRESS_SIZE 64)
-  if (NOT CMAKE_OSX_ARCHITECTURES)
-    if (ADDRESS_SIZE EQUAL 64)
-      set(CMAKE_OSX_ARCHITECTURES x86_64)
-    else (ADDRESS_SIZE EQUAL 64)
-      set(CMAKE_OSX_ARCHITECTURES i386)
-    endif (ADDRESS_SIZE EQUAL 64)
-  endif (NOT CMAKE_OSX_ARCHITECTURES)
+  # Apple Clang - Language - C++
+  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD c++14)
+  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 
-  if (ADDRESS_SIZE EQUAL 64)
-    set(ARCH x86_64)
-  else (ADDRESS_SIZE EQUAL 64)
-    set(ARCH i386)
-  endif (ADDRESS_SIZE EQUAL 64)
+  # Apple Clang - Warning Policies
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_TREAT_WARNINGS_AS_ERRORS YES)
+
   set(LL_ARCH ${ARCH}_darwin)
   set(LL_ARCH_DIR universal-darwin)
-  set(AUTOBUILD_PLATFORM_NAME "darwin" CACHE STRING "Autobuild Platform Name")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 # Default deploy grid
@@ -253,12 +212,14 @@ string(REPLACE " " "" VIEWER_CHANNEL_ONEWORD ${VIEWER_CHANNEL})
 
 option(VIEWER_CHANNEL_GRK "Greek character(s) to represent the viewer channel for support purposes, override only for special branches" "")
 if (NOT VIEWER_CHANNEL_GRK)
-    if (VIEWER_CHANNEL_BASE MATCHES "Test")
-        set(VIEWER_CHANNEL_GRK "τ")
+    if (1) # This branch has a special indicator
+        set(VIEWER_CHANNEL_GRK "\\u03BC") # "�"
+    elseif (VIEWER_CHANNEL_BASE MATCHES "Test")
+        set(VIEWER_CHANNEL_GRK "\\u03C4") # "τ"
     elseif (VIEWER_CHANNEL_BASE MATCHES "Alpha")
-        set(VIEWER_CHANNEL_GRK "α")
+        set(VIEWER_CHANNEL_GRK "\\u03B1") # "α"
     elseif (VIEWER_CHANNEL_BASE MATCHES "Beta")
-        set(VIEWER_CHANNEL_GRK "β")
+        set(VIEWER_CHANNEL_GRK "\\u03B2") # "β"
     endif ()
 endif (NOT VIEWER_CHANNEL_GRK)
 
@@ -276,13 +237,21 @@ set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_ONEWORD} CACHE STRING "Prefix used f
 
 set(VIEWER_BRANDING_ID "singularity" CACHE STRING "Viewer branding id")
 
-set(VERSION_BUILD "0" CACHE STRING "Revision number passed in from the outside")
-
 option(ENABLE_SIGNING "Enable signing the viewer" OFF)
 set(SIGNING_IDENTITY "" CACHE STRING "Specifies the signing identity to use, if necessary.")
 
-source_group("CMake Rules" FILES CMakeLists.txt)
+set(VERSION_BUILD "0" CACHE STRING "Revision number passed in from the outside")
+# Compiler and toolchain options
+option(USESYSTEMLIBS "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
+option(STANDALONE "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
+if (USESYSTEMLIBS)
+    set(STANDALONE ON)
+elseif (STANDALONE)
+    set(USESYSTEMLIBS ON)
+endif (USESYSTEMLIBS)
 
-mark_as_advanced(AUTOBUILD_PLATFORM_NAME)
+
+
+source_group("CMake Rules" FILES CMakeLists.txt)
 
 endif(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)

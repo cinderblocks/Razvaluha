@@ -311,10 +311,10 @@ protected:
 
 	LLHandle<LLView>					mPopupMenuHandle;
 
-	S32				getLength() const { return mWText.length(); }
 	void			getSegmentAndOffset( S32 startpos, S32* segidxp, S32* offsetp ) const;
 	void			drawPreeditMarker();
 public:
+	S32				getLength() const { return mWText.length(); }
 	void			updateLineStartList(S32 startpos = 0);
 protected:
 	void			updateScrollFromCursor();
@@ -416,8 +416,10 @@ protected:
 	S32 			removeChar(S32 pos);
 	void			removeWord(bool prev);
 	S32				insert(const S32 pos, const LLWString &wstr, const BOOL group_with_next_op);
+public:
 	S32				remove(const S32 pos, const S32 length, const BOOL group_with_next_op);
-	
+protected:
+
 	// Direct operations
 	S32				insertStringNoUndo(S32 pos, const LLWString &wstr); // returns num of chars actually inserted
 	S32 			removeStringNoUndo(S32 pos, S32 length);
@@ -464,6 +466,10 @@ protected:
 	BOOL			mParseHighlights;
 
 	typedef std::vector<LLTextSegmentPtr> segment_list_t;
+
+	segment_list_t::iterator			getSegIterContaining(S32 index);
+	segment_list_t::const_iterator		getSegIterContaining(S32 index) const;
+
 	segment_list_t mSegments;
 	LLTextSegmentPtr	mHoverSegment;
 	

@@ -83,7 +83,6 @@ private:
 
 	struct mLibVLCContext
 	{
-		mLibVLCContext() : texture_pixels(nullptr), mp(nullptr), parent(nullptr) {};
 		unsigned char* texture_pixels = nullptr;
 		libvlc_media_player_t* mp = nullptr;
 		MediaPluginLibVLC* parent = nullptr;

@@ -1342,9 +1342,7 @@ BOOL LLVOVolume::calcLOD()
 	if (distance < rampDist)
 	{
 		// Boost LOD when you're REALLY close
-		distance *= 1.0f/rampDist;
-		distance *= distance;
-		distance *= rampDist;
+		distance *= distance/rampDist;
 	}
 	
 	// DON'T Compensate for field of view changing on FOV zoom.
@@ -1539,7 +1537,7 @@ void LLVOVolume::regenFaces()
 
 BOOL LLVOVolume::genBBoxes(BOOL force_global)
 {
-	BOOL res = TRUE;
+	bool res = true;
 
 	LLVector4a min,max;
 
@@ -1591,12 +1589,14 @@ BOOL LLVOVolume::genBBoxes(BOOL force_global)
 		{
 			continue;
 		}
-		res &= face->genVolumeBBoxes(*volume, i,
+		bool face_res = face->genVolumeBBoxes(*volume, i,
 										mRelativeXform,
 										(mVolumeImpl && mVolumeImpl->isVolumeGlobal()) || force_global);
+		// Singu note: Don't let one bad face to ruin the whole volume. &= bad. |= good.
+		res &= face_res;
 		
         // MAINT-8264 - ignore bboxes of ill-formed faces.
-        if (!res)
+        if (!face_res)
         {
             continue;
         }

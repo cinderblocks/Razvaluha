@@ -40,23 +40,15 @@ if(WINDOWS)
     #*******************************
     # Misc shared libs 
 
-    set(debug_src_dir "${ARCH_PREBUILT_DIRS_DEBUG}")
-    set(debug_files
-        glod.dll    
-        nghttp2.dll
-        libhunspell.dll
-        openjpegd.dll
-        )
-
     set(release_src_dir "${ARCH_PREBUILT_DIRS_RELEASE}")
     set(release_files
-        glod.dll
-        nghttp2.dll
-        libhunspell.dll
         openjpeg.dll
+        nghttp2.dll
+        glod.dll
+        libhunspell.dll
         )
 
-    if(ADDRESS_SIZE STREQUAL 64)
+    if(ADDRESS_SIZE EQUAL 64)
       list(APPEND debug_files
            libcrypto-1_1-x64.dll
            libssl-1_1-x64.dll
@@ -65,7 +57,7 @@ if(WINDOWS)
            libcrypto-1_1-x64.dll
            libssl-1_1-x64.dll
            )
-    else(ADDRESS_SIZE STREQUAL 64)
+    else(ADDRESS_SIZE EQUAL 64)
       list(APPEND debug_files
            libcrypto-1_1.dll
            libssl-1_1.dll
@@ -74,8 +66,8 @@ if(WINDOWS)
            libcrypto-1_1.dll
            libssl-1_1.dll
            )
-    endif(ADDRESS_SIZE STREQUAL 64)
-		
+    endif(ADDRESS_SIZE EQUAL 64)
+
     if (LLCOMMON_LINK_SHARED)
       list(APPEND debug_files 
         libapr-1.dll
@@ -118,6 +110,7 @@ if(WINDOWS)
         list(APPEND release_files fmod.dll)
       endif(ADDRESS_SIZE STREQUAL 64)
     endif (FMODSTUDIO)
+
 elseif(DARWIN)
     set(SHARED_LIB_STAGING_DIR_DEBUG            "${SHARED_LIB_STAGING_DIR}/Debug/Resources")
     set(SHARED_LIB_STAGING_DIR_RELWITHDEBINFO   "${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/Resources")
@@ -140,20 +133,23 @@ elseif(DARWIN)
         libaprutil-1.0.dylib
         libaprutil-1.dylib
         libexception_handler.dylib
+        libopenjpeg.dylib
         libfreetype.6.dylib
         libGLOD.dylib
         libndofdev.dylib
-        libopenjpeg.dylib
+        libnghttp2.dylib
+        libnghttp2.14.dylib
+        libnghttp2.14.14.0.dylib
        )
 
     if (OPENAL)
       list(APPEND release_files libopenal.dylib libalut.dylib)
     endif (OPENAL)
 
-    if (FMODEX)
-      list(APPEND debug_files libfmodexL.dylib)
-      list(APPEND release_files libfmodex.dylib)
-    endif (FMODEX)
+    if (FMODSTUDIO)
+      list(APPEND debug_files libfmodL.dylib)
+      list(APPEND release_files libfmod.dylib)
+    endif (FMODSTUDIO)
 
 elseif(LINUX)
     # linux is weird, multiple side by side configurations aren't supported
@@ -259,13 +255,13 @@ set(third_party_targets ${third_party_targets} ${out_targets})
 
 
 
-copy_if_different(
-    ${debug_src_dir}
-    "${SHARED_LIB_STAGING_DIR_DEBUG}"
-    out_targets
-    ${debug_files}
-    )
-set(third_party_targets ${third_party_targets} ${out_targets})
+#copy_if_different(
+#    ${debug_src_dir}
+#    "${SHARED_LIB_STAGING_DIR_DEBUG}"
+#    out_targets
+#    ${debug_files}
+#    )
+#set(third_party_targets ${third_party_targets} ${out_targets})
 
 copy_if_different(
     ${release_src_dir}

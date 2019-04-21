@@ -43,7 +43,7 @@ if(NON_RELEASE_CRASH_REPORTING)
 endif()
 
 # Don't bother with a MinSizeRel build.
-set(CMAKE_CONFIGURATION_TYPES "RelWithDebInfo;Release;Debug" CACHE STRING
+set(CMAKE_CONFIGURATION_TYPES "Release" CACHE STRING
     "Supported build types." FORCE)
 
 # Platform-specific compilation flags.

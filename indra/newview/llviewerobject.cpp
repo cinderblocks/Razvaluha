@@ -295,7 +295,8 @@ LLViewerObject::LLViewerObject(const LLUUID &id, const LLPCode pcode, LLViewerRe
 	mPhysicsShapeUnknown(true),
 	mAttachmentItemID(LLUUID::null),
 	mLastUpdateType(OUT_UNKNOWN),
-	mLastUpdateCached(FALSE)
+	mLastUpdateCached(FALSE),
+	mExtraParameterList(LLNetworkData::PARAMS_MAX >> 4)
 {
 	if(!is_global)
 	{
@@ -341,15 +342,6 @@ LLViewerObject::~LLViewerObject()
 	}
 
 	// Delete memory associated with extra parameters.
-	std::map<U16, ExtraParameter*>::iterator iter;
-	for (iter = mExtraParameterList.begin(); iter != mExtraParameterList.end(); ++iter)
-	{
-		if(iter->second != NULL)
-		{
-			delete iter->second->data;
-			delete iter->second;
-		}
-	}
 	mExtraParameterList.clear();
 
 	for_each(mNameValuePairs.begin(), mNameValuePairs.end(), DeletePairedPointer()) ;
@@ -1395,10 +1387,11 @@ U32 LLViewerObject::processUpdateMessage(LLMessageSystem *mesgsys,
 				unpackParticleSource(block_num, owner_id);
 
 				// Mark all extra parameters not used
-				std::map<U16, ExtraParameter*>::iterator iter;
+				std::vector<std::unique_ptr<ExtraParameter> >::iterator iter;
 				for (iter = mExtraParameterList.begin(); iter != mExtraParameterList.end(); ++iter)
 				{
-					iter->second->in_use = FALSE;
+					if(*iter)
+						(*iter)->in_use = FALSE;
 				}
 
 				// Unpack extra parameters
@@ -1425,12 +1418,12 @@ U32 LLViewerObject::processUpdateMessage(LLMessageSystem *mesgsys,
 					delete[] buffer;
 				}
 
-				for (iter = mExtraParameterList.begin(); iter != mExtraParameterList.end(); ++iter)
+				for (size_t i = 0; i < mExtraParameterList.size(); ++i)
 				{
-					if (!iter->second->in_use)
+					if (mExtraParameterList[i] && !mExtraParameterList[i]->in_use)
 					{
 						// Send an update message in case it was formerly in use
-						parameterChanged(iter->first, iter->second->data, FALSE, false);
+						parameterChanged((i + 1) << 4, mExtraParameterList[i]->data.get(), FALSE, false);
 					}
 				}
 
@@ -1654,10 +1647,11 @@ U32 LLViewerObject::processUpdateMessage(LLMessageSystem *mesgsys,
 				}
 
 				// Mark all extra parameters not used
-				std::map<U16, ExtraParameter*>::iterator iter;
+				std::vector<std::unique_ptr<ExtraParameter> >::iterator iter;
 				for (iter = mExtraParameterList.begin(); iter != mExtraParameterList.end(); ++iter)
 				{
-					iter->second->in_use = FALSE;
+					if(*iter)
+						(*iter)->in_use = FALSE;
 				}
 
 				// Unpack extra params
@@ -1675,12 +1669,12 @@ U32 LLViewerObject::processUpdateMessage(LLMessageSystem *mesgsys,
 					unpackParameterEntry(param_type, &dp2);
 				}
 
-				for (iter = mExtraParameterList.begin(); iter != mExtraParameterList.end(); ++iter)
+				for (size_t i = 0; i < mExtraParameterList.size(); ++i)
 				{
-					if (!iter->second->in_use)
+					if (mExtraParameterList[i] && !mExtraParameterList[i]->in_use)
 					{
 						// Send an update message in case it was formerly in use
-						parameterChanged(iter->first, iter->second->data, FALSE, false);
+						parameterChanged((i + 1) << 4, mExtraParameterList[i]->data.get(), FALSE, false);
 					}
 				}
 
@@ -5834,7 +5828,7 @@ bool LLViewerObject::unpackParameterEntry(U16 param_type, LLDataPacker *dp)
 	{
 		param->data->unpack(*dp);
 		param->in_use = TRUE;
-		parameterChanged(param_type, param->data, TRUE, false);
+		parameterChanged(param_type, param->data.get(), TRUE, false);
 		return true;
 	}
 	else
@@ -5883,9 +5877,9 @@ LLViewerObject::ExtraParameter* LLViewerObject::createNewParameterEntry(U16 para
 	if (new_block)
 	{
 		ExtraParameter* new_entry = new ExtraParameter;
-		new_entry->data = new_block;
+		new_entry->data = decltype(new_entry->data)(new_block);
 		new_entry->in_use = false; // not in use yet
-		mExtraParameterList[param_type] = new_entry;
+		mExtraParameterList[(param_type >> 4) - 1].reset(new_entry);
 		return new_entry;
 	}
 	return NULL;
@@ -5893,12 +5887,7 @@ LLViewerObject::ExtraParameter* LLViewerObject::createNewParameterEntry(U16 para
 
 LLViewerObject::ExtraParameter* LLViewerObject::getExtraParameterEntry(U16 param_type) const
 {
-	std::map<U16, ExtraParameter*>::const_iterator itor = mExtraParameterList.find(param_type);
-	if (itor != mExtraParameterList.end())
-	{
-		return itor->second;
-	}
-	return NULL;
+	return param_type <= LLNetworkData::PARAMS_MAX ? mExtraParameterList[(param_type >> 4) - 1].get() : nullptr;
 }
 
 LLViewerObject::ExtraParameter* LLViewerObject::getExtraParameterEntryCreate(U16 param_type)
@@ -5916,7 +5905,7 @@ LLNetworkData* LLViewerObject::getParameterEntry(U16 param_type) const
 	ExtraParameter* param = getExtraParameterEntry(param_type);
 	if (param)
 	{
-		return param->data;
+		return param->data.get();
 	}
 	else
 	{
@@ -5948,7 +5937,7 @@ bool LLViewerObject::setParameterEntry(U16 param_type, const LLNetworkData& new_
 		}
 		param->in_use = true;
 		param->data->copy(new_value);
-		parameterChanged(param_type, param->data, TRUE, local_origin);
+		parameterChanged(param_type, param->data.get(), TRUE, local_origin);
 		return true;
 	}
 	else
@@ -5966,7 +5955,7 @@ bool LLViewerObject::setParameterEntryInUse(U16 param_type, BOOL in_use, bool lo
 	if (param && param->in_use != in_use)
 	{
 		param->in_use = in_use;
-		parameterChanged(param_type, param->data, in_use, local_origin);
+		parameterChanged(param_type, param->data.get(), in_use, local_origin);
 		return true;
 	}
 	return false;
@@ -5977,7 +5966,7 @@ void LLViewerObject::parameterChanged(U16 param_type, bool local_origin)
 	ExtraParameter* param = getExtraParameterEntry(param_type);
 	if (param)
 	{
-		parameterChanged(param_type, param->data, param->in_use, local_origin);
+		parameterChanged(param_type, param->data.get(), param->in_use, local_origin);
 	}
 }
 
