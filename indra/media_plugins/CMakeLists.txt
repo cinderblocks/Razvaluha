@@ -1,19 +1,20 @@
 # -*- cmake -*-
 
-include(Variables)
-
 add_subdirectory(base)
 
 if (LINUX)
     add_subdirectory(gstreamer010)
+    add_subdirectory(libvlc)
 endif (LINUX)
 
-if (WINDOWS)
-  if (LIBVLCPLUGIN)
+if (DARWIN)
+    add_subdirectory(cef)
     add_subdirectory(libvlc)
-  endif (LIBVLCPLUGIN)
-endif (WINDOWS)
+endif (DARWIN)
 
-add_subdirectory(cef)
+if (WINDOWS)
+    add_subdirectory(cef)
+    add_subdirectory(libvlc)
+endif (WINDOWS)
 
 ### add_subdirectory(example)

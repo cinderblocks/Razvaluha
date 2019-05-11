@@ -23,19 +23,13 @@ set(SCRIPTS_PREFIX ../scripts)
 set(VIEWER_PREFIX)
 set(INTEGRATION_TESTS_PREFIX)
 option(LL_TESTS "Build and run unit and integration tests (disable for build timing runs to reduce variation" OFF)
-
 option(INCREMENTAL_LINK "Use incremental linking on win32 builds (enable for faster links on some machines)" OFF)
-option(USE_PRECOMPILED_HEADERS "Enable use of precompiled header directives where supported." ON)
-option(USE_LTO "Enable Whole Program Optimization and related folding and binary reduction routines" OFF)
+option(USE_LTO "Enable global and interprocedural optimizations" OFF)
 option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
-
-# Media Plugins
+option(FULL_DEBUG_SYMS "Enable Generation of full pdb on msvc" OFF)
 option(ENABLE_MEDIA_PLUGINS "Turn off building media plugins if they are imported by third-party library mechanism" ON)
-option(LIBVLCPLUGIN "Turn off building support for libvlc plugin" ON)
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(LIBVLCPLUGIN OFF)
-endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+set(VIEWER_SYMBOL_FILE "" CACHE STRING "Name of tarball into which to place symbol files")
+set(BUGSPLAT_DB "" CACHE STRING "BugSplat database name, if BugSplat crash reporting is desired")
 
 # Mallocs
 set(DISABLE_TCMALLOC OFF CACHE BOOL "Disable linkage of TCMalloc. (64bit builds automatically disable TCMalloc)")
@@ -237,12 +231,11 @@ set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_ONEWORD} CACHE STRING "Prefix used f
 
 set(VIEWER_BRANDING_ID "singularity" CACHE STRING "Viewer branding id")
 
-option(ENABLE_SIGNING "Enable signing the viewer" OFF)
+set(ENABLE_SIGNING OFF CACHE BOOL "Enable signing the viewer")
 set(SIGNING_IDENTITY "" CACHE STRING "Specifies the signing identity to use, if necessary.")
 
 set(VERSION_BUILD "0" CACHE STRING "Revision number passed in from the outside")
-# Compiler and toolchain options
-option(USESYSTEMLIBS "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
+set(USESYSTEMLIBS OFF CACHE BOOL "Use libraries from your system rather than Linden-supplied prebuilt libraries.")
 option(STANDALONE "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
 if (USESYSTEMLIBS)
     set(STANDALONE ON)
@@ -250,7 +243,7 @@ elseif (STANDALONE)
     set(USESYSTEMLIBS ON)
 endif (USESYSTEMLIBS)
 
-
+set(USE_PRECOMPILED_HEADERS ON CACHE BOOL "Enable use of precompiled header directives where supported.")
 
 source_group("CMake Rules" FILES CMakeLists.txt)
 

@@ -1482,13 +1482,23 @@ if (WINDOWS)
   list(APPEND viewer_SOURCE_FILES ${viewer_INSTALLER_FILES})
 endif (WINDOWS)
 
-set_source_files_properties(llstartup.cpp PROPERTIES COMPILE_FLAGS "${LLSTARTUP_COMPILE_FLAGS}")
+set(LLSTARTUP_COMPILE_DEFINITIONS "$(LLSTARTUP_COMPILE_FLAGS)")
+
+if (OPENAL)
+  list(APPEND LLSTARTUP_COMPILE_DEFINITIONS "LL_OPENAL=1")
+endif (OPENAL)
+
+if (FMODSTUDIO)
+  list(APPEND LLSTARTUP_COMPILE_DEFINITIONS "LL_FMODSTUDIO=1")
+  set(FMODWRAPPER_LIBRARY ${FMODSTUDIO_LIBRARY})
+endif (FMODSTUDIO)
 
 if (LIBVLCPLUGIN)
-    set_source_files_properties(llfloaterabout.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=1")
-else (LIBVLCPLUGIN)
-    set_source_files_properties(llfloaterabout.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=0")
+  list(APPEND LLSTARTUP_COMPILE_DEFINITIONS "VLCPLUGIN=1")
 endif (LIBVLCPLUGIN)
+
+set_source_files_properties(llstartup.cpp PROPERTIES COMPILE_DEFINITIONS "${LLSTARTUP_COMPILE_DEFINITIONS}")
+set_source_files_properties(llfloaterabout.cpp PROPERTIES COMPILE_DEFINITIONS "${LLSTARTUP_COMPILE_DEFINITIONS}")
 
 list(APPEND viewer_SOURCE_FILES ${viewer_HEADER_FILES})
 
@@ -1575,15 +1585,21 @@ if (WINDOWS)
       ${ARCH_PREBUILT_DIRS_DEBUG}/ssleay32.dll
       AlchemyPlugin
       media_plugin_cef
+      media_plugin_libvlc
       windows-crash-logger
       )
 
-    if(LIBVLCPLUGIN)
-      list(APPEND COPY_INPUT_DEPENDENCIES
-	    media_plugin_libvlc
-	    )
-    endif(LIBVLCPLUGIN)
-
+    if (ADDRESS_SIZE EQUAL 64)
+        list(APPEND COPY_INPUT_DEPENDENCIES
+            ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/vivoxsdk_x64.dll
+            ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/ortp_x64.dll
+            )
+    else (ADDRESS_SIZE EQUAL 64)
+        list(APPEND COPY_INPUT_DEPENDENCIES
+            ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/vivoxsdk.dll
+            ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/ortp.dll
+            )
+    endif (ADDRESS_SIZE EQUAL 64)
 
     if (FMODSTUDIO)
       if (ADDRESS_SIZE EQUAL 32)
@@ -1715,8 +1731,8 @@ else (WINDOWS)
 endif (WINDOWS)
 
 # *NOTE: - this list is very sensitive to ordering, test carefully on all
-# platforms if you change the releative order of the entries here.
-# In particular, cmake 2.6.4 (when buidling with linux/makefile generators)
+# platforms if you change the relative order of the entries here.
+# In particular, cmake 2.6.4 (when building with linux/makefile generators)
 # appears to sometimes de-duplicate redundantly listed dependencies improperly.
 # To work around this, higher level modules should be listed before the modules
 # that they depend upon. -brad
@@ -1802,6 +1818,7 @@ if (LINUX)
     linux-crash-logger
     AlchemyPlugin
     media_plugin_gstreamer010
+    media_plugin_libvlc
     llcommon
     )
 
@@ -1877,7 +1894,7 @@ if (DARWIN)
   set(MACOSX_BUNDLE_BUNDLE_VERSION "${${ROOT_PROJECT_NAME}_VERSION}")
   set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2010-2019 Siana Gearz")
   set(MACOSX_BUNDLE_NSMAIN_NIB_FILE "${VIEWER_PRODUCT_NAME}")
-  set(MACOSX_BUNDLE_NSPRINCIPAL_CLASS "LLNSApplication")
+  set(MACOSX_BUNDLE_NSPRINCIPAL_CLASS "NSApplication")
 
   set_target_properties(
     ${VIEWER_BINARY_NAME}
@@ -1906,20 +1923,20 @@ if (DARWIN)
       --branding_id=${VIEWER_BRANDING_ID}
       --build=${CMAKE_CURRENT_BINARY_DIR}
       --buildtype=${CMAKE_BUILD_TYPE}
+      --bundleid=${MACOSX_BUNDLE_GUI_IDENTIFIER}
       --channel=${VIEWER_CHANNEL}
       --configuration=${CMAKE_CFG_INTDIR}
       --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL_ONEWORD}.app
       --grid=${GRID}
       --sdl2=${LLWINDOW_SDL2}
-      --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
-      --bundleid=${MACOSX_BUNDLE_GUI_IDENTIFIER}
       --source=${CMAKE_CURRENT_SOURCE_DIR}
+      --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
     DEPENDS
       ${VIEWER_BINARY_NAME}
       ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
     )
 
-    add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin media_plugin_cef mac-crash-logger)
+    add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin media_plugin_libvlc media_plugin_cef mac-crash-logger)
 
   if (ENABLE_SIGNING)
       set(SIGNING_SETTING "--signature=${SIGNING_IDENTITY}")
@@ -1945,9 +1962,9 @@ if (DARWIN)
           --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL_ONEWORD}.app
           --grid=${GRID}
           --sdl2=${LLWINDOW_SDL2}
-          --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
           --source=${CMAKE_CURRENT_SOURCE_DIR}
           --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${VIEWER_CHANNEL_NOSPACE}.touched
+          --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
           ${SIGNING_SETTING}
         DEPENDS
 		  ${VIEWER_BINARY_NAME}

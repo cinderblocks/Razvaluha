@@ -559,7 +559,7 @@ private:
 	LLPointer<LLImageFormatted> mFormattedImage;
 	LLPointer<LLImageRaw>       mRawImage,
 								mAuxImage;
-	FTType mFTType;
+	const FTType mFTType;
 	LLUUID mID;
 	LLHost mHost;
 	std::string mUrl;
@@ -637,7 +637,7 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////////////
-		
+
 // Cross-thread messaging for asset metrics.
 
 /**
@@ -1364,7 +1364,7 @@ bool LLTextureFetchWorker::doWork(S32 param)
 				{
 					if (mFTType != FTT_DEFAULT)
 					{
-						LL_WARNS(LOG_TXT) << "trying to seek a non-default texture on the sim. Bad!" << LL_ENDL;
+						LL_WARNS(LOG_TXT) << "trying to seek a non-default texture on the sim. Bad! mFTType: " << mFTType << LL_ENDL;
 					}
 					setUrl(http_url + "/?texture_id=" + mID.asString().c_str());
 					LL_DEBUGS(LOG_TXT) << "Texture URL: " << mUrl << LL_ENDL;

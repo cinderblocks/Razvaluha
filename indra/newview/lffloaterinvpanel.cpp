@@ -22,23 +22,44 @@
 
 #include "lffloaterinvpanel.h"
 
+#include <boost/algorithm/string/erase.hpp>
+
 #include "llinventorypanel.h"
 #include "lluictrlfactory.h"
 
 
-LFFloaterInvPanel::LFFloaterInvPanel(const LLUUID& cat_id, LLInventoryModel* model, const std::string& name)
-: LLInstanceTracker<LFFloaterInvPanel, LLUUID>(cat_id)
+LFFloaterInvPanel::LFFloaterInvPanel(const LLSD& cat, const std::string& name, LLInventoryModel* model)
+: LLInstanceTracker<LFFloaterInvPanel, LLSD>(cat)
 {
+	// Setup the floater first
+	mPanel = new LLInventoryPanel("inv_panel", LLInventoryPanel::DEFAULT_SORT_ORDER, cat, LLRect(), model ? model : &gInventory, true);
+	const auto& title = name.empty() ? gInventory.getCategory(mPanel->getRootFolderID())->getName() : name;
+
+	// Figure out a unique name for our rect control
+	const auto rect_control = llformat("FloaterInv%sRect", boost::algorithm::erase_all_copy(title, " ").data());
+
+	if (gSavedSettings.controlExists(rect_control)) // Set our initial rect to the stored control
+		setRect(gSavedSettings.getRect(rect_control));
+	else // Or create the rect control if it doesn't exist
+		gSavedSettings.declareRect(rect_control, getRect(), "Rectangle for " + title + " window");
+
+	setRectControl(rect_control);
+
+	// Load from XUI
 	mCommitCallbackRegistrar.add("InvPanel.Search", boost::bind(&LLInventoryPanel::setFilterSubString, boost::ref(mPanel), _2));
 	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_inv_panel.xml");
+
+	// Now set the title
+	setTitle(title);
+
+	// Now take care of the children
 	LLPanel* panel = getChild<LLPanel>("placeholder_panel");
-	mPanel = new LLInventoryPanel("inv_panel", LLInventoryPanel::DEFAULT_SORT_ORDER, LLSD().with("id", cat_id), panel->getRect(), model, true);
+	mPanel->setRect(panel->getRect());
 	mPanel->postBuild();
 	mPanel->setFollows(FOLLOWS_ALL);
 	mPanel->setEnabled(true);
 	addChild(mPanel);
 	removeChild(panel);
-	setTitle(name);
 }
 
 LFFloaterInvPanel::~LFFloaterInvPanel()
@@ -47,10 +68,10 @@ LFFloaterInvPanel::~LFFloaterInvPanel()
 }
 
 // static
-void LFFloaterInvPanel::show(const LLUUID& cat_id, LLInventoryModel* model, const std::string& name)
+void LFFloaterInvPanel::show(const LLSD& cat, const std::string& name, LLInventoryModel* model)
 {
-	auto floater = getInstance(cat_id);
-	if (!floater) floater = new LFFloaterInvPanel(cat_id, model, name);
+	auto floater = getInstance(cat);
+	if (!floater) floater = new LFFloaterInvPanel(cat, name, model);
 	floater->open();
 }
 

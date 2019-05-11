@@ -741,7 +741,7 @@ LLMenuGL* LLTextEditor::createUrlContextMenu(S32 x, S32 y, const std::string &in
 	return menu;
 }
 
-void LLTextEditor::setText(const LLStringExplicit &utf8str)
+void LLTextEditor::setText(const LLStringExplicit &utf8str, bool force_replace_links)
 {
 	// clear out the existing text and segments
 	mWText.clear();
@@ -756,7 +756,7 @@ void LLTextEditor::setText(const LLStringExplicit &utf8str)
 	//LLStringUtil::removeCRLF(text);
 
 	// appendText modifies mCursorPos...
-	appendText(utf8str, false, false);
+	appendText(utf8str, false, false, nullptr, force_replace_links);
 	// ...so move cursor to top after appending text
 	setCursorPos(0);
 
@@ -766,9 +766,9 @@ void LLTextEditor::setText(const LLStringExplicit &utf8str)
 	mTextIsUpToDate = true;
 }
 
-void LLTextEditor::setWText(const LLWString& text)
+void LLTextEditor::setWText(const LLWString& text, bool force_replace_links)
 {
-	setText(wstring_to_utf8str(text));
+	setText(wstring_to_utf8str(text), force_replace_links);
 }
 
 // virtual
@@ -4274,7 +4274,7 @@ void LLTextEditor::appendText(const std::string &new_text, bool allow_undo, bool
 		return;
 
 	std::string text = prepend_newline && !mWText.empty() ? ('\n' + new_text) : new_text;
-	appendTextImpl(text, style);
+	appendTextImpl(text, style, force_replace_links);
 
 	if (!allow_undo)
 	{
@@ -4317,7 +4317,7 @@ void LLTextEditor::appendTextImpl(const std::string &new_text, const LLStyleSP s
 			if (always_underline) link_style->mUnderline = true;
 			appendAndHighlightText(link, part, link_style, !always_underline/*match.underlineOnHoverOnly()*/);
 		};
-		const auto&& cb = force_replace_links ? boost::bind(&LLTextEditor::replaceUrl, this, _1, _2, _3) : LLUrlLabelCallback::slot_function_type();
+		const auto&& cb = force_replace_links ? boost::bind(&LLTextEditor::replaceUrl, this, _1, _2, _3) : LLUrlLabelCallback();
 		while (!text.empty() && LLUrlRegistry::instance().findUrl(text, match, cb))
 		{
 			start = match.getStart();
@@ -4340,7 +4340,7 @@ void LLTextEditor::appendTextImpl(const std::string &new_text, const LLStyleSP s
 
 			auto url = match.getUrl();
 			const auto& label = match.getLabel();
-			if (force_replace_links || replace_links || url == label)
+			if (force_replace_links || url == label)
 			{
 				// add icon before url if need
 				/* Singu TODO: Icons next to links?
@@ -4627,7 +4627,7 @@ void LLTextEditor::appendAndHighlightTextImpl(const std::string& new_text, S32 h
 		}	
 		endOfDoc();
 	}
-	else if( selection_start != selection_end )
+	else if (was_selecting || selection_start != selection_end)
 	{
 		mSelectionStart = selection_start;
 		mSelectionEnd = selection_end;
@@ -4739,7 +4739,11 @@ S32 LLTextEditor::removeStringNoUndo(S32 pos, S32 length)
 	createDefaultSegment();
 
 	mTextIsUpToDate = FALSE;
-	needsReflow(/*pos*/);
+
+	/*needsReflow(pos);*/
+	// Singu Note: This kinda sucks for performance of delete, fix this later (with LLTextBase merge?)
+	updateLineStartList();
+	mReflowNeeded = false;
 
 	return -length;	// This will be wrong if someone calls removeStringNoUndo with an excessive length
 }

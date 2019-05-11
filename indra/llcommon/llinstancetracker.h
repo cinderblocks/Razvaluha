@@ -28,7 +28,7 @@
 #ifndef LL_LLINSTANCETRACKER_H
 #define LL_LLINSTANCETRACKER_H
 
-#include <map>
+#include <boost/unordered_map.hpp>
 #include <typeinfo>
 
 #include "llatomic.h"
@@ -74,14 +74,10 @@ protected:
     /// implementations do.
     struct StaticBase
     {
-#ifdef LL_DEBUG
-        StaticBase()
-            : sIterationNestDepth(0)
+        StaticBase():
+            sIterationNestDepth(0)
         {}
-#else
-       StaticBase()
-        {}
-#endif
+
 		void incrementDepth();
 		void decrementDepth();
 		U32 getDepth();
@@ -107,8 +103,7 @@ template<typename T, typename KEY = void, EInstanceTrackerAllowKeyCollisions KEY
 class LLInstanceTracker : public LLInstanceTrackerBase
 {
 	typedef LLInstanceTracker<T, KEY> self_t;
-	typedef typename std::multimap<KEY, T*> InstanceMap;
-	typedef typename InstanceMap::iterator::difference_type difference_type;
+	typedef typename boost::unordered_map<KEY, T*> InstanceMap;
 	struct StaticData: public StaticBase
 	{
 		InstanceMap sMap;
@@ -143,10 +138,6 @@ public:
 
 		void increment() { ++mIterator; }
 		void decrement() { --mIterator; }
-		difference_type distance_to(instance_iter const& other) const
-		{
-			return std::distance(mIterator, other.mIterator);
-		}
 		bool equal(instance_iter const& other) const
 		{
 			return mIterator == other.mIterator;
@@ -194,10 +185,6 @@ public:
 
 		void increment() { ++mIterator; }
 		void decrement() { --mIterator; }
-		difference_type distance_to(instance_iter const& other) const
-		{
-			return std::distance(mIterator, other.mIterator);
-		}
 		bool equal(key_iter const& other) const
 		{
 			return mIterator == other.mIterator;
@@ -255,7 +242,7 @@ protected:
 #ifdef LL_DEBUG
 		llassert_always(getStatic().getDepth() == 0);
 #endif
-		remove_();		
+		remove_();
 	}
 	virtual void setKey(KEY key) { remove_(); add_(key); }
 	virtual const KEY& getKey() const { return mInstanceKey; }
@@ -268,7 +255,7 @@ private:
 	{ 
 		mInstanceKey = key; 
 		InstanceMap& map = getMap_();
-		typename InstanceMap::iterator insertion_point_it = map.lower_bound(key);
+		typename InstanceMap::iterator insertion_point_it = map.find(key);
 		if (insertion_point_it != map.end() 
 			&& insertion_point_it->first == key)
 		{ // found existing entry with that key

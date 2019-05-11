@@ -8238,7 +8238,7 @@ To grant this permission please update your viewer to the latest version.
    icon="notify.tga"
    name="ScriptTextBoxDialog"
    type="notify">
-    [NAME]&apos;s &apos;[TITLE]&apos;
+    [NAME]&apos;s &apos;[TITLE]&apos; (ch[CHANNEL])
     [MESSAGE]
     <form name="form">
       <input name="message">

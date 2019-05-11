@@ -95,7 +95,8 @@ class ViewerManifest(LLManifest):
 
                 # ... and the included spell checking dictionaries
                 pkgdir = os.path.join(self.args['build'], os.pardir, 'packages')
-                self.path("dictionaries")
+                with self.prefix(src=pkgdir):
+                    self.path("dictionaries")
 
                 # include the extracted packages information (see BuildPackagesInfo.cmake)
                 self.path(src=os.path.join(self.args['build'],"packages-info.txt"), dst="packages-info.txt")
@@ -168,6 +169,9 @@ class ViewerManifest(LLManifest):
 
     def standalone(self):
         return self.args['standalone'] == "ON"
+
+    def finish_build_data_dict(self, build_data_dict):
+        return build_data_dict
 
     def grid(self):
         return self.args['grid']
@@ -401,9 +405,6 @@ class WindowsManifest(ViewerManifest):
     # VMP will concatenate that with the address_size.
     build_data_json_platform = 'win'
 
-    def is_win64(self):
-        return self.args.get('arch') == "x86_64"
-
     def final_exe(self):
         return self.app_name_oneword()+"Viewer.exe"
 
@@ -533,8 +534,14 @@ class WindowsManifest(ViewerManifest):
 
             # Vivox runtimes
             self.path("SLVoice.exe")
-            self.path("vivoxsdk.dll")
-            self.path("ortp.dll")
+            if (self.address_size == 64):
+                self.path("vivoxsdk_x64.dll")
+                self.path("ortp_x64.dll")
+            else:
+                self.path("vivoxsdk.dll")
+                self.path("ortp.dll")
+            #self.path("libsndfile-1.dll")
+            #self.path("vivoxoal.dll")
             
             # Security
             if(self.address_size == 64):
@@ -598,6 +605,11 @@ class WindowsManifest(ViewerManifest):
                 # Media plugins - LibVLC
                 with self.prefix(src=os.path.join('libvlc', self.args['configuration'])):
                     self.path("media_plugin_libvlc.dll")
+
+                # Media plugins - Example (useful for debugging - not shipped with release viewer)
+                if self.channel_type() != 'release':
+                    with self.prefix(src=os.path.join('example', self.args['configuration'])):
+                        self.path("media_plugin_example.dll")
 
             # CEF runtime files - debug
             # CEF runtime files - not debug (release, relwithdebinfo etc.)
@@ -765,6 +777,8 @@ class WindowsManifest(ViewerManifest):
             'version' : '.'.join(self.args['version']),
             'version_short' : '.'.join(self.args['version'][:-1]),
             'version_dashes' : '-'.join(self.args['version']),
+            'version_registry' : '%s(%s)' %
+            ('.'.join(self.args['version']), self.address_size),
             'final_exe' : self.final_exe(),
             'flags':'',
             'app_name':self.app_name(),
@@ -909,6 +923,7 @@ class DarwinManifest(ViewerManifest):
                     self.path("*.tif")
 
                 self.path("featuretable_mac.txt")
+                self.path("SecondLife.nib")
 
                 icon_path = self.icon_path()
                 with self.prefix(src=icon_path, dst="") :
@@ -1407,11 +1422,16 @@ class LinuxManifest(ViewerManifest):
         tempname = self.build_path_of(installer_name)
         self.run_command(["mv", realname, tempname])
         try:
-            # --numeric-owner hides the username of the builder for
-            # security etc.
-            self.run_command(['tar', '-C', self.get_build_prefix(),
-                              '--numeric-owner', '-cJf',
-                             tempname + '.tar.xz', installer_name])
+            # only create tarball if it's a release build.
+            if True:# self.args['buildtype'].lower() == 'release':
+                # --numeric-owner hides the username of the builder for
+                # security etc.
+                self.run_command(['tar', '-C', self.get_build_prefix(),
+                                  '--numeric-owner', '-cJf',
+                                 tempname + '.tar.xz', installer_name])
+            else:
+                print "Skipping %s.tar.xz for non-Release build (%s)" % \
+                      (installer_name, self.args['buildtype'])
         finally:
             self.run_command(["mv", tempname, realname])
 
@@ -1452,6 +1472,7 @@ class Linux_i686_Manifest(LinuxManifest):
 
             self.path("libtcmalloc_minimal.so.0")
             self.path("libtcmalloc_minimal.so.0.2.2")
+
 
         # Vivox runtimes
         with self.prefix(src=relpkgdir, dst="bin"):
@@ -1501,8 +1522,6 @@ class Linux_x86_64_Manifest(LinuxManifest):
                 print "Skipping libfmod.so - not found"
                 pass
 
-            self.end_prefix("lib64")
-
         # Vivox runtimes
         with self.prefix(src=relpkgdir, dst="bin"):
             self.path("SLVoice")
@@ -1522,7 +1541,7 @@ class Linux_x86_64_Manifest(LinuxManifest):
 
 if __name__ == "__main__":
     extra_arguments = [
-    #    dict(name='bugsplat', description="""BugSplat database to which to post crashes,
-    #         if BugSplat crash reporting is desired""", default=''),
+        dict(name='bugsplat', description="""BugSplat database to which to post crashes,
+             if BugSplat crash reporting is desired""", default=''),
         ]
     main(extra=extra_arguments)

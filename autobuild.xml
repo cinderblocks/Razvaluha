@@ -3736,7 +3736,6 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
                   <string>Debug</string>
                   <string>-project</string>
                   <string>Singularity.xcodeproj</string>
-                  <string>-DADDRESS_SIZE=64</string>
                 </array>
               </map>
               <key>configure</key>
@@ -3768,7 +3767,6 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
                   <string>RelWithDebInfo</string>
                   <string>-project</string>
                   <string>Singularity.xcodeproj</string>
-                  <string>-DADDRESS_SIZE=64</string>
                 </array>
               </map>
               <key>configure</key>
@@ -3794,7 +3792,6 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
                   <string>Release</string>
                   <string>-project</string>
                   <string>Singularity.xcodeproj</string>
-                  <string>-DADDRESS_SIZE=64</string>
                 </array>
               </map>
               <key>configure</key>
@@ -3906,7 +3903,6 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
                 <array>
                   <string>-G</string>
                   <string>Unix Makefiles</string>
-                  <string>-DADDRESS_SIZE:STRING=64</string>
                 </array>
               </map>
               <key>name</key>
@@ -3930,7 +3926,6 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
                 <array>
                   <string>-G</string>
                   <string>Unix Makefiles</string>
-                  <string>-DADDRESS_SIZE:STRING=64</string>
                 </array>
               </map>
               <key>name</key>
