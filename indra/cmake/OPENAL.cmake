@@ -27,6 +27,5 @@ endif (OPENAL)
 
 if (OPENAL)
   message(STATUS "Building with OpenAL audio support")
-  set(LLSTARTUP_COMPILE_FLAGS "${LLSTARTUP_COMPILE_FLAGS} -DLL_OPENAL")
 endif (OPENAL)
 endif(NOT FMOD)
