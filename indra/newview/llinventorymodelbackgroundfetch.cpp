@@ -200,6 +200,8 @@ LLInventoryModelBackgroundFetch::LLInventoryModelBackgroundFetch() :
 	mMinTimeBetweenFetches(0.3f)
 {}
 
+bool use_http_inventory();
+
 LLInventoryModelBackgroundFetch::~LLInventoryModelBackgroundFetch()
 {}
 
@@ -351,7 +353,6 @@ void LLInventoryModelBackgroundFetch::backgroundFetch()
 	LLViewerRegion* region = gAgent.getRegion();
 	if (mBackgroundFetchActive && region && region->capabilitiesReceived())
 	{
-		bool use_http_inventory();
 		if (use_http_inventory())
 		{
 			// If we'll be using the capability, we'll be sending batches and the background thing isn't as important.
@@ -814,6 +815,7 @@ void BGFolderHttpHandler::processFailure(LLCore::HttpStatus status, LLCore::Http
 	// adquately on retries but I want to keep the structure of a
 	// retry for reference.
 	LLInventoryModelBackgroundFetch *fetcher = LLInventoryModelBackgroundFetch::getInstance();
+#if 0
 	if (false)
 	{
 		// timed out or curl failure
@@ -828,6 +830,7 @@ void BGFolderHttpHandler::processFailure(LLCore::HttpStatus status, LLCore::Http
 		}
 	}
 	else
+#endif
 	{
 		if (fetcher->isBulkFetchProcessingComplete())
 		{
@@ -865,6 +868,7 @@ void BGFolderHttpHandler::processFailure(const char * const reason, LLCore::Http
 			fetcher->addRequestAtFront(folder_id, recursive, true);
 		}
 	}
+#if 0
 	else
 	{
 		if (fetcher->isBulkFetchProcessingComplete())
@@ -872,6 +876,7 @@ void BGFolderHttpHandler::processFailure(const char * const reason, LLCore::Http
 			fetcher->setAllFoldersFetched();
 		}
 	}
+#endif
 	gInventory.notifyObservers();
 }
 
