@@ -40,6 +40,7 @@
 #include <Carbon/Carbon.h>
 #include <AudioUnit/AudioUnit.h>
 #include <list>
+#include "llsingleton.h"
 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -47,14 +48,14 @@ struct VolumeCatcherStorage;
 
 class VolumeCatcherImpl : public LLSingleton<VolumeCatcherImpl>
 {
-	friend LLSingleton<VolumeCatcherImpl>;
-	VolumeCatcherImpl();
+	LLSINGLETON(VolumeCatcherImpl);
 	// This is a singleton class -- both callers and the component implementation should use getInstance() to find the instance.
-	~VolumeCatcherImpl();
+	~VolumeCatcherImpl() {}
 
 public:
 
 	void setVolume(F32 volume);
+	void setVolumes();
 	void setPan(F32 pan);
 	
 	std::list<VolumeCatcherStorage*> mComponentInstances;
@@ -155,7 +156,7 @@ static ComponentResult volume_catcher_component_open(VolumeCatcherStorage *stora
 		impl->mComponentInstances.push_back(storage);	
 		
 		// and set up the initial volume
-		impl->setVolume(storage);
+		impl->setVolumes();
 	}
 
 	return result;
@@ -182,7 +183,11 @@ static ComponentResult volume_catcher_component_close(VolumeCatcherStorage *stor
 void VolumeCatcherImpl::setVolume(F32 volume)
 {
 	mVolume = volume;
+	setVolumes();
+}
 
+void VolumeCatcherImpl::setVolumes()
+{
 	// Iterate through all known instances, setting the volume on each.
 	for(auto& instance : mComponentInstances)
 	{
