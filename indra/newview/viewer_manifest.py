@@ -463,7 +463,7 @@ class WindowsManifest(ViewerManifest):
                 raise Exception("Directories are not supported by test_CRT_and_copy_action()")
         else:
             print "Doesn't exist:", src
-        
+
     def construct(self):
         super(WindowsManifest, self).construct()
 
@@ -542,7 +542,7 @@ class WindowsManifest(ViewerManifest):
                 self.path("ortp.dll")
             #self.path("libsndfile-1.dll")
             #self.path("vivoxoal.dll")
-            
+
             # Security
             if(self.address_size == 64):
                 self.path("libcrypto-1_1-x64.dll")
@@ -563,7 +563,7 @@ class WindowsManifest(ViewerManifest):
             # Hunspell
             self.path("libhunspell.dll")
             if not self.is_packaging_viewer():
-                self.path("libhunspell.pdb") 
+                self.path("libhunspell.pdb")
 
             # BugSplat
             if self.args.get('bugsplat'):
@@ -750,7 +750,7 @@ class WindowsManifest(ViewerManifest):
                 prev = d
 
         return result
-	
+
     def sign_command(self, *argv):
         return [
             "signtool.exe", "sign", "/v",
@@ -759,7 +759,7 @@ class WindowsManifest(ViewerManifest):
             "/d","%s" % self.channel(),
             "/t","http://timestamp.comodoca.com/authenticode"
         ] + list(argv)
-	
+
     def sign(self, *argv):
         subprocess.check_call(self.sign_command(*argv))
 
@@ -771,7 +771,7 @@ class WindowsManifest(ViewerManifest):
                 self.sign(self.args['configuration']+"\\SLVoice.exe")
             except:
                 print "Couldn't sign binaries. Tried to sign %s" % self.args['configuration'] + "\\" + self.final_exe()
-		
+
         # a standard map of strings for replacing in the templates
         substitution_strings = {
             'version' : '.'.join(self.args['version']),
@@ -852,7 +852,7 @@ class WindowsManifest(ViewerManifest):
         if 'signature' in self.args and 'VIEWER_SIGNING_PWD' in os.environ:
             try:
                 self.sign(self.args['configuration'] + "\\" + substitution_strings['installer_file'])
-            except: 
+            except:
                 print "Couldn't sign windows installer. Tried to sign %s" % self.args['configuration'] + "\\" + substitution_strings['installer_file']
 
         self.created_path(self.dst_path_of(installer_file))
@@ -1040,7 +1040,7 @@ class DarwinManifest(ViewerManifest):
                                 'SLVoice',
                                 ):
                     self.path2basename(relpkgdir, libfile)
-                
+
                 # dylibs that vary based on configuration
                 if self.args['configuration'].lower() == 'debug':
                     for libfile in (
@@ -1260,8 +1260,8 @@ class DarwinManifest(ViewerManifest):
             # Set the disk image root's custom icon bit
             self.run_command(['SetFile', '-a', 'C', volpath])
 
-            # Sign the app if requested; 
-            # do this in the copy that's in the .dmg so that the extended attributes used by 
+            # Sign the app if requested;
+            # do this in the copy that's in the .dmg so that the extended attributes used by
             # the signature are preserved; moving the files using python will leave them behind
             # and invalidate the signatures.
             if 'signature' in self.args:
@@ -1321,7 +1321,7 @@ class DarwinManifest(ViewerManifest):
                     self.run_command(['spctl', '-a', '-texec', '-vvvv', app_in_dmg])
 
         finally:
-            # Unmount the image even if exceptions from any of the above 
+            # Unmount the image even if exceptions from any of the above
             self.run_command(['hdiutil', 'detach', '-force', devfile])
 
         print "Converting temp disk image to final disk image"
@@ -1361,7 +1361,7 @@ class LinuxManifest(ViewerManifest):
             # package_finish() was called by super.do() so just create the TAR.
             self.create_archive()
         return self.file_list
-    
+
     def construct(self):
         import shutil
         shutil.rmtree("./packaged/app_settings/shaders", ignore_errors=True);
