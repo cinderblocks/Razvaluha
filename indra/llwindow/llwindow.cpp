@@ -280,7 +280,7 @@ int LLWindow::ShellEx(const std::string& command)
 	sei.lpFile = url_utf16.c_str();
 	const auto& code = ShellExecuteEx(&sei) ? 0 : GetLastError();
 #elif LL_DARWIN
-	CFURLRef urlRef;
+	CFURLRef urlRef = nullptr;
 	CFStringRef stringRef = CFStringCreateWithCString(NULL, command.c_str(), kCFStringEncodingUTF8);
 	if (stringRef)
 	{
