@@ -141,7 +141,7 @@
         <string>apr_suite</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -151,18 +151,6 @@
               <string>md5</string>
               <key>url</key>
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/apr_suite-1.6.3-1.6.1-1.2.2-darwin-201712261955.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>f65774ebabb256f2d217a872b0cf2b5b</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/4812/15284/apr_suite-1.4.5.504800-darwin64-504800.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -239,7 +227,7 @@
         <string>boost</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -249,18 +237,6 @@
               <string>md5</string>
               <key>url</key>
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/boost-1.66.0-darwin-201712261623.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>d318c25353e41215f1f523d58cacfd44</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/893/1984/boost-1.57-darwin64-500883.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -337,18 +313,6 @@
         <string>bugsplat</string>
         <key>platforms</key>
         <map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>c3b5e8c57bd1c92bc9e0956586908b99</string>
-              <key>url</key>
-              <string>http://s3-proxy.lindenlab.com/private-builds-secondlife-com/ct2/26330/207568/bugsplat-1.0.7.520791-darwin64-520791.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin64</string>
-          </map>
           <key>windows</key>
           <map>
             <key>archive</key>
@@ -389,26 +353,16 @@
         <string>colladadom</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>66849777a83cb69cec3c06b07da7cd3d</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/colladadom_3p-update-colladadom/rev/297450/arch/Darwin/installer/colladadom-2.3.297450-darwin-297450.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>fa93a9a10fa379091e3e7b85665690d9</string>
+              <string>6ee41a4d6aa045d3cd2e0f4ae9cc23b4</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/913/2026/colladadom-2.3.500902-darwin64-500902.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/colladadom-2.3-darwin-201712261921.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -481,26 +435,16 @@
         <string>curl</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>5ad49b3dc23e5ce67452d968d503be6e</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/curl-7.57.0-darwin-201712262218.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>f426c56252c70fe38fcb2251f7c1d762</string>
+              <string>5ad49b3dc23e5ce67452d968d503be6e</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/9265/41615/curl-7.54.1.509254-darwin64-509254.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/curl-7.57.0-darwin-201712262218.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -711,26 +655,14 @@
         <string>dullahan</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>23aeaf23e7db2484a1850017141860dd</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/34069/283470/dullahan-1.1.1320_3.3626.1895.g7001d56-darwin64-525361.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>23aeaf23e7db2484a1850017141860dd</string>
+              <string>3c4288eb71fae42e3d44fc7e9f315cb4</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/34069/283470/dullahan-1.1.1320_3.3626.1895.g7001d56-darwin64-525361.tar.bz2</string>
+              <string>https://bitbucket.org/router_gray/3p-dullahan/downloads/dullahan-1.1.1320_73.1.12+gee4b49f+chromium-73.0.3683.75-darwin64-191320724.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -817,7 +749,7 @@
         <string>expat</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -827,18 +759,6 @@
               <string>md5</string>
               <key>url</key>
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/expat-2.2.5-darwin-201712261952.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>fd182ab5bed66c94899dec3035310945</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/384/954/expat-2.1.1.500375-darwin64-500375.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -915,20 +835,6 @@
         <string>fmodstudio</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>a3ccf7916d1e0b6f01370978b661c139</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/fmodstudio-1.10.02-darwin-201712262058.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
@@ -1139,7 +1045,7 @@
         <string>freetype</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -1149,18 +1055,6 @@
               <string>md5</string>
               <key>url</key>
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/freetype-2.8.1-darwin-201712262206.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>3f0698d53acf14b3f0a11dba889d67f3</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/875/1919/freetype-2.4.4.500865-darwin64-500865.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1329,28 +1223,16 @@
         <string>glod</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>71e678d70e276fc42a56926fc28a7abd</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/glod_3p-update-glod/rev/296895/arch/Darwin/installer/glod-1.0pre4.296895-darwin-296895.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>017ef34ddf14293099a90c6eaa3615ca</string>
+              <string>fd6ace9b654318ea8e441e1c4ffb91e0</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/1626/3627/glod-1.0pre3.501614-darwin64-501614.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/glod-1.0pre4-darwin-201712262108.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1427,26 +1309,16 @@
         <string>google_breakpad</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>9f963eb1728e6d5077d4feba805d4896</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/google_breakpad-9e60a27-darwin-201511222009.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>2d43c6a149cd9c89ba19e884579b1e25</string>
+              <string>9f963eb1728e6d5077d4feba805d4896</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/1836/4096/google_breakpad-1413.501824-darwin64-501824.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/google_breakpad-9e60a27-darwin-201511222009.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1643,7 +1515,7 @@
         <string>havok-source</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -1651,18 +1523,6 @@
               <string>5c5b4820999ae9e398801d6a46f45897</string>
               <key>url</key>
               <string>http://s3-proxy.lindenlab.com/private-builds-secondlife-com/hg/repo/havok-source_3p-update-havok-source/rev/297312/arch/Darwin/installer/havok_source-2012.1-darwin-297312.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>a0c4405c9e44d4a0135fe20ba8cfbace</string>
-              <key>url</key>
-              <string>http://s3-proxy.lindenlab.com/private-builds-secondlife-com/ct2/4693/14627/havok_source-2012.1-2-darwin64-504680.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1733,7 +1593,7 @@
         <string>jpeglib</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -1745,7 +1605,7 @@
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/jpeglib-1.5.3-darwin-201712262014.tar.bz2</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
+            <string>darwin64</string>
           </map>
           <key>linux</key>
           <map>
@@ -1819,7 +1679,7 @@
         <string>kdu</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -1827,18 +1687,6 @@
               <string>3855bd40f950e3c22739ae8f3ee2afc9</string>
               <key>url</key>
               <string>http://s3-proxy.lindenlab.com/private-builds-secondlife-com/ct2/15258/98444/kdu-7.10.4.513518-darwin-513518.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>d1521becaf21bf7233173722af63f57d</string>
-              <key>url</key>
-              <string>http://s3-proxy.lindenlab.com/private-builds-secondlife-com/ct2/15257/98440/kdu-7.10.4.513518-darwin64-513518.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1911,7 +1759,7 @@
         <string>libhunspell</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -1923,7 +1771,7 @@
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/libhunspell-1.6.2-darwin-201712262132.tar.bz2</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
+            <string>darwin64</string>
           </map>
           <key>linux</key>
           <map>
@@ -1997,7 +1845,7 @@
         <string>libidn</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -2009,7 +1857,7 @@
               <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/libidn-1.32-darwin-201511222141.tar.bz2</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
@@ -2043,7 +1891,7 @@
         <string>libndofdev</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -2055,7 +1903,7 @@
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/libndofdev-0.1-darwin-201712262016.tar.bz2</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
+            <string>darwin64</string>
           </map>
           <key>windows</key>
           <map>
@@ -2135,26 +1983,16 @@
         <string>libpng</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>2919c647bd11448e2878ab8c9ceac1af</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libpng-1.6.34-darwin-201712262200.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>537b59a75709bd9abe0abe0c7309add4</string>
+              <string>2919c647bd11448e2878ab8c9ceac1af</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/883/1951/libpng-1.6.8.500873-darwin64-500873.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libpng-1.6.34-darwin-201712262200.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2269,26 +2107,16 @@
         <string>libxml2</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>678b5278e7faf956024f68816b3f05d4</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libxml2-2.9.7-darwin-201712261252.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>89a71a652a5ecd7cf6142ff56f40f018</string>
+              <string>678b5278e7faf956024f68816b3f05d4</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/891/1973/libxml2-2.9.4.500877-darwin64-500877.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libxml2-2.9.7-darwin-201712261252.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2420,18 +2248,6 @@
         <string>llphysicsextensions_source</string>
         <key>platforms</key>
         <map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>162a3fc9b66626072ec8679361b174f5</string>
-              <key>url</key>
-              <string>http://s3-proxy.lindenlab.com/private-builds-secondlife-com/ct2/4722/14837/llphysicsextensions_source-1.0.504710-darwin64-504710.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin64</string>
-          </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
@@ -2472,7 +2288,7 @@
         <string>llphysicsextensions_stub</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -2482,18 +2298,6 @@
               <string>md5</string>
               <key>url</key>
               <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/llphysicsextensions-stub_llphysicsextensions-update/rev/298370/arch/Darwin/installer/llphysicsextensions_stub-1.0.298370-darwin-298370.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>566aa2c6f5b2f40a8b0bedf90d9c6beb</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/4723/14838/llphysicsextensions_stub-1.0.504712-darwin64-504712.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2749,26 +2553,16 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>ogg_vorbis</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>6b4945c0d9a102a67756196810f20370</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/ogg_vorbis-1.3.2-1.3.5-darwin-201712262100.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>bb8bed08fd5973a040c509ef8b545ec8</string>
+              <string>6b4945c0d9a102a67756196810f20370</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/490/1046/ogg_vorbis-1.2.2-1.3.2.500397-darwin64-500397.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/ogg_vorbis-1.3.2-1.3.5-darwin-201712262100.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2871,7 +2665,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>openal</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
@@ -2883,7 +2677,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/openal-1.16.0-1.1.0-darwin-201412160747.tar.bz2</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
+            <string>darwin64</string>
           </map>
           <key>linux</key>
           <map>
@@ -2957,18 +2751,6 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>openjpeg</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>f1386e2390eeaf2440df69783b99ba48</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/openjpeg-1.5.1-darwin-201712262138.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
@@ -3051,24 +2833,14 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>openssl</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>c9dbec48da7f8ebc3cdcc40cc70586c4</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/openssl-1.1.0g-darwin-201712261237.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
               <string>c9dbec48da7f8ebc3cdcc40cc70586c4</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/openssl-1.1.0g-darwin-201712261237.tar.bz2</string>
             </map>
@@ -3143,18 +2915,6 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>slvoice</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>511a9c3fd4b6c76a8a737d06bba1c291</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/oz-426-slvoice/rev/330003/arch/Darwin/installer/slvoice-4.9.0002.27586.330003-darwin-330003.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
@@ -3263,24 +3023,14 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>uriparser</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>364cbc9a049acb2a0d2cd6719a02adf0</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/uriparser-0.8.4-darwin-201511221948.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
               <string>364cbc9a049acb2a0d2cd6719a02adf0</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
               <string>https://depot.alchemyviewer.org/pub/darwin/lib/uriparser-0.8.4-darwin-201511221948.tar.bz2</string>
             </map>
@@ -3355,18 +3105,6 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>viewer-manager</string>
         <key>platforms</key>
         <map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>aaf04f5ed1d28477781d976dc04871ee</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/31904/266163/viewer_manager-2.0.524157-darwin64-524157.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin64</string>
-          </map>
           <key>linux</key>
           <map>
             <key>archive</key>
@@ -3413,17 +3151,17 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>vlc-bin</string>
         <key>platforms</key>
         <map>
-          <key>darwin64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>e5635e173c75dc0675b48ab5f5e4868b</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/12143/71451/vlc_bin-2.2.8.511703-darwin64-511703.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin64</string>
+         <key>darwin64</key>
+         <map>
+           <key>archive</key>
+           <map>
+             <key>hash</key>
+             <string>e5635e173c75dc0675b48ab5f5e4868b</string>
+             <key>url</key>
+             <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/12143/71451/vlc_bin-2.2.8.511703-darwin64-511703.tar.bz2</string>
+           </map>
+           <key>name</key>
+           <string>darwin64</string>
           </map>
           <key>linux</key>
           <map>
@@ -3479,26 +3217,16 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>xmlrpc-epi</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>8e0408fc38d55f665d78b2186e3385a2</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/xmlrpc_epi-0.54.2-darwin-201712262005.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>b2d31df56a10c634657eed856c8d7895</string>
+              <string>8e0408fc38d55f665d78b2186e3385a2</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/728/1494/xmlrpc_epi-0.54.1.500719-darwin64-500719.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/xmlrpc_epi-0.54.2-darwin-201712262005.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -3571,26 +3299,16 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>zlib</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>8659403827b2395bd92998718138689c</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/zlib-1.2.11-darwin-201712261200.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e204dee29902549f50af1af2bb098df5</string>
+              <string>8659403827b2395bd92998718138689c</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/867/1903/zlib-1.2.8.500857-darwin64-500857.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/darwin/lib/zlib-1.2.11-darwin-201712261200.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
