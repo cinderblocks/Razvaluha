@@ -509,7 +509,9 @@ void LLDrawPoolWater::renderReflection(LLFace* face)
 		return;
 	}
 
+#ifndef LL_GL_CORE
 	LLGLSNoFog noFog;
+#endif
 
 	gGL.getTexUnit(0)->bind(mHBTex[dr]);
 

@@ -388,7 +388,9 @@ void LLDrawPoolWLSky::render(S32 pass)
 
 	const F32 camHeightLocal = LLWLParamManager::getInstance()->getDomeOffset() * LLWLParamManager::getInstance()->getDomeRadius();
 
+#ifndef LL_GL_CORE
 	LLGLSNoFog disableFog;
+#endif
 	LLGLDepthTest depth(GL_TRUE, GL_FALSE);
 #ifndef LL_GL_CORE
 	LLGLDisable<GL_CLIP_PLANE0> clip;

@@ -4094,9 +4094,9 @@ void LLPipeline::renderGeom(LLCamera& camera, BOOL forceVBOUpdate)
 	// Toggle backface culling for debugging
 	LLGLEnable<GL_CULL_FACE> cull_face(mBackfaceCull);
 
+#ifndef LL_GL_CORE
 	// Set fog only if not using shaders and is underwater render.
 	BOOL use_fog = hasRenderDebugFeatureMask(LLPipeline::RENDER_DEBUG_FEATURE_FOG);
-#ifndef LL_GL_CORE
 	LLGLEnable<GL_FOG_LEGACY> fog_enable(use_fog && sUnderWaterRender && !LLGLSLShader::sNoFixedFunction);
 #endif
 	gSky.updateFog(camera.getFar());
