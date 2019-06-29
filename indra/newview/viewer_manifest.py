@@ -899,7 +899,7 @@ class DarwinManifest(ViewerManifest):
 
     def construct(self):
         # copy over the build result (this is a no-op if run within the xcode script)
-        self.path(self.args['configuration'] + "/" + self.app_name_oneword() + ".app", dst="")
+        self.path(os.path.join(self.args['configuration'], self.app_name_oneword()+".app"), dst="")
 
         pkgdir = os.path.join(self.args['build'], os.pardir, 'packages')
         relpkgdir = os.path.join(pkgdir, "lib", "release")
@@ -916,6 +916,20 @@ class DarwinManifest(ViewerManifest):
                 self.path2basename(relpkgdir, CEF_framework)
                 CEF_framework = self.dst_path_of(CEF_framework)
 
+
+            with self.prefix(dst="MacOS"):
+                executable = self.dst_path_of(self.app_name_oneword())
+
+                # NOTE: the -S argument to strip causes it to keep
+                # enough info for annotated backtraces (i.e. function
+                # names in the crash log). 'strip' with no arguments
+                # yields a slightly smaller binary but makes crash
+                # logs mostly useless. This may be desirable for the
+                # final release. Or not.
+                if self.is_rearranging():
+                    self.run_command(
+                        ['strip', '-S', executable])
+
             with self.prefix(dst="Resources"):
                 # defer cross-platform file copies until we're in the
                 # nested Resources directory
@@ -926,13 +940,13 @@ class DarwinManifest(ViewerManifest):
                     #self.path("secondlife.icns")
                 with self.prefix(src=relpkgdir, dst=""):
                     self.path("libndofdev.dylib")
-                    self.path("libhunspell-1.3.0.dylib")
+                    self.path("libhunspell*.dylib")
 
                 with self.prefix(src_dst="cursors_mac"):
                     self.path("*.tif")
 
+                self.path("licenses-mac.txt", dst="licenses.txt")
                 self.path("featuretable_mac.txt")
-                self.path("SecondLife.nib")
 
                 icon_path = self.icon_path()
                 with self.prefix(src=icon_path, dst="") :
@@ -940,12 +954,15 @@ class DarwinManifest(ViewerManifest):
 
                 self.path("%s.nib" % self.viewer_branding_id().capitalize())
 
+                with self.prefix(src=pkgdir,dst=""):
+                    self.path("ca-bundle.crt")
+
                 # Translations
                 self.path("English.lproj/language.txt")
-                self.replace_in(src="English.lproj/InfoPlist.strings",
-                                dst="English.lproj/InfoPlist.strings",
-                                searchdict={'%%VERSION%%':'.'.join(self.args['version'])}
-                                )
+                #self.replace_in(src="English.lproj/InfoPlist.strings",
+                #                dst="English.lproj/InfoPlist.strings",
+                #                searchdict={'%%VERSION%%':'.'.join(self.args['version'])}
+                #                )
                 self.path("German.lproj")
                 self.path("Japanese.lproj")
                 self.path("Korean.lproj")
@@ -988,6 +1005,7 @@ class DarwinManifest(ViewerManifest):
                 # in our bundled sub-apps. For each of these we'll create a
                 # symlink from sub-app/Contents/Resources to the real .dylib.
                 # Need to get the llcommon dll from any of the build directories as well.
+                libfile_parent = self.get_dst_prefix()
                 libfile = "libllcommon.dylib"
                 dylibs = path_optional(self.find_existing_file(os.path.join(os.pardir,
                                                                "llcommon",
@@ -999,13 +1017,16 @@ class DarwinManifest(ViewerManifest):
                 for libfile in (
                                 "libapr-1.0.dylib",
                                 "libaprutil-1.0.dylib",
+                                "libcollada14dom.dylib",
+                                "libexpat.1.dylib",
                                 "libexception_handler.dylib",
                                 "libGLOD.dylib",
                                 "libopenjpeg.dylib",
                                 # libnghttp2.dylib is a symlink to
                                 # libnghttp2.major.dylib, which is a symlink to
                                 # libnghttp2.version.dylib. Get all of them.
-                                "libfreetype.6.dylib",
+                                "libnghttp2.*dylib",
+                                "libfreetype*.dylib",
                                 ):
                     dylibs += path_optional(os.path.join(relpkgdir, libfile), libfile)
 
@@ -1130,7 +1151,7 @@ class DarwinManifest(ViewerManifest):
                     # @executable_path at runtime!
                     newpath = os.path.join(
                         '@executable_path',
-                        self.relpath(SLPlugin_framework, executable_path["SLPlugin.app"],
+                        self.relpath(SLPlugin_framework, executable_path["AlchemyPlugin.app"],
                                      symlink=True),
                         frameworkname)
                     # restamp media_plugin_cef.dylib
@@ -1298,9 +1319,6 @@ class DarwinManifest(ViewerManifest):
                                 print >> sys.stderr, "Maximum codesign attempts exceeded; giving up"
                                 raise
                     self.run_command(['spctl', '-a', '-texec', '-vvvv', app_in_dmg])
-
-            imagename= self.app_name_oneword() + "_" + '_'.join(self.args['version'])
-
 
         finally:
             # Unmount the image even if exceptions from any of the above 
