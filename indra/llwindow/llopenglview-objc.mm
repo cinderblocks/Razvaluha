@@ -167,7 +167,7 @@ attributedStringInfo getSegments(NSAttributedString *str)
 	}
 }
 
-- (void)windowResized:(NSNotification *)notification;
+- (void)windowResized:(NSNotification *)notification
 {
 	if (NSAppKitVersionNumber >= NSAppKitVersionNumber10_7)
     {
@@ -177,22 +177,22 @@ attributedStringInfo getSegments(NSAttributedString *str)
     }
 }
 
-- (void)windowWillMiniaturize:(NSNotification *)notification;
+- (void)windowWillMiniaturize:(NSNotification *)notification
 {
     callWindowHide();
 }
 
-- (void)windowDidDeminiaturize:(NSNotification *)notification;
+- (void)windowDidDeminiaturize:(NSNotification *)notification
 {
     callWindowUnhide();
 }
 
-- (void)windowDidBecomeKey:(NSNotification *)notification;
+- (void)windowDidBecomeKey:(NSNotification *)notification
 {
     mModifiers = [NSEvent modifierFlags];
 }
 
-- (void)windowDidChangeBackingProperties:(NSNotification *)notification;
+- (void)windowDidChangeBackingProperties:(NSNotification *)notification
 {
     if (NSAppKitVersionNumber >= NSAppKitVersionNumber10_7)
     {
