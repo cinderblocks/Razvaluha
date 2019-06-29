@@ -64,7 +64,7 @@ public:
 	class TFRequest;
 	
     // Threads:  Tmain
-	/*virtual*/ S32 update(F32 max_time_ms);	
+	/*virtual*/ S32 update(F32 max_time_ms) override;
 
 	// called in the main thread after the TextureCacheThread shuts down.
     // Threads:  Tmain
@@ -135,7 +135,7 @@ public:
 	U32 getTotalNumHTTPRequests();
 	
     // Threads:  T*
-    S32 getPending();
+    S32 getPending() override;
 
     // Threads:  T*
 	void lockQueue() { mQueueMutex.lock(); }
