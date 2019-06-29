@@ -1070,11 +1070,8 @@ void LLPreviewGesture::saveIfNeeded()
     LLDataPackerAsciiBuffer dp(buffer, maxSize);
 
 	bool ok = gesture->serialize(dp);
-
-	// <edit>
-	//if (dp.getCurrentSize() > 1000)
-	if(0)
-	// </edit>
+#if 0	// <edit>
+	if (dp.getCurrentSize() > 1000)
 	{
 		LLNotificationsUtil::add("GestureSaveFailedTooManySteps");
 
@@ -1083,6 +1080,8 @@ void LLPreviewGesture::saveIfNeeded()
         return;
 	}
 	else if (!ok)
+#endif	// </edit>
+	if (!ok)
 	{
 		LLNotificationsUtil::add("GestureSaveFailedTryAgain");
 		delete gesture;

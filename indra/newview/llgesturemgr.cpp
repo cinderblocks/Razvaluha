@@ -1208,6 +1208,8 @@ void LLGestureMgr::stopGesture(LLMultiGesture* gesture)
 	{
 		gAgent.sendAnimationRequest(anim_id, ANIM_REQUEST_STOP);
 	}
+	gesture->mRequestedAnimIDs.clear();
+
 	for (const auto& anim_id : gesture->mPlayingAnimIDs)
 	{
 		if (gesture->mLocal)
@@ -1215,6 +1217,7 @@ void LLGestureMgr::stopGesture(LLMultiGesture* gesture)
 		else
 			gAgent.sendAnimationRequest(anim_id, ANIM_REQUEST_STOP);
 	}
+	gesture->mPlayingAnimIDs.clear();
 
 	mPlaying.erase(std::remove(mPlaying.begin(), mPlaying.end(), gesture), mPlaying.end());
 

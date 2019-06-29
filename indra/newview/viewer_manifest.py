@@ -473,7 +473,7 @@ class WindowsManifest(ViewerManifest):
 
         if True: #self.is_packaging_viewer():
             # Find singularity-bin.exe in the 'configuration' dir, then rename it to the result of final_exe.
-            self.path(src='%s/%s-bin.exe' % (self.args['configuration'],self.viewer_branding_id()), dst=self.final_exe())
+            self.path(src='%s\\%s-bin.exe' % (self.args['configuration'],self.viewer_branding_id()), dst=self.final_exe())
 
             with self.prefix(src=os.path.join(pkgdir, "redist")):
                 # include the compiled launcher scripts so that it gets included in the file_list
@@ -787,6 +787,15 @@ class WindowsManifest(ViewerManifest):
 
         installer_file = self.installer_base_name() + '_Setup.exe'
         substitution_strings['installer_file'] = installer_file
+
+        # Packaging the installer takes forever, dodge it if we can.
+        installer_path = os.path.join(self.args['configuration'], installer_file);
+        if os.path.isfile(installer_path):
+            binary_mod = os.path.getmtime(os.path.join(self.args['configuration'], self.final_exe()))
+            installer_mod = os.path.getmtime(installer_path)
+            if binary_mod <= installer_mod:
+                print("Binary is unchanged since last package, touch the binary or delete installer to trigger repackage.")
+                exit();
 
         version_vars = """
         !define INSTEXE  "%(final_exe)s"
