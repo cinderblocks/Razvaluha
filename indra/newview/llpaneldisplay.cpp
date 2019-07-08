@@ -272,7 +272,12 @@ BOOL LLPanelDisplay::postBuild()
 	//----------------------------------------------------------------------------
 	// Global Shader Enable
 	mCtrlShaderEnable = getChild<LLCheckBoxCtrl>("BasicShaders");
+#ifdef LL_GL_CORE
+	mCtrlShaderEnable->setMakeVisibleControlVariable(nullptr);
+	mCtrlShaderEnable->setVisible(false);
+#else
 	mCtrlShaderEnable->setCommitCallback(boost::bind(&LLPanelDisplay::refreshEnabledState, this));
+#endif
 	
 	//============================================================================
 
