@@ -87,7 +87,7 @@ public:
 		for (msg_var_data_map_t::iterator iter = mMemberVarData.begin();
 			 iter != mMemberVarData.end(); iter++)
 		{
-			iter->second.deleteData();
+			mMemberVarData.toValue(iter).deleteData();
 		}
 	}
 
@@ -187,21 +187,21 @@ public:
 
 	~LLMessageBlock()
 	{
-		for_each(mMemberVariables.begin(), mMemberVariables.end(), DeletePairedPointer());
+		for_each(mMemberVariables.begin(), mMemberVariables.end(), message_variable_map_t::DeletePointer());
 	}
 
 	void addVariable(char *name, const EMsgVariableType type, const S32 size)
 	{
-		LLMessageVariable** varp = &mMemberVariables[name];
-		if (*varp != nullptr)
+		LLMessageVariable*& varp = mMemberVariables[name];
+		if (varp != nullptr)
 		{
 			LL_ERRS() << name << " has already been used as a variable name!" << LL_ENDL;
 		}
-		*varp = new LLMessageVariable(name, type, size);
-		if (((*varp)->getType() != MVT_VARIABLE)
-			&&(mTotalSize != -1))
+		varp = new LLMessageVariable(name, type, size);
+		if ((varp->getType() != MVT_VARIABLE)
+			&& (mTotalSize != -1))
 		{
-			mTotalSize += (*varp)->getSize();
+			mTotalSize += varp->getSize();
 		}
 		else
 		{
@@ -222,7 +222,7 @@ public:
 	const LLMessageVariable* getVariable(char* name) const
 	{
 		message_variable_map_t::const_iterator iter = mMemberVariables.find(name);
-		return iter != mMemberVariables.end()? iter->second : NULL;
+		return iter != mMemberVariables.end() ? mMemberVariables.toValue(iter) : NULL;
 	}
 
 	friend std::ostream&	 operator<<(std::ostream& s, LLMessageBlock &msg);
@@ -293,22 +293,22 @@ public:
 
 	~LLMessageTemplate()
 	{
-		for_each(mMemberBlocks.begin(), mMemberBlocks.end(), DeletePairedPointer());
+		for_each(mMemberBlocks.begin(), mMemberBlocks.end(), message_block_map_t::DeletePointer());
 	}
 
 	void addBlock(LLMessageBlock *blockp)
 	{
-		LLMessageBlock** member_blockp = &mMemberBlocks[blockp->mName];
-		if (*member_blockp != nullptr)
+		LLMessageBlock*& member_blockp = mMemberBlocks[blockp->mName];
+		if (member_blockp != nullptr)
 		{
 			LL_ERRS() << "Block " << blockp->mName
 				<< "has already been used as a block name!" << LL_ENDL;
 		}
-		*member_blockp = blockp;
-		if ((mTotalSize != -1)
-			&& (blockp->mTotalSize != -1)
-			&& ((blockp->mType == MBT_SINGLE)
-				|| (blockp->mType == MBT_MULTIPLE)))
+		member_blockp = blockp;
+		if (  (mTotalSize != -1)
+			&&(blockp->mTotalSize != -1)
+			&&(  (blockp->mType == MBT_SINGLE)
+			   ||(blockp->mType == MBT_MULTIPLE)))
 		{
 			mTotalSize += blockp->mNumber*blockp->mTotalSize;
 		}
@@ -390,7 +390,7 @@ public:
 	const LLMessageBlock* getBlock(char* name) const
 	{
 		message_block_map_t::const_iterator iter = mMemberBlocks.find(name);
-		return iter != mMemberBlocks.end() ? iter->second : NULL;
+		return iter != mMemberBlocks.end()? mMemberBlocks.toValue(iter): NULL;
 	}
 
 public:
