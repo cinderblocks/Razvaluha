@@ -6079,33 +6079,10 @@ class LLAvatarResetSkeleton: public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		LLVOAvatar* avatar = NULL;
-		LLViewerObject *obj = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
-		if (obj)
-		{
-			avatar = obj->getAvatar();
-		}
-		if(avatar)
+		LLVOAvatar* avatar = find_avatar_from_object(LLSelectMgr::getInstance()->getSelection()->getPrimaryObject());
+		if (avatar)
 		{
 			avatar->resetSkeleton(false);
-		}
-		return true;
-	}
-};
-
-class LLAvatarResetSkeletonAndAnimations : public view_listener_t
-{
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
-	{
-		LLVOAvatar* avatar = NULL;
-		LLViewerObject *obj = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
-		if (obj)
-		{
-			avatar = obj->getAvatar();
-		}
-		if(avatar)
-		{
-			avatar->resetSkeleton(true);
 		}
 		return true;
 	}
@@ -6115,13 +6092,24 @@ class LLAvatarEnableResetSkeleton: public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		LLViewerObject *obj = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
-		if (obj && obj->getAvatar())
-		{
-			return true;
-		}
-		return false;
+		LLVOAvatar* avatar = find_avatar_from_object(LLSelectMgr::getInstance()->getSelection()->getPrimaryObject());
+		return avatar != nullptr;
 	}
+};
+
+
+class LLAvatarResetSkeletonAndAnimations : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		LLVOAvatar* avatar = find_avatar_from_object(LLSelectMgr::getInstance()->getSelection()->getPrimaryObject());
+		if (avatar)
+		{
+			avatar->resetSkeleton(true);
+		}
+		return true;
+	}
+
 };
 
 bool complete_give_money(const LLSD& notification, const LLSD& response, LLObjectSelectionHandle selection)
@@ -9305,7 +9293,7 @@ void estate_bulk_eject(const uuid_vec_t& ids, bool ban, S32 option)
 		else
 			strings.push_back(idstr);
 		if (ban)
-			LLPanelEstateInfo::sendEstateAccessDelta(ESTATE_ACCESS_BANNED_AGENT_ADD | ESTATE_ACCESS_ALLOWED_AGENT_REMOVE | ESTATE_ACCESS_NO_REPLY, id);
+			LLPanelEstateAccess::sendEstateAccessDelta(ESTATE_ACCESS_BANNED_AGENT_ADD | ESTATE_ACCESS_ALLOWED_AGENT_REMOVE | ESTATE_ACCESS_NO_REPLY, id);
 	}
 	if (!tphome) send_estate_message("kickestate", strings);
 }

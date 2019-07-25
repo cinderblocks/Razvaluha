@@ -207,6 +207,7 @@ public:
 	LLScrollListItem*	getFirstData() const;
 	LLScrollListItem*	getLastData() const;
 	std::vector<LLScrollListItem*>	getAllData() const;
+	uuid_vec_t getAllIDs() const; //Helper. Much like getAllData, but just provides a LLUUID vec
 
 	LLScrollListItem*	getItem(const LLSD& sd) const;
 	
@@ -247,6 +248,9 @@ public:
 	S32				getRowOffsetFromIndex(S32 index);
 
 	void			clearSearchString() { mSearchString.clear(); }
+
+	void			filterItem(LLScrollListItem* item);
+	void			setFilter(const std::string& filter);
 
 	// support right-click context menus for avatar/group lists
 	void setContextMenu(LLMenuGL* menu) { mPopupMenu = menu; }
@@ -467,6 +471,8 @@ private:
 
 	LLWString		mSearchString;
 	LLFrameTimer	mSearchTimer;
+
+	std::string		mFilter;
 	
 	S32				mSearchColumn;
 	S32				mNumDynamicWidthColumns;

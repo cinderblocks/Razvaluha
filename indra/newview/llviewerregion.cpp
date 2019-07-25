@@ -2037,6 +2037,7 @@ void LLViewerRegionImpl::buildCapabilityNames(LLSD& capabilityNames)
 	capabilityNames.append("DispatchRegionInfo");
 	capabilityNames.append("DirectDelivery");
 	capabilityNames.append("EnvironmentSettings");
+	capabilityNames.append("EstateAccess");
 	capabilityNames.append("EstateChangeInfo");
 	capabilityNames.append("EventQueueGet");
     capabilityNames.append("ExtEnvironment");
@@ -2087,6 +2088,7 @@ void LLViewerRegionImpl::buildCapabilityNames(LLSD& capabilityNames)
 	capabilityNames.append("ParcelVoiceInfoRequest");
 	capabilityNames.append("ProductInfoRequest");
 	capabilityNames.append("ProvisionVoiceAccountRequest");
+	capabilityNames.append("ReadOfflineMsgs"); // Requires to respond reliably: AcceptFriendship, AcceptGroupInvite, DeclineFriendship, DeclineGroupInvite
 	capabilityNames.append("RemoteParcelRequest");
 	capabilityNames.append("RenderMaterials");
 	capabilityNames.append("RequestTextureDownload");

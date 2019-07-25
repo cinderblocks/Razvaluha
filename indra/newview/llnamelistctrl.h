@@ -144,11 +144,12 @@ public:
 	// Add a user to the list by name.  It will be added, the name 
 	// requested from the cache, and updated as necessary.
 	LLScrollListItem* addNameItem(const LLUUID& agent_id, EAddPosition pos = ADD_BOTTOM,
-					 BOOL enabled = TRUE, const std::string& suffix = LLStringUtil::null);
+					 BOOL enabled = TRUE, const std::string& suffix = LLStringUtil::null, const std::string& prefix = LLStringUtil::null);
 	LLScrollListItem* addNameItem(NameItem& item, EAddPosition pos = ADD_BOTTOM);
 
-	/*virtual*/ LLScrollListItem* addElement(const LLSD& element, EAddPosition pos = ADD_BOTTOM, void* userdata = nullptr) override;
-	LLScrollListItem* addNameItemRow(const NameItem& value, EAddPosition pos = ADD_BOTTOM, const std::string& suffix = LLStringUtil::null);
+	/*virtual*/ LLScrollListItem* addElement(const LLSD& element, EAddPosition pos = ADD_BOTTOM, void* userdata = NULL) override;
+	LLScrollListItem* addNameItemRow(const NameItem& value, EAddPosition pos = ADD_BOTTOM, const std::string& suffix = LLStringUtil::null,
+																							const std::string& prefix = LLStringUtil::null);
 
 	// Add a user to the list by name.  It will be added, the name 
 	// requested from the cache, and updated as necessary.
@@ -158,6 +159,8 @@ public:
 
 
 	void removeNameItem(const LLUUID& agent_id);
+
+	LLScrollListItem* getNameItemByAgentId(const LLUUID& agent_id);
 
 	// LLView interface
 	/*virtual*/ BOOL	handleDragAndDrop(S32 x, S32 y, MASK mask,
@@ -169,7 +172,8 @@ public:
 
 	void sortByName(BOOL ascending);
 private:
-	void onAvatarNameCache(const LLUUID& agent_id, const LLAvatarName& av_name, std::string suffix, LLHandle<LLNameListItem> item);
+	void onAvatarNameCache(const LLUUID& agent_id, const LLAvatarName& av_name, std::string suffix, std::string prefix, LLHandle<LLNameListItem> item);
+	void onGroupNameCache(const LLUUID& group_id, const std::string name, LLHandle<LLNameListItem> item);
 
 private:
 	S32    	 mNameColumnIndex;

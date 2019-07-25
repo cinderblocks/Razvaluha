@@ -28,6 +28,8 @@
 #ifndef LL_LLFLOATERREGIONINFO_H
 #define LL_LLFLOATERREGIONINFO_H
 
+#include <vector>
+#include "llagent.h"
 #include "llassettype.h"
 #include "llfloater.h"
 #include "llhost.h"
@@ -64,6 +66,7 @@ class LLPanelEstateCovenant;
 class LLPanelExperienceListEditor;
 class LLPanelExperiences;
 class LLPanelRegionExperiences;
+class LLPanelEstateAccess;
 
 class LLEventTimer;
 class LLEnvironmentSettings;
@@ -74,11 +77,12 @@ class LLWaterParamSet;
 
 class LLFloaterRegionInfo : public LLFloater, public LLFloaterSingleton<LLFloaterRegionInfo>
 {
-	friend class LLUISingleton<LLFloaterRegionInfo, VisibilityPolicy<LLFloater> >;
+	friend class LLUISingleton<LLFloaterRegionInfo, VisibilityPolicy<LLFloater>>;
 public:
 
 
 	/*virtual*/ void onOpen(/*const LLSD& key*/) override;
+	/*virtual*/ void onClose(bool app_quitting) override;
 	/*virtual*/ BOOL postBuild() override;
 // [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a)
 	/*virtual*/ void open() override;
@@ -95,6 +99,7 @@ public:
 	//static void incrementSerial() { sRequestSerial++; }
 
 	static LLPanelEstateInfo* getPanelEstate();
+	static LLPanelEstateAccess* getPanelAccess();
 	static LLPanelEstateCovenant* getPanelCovenant();
 	static LLPanelRegionTerrainInfo* getPanelRegionTerrain();
 	static LLPanelRegionExperiences* getPanelExperiences();
@@ -113,12 +118,11 @@ private:
 	LLFloaterRegionInfo(const LLSD& seed);
 	~LLFloaterRegionInfo();
 
-
-	
 protected:
 	void onTabSelected(const LLSD& param);
 	void disableTabCtrls();
 	void refreshFromRegion(LLViewerRegion* region);
+	void onGodLevelChange(U8 god_level);
 
 	// member data
 	LLTabContainer* mTab;
@@ -126,6 +130,10 @@ protected:
 	info_panels_t mInfoPanels;
 	//static S32 sRequestSerial;	// serial # of last EstateOwnerRequest
 	static LLUUID sRequestInvoice;
+
+private:
+	LLAgent::god_level_change_slot_t   mGodLevelChangeSlot;
+
 };
 
 
@@ -171,6 +179,7 @@ protected:
 					 const LLUUID& invoice,
 					 const strings_t& strings);
 	
+
 	// member data
 	LLHost mHost;
 };
@@ -293,34 +302,10 @@ public:
 	void onClickEditDayCycle();
 	void onClickEditDayCycleHelp();
 
-	void onClickAddAllowedAgent();
-	void onClickRemoveAllowedAgent();
-	void onClickAddAllowedGroup();
-	void onClickRemoveAllowedGroup();
-	void onClickAddBannedAgent();
-	void onClickRemoveBannedAgent();
-	void onClickAddEstateManager();
-	void onClickRemoveEstateManager();
 	void onClickKickUser();
 
-	// Group picker callback is different, can't use core methods below
-	bool addAllowedGroup(const LLSD& notification, const LLSD& response);
-	void addAllowedGroup2(LLUUID id);
 
-	// Core methods for all above add/remove button clicks
-	static void accessAddCore(U32 operation_flag, const std::string& dialog_name);
-	static bool accessAddCore2(const LLSD& notification, const LLSD& response);
-	static void accessAddCore3(const uuid_vec_t& ids, LLEstateAccessChangeInfo* change_info);
-
-	static void accessRemoveCore(U32 operation_flag, const std::string& dialog_name, const std::string& list_ctrl_name);
-	static bool accessRemoveCore2(const LLSD& notification, const LLSD& response);
-
-	// used for both add and remove operations
-	static bool accessCoreConfirm(const LLSD& notification, const LLSD& response);
 	bool kickUserConfirm(const LLSD& notification, const LLSD& response);
-
-	// Send the actual EstateOwnerRequest "estateaccessdelta" message
-	static void sendEstateAccessDelta(U32 flags, const LLUUID& agent_id);
 
 	void onKickUserCommit(const uuid_vec_t& ids, const std::vector<LLAvatarName>& names);
 	static void onClickMessageEstate(void* data);
@@ -357,7 +342,6 @@ protected:
 	void commitEstateAccess();
 	void commitEstateManagers();
 	
-	void clearAccessLists();
 	BOOL checkSunHourSlider(LLUICtrl* child_ctrl);
 
 	U32 mEstateID;
@@ -517,6 +501,72 @@ private:
 	LLPanelExperienceListEditor* mAllowed;
 	LLPanelExperienceListEditor* mBlocked;
 	LLUUID mDefaultExperience;
+};
+
+
+class LLPanelEstateAccess : public LLPanelRegionInfo
+{
+	LOG_CLASS(LLPanelEnvironmentInfo);
+
+public:
+	LLPanelEstateAccess();
+
+	virtual BOOL postBuild();
+	virtual void updateChild(LLUICtrl* child_ctrl);
+
+	void updateControls(LLViewerRegion* region);
+	void updateLists();
+
+	void setPendingUpdate(bool pending) { mPendingUpdate = pending; }
+	bool getPendingUpdate() { return mPendingUpdate; }
+
+	virtual bool refreshFromRegion(LLViewerRegion* region);
+
+	static void onEstateAccessReceived(const LLSD& result);
+
+private:
+	void onClickAddAllowedAgent();
+	void onClickRemoveAllowedAgent();
+	void onClickCopyAllowedList();
+	void onClickAddAllowedGroup();
+	void onClickRemoveAllowedGroup();
+	void onClickCopyAllowedGroupList();
+	void onClickAddBannedAgent();
+	void onClickRemoveBannedAgent();
+    void onClickCopyBannedList();
+	void onClickAddEstateManager();
+	void onClickRemoveEstateManager();
+	void onAllowedSearchEdit(const std::string& search_string);
+	void onAllowedGroupsSearchEdit(const std::string& search_string);
+	void onBannedSearchEdit(const std::string& search_string);
+
+	// Group picker callback is different, can't use core methods below
+	bool addAllowedGroup(const LLSD& notification, const LLSD& response);
+	void addAllowedGroup2(LLUUID id);
+
+	// Core methods for all above add/remove button clicks
+	static void accessAddCore(U32 operation_flag, const std::string& dialog_name);
+	static bool accessAddCore2(const LLSD& notification, const LLSD& response);
+	static void accessAddCore3(const uuid_vec_t& ids, const std::vector<LLAvatarName>& names, LLEstateAccessChangeInfo* change_info);
+
+	static void accessRemoveCore(U32 operation_flag, const std::string& dialog_name, const std::string& list_ctrl_name);
+	static bool accessRemoveCore2(const LLSD& notification, const LLSD& response);
+
+	// used for both add and remove operations
+	static bool accessCoreConfirm(const LLSD& notification, const LLSD& response);
+
+public:
+	// Send the actual EstateOwnerRequest "estateaccessdelta" message
+	static void sendEstateAccessDelta(U32 flags, const LLUUID& agent_id);
+
+private:
+	static void requestEstateGetAccessCoro(std::string url);
+
+	void searchAgent(LLNameListCtrl* listCtrl, const std::string& search_string);
+	void copyListToClipboard(std::string list_name);
+
+	bool mPendingUpdate;
+	bool mCtrlsEnabled;
 };
 
 #endif
