@@ -82,7 +82,7 @@ LLVoiceHandler gVoiceHandler;
 
 std::string LLVoiceClientStatusObserver::status2string(LLVoiceClientStatusObserver::EStatusType inStatus)
 {
-	std::string result = "UNKNOWN";
+	std::string result = "UNTRANSLATED";
 	
 	// Prevent copy-paste errors when updating this list...
 #define CASE(x)  case x:  result = #x;  break
@@ -95,12 +95,18 @@ std::string LLVoiceClientStatusObserver::status2string(LLVoiceClientStatusObserv
 			CASE(STATUS_JOINED);
 			CASE(STATUS_LEFT_CHANNEL);
 			CASE(STATUS_VOICE_DISABLED);
+			CASE(STATUS_VOICE_ENABLED);
 			CASE(BEGIN_ERROR_STATUS);
 			CASE(ERROR_CHANNEL_FULL);
 			CASE(ERROR_CHANNEL_LOCKED);
 			CASE(ERROR_NOT_AVAILABLE);
 			CASE(ERROR_UNKNOWN);
 		default:
+            {
+                std::ostringstream stream;
+                stream << "UNKNOWN(" << (int)inStatus << ")";
+                result = stream.str();
+            }
 			break;
 	}
 	
@@ -162,6 +168,14 @@ void LLVoiceClient::userAuthorized(const std::string& user_id, const LLUUID &age
 	}
 	mVoiceModule->init(m_servicePump);	
 	mVoiceModule->userAuthorized(user_id, agentID);
+}
+
+void LLVoiceClient::setHidden(bool hidden)
+{
+    if (mVoiceModule)
+    {
+        mVoiceModule->setHidden(hidden);
+    }
 }
 
 void LLVoiceClient::terminate()
@@ -835,7 +849,7 @@ void LLVoiceClient::addObserver(LLVoiceClientStatusObserver* observer)
 
 void LLVoiceClient::removeObserver(LLVoiceClientStatusObserver* observer)
 {
-	if (mVoiceModule) mVoiceModule->removeObserver(observer);
+	if (mVoiceModule && mVoiceModule->singletoneInstanceExists()) mVoiceModule->removeObserver(observer);
 }
 
 void LLVoiceClient::addObserver(LLFriendObserver* observer)
@@ -845,7 +859,7 @@ void LLVoiceClient::addObserver(LLFriendObserver* observer)
 
 void LLVoiceClient::removeObserver(LLFriendObserver* observer)
 {
-	if (mVoiceModule) mVoiceModule->removeObserver(observer);
+	if (mVoiceModule && mVoiceModule->singletoneInstanceExists()) mVoiceModule->removeObserver(observer);
 }
 
 void LLVoiceClient::addObserver(LLVoiceClientParticipantObserver* observer)
@@ -855,7 +869,7 @@ void LLVoiceClient::addObserver(LLVoiceClientParticipantObserver* observer)
 
 void LLVoiceClient::removeObserver(LLVoiceClientParticipantObserver* observer)
 {
-	if (mVoiceModule) mVoiceModule->removeObserver(observer);
+	if (mVoiceModule && mVoiceModule->singletoneInstanceExists()) mVoiceModule->removeObserver(observer);
 }
 
 std::string LLVoiceClient::sipURIFromID(const LLUUID &id)

@@ -2915,6 +2915,18 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <string>slvoice</string>
         <key>platforms</key>
         <map>
+          <key>darwin</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>511a9c3fd4b6c76a8a737d06bba1c291</string>
+              <key>url</key>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/oz-426-slvoice/rev/330003/arch/Darwin/installer/slvoice-4.9.0002.27586.330003-darwin-330003.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>darwin</string>
+          </map>
           <key>darwin64</key>
           <map>
             <key>archive</key>

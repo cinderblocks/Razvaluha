@@ -40,8 +40,19 @@ class LLVOAvatar;
 
 // devices
 
-typedef std::vector<std::string> LLVoiceDeviceList;	
+class LLVoiceDevice
+{
+  public:
+    std::string display_name; // friendly value for the user
+    std::string full_name;  // internal value for selection
 
+    LLVoiceDevice(const std::string& display_name, const std::string& full_name)
+        :display_name(display_name)
+        ,full_name(full_name)
+    {
+    };
+};
+typedef std::vector<LLVoiceDevice> LLVoiceDeviceList;
 
 class LLVoiceClientParticipantObserver
 {
@@ -106,8 +117,12 @@ public:
 	
 	virtual bool isVoiceWorking() const = 0; // connected to a voice server and voice channel
     
+    virtual void setHidden(bool hidden)=0;  //  Hides the user from voice.
+
 	virtual const LLVoiceVersionInfo& getVersion()=0;
 	
+	virtual bool singletoneInstanceExists()=0;
+
 	/////////////////////
 	/// @name Tuning
 	//@{
@@ -344,6 +359,7 @@ public:
 
 	void setCaptureDevice(const std::string& name);
 	void setRenderDevice(const std::string& name);
+    void setHidden(bool hidden);
 
 	const LLVoiceDeviceList& getCaptureDevices();
 	const LLVoiceDeviceList& getRenderDevices();

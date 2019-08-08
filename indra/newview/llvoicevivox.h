@@ -74,6 +74,8 @@ public:
 	// Returns true if vivox has successfully logged in and is not in error state	
 	bool isVoiceWorking() const override;
 
+	bool singletoneInstanceExists() override;
+
 	/////////////////////
 	/// @name Tuning
 	//@{
@@ -435,10 +437,10 @@ protected:
 	//----------------------------------
 	// devices
 	void clearCaptureDevices();
-	void addCaptureDevice(const std::string& name);
+	void addCaptureDevice(const LLVoiceDevice& device);
 	void clearRenderDevices();
 	void setDevicesListUpdated(bool state);
-	void addRenderDevice(const std::string& name);	
+	void addRenderDevice(const LLVoiceDevice& device);	
 	void buildSetAudioDevices(std::ostringstream &stream);
 	
 	void getCaptureDevicesSendMessage();
@@ -749,6 +751,7 @@ private:
 	std::string getAudioSessionURI();
 	std::string getAudioSessionHandle();
     
+    void setHidden(bool hidden) override; //virtual
 	void sendPositionAndVolumeUpdate(void);
 	
     void sendCaptureAndRenderDevices();
@@ -779,6 +782,7 @@ private:
 	
 	bool		mMuteMic;
 	bool		mMuteMicDirty;
+    bool        mHidden;       //Set to true during teleport to hide the agent's position.
 			
 	// Set to true when the friends list is known to have changed.
 	bool		mFriendsListDirty;
@@ -787,8 +791,7 @@ private:
 	{
 		earLocCamera = 0,		// ear at camera
 		earLocAvatar,			// ear at avatar
-		earLocMixed,			// ear at avatar location/camera direction
-		earLocSpeaker			// ear at speaker, speakers not affected by position
+		earLocMixed				// ear at avatar location/camera direction
 	};
 	
 	S32			mEarLocation;  

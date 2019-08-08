@@ -571,10 +571,11 @@ public:
     /// Generate a distinct name for a listener -- see listen()
     static std::string inventName(const std::string& pfx="listener");
 
-private:
-    friend class LLEventPumps;
     /// flush queued events
     virtual void flush() {}
+
+private:
+    friend class LLEventPumps;
 
     virtual void reset();
 
@@ -639,15 +640,21 @@ public:
  *   LLEventMailDrop
  *****************************************************************************/
 /**
- * LLEventMailDrop is a specialization of LLEventStream. Events are posted normally, 
- * however if no listeners return that they have handled the event it is placed in 
- * a queue. Subsequent attaching listeners will receive stored events from the queue 
- * until a listener indicates that the event has been handled.  In order to receive 
- * multiple events from a mail drop the listener must disconnect and reconnect.
+ * LLEventMailDrop is a specialization of LLEventStream. Events are posted
+ * normally, however if no listener returns that it has handled the event
+ * (returns true), it is placed in a queue. Subsequent attaching listeners
+ * will receive stored events from the queue until some listener indicates
+ * that the event has been handled.
+ *
+ * LLEventMailDrop completely decouples the timing of post() calls from
+ * listen() calls: every event posted to an LLEventMailDrop is eventually seen
+ * by all listeners, until some listener consumes it. The caveat is that each
+ * event *must* eventually reach a listener that will consume it, else the
+ * queue will grow to arbitrary length.
  * 
  * @NOTE: When using an LLEventMailDrop (or LLEventQueue) with a LLEventTimeout or
- * LLEventFilter attaching the filter downstream using Timeout's constructor will
- * cause the MailDrop to discharge any of it's stored events. The timeout should 
+ * LLEventFilter attaching the filter downstream, using Timeout's constructor will
+ * cause the MailDrop to discharge any of its stored events. The timeout should 
  * instead be connected upstream using its listen() method.  
  * See llcoro::suspendUntilEventOnWithTimeout() for an example.
  */
@@ -658,10 +665,12 @@ public:
     virtual ~LLEventMailDrop() {}
     
     /// Post an event to all listeners
-	bool post(const LLSD& event) override;
+    virtual bool post(const LLSD& event) override;
     
+    /// Remove any history stored in the mail drop.
+    virtual void flush() override { mEventHistory.clear(); LLEventStream::flush(); };
 protected:
-	LLBoundListener listen_impl(const std::string& name, const LLEventListener&,
+    virtual LLBoundListener listen_impl(const std::string& name, const LLEventListener&,
                                         const NameList& after,
                                         const NameList& before) override;
 
@@ -686,7 +695,6 @@ public:
     /// Post an event to all listeners
 	bool post(const LLSD& event) override;
 
-private:
     /// flush queued events
 	void flush() override;
 
