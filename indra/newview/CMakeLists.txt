@@ -9,7 +9,6 @@ include(BuildVersion)
 include(BuildBranding)
 include(CMakeCopyIfDifferent)
 include(DBusGlib)
-include(FindVCRedist)
 include(FMODSTUDIO)
 include(GLOD)
 include(Hunspell)
@@ -1645,29 +1644,6 @@ if (WINDOWS)
 
     add_custom_target(copy_w_viewer_manifest ALL DEPENDS ${CMAKE_CFG_INTDIR}/copy_touched.bat)
 
-    if(EXISTS ${VISUAL_STUDIO_REDISTRIBUTABLE_PATH})
-      add_custom_command(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/redist
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/redist"
-        DEPENDS copy_w_viewer_manifest
-        COMMENT "Creating redist dir"
-      )
-      add_custom_command(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/redist/${VISUAL_STUDIO_REDISTRIBUTABLE_NAME}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-		ARGS
-		${VISUAL_STUDIO_REDISTRIBUTABLE_PATH}
-		${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/redist/${VISUAL_STUDIO_REDISTRIBUTABLE_NAME}
-        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/redist
-        COMMENT "Copying ${VISUAL_STUDIO_REDISTRIBUTABLE_PATH} to redist dir"
-      )
-
-      add_custom_target(copy_w_redist ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/redist/${VISUAL_STUDIO_REDISTRIBUTABLE_NAME})
-
-	  add_dependencies(${VIEWER_BINARY_NAME} copy_w_redist)
-    endif()
-
-
     add_dependencies(${VIEWER_BINARY_NAME} stage_third_party_libs llcommon copy_w_viewer_manifest)
 
     if (EXISTS ${CMAKE_SOURCE_DIR}/copy_win_scripts)
@@ -1872,13 +1848,12 @@ if (LINUX)
       )
 
   add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin)
-  add_custom_target(copy_l_viewer_manifest ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.copy_touched)
 
   if (PACKAGE)
     add_custom_target(llpackage ALL DEPENDS ${product}.tar.xz)
-    # Make sure we don't run two instances of viewer_manifest.py at the same time.
-    add_dependencies(llpackage copy_l_viewer_manifest)
     check_message_template(llpackage)
+  else (PACKAGE)
+    add_custom_target(copy_l_viewer_manifest ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.copy_touched)
   endif (PACKAGE)
 endif (LINUX)
 

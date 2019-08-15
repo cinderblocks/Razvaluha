@@ -7208,16 +7208,6 @@ Deactivated gestures with same trigger:
 
   <notification
    icon="notify.tga"
-   name="NoQuickTime"
-   persist="true"
-   type="notify">
-Apple&apos;s QuickTime software does not appear to be installed on your system.
-If you want to view streaming media on parcels that support it you should go to the QuickTime site (http://www.apple.com/quicktime) and install the QuickTime Player.
-  <tag>fail</tag>
-  </notification>
-
-  <notification
-   icon="notify.tga"
    name="NoPlugin"
    persist="true"
    type="notify">
@@ -11936,6 +11926,17 @@ Do you wish to export anyway?
    name="WavefrontExportSuccess"
    type="notifytip">
 Object successfully exported to: [FILENAME]
+  </notification>
+
+  <notification
+   icon="alertmodal.tga"
+   name="SupportChatShowInfo"
+   type="alertmodal">
+You have just entered a [SHORT_APP_NAME] support group chat. To help provide support, [SHORT_APP_NAME] can prepend useful information to your messages. This can easily be toggled later via the checkbox in the support group chat.
+  <usetemplate
+   name="okcancelbuttons"
+   notext="Don't Bother"
+   yestext="I Consent!"/>
   </notification>
 
   <notification

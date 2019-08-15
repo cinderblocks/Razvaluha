@@ -144,7 +144,7 @@ public:
 	void pauseAllMotions();
 	void unpauseAllMotions();
 	BOOL isPaused() const { return mPaused; }
-	U32 getPausedFrame() const { return mPausedFrame; }
+	U64 getPausedFrame() const { return mPausedFrame; }
 
 	void setTimeStep(F32 step);
     F32 getTimeStep() const { return mTimeStep; }
@@ -218,7 +218,7 @@ protected:
 	F32					mLastTime;
 	BOOL				mHasRunOnce;
 	BOOL				mPaused;
-	U32					mPausedFrame;
+	U64					mPausedFrame;
 	F32					mTimeStep;
 	S32					mTimeStepCount;
 	F32					mLastInterp;

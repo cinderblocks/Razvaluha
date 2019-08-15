@@ -4274,6 +4274,20 @@ void LLPanelEstateAccess::sendEstateAccessDelta(U32 flags, const LLUUID& agent_o
 	msg->nextBlock("ParamList");
 	msg->addString("Parameter", buf);
 
+
+	if (flags & (ESTATE_ACCESS_ALLOWED_AGENT_ADD | ESTATE_ACCESS_ALLOWED_AGENT_REMOVE |
+		         ESTATE_ACCESS_BANNED_AGENT_ADD | ESTATE_ACCESS_BANNED_AGENT_REMOVE))
+	{
+		if (auto panel = LLFloaterRegionInfo::getPanelAccess())
+		{
+			// Clear these out before we ask for an update
+			if (auto name_list = panel->getChild<LLNameListCtrl>("allowed_avatar_name_list"))
+				name_list->deleteAllItems();
+			if (auto name_list = panel->getChild<LLNameListCtrl>("banned_avatar_name_list"))
+				name_list->deleteAllItems();
+		}
+	}
+
 	gAgent.sendReliableMessage();
 }
 
@@ -4320,6 +4334,7 @@ void LLPanelEstateAccess::onEstateAccessReceived(const LLSD& result)
 		std::string msg = LLTrans::getString("RegionInfoAllowedResidents", args);
 		panel->getChild<LLUICtrl>("allow_resident_label")->setValue(LLSD(msg));
 
+		const auto order = allowed_agent_name_list->getSortOrder();
 		allowed_agent_name_list->clearSortOrder();
 		allowed_agent_name_list->deleteAllItems();
 		for (LLSD::array_const_iterator it = result["AllowedAgents"].beginArray(); it != result["AllowedAgents"].endArray(); ++it)
@@ -4327,7 +4342,7 @@ void LLPanelEstateAccess::onEstateAccessReceived(const LLSD& result)
 			LLUUID id = (*it)["id"].asUUID(); 
 			allowed_agent_name_list->addNameItem(id);
 		}
-		allowed_agent_name_list->sortByName(TRUE);
+		allowed_agent_name_list->setSortOrder(order);
 	}
 
 	LLNameListCtrl* banned_agent_name_list = panel->getChild<LLNameListCtrl>("banned_avatar_name_list");
@@ -4339,6 +4354,7 @@ void LLPanelEstateAccess::onEstateAccessReceived(const LLSD& result)
 		std::string msg = LLTrans::getString("RegionInfoBannedResidents", args);
 		panel->getChild<LLUICtrl>("ban_resident_label")->setValue(LLSD(msg));
 
+		const auto order = banned_agent_name_list->getSortOrder();
 		banned_agent_name_list->clearSortOrder();
 		banned_agent_name_list->deleteAllItems();
 		static const auto na = LLTrans::getString("na");
@@ -4371,7 +4387,7 @@ void LLPanelEstateAccess::onEstateAccessReceived(const LLSD& result)
 
 			banned_agent_name_list->addElement(item);
 		}
-		banned_agent_name_list->sortByName(TRUE);
+		banned_agent_name_list->setSortOrder(order);
 	}
 
 	LLNameListCtrl* allowed_group_name_list = panel->getChild<LLNameListCtrl>("allowed_group_name_list");
@@ -4383,6 +4399,7 @@ void LLPanelEstateAccess::onEstateAccessReceived(const LLSD& result)
 		std::string msg = LLTrans::getString("RegionInfoAllowedGroups", args);
 		panel->getChild<LLUICtrl>("allow_group_label")->setValue(LLSD(msg));
 
+		const auto order = allowed_group_name_list->getSortOrder();
 		allowed_group_name_list->clearSortOrder();
 		allowed_group_name_list->deleteAllItems();
 		for (LLSD::array_const_iterator it = result["AllowedGroups"].beginArray(); it != result["AllowedGroups"].endArray(); ++it)
@@ -4390,7 +4407,7 @@ void LLPanelEstateAccess::onEstateAccessReceived(const LLSD& result)
 			LLUUID id = (*it)["id"].asUUID();
 			allowed_group_name_list->addGroupNameItem(id);
 		}
-		allowed_group_name_list->sortByName(TRUE);
+		allowed_group_name_list->setSortOrder(order);
 	}
 
 	LLNameListCtrl* estate_manager_name_list = panel->getChild<LLNameListCtrl>("estate_manager_name_list");
@@ -4402,6 +4419,7 @@ void LLPanelEstateAccess::onEstateAccessReceived(const LLSD& result)
 		std::string msg = LLTrans::getString("RegionInfoEstateManagers", args);
 		panel->getChild<LLUICtrl>("estate_manager_label")->setValue(LLSD(msg));
 
+		const auto order = estate_manager_name_list->getSortOrder();
 		estate_manager_name_list->clearSortOrder();
 		estate_manager_name_list->deleteAllItems();
 		for (LLSD::array_const_iterator it = result["Managers"].beginArray(); it != result["Managers"].endArray(); ++it)
@@ -4409,7 +4427,7 @@ void LLPanelEstateAccess::onEstateAccessReceived(const LLSD& result)
 			LLUUID id = (*it)["agent_id"].asUUID();
 			estate_manager_name_list->addNameItem(id);
 		}
-		estate_manager_name_list->sortByName(TRUE);
+		estate_manager_name_list->setSortOrder(order);
 	}
 
 
@@ -4481,6 +4499,12 @@ void LLPanelEstateAccess::copyListToClipboard(std::string list_name)
 
 bool LLPanelEstateAccess::refreshFromRegion(LLViewerRegion* region)
 {
+	// Clear these out before we ask for an update
+	if (auto name_list = getChild<LLNameListCtrl>("allowed_avatar_name_list"))
+		name_list->deleteAllItems();
+	if (auto name_list = getChild<LLNameListCtrl>("banned_avatar_name_list"))
+		name_list->deleteAllItems();
+
 	updateLists();
 	return LLPanelRegionInfo::refreshFromRegion(region);
 }

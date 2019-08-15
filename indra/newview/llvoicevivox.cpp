@@ -3960,8 +3960,13 @@ void LLVivoxVoiceClient::participantUpdatedEvent(
 			 So, we have to call LLSpeakerMgr::update() here. 
 			 */
 			LLVoiceChannel* voice_cnl = LLVoiceChannel::getCurrentVoiceChannel();
-			
-			// ignore session ID of local chat                                                                                                    
+
+			// Singu Note: This block is different so we also update the active speaker list.
+			// also initialize voice moderate_mode depend on Agent's participant. See EXT-6937.
+			// *TODO: remove once a way to request the current voice channel moderation mode is implemented.
+			bool moderate = gAgentID == participant->mAvatarID;
+
+			// ignore session ID of local chat
 			if (voice_cnl && voice_cnl->getSessionID().notNull())
 			{
 				/* Singu TODO: LLIMModel::getSpeakerManager
@@ -3973,14 +3978,20 @@ void LLVivoxVoiceClient::participantUpdatedEvent(
 				{
 					speaker_manager->update(true);
 
-					// also initialize voice moderate_mode depend on Agent's participant. See EXT-6937.
-					// *TODO: remove once a way to request the current voice channel moderation mode is implemented.
-					if (gAgent.getID() == participant->mAvatarID)
+					if (moderate)
 					{
 						speaker_manager->initVoiceModerateMode();
 					}
 				}
 			}
+			else if (voice_cnl) // Local
+			{
+				LLLocalSpeakerMgr::instance().update(true);
+			}
+			// Always update active speakers
+			auto& inst(LLActiveSpeakerMgr::instance());
+			inst.update(true);
+			if (moderate) inst.initVoiceModerateMode();
 		}
 		else
 		{

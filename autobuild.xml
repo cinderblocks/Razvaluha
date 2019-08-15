@@ -38,7 +38,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/SDL-1.2.15-linux64-201609250149.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/SDL-1.2.15-linux64-201609250149.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -70,7 +70,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/SDL2-2.0.5-windows-201703090609.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/SDL2-2.0.5-windows-201703090609.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -84,7 +84,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc141/SDL2-2.0.5-windows64-201703081654.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows64/lib-vc141/SDL2-2.0.5-windows64-201703081654.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -118,7 +118,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/common/abseil_cpp-20190407.190972335-common-190972335.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/common/abseil_cpp-20190407.190972335-common-190972335.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -150,7 +150,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/apr_suite-1.6.3-1.6.1-1.2.2-darwin-201712261955.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/apr_suite-1.6.3-1.6.1-1.2.2-darwin-201712261955.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -176,7 +176,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/apr_suite-1.5.2-linux64-201609250304.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/apr_suite-1.5.2-linux64-201609250304.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -190,7 +190,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/apr_suite-1.5.2-windows-201703090634.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/apr_suite-1.5.2-windows-201703090634.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -204,7 +204,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/apr_suite-1.6.5.190371632-windows64-190371632.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/apr_suite-1.6.5.190371632-windows64-190371632.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -236,7 +236,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/boost-1.66.0-darwin-201712261623.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/boost-1.66.0-darwin-201712261623.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -262,7 +262,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/boost-1.63.0-linux64-201706220306.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/boost-1.63.0-linux64-201706220306.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -276,7 +276,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/boost-1.63.0-windows-201703281813.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/boost-1.63.0-windows-201703281813.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -290,7 +290,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/boost-1.69-windows64-190370738.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/boost-1.69-windows64-190370738.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -362,7 +362,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/colladadom-2.3-darwin-201712261921.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/colladadom-2.3-darwin-201712261921.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -386,7 +386,7 @@
               <key>hash</key>
               <string>5c9bf2dc7952e9103a0924d4ef9e230c</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/colladadom-2.3-linux64-201706220338.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/colladadom-2.3-linux64-201706220338.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -398,7 +398,7 @@
               <key>hash</key>
               <string>60bd2dbac5559141e05be6c424cf9cd0</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/colladadom-2.3-windows-201703281922.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/colladadom-2.3-windows-201703281922.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -412,7 +412,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/colladadom-2.3.190371156-windows64-190371156.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/colladadom-2.3.190371156-windows64-190371156.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -444,7 +444,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/curl-7.57.0-darwin-201712262218.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/curl-7.57.0-darwin-201712262218.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -468,7 +468,7 @@
               <key>hash</key>
               <string>9d5e31cbe4b3d129cb458edb3cf271d4</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/curl-7.55.1-linux64-201709282020.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/curl-7.55.1-linux64-201709282020.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -482,7 +482,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/curl-7.56.1-windows-201711241310.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/curl-7.56.1-windows-201711241310.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -496,7 +496,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/curl-7.63.0.190361116-windows64-190361116.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/curl-7.63.0.190361116-windows64-190361116.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -632,7 +632,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/discord_rpc-3.4.0.190570542-windows64-190570542.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/discord_rpc-3.4.0.190570542-windows64-190570542.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -702,7 +702,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1920/dullahan-1.1.1320_73.1.12-gee4b49f-chromium-73.0.3683.75-windows64-190871757.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1920/dullahan-1.1.1320_73.1.12-gee4b49f-chromium-73.0.3683.75-windows64-190871757.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -758,7 +758,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/expat-2.2.5-darwin-201712261952.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/expat-2.2.5-darwin-201712261952.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -784,7 +784,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/expat-2.2.0-linux64-201609241339.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/expat-2.2.0-linux64-201609241339.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -798,7 +798,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/expat-2.2.0-windows-201703090626.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/expat-2.2.0-windows-201703090626.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -812,7 +812,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/expat-2.2.6.190371437-windows64-190371437.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/expat-2.2.6.190371437-windows64-190371437.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -858,7 +858,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux/lib/fmodstudio-1.06.07-linux-201507231333.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux/lib/fmodstudio-1.06.07-linux-201507231333.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux</string>
@@ -944,7 +944,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/fontconfig-2.12.1-linux64-201709282143.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/fontconfig-2.12.1-linux64-201709282143.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -976,7 +976,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/common/fonts-20190402.1-common-190922141.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/common/fonts-20190402.1-common-190922141.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -1008,7 +1008,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc14/freeglut-3.0.0-windows-201601151006.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc14/freeglut-3.0.0-windows-201601151006.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1022,7 +1022,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc14/freeglut-3.0.0-windows64-201512130218.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows64/lib-vc14/freeglut-3.0.0-windows64-201512130218.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -1054,7 +1054,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/freetype-2.8.1-darwin-201712262206.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/freetype-2.8.1-darwin-201712262206.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1080,7 +1080,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/freetype-2.8.0-linux64-201709282140.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/freetype-2.8.0-linux64-201709282140.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1094,7 +1094,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/freetype-2.8.0-windows-201710192344.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/freetype-2.8.0-windows-201710192344.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1108,7 +1108,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/freetype-2.9.1.190361344-windows64-190361344.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/freetype-2.9.1.190361344-windows64-190361344.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -1140,7 +1140,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/common/lib/glext-20150325-common-201504222056.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/common/lib/glext-20150325-common-201504222056.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -1202,7 +1202,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/common/lib/glm-0.9.8.5-common-201712250831.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/common/lib/glm-0.9.8.5-common-201712250831.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -1232,7 +1232,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/glod-1.0pre4-darwin-201712262108.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/glod-1.0pre4-darwin-201712262108.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1258,7 +1258,7 @@
               <key>hash</key>
               <string>72d9df7676a1238f6f59b308e49b4a6e</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/glod-1.0pre4-linux64-201609240327.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/glod-1.0pre4-linux64-201609240327.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1286,7 +1286,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/glod-1.0pre3.190390340-windows64-190390340.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/glod-1.0pre3.190390340-windows64-190390340.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -1318,7 +1318,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/google_breakpad-9e60a27-darwin-201511222009.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/google_breakpad-9e60a27-darwin-201511222009.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1354,7 +1354,7 @@
               <key>hash</key>
               <string>fa7f683ba4ddd7db777c78c8213d2e46</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/google_breakpad-7398ce15b79da-windows-201703090621.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/google_breakpad-7398ce15b79da-windows-201703090621.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1368,7 +1368,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc141/google_breakpad-7398ce15b79da-windows64-201703081616.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows64/lib-vc141/google_breakpad-7398ce15b79da-windows64-201703081616.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -1410,7 +1410,7 @@
               <key>hash</key>
               <string>e81d9e4526ceac49f1532d6518085985</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib/gperftools-2.1-windows-20140120.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib/gperftools-2.1-windows-20140120.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1422,7 +1422,7 @@
               <key>hash</key>
               <string>da6ec7472ed69fe3231eb95432a789d9</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib/gperftools-2.2-windows64-20140605.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows64/lib/gperftools-2.2-windows64-20140605.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1452,7 +1452,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/common/lib/gstreamer-0.10.6.201501032013-common-201501032013.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/common/lib/gstreamer-0.10.6.201501032013-common-201501032013.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -1602,7 +1602,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/jpeglib-1.5.3-darwin-201712262014.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/jpeglib-1.5.3-darwin-201712262014.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1628,7 +1628,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/jpeglib-1.5.1-linux64-201609241330.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/jpeglib-1.5.1-linux64-201609241330.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1642,7 +1642,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/jpeglib-1.5.1-windows-201703090615.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/jpeglib-1.5.1-windows-201703090615.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1656,7 +1656,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc1415/jpeglib-2.0.0-windows64-201809210614.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows64/lib-vc1415/jpeglib-2.0.0-windows64-201809210614.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -1768,7 +1768,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libhunspell-1.6.2-darwin-201712262132.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/libhunspell-1.6.2-darwin-201712262132.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1794,7 +1794,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/libhunspell-1.6.0-linux64-201703121035.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/libhunspell-1.6.0-linux64-201703121035.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1808,7 +1808,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libhunspell-1.6.0-windows-201703090619.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/libhunspell-1.6.0-windows-201703090619.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1822,7 +1822,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libhunspell-1.6.2-windows64-201712251236.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows64/lib-vc142/libhunspell-1.6.2-windows64-201712251236.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -1868,7 +1868,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-trusty/libidn-1.32-linux64-201603240734.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-trusty/libidn-1.32-linux64-201603240734.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1900,7 +1900,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libndofdev-0.1-darwin-201712262016.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/libndofdev-0.1-darwin-201712262016.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1914,7 +1914,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libndofdev-0.1-windows-201703090613.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/libndofdev-0.1-windows-201703090613.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -1928,7 +1928,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libndofdev-0.1-windows64-201712251124.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows64/lib-vc142/libndofdev-0.1-windows64-201712251124.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -1960,7 +1960,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/libndofdev_open-0.8-linux64-201609250211.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/libndofdev_open-0.8-linux64-201609250211.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -1992,7 +1992,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libpng-1.6.34-darwin-201712262200.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/libpng-1.6.34-darwin-201712262200.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2016,7 +2016,7 @@
               <key>hash</key>
               <string>a3615cbbb3aa02bb561f3ee0ba7897ba</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/libpng-1.6.34-linux64-201711051519.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/libpng-1.6.34-linux64-201711051519.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2028,7 +2028,7 @@
               <key>hash</key>
               <string>9aad0afaf2c1895224454c1dc433f481</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libpng-1.6.34-windows-201710172201.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/libpng-1.6.34-windows-201710172201.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2042,7 +2042,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/libpng-1.6.36.190361231-windows64-190361231.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/libpng-1.6.36.190361231-windows64-190361231.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2116,7 +2116,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/libxml2-2.9.7-darwin-201712261252.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/libxml2-2.9.7-darwin-201712261252.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2140,7 +2140,7 @@
               <key>hash</key>
               <string>e33e5ea00d88e32a458ac66af497ebbe</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/libxml2-2.9.4-linux64-201703120604.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/libxml2-2.9.4-linux64-201703120604.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2152,7 +2152,7 @@
               <key>hash</key>
               <string>a3f7c3421e9e4921dda3558c3b36dc59</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libxml2-2.9.4-windows-201703090740.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/libxml2-2.9.4-windows-201703090740.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2166,7 +2166,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/libxml2-2.9.9.190371011-windows64-190371011.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/libxml2-2.9.9.190371011-windows64-190371011.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2227,7 +2227,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/common/llca-201903280123.0-common-190870823.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/common/llca-201903280123.0-common-190870823.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -2347,7 +2347,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib/llphysicsextensions_stub-1.0.298370-windows64-298370.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows64/lib/llphysicsextensions_stub-1.0.298370-windows64-298370.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2405,7 +2405,7 @@
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/common/modernjson-3.5.0-common-190371845.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/common/modernjson-3.5.0-common-190371845.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
@@ -2486,7 +2486,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/nghttp2-1.36.0.190360804-windows64-190360804.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/nghttp2-1.36.0.190360804-windows64-190360804.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2562,7 +2562,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/ogg_vorbis-1.3.2-1.3.5-darwin-201712262100.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/ogg_vorbis-1.3.2-1.3.5-darwin-201712262100.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2586,7 +2586,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>1c6258ddd8d3794402fefcd53e7a8ca0</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/ogg_vorbis-1.3.2-1.3.5-linux64-201609241255.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/ogg_vorbis-1.3.2-1.3.5-linux64-201609241255.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2598,7 +2598,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>41d090321853ea941c5ca57ba0d471d0</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/ogg_vorbis-1.3.2-1.3.5-windows-201703090612.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/ogg_vorbis-1.3.2-1.3.5-windows-201703090612.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2612,7 +2612,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/ogg_vorbis-1.3.3-1.3.6.190390237-windows64-190390237.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/ogg_vorbis-1.3.3-1.3.6.190390237-windows64-190390237.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2674,7 +2674,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/openal-1.16.0-1.1.0-darwin-201412160747.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/openal-1.16.0-1.1.0-darwin-201412160747.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2702,7 +2702,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/openal-1.17.2-1.1.0-linux64-201609241409.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/openal-1.17.2-1.1.0-linux64-201609241409.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2716,7 +2716,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib/openal-1.16.0-1.1.0-windows-201504270536.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib/openal-1.16.0-1.1.0-windows-201504270536.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2728,7 +2728,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>fec29528320a2a67ffa7b3900135592d</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib/openal-1.16.0-1.1.0-windows64-201504270534.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows64/lib/openal-1.16.0-1.1.0-windows64-201504270534.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2760,7 +2760,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/openjpeg-1.5.1-darwin-201712262138.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/openjpeg-1.5.1-darwin-201712262138.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2784,7 +2784,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>2855cc01de820f3f9c1c43845aa8f308</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/openjpeg-1.5.1-linux64-201609240352.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/openjpeg-1.5.1-linux64-201609240352.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2796,7 +2796,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>1dd583ca386e5c324fe2ec2046919153</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/openjpeg-1.5.1-windows-201705200855.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/openjpeg-1.5.1-windows-201705200855.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2810,7 +2810,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/openjpeg-1.5.1.190381312-windows64-190381312.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/openjpeg-1.5.1.190381312-windows64-190381312.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2842,7 +2842,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/openssl-1.1.0g-darwin-201712261237.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/openssl-1.1.0g-darwin-201712261237.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -2866,7 +2866,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>5dbb6b1e1081976871a31c22ced194c5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/openssl-1.1.0f-linux64-201706212104.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/openssl-1.1.0f-linux64-201706212104.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -2878,7 +2878,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>0d25e1794f5d86b675484bf5eda799e4</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/openssl-1.1.0g-windows-201711200028.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/openssl-1.1.0g-windows-201711200028.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2892,7 +2892,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/openssl-1.1.1a.190361040-windows64-190361040.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/openssl-1.1.1a.190361040-windows64-190361040.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -2958,7 +2958,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>df43d3df49296bfe93996ec537b9eddf</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib/slvoice-4.6.0009.20030-linux64-201501031918.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib/slvoice-4.6.0009.20030-linux64-201501031918.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -3044,7 +3044,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/uriparser-0.8.4-darwin-201511221948.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/uriparser-0.8.4-darwin-201511221948.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -3068,7 +3068,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>cf21d9f7ed7949d2230413e8a391fb73</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/uriparser-0.8.4-linux64-201609241428.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/uriparser-0.8.4-linux64-201609241428.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -3080,7 +3080,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>89f3fc7f3fe396439d306f099d1a12d3</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/uriparser-0.8.4-windows-201703090606.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/uriparser-0.8.4-windows-201703090606.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -3094,7 +3094,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/uriparser-0.9.1-windows64-190390033.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/uriparser-0.9.1-windows64-190390033.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -3138,7 +3138,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc/viewer_manager-2.0.190681402-windows-190681402.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc/viewer_manager-2.0.190681402-windows-190681402.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -3238,7 +3238,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/xmlrpc_epi-0.54.2-darwin-201712262005.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/xmlrpc_epi-0.54.2-darwin-201712262005.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -3262,7 +3262,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>f711601f801e9321481ee0116a629a32</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/xmlrpc_epi-0.54.2-linux64-201609250229.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/xmlrpc_epi-0.54.2-linux64-201609250229.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -3274,7 +3274,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>4cd5d80362fef95fe486b5bc1c373174</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/xmlrpc_epi-0.54.2-windows-201703090632.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/xmlrpc_epi-0.54.2-windows-201703090632.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -3288,7 +3288,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/xmlrpc_epi-0.54.2.190371701-windows64-190371701.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/xmlrpc_epi-0.54.2.190371701-windows64-190371701.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
@@ -3320,7 +3320,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/zlib-1.2.11-darwin-201712261200.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/darwin/lib/zlib-1.2.11-darwin-201712261200.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -3346,7 +3346,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>a11a8de934a96eede6fadc6e1639efb6</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/zlib-1.2.11-linux64-201703120446.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/linux64/lib-xenial/zlib-1.2.11-linux64-201703120446.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -3358,7 +3358,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash</key>
               <string>75651f8b2fa45545461f73ba583180bb</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/zlib-1.2.11-windows-201703090604.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/windows/lib-vc141/zlib-1.2.11-windows-201703090604.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -3372,7 +3372,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/windows64/msvc-1916/zlib-1.2.11.190360338-windows64-190360338.tar.bz2</string>
+              <string>http://libs.virtual-nexus.xyz/packages/windows64/msvc-1916/zlib-1.2.11.190360338-windows64-190360338.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>

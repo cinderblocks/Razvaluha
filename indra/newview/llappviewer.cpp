@@ -260,7 +260,6 @@ F32 gSimLastTime; // Used in LLAppViewer::init and send_stats()
 F32 gSimFrames;
 
 BOOL gShowObjectUpdates = FALSE;
-BOOL gUseQuickTime = TRUE;
 
 BOOL gAcceptTOS = FALSE;
 BOOL gAcceptCriticalMessage = FALSE;
