@@ -32,8 +32,9 @@
 #include "llgl.h"
 #include "llviewertexture.h"
 #include "llui.h"
-#include <list>
 #include "lluiimage.h"
+#include <list>
+#include <unordered_map>
 
 const U32 LL_IMAGE_REZ_LOSSLESS_CUTOFF = 128;
 
@@ -188,6 +189,8 @@ public:
 private:
 	typedef std::map< LLUUID, LLPointer<LLViewerFetchedTexture> > uuid_map_t;
 	uuid_map_t mUUIDMap;
+	typedef std::unordered_map< LLUUID, LLPointer<LLViewerFetchedTexture>* > uuid_dict_t;
+	uuid_map_t mUUIDDict;
 	LLUUID mLastUpdateUUID;
 	LLUUID mLastFetchUUID;
 	

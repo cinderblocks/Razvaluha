@@ -681,7 +681,8 @@ LLWindowWin32::LLWindowWin32(LLWindowCallbacks* callbacks,
 
 	initDPIAwareness();
 
-	if (!switchContext(mFullscreen, windowSize, vsync_mode, &windowPos))
+
+	if (!switchContext(mFullscreen, windowSize, vsync_mode, nullptr, nullptr, &windowPos))
 	{
 		return;
 	}
@@ -960,7 +961,7 @@ BOOL LLWindowWin32::setSizeImpl(const LLCoordWindow size)
 }
 
 // changing fullscreen resolution
-BOOL LLWindowWin32::switchContext(BOOL fullscreen, const LLCoordScreen &size, const S32 vsync_mode, const LLCoordScreen * const posp)
+BOOL LLWindowWin32::switchContext(BOOL fullscreen, const LLCoordScreen &size, const S32 vsync_mode, std::function<void()> stopFn, std::function<void(bool)> restoreFn, const LLCoordScreen * const posp)
 {
 	GLuint	pixel_format;
 	DEVMODE dev_mode;
@@ -990,20 +991,25 @@ BOOL LLWindowWin32::switchContext(BOOL fullscreen, const LLCoordScreen &size, co
 	}
 
 	gGLManager.shutdownGL();
-	//destroy gl context
+	class ContextHandle
+	{
+	public:
+		ContextHandle(HGLRC context) : mOldContext(context)
+		{}
+		~ContextHandle()
+		{
+			wglDeleteContext(mOldContext);
+		}
+		operator HGLRC() const { return mOldContext; }
+	private:
+		HGLRC mOldContext;
+	} oldContext = mhRC;
 	if (mhRC)
 	{
 		if (!wglMakeCurrent(nullptr, nullptr))
 		{
 			LL_WARNS("Window") << "Release of DC and RC failed" << LL_ENDL;
 		}
-
-		if (!wglDeleteContext(mhRC))
-		{
-			LL_WARNS("Window") << "Release of rendering context failed" << LL_ENDL;
-		}
-
-		mhRC = nullptr;
 	}
 
 	if (fullscreen)
@@ -1528,6 +1534,7 @@ BOOL LLWindowWin32::switchContext(BOOL fullscreen, const LLCoordScreen &size, co
 	}
 
 	mhRC = nullptr;
+	bool sharedContext = false;
 	if (wglCreateContextAttribsARB)
 	{ //attempt to create a specific versioned context
 		S32 attribs[] = 
@@ -1542,8 +1549,11 @@ BOOL LLWindowWin32::switchContext(BOOL fullscreen, const LLCoordScreen &size, co
 		bool done = false;
 		while (!done)
 		{
-			mhRC = wglCreateContextAttribsARB(mhDC, mhRC, attribs);
-
+			sharedContext = oldContext && (mhRC = wglCreateContextAttribsARB(mhDC, oldContext, attribs)) != nullptr;
+			if (!sharedContext)
+			{
+				mhRC = wglCreateContextAttribsARB(mhDC, nullptr, attribs);
+			}
 			if (!mhRC)
 			{
 				if (attribs[3] > 0)
@@ -1574,7 +1584,11 @@ BOOL LLWindowWin32::switchContext(BOOL fullscreen, const LLCoordScreen &size, co
 		}
 	}
 
-	if (!mhRC && !(mhRC = wglCreateContext(mhDC)))
+	bool abort = !mhRC && !(mhRC = wglCreateContext(mhDC));
+
+	if (!sharedContext && stopFn) stopFn();
+
+	if (abort)
 	{
 		close();
 		OSMessageBox(mCallbacks->translateString("MBGLContextErr"), mCallbacks->translateString("MBError"), OSMB_OK);
@@ -1644,6 +1658,8 @@ BOOL LLWindowWin32::switchContext(BOOL fullscreen, const LLCoordScreen &size, co
 	int buf = 0;
 	glGetIntegerv(GL_SAMPLES, &buf);
 	LL_INFOS() << "Acquired FSAA Samples = " << buf << LL_ENDL;
+
+	if(restoreFn) restoreFn(!sharedContext);
 
 	return TRUE;
 }

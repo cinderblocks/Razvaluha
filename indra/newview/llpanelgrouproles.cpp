@@ -864,8 +864,6 @@ BOOL LLPanelGroupMembersSubTab::postBuildSubTab(LLView* root)
 	// We want to be notified whenever a member is selected.
 	mMembersList->setCommitOnSelectionChange(TRUE);
 	mMembersList->setCommitCallback(boost::bind(&LLPanelGroupMembersSubTab::onMemberSelect,_1,this));
-	// Show the member's profile on double click.
-	mMembersList->setDoubleClickCallback(boost::bind(&LLPanelGroupMembersSubTab::onMemberDoubleClick,this));
 
 	LLButton* button = parent->getChild<LLButton>("member_invite", recurse);
 	if ( button )
@@ -1154,13 +1152,6 @@ void LLPanelGroupMembersSubTab::handleMemberSelect()
 	mEjectBtn->setEnabled(can_eject_members);
 }
 
-// static
-void LLPanelGroupMembersSubTab::onMemberDoubleClick(void* user_data)
-{
-	LLPanelGroupMembersSubTab* self = static_cast<LLPanelGroupMembersSubTab*>(user_data);
-	self->handleMemberDoubleClick();
-}
-
 //static
 void LLPanelGroupMembersSubTab::onInviteMember(void *userdata)
 {
@@ -1335,15 +1326,6 @@ void LLPanelGroupMembersSubTab::onRoleCheck(LLUICtrl* ctrl, void* user_data)
 						      LLRoleMemberChangeType::RMC_REMOVE);
 		
 		self->handleRoleCheck(role_id, change_type);
-	}
-}
-
-void LLPanelGroupMembersSubTab::handleMemberDoubleClick()
-{
-	LLScrollListItem* selected = mMembersList->getFirstSelected();
-	if (selected)
-	{
-		LLAvatarActions::showProfile(selected->getUUID());
 	}
 }
 

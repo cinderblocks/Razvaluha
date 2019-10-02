@@ -42,32 +42,48 @@ class LLAvatarName;
 class LLNameListItem : public LLScrollListItem, public LLHandleProvider<LLNameListItem>
 {
 public:
-	bool isGroup() const { return mIsGroup; }
-	void setIsGroup(bool is_group) { mIsGroup = is_group; }
-	bool isExperience() const { return mIsExperience; }
-	void setIsExperience(bool is_experience) { mIsExperience = is_experience; }
+	enum ENameType
+	{
+		INDIVIDUAL,
+		GROUP,
+		SPECIAL,
+		EXPERIENCE
+	};
+
+	// provide names for enums
+	struct NameTypeNames : public LLInitParam::TypeValuesHelper<ENameType, NameTypeNames>
+	{
+		static void declareValues();
+	};
+
+	struct Params : public LLInitParam::Block<Params, LLScrollListItem::Params>
+	{
+		Optional<std::string>				name;
+		Optional<ENameType, NameTypeNames>	target;
+
+		Params()
+			: name("name"),
+			target("target", INDIVIDUAL)
+		{}
+	};
+	ENameType getNameType() const { return mNameType; }
+	void setNameType(ENameType name_type) { mNameType = name_type; }
 
 protected:
 	friend class LLNameListCtrl;
 
-	LLNameListItem( const LLScrollListItem::Params& p )
-	:	LLScrollListItem(p), mIsGroup(false), mIsExperience(false)
+	LLNameListItem( const Params& p )
+	:	LLScrollListItem(p), mNameType(p.target)
 	{
 	}
 
-	LLNameListItem( const LLScrollListItem::Params& p, bool is_group )
-	:	LLScrollListItem(p), mIsGroup(is_group), mIsExperience(false)
-	{
-	}
-
-	LLNameListItem( const LLScrollListItem::Params& p, bool is_group, bool is_experience )
-	:	LLScrollListItem(p), mIsGroup(is_group), mIsExperience(is_experience)
+	LLNameListItem( const LLScrollListItem::Params& p, ENameType name_type)
+	:	LLScrollListItem(p), mNameType(name_type)
 	{
 	}
 
 private:
-	bool mIsGroup;
-	bool mIsExperience;
+	ENameType mNameType;
 };
 
 
@@ -76,31 +92,7 @@ class LLNameListCtrl
 {
 public:
 	typedef boost::signals2::signal<void(bool)> namelist_complete_signal_t;
-
-	typedef enum e_name_type
-	{
-		INDIVIDUAL,
-		GROUP,
-		SPECIAL,
-		EXPERIENCE
-	} ENameType;
-
-	// provide names for enums
-	struct NameTypeNames : public LLInitParam::TypeValuesHelper<LLNameListCtrl::ENameType, NameTypeNames>
-	{
-		static void declareValues();
-	};
-
-	struct NameItem : public LLInitParam::Block<NameItem, LLScrollListItem::Params>
-	{
-		Optional<std::string>				name;
-		Optional<ENameType, NameTypeNames>	target;
-
-		NameItem()
-		:	name("name"),
-			target("target", INDIVIDUAL)
-		{}
-	};
+	typedef LLNameListItem::Params NameItem;
 
 	struct NameColumn : public LLInitParam::ChoiceBlock<NameColumn>
 	{
@@ -167,6 +159,7 @@ public:
 									  BOOL drop, EDragAndDropType cargo_type, void *cargo_data,
 									  EAcceptance *accept,
 									  std::string& tooltip_msg) override;
+	BOOL handleDoubleClick(S32 x, S32 y, MASK mask) override;
 
 	void setAllowCallingCardDrop(BOOL b) { mAllowCallingCardDrop = b; }
 

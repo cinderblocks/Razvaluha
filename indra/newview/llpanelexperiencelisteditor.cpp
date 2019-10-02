@@ -196,7 +196,7 @@ void LLPanelExperienceListEditor::onItems()
 	{
 		const LLUUID& experience = *it;
 		item["id"]=experience;
-		item["target"] = LLNameListCtrl::EXPERIENCE;
+		item["target"] = LLNameListItem::EXPERIENCE;
 		LLSD& columns = item["columns"];
 		columns[0]["column"] = "experience_name";
 		columns[0]["value"] = getString("loading");

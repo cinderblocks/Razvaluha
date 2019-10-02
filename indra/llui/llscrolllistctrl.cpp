@@ -198,7 +198,8 @@ LLScrollListCtrl::LLScrollListCtrl(const std::string& name, const LLRect& rect, 
 		addChild(mBorder);
 	}
 
-	LLTextBox* textBox = new LLTextBox("comment_text",mItemListRect,std::string());
+	LLTextBox* textBox = new LLTextBox("comment_text",mItemListRect, LLStringUtil::null);
+	mCommentTextView = textBox;
 	textBox->setBorderVisible(false);
 	textBox->setFollows(FOLLOWS_ALL);
 	textBox->setFontShadow(LLFontGL::NO_SHADOW);
@@ -457,23 +458,27 @@ void LLScrollListCtrl::updateLayout()
 
 	mCommentTextView->setShape(mItemListRect);
 
-	// how many lines of content in a single "page"
-	S32 page_lines =  getLinesPerPage();
+	adjustScrollbar(mFilter.empty() ? getItemCount() : mScrollbar->getDocSize()); // Doc size is the item count without a filter, otherwise it's calculated whenever filter is updated
+	dirtyColumns();
+}
 
-	BOOL scrollbar_visible = mLineHeight * getItemCount() > mItemListRect.getHeight();
+void LLScrollListCtrl::adjustScrollbar(S32 doc_size)
+{
+	// how many lines of content in a single "page"
+	S32 page_lines = getLinesPerPage();
+
+	bool scrollbar_visible = mLineHeight * doc_size > mItemListRect.getHeight();
 	if (scrollbar_visible)
 	{
 		// provide space on the right for scrollbar
 		mItemListRect.mRight = getRect().getWidth() - mBorderThickness - SCROLLBAR_SIZE;
+		mScrollbar->setOrigin(mItemListRect.mRight, mItemListRect.mBottom);
+		mScrollbar->reshape(SCROLLBAR_SIZE, mItemListRect.getHeight() + (mDisplayColumnHeaders ? mHeadingHeight : 0));
 	}
 
-	mScrollbar->setOrigin(getRect().getWidth() - mBorderThickness - SCROLLBAR_SIZE, mItemListRect.mBottom);
-	mScrollbar->reshape(SCROLLBAR_SIZE, mItemListRect.getHeight() + (mDisplayColumnHeaders ? mHeadingHeight : 0));
 	mScrollbar->setPageSize(page_lines);
-	mScrollbar->setDocSize( getItemCount() );
+	mScrollbar->setDocSize(doc_size);
 	mScrollbar->setVisible(scrollbar_visible);
-
-	dirtyColumns();
 }
 
 // Attempt to size the control to show all items.
@@ -507,7 +512,8 @@ BOOL LLScrollListCtrl::addItem( LLScrollListItem* item, EAddPosition pos, BOOL r
 	BOOL not_too_big = getItemCount() < mMaxItemCount;
 	if (not_too_big)
 	{
-		if (!mFilter.empty()) filterItem(item);
+		if (!mFilter.empty() && !filterItem(item)) // If we're filtering, filter this item if needed, if not, bump the document size.
+			mScrollbar->setDocSize(mScrollbar->getDocSize()+1);
 
 		switch( pos )
 		{
@@ -1147,7 +1153,7 @@ void LLScrollListCtrl::deselectAllItems(BOOL no_commit_on_change)
 
 void LLScrollListCtrl::setCommentText(const std::string& comment_text)
 {
-	getChild<LLTextBox>("comment_text")->setWrappedText(comment_text);
+	static_cast<LLTextBox*>(mCommentTextView)->setWrappedText(comment_text);
 }
 
 LLScrollListItem* LLScrollListCtrl::addSeparator(EAddPosition pos)
@@ -1420,9 +1426,6 @@ void LLScrollListCtrl::drawItems()
 	S32 x = mItemListRect.mLeft;
 	S32 y = mItemListRect.mTop - mLineHeight;
 
-	// allow for partial line at bottom
-	S32 num_page_lines = getLinesPerPage();
-
 	LLRect item_rect;
 
 	LLGLSUIDefault gls_ui;
@@ -1441,25 +1444,29 @@ void LLScrollListCtrl::drawItems()
 			clip_rect.intersectWith(scissor);
 		}
 
-		S32 max_columns = 0;
-
-		LLColor4 highlight_color = LLColor4::white;
-		F32 type_ahead_timeout = LLUI::sConfigGroup->getF32("TypeAheadTimeout");
-		highlight_color.mV[VALPHA] = clamp_rescale(mSearchTimer.getElapsedTimeF32(), type_ahead_timeout * 0.7f, type_ahead_timeout, 0.4f, 0.f);
-
 		S32 first_line = mScrollLines;
-		S32 last_line = llmin((S32)mItemList.size() - 1, mScrollLines + getLinesPerPage());
-
 		if ((item_list::size_type)first_line >= mItemList.size())
 		{
 			return;
 		}
+		S32 list_size = mItemList.size() - 1;
+
+		// allow for partial line at bottom
+		S32 num_page_lines = mFilter.empty() ? getLinesPerPage() : mScrollbar->getDocSize() + 1;
+		S32 last_line = llmin(list_size, mScrollLines + num_page_lines);
+
+		S32 max_columns = 0;
+
+		LLColor4 highlight_color = LLColor4::white;
+		static const LLUICachedControl<F32> type_ahead_timeout("TypeAheadTimeout");
+		highlight_color.mV[VALPHA] = clamp_rescale(mSearchTimer.getElapsedTimeF32(), type_ahead_timeout * 0.7f, type_ahead_timeout, 0.4f, 0.f);
+
 		bool done = false;
 		for (S32 pass = 0; !done; ++pass)
 		{
 			bool should_continue = false; // False until all passes are done for all row cells.
 			S32 cur_y = y;
-			for (S32 index = first_line, line = first_line; index <= last_line; ++index)
+			for (S32 index = first_line, line = first_line; index <= list_size; ++index)
 			{
 				LLScrollListItem* item = mItemList[index];
 				if (item->getFiltered()) continue; // Skip filtered
@@ -1478,7 +1485,6 @@ void LLScrollListCtrl::drawItems()
 				LLColor4 fg_color;
 				LLColor4 bg_color(LLColor4::transparent);
 
-				if (mScrollLines <= line && line < mScrollLines + num_page_lines)
 				{
 					cur_y -= mLineHeight;
 
@@ -1514,8 +1520,11 @@ void LLScrollListCtrl::drawItems()
 					}
 
 					should_continue |= item->draw(pass, item_rect, fg_color, bg_color, highlight_color, mColumnPadding);
+					if (++line > last_line)
+					{
+						break; // Don't draw any more than needed.
+					}
 				}
-				++line;
 			}
 			done = !should_continue;
 		}
@@ -1547,7 +1556,7 @@ void LLScrollListCtrl::draw()
 
 	updateColumns();
 
-	getChildView("comment_text")->setVisible(mItemList.empty());
+	mCommentTextView->setVisible(mItemList.empty());
 
 	drawItems();
 
@@ -1820,17 +1829,19 @@ BOOL LLScrollListCtrl::handleDoubleClick(S32 x, S32 y, MASK mask)
 	{
 		// Offer the click to the children, even if we aren't enabled
 		// so the scroll bars will work.
-		if (NULL == LLView::childrenHandleDoubleClick(x, y, mask))
+		handled = LLView::childrenHandleDoubleClick(x, y, mask) != nullptr;
+		if (!handled)
 		{
 			// Run the callback only if an item is being double-clicked.
-			if( mCanSelect && hitItem(x, y) && mOnDoubleClickCallback )
+			if (mCanSelect && mOnDoubleClickCallback && hitItem(x, y))
 			{
 				mOnDoubleClickCallback();
+				handled = true;
 			}
 		}
 	}
 
-	return TRUE;
+	return handled;
 }
 
 BOOL LLScrollListCtrl::handleClick(S32 x, S32 y, MASK mask)
@@ -1903,14 +1914,16 @@ LLScrollListItem* LLScrollListCtrl::hitItem( S32 x, S32 y )
 
 	// allow for partial line at bottom
 	S32 num_page_lines = getLinesPerPage();
+	S32 list_size = mItemList.size() - 1;
+	S32 last_line = llmin(list_size, mScrollLines + num_page_lines);
 
-	S32 line = 0;
-	for(LLScrollListItem* item : mItemList)
+	for (S32 index = mScrollLines, line = mScrollLines; index <= list_size; ++index)
 	{
+		LLScrollListItem* item = mItemList[index];
 		if (item->getFiltered()) continue;
-		if( mScrollLines <= line && line < mScrollLines + num_page_lines )
+
 		{
-			if( item->getEnabled() && item_rect.pointInRect( x, y ) )
+			if (item->getEnabled() && item_rect.pointInRect( x, y ))
 			{
 				hit_item = item;
 				break;
@@ -1918,7 +1931,7 @@ LLScrollListItem* LLScrollListCtrl::hitItem( S32 x, S32 y )
 
 			item_rect.translate(0, -mLineHeight);
 		}
-		++line;
+		if (++line > last_line) break; // Don't try to hit any undrawn items
 	}
 
 	return hit_item;
@@ -1976,7 +1989,7 @@ S32 LLScrollListCtrl::getRowOffsetFromIndex(S32 index)
 	return row_bottom;
 }
 
-void LLScrollListCtrl::filterItem(LLScrollListItem* item)
+bool LLScrollListCtrl::filterItem(LLScrollListItem* item)
 {
 	for (const auto& column : item->mColumns)
 	{
@@ -1984,10 +1997,11 @@ void LLScrollListCtrl::filterItem(LLScrollListItem* item)
 		if (column->isText() && boost::icontains(column->getToolTip(), mFilter))
 		{
 			item->setFiltered(false);
-			return;
+			return false;
 		}
 	}
 	item->setFiltered(true);
+	return true;
 }
 
 void LLScrollListCtrl::setFilter(const std::string& filter)
@@ -1997,16 +2011,34 @@ void LLScrollListCtrl::setFilter(const std::string& filter)
 	bool no_filter = filter.empty();
 	// If our filter string has been expanded, we can skip already filtered items
 	bool expanded = !no_filter && !mFilter.empty() && boost::icontains(filter, mFilter);
+	// If our filter string has been contracted, we can skip already unfiltered items
+	bool contracted = !no_filter && !mFilter.empty() && !expanded && boost::icontains(mFilter, filter);
+	bool unique = !expanded && !contracted;
 
 	mFilter = filter;
+	S32 unfiltered_count = no_filter ? mItemList.size() // No filter, doc size is all items
+		: !unique ? mScrollbar->getDocSize() // Expanded/contracted filter, start with the current doc size and remove/add respectively
+		: 0; // Different filter, count up from 0;
 	for (auto& item : mItemList)
 	{
 		if (no_filter) item->setFiltered(false);
-		else if (!expanded || !item->getFiltered())
+		else if (expanded && !item->getFiltered()) // Filter has been expanded and we are not yet filtered
 		{
-			filterItem(item);
+			if (filterItem(item)) --unfiltered_count; // We are now filtered, lower the count
+		}
+		else if (unique	||							 // Filter isn't expanded, find out if we should be filtered or
+				(contracted && item->getFiltered())) // Filter has contracted and we were filtered before, should we still be?
+		{
+			if (!filterItem(item)) ++unfiltered_count; // Wasn't filltered, bump count
 		}
 	}
+
+	if (mLastSelected && mLastSelected->getFiltered()) // Remove selection if filtered.
+		mLastSelected = nullptr;
+
+	// Scrollbar needs adjusted
+	setScrollPos(0); // Changing the filter resets scroll position
+	adjustScrollbar(unfiltered_count);
 }
 
 

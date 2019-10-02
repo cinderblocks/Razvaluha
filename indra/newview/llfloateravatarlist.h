@@ -264,6 +264,7 @@ public:
 	void focusOnNext(bool marked_only);
 
 	void refreshTracker();
+	void trackAvatar(const LLUUID& agent_id);
 	void trackAvatar(const LLAvatarListEntry* entry) const;
 
 	/**
