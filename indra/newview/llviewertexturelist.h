@@ -36,6 +36,8 @@
 #include <list>
 #include <unordered_map>
 
+#include "absl/container/flat_hash_map.h"
+
 const U32 LL_IMAGE_REZ_LOSSLESS_CUTOFF = 128;
 
 const BOOL MIPMAP_YES = TRUE;
@@ -189,8 +191,8 @@ public:
 private:
 	typedef std::map< LLUUID, LLPointer<LLViewerFetchedTexture> > uuid_map_t;
 	uuid_map_t mUUIDMap;
-	typedef std::unordered_map< LLUUID, LLPointer<LLViewerFetchedTexture>* > uuid_dict_t;
-	uuid_map_t mUUIDDict;
+	typedef absl::flat_hash_map< LLUUID, LLViewerFetchedTexture* > uuid_dict_t;
+	uuid_dict_t mUUIDDict;
 	LLUUID mLastUpdateUUID;
 	LLUUID mLastFetchUUID;
 	

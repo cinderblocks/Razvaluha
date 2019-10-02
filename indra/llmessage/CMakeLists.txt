@@ -213,6 +213,7 @@ add_library (llmessage ${llmessage_SOURCE_FILES})
 if (LINUX)
 target_link_libraries(
   llmessage
+  PUBLIC
   ${LLCOREHTTP_LIBRARIES}
   ${LLCOMMON_LIBRARIES}
   ${LLVFS_LIBRARIES}

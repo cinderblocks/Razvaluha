@@ -94,6 +94,7 @@ endif (SDL_FOUND)
 # Libraries on which this library depends, needed for Linux builds
 # Sort by high-level to low-level
 target_link_libraries(llrender
+    PUBLIC
     ${LLCOMMON_LIBRARIES}
     ${LLIMAGE_LIBRARIES}
     ${LLMATH_LIBRARIES}

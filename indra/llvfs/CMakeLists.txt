@@ -72,6 +72,7 @@ set(vfs_BOOST_LIBRARIES
     )
 
 target_link_libraries(llvfs
+    PUBLIC
     ${LLCOMMON_LIBRARIES}
     ${vfs_BOOST_LIBRARIES}
     )

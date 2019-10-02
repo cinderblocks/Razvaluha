@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file windows_volume_catcher.cpp
  * @brief A Windows implementation of volume level control of all audio channels opened by a process.
@@ -28,13 +26,11 @@
  * @endcond
  */
 
-#include "linden_common.h"
-
 #include "volume_catcher.h"
+#include "llwin32headerslean.h"
 #include "llsingleton.h"
 
-#include "llwin32headers.h"
-#include <mmsystem.h>
+#include <mmeapi.h>
 
 class VolumeCatcherImpl : public LLSingleton<VolumeCatcherImpl>
 {
@@ -71,7 +67,7 @@ void VolumeCatcherImpl::setVolume(F32 volume)
 	DWORD left_channel  = (DWORD)(mVolume * 65535.0f);
 	DWORD right_channel =  (DWORD)(mVolume * 65535.0f);
 	DWORD hw_volume = left_channel << 16 | right_channel;
-	waveOutSetVolume(NULL, hw_volume);
+	waveOutSetVolume(nullptr, hw_volume);
 }
 
 void VolumeCatcherImpl::setPan(F32 pan)

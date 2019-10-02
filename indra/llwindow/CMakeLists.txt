@@ -218,5 +218,4 @@ elseif (SDL_FOUND)
     )
 endif (LLWINDOW_SDL2)
 
-target_link_libraries (llwindow ${llwindow_LINK_LIBRARIES})
-
+target_link_libraries (llwindow PUBLIC llcommon ${llwindow_LINK_LIBRARIES})

@@ -43,6 +43,7 @@ add_library (llxml ${llxml_SOURCE_FILES})
 # Libraries on which this library depends, needed for Linux builds
 # Sort by high-level to low-level
 target_link_libraries( llxml
+    PUBLIC
     ${LLVFS_LIBRARIES}
     ${LLMATH_LIBRARIES}
     ${LLCOMMON_LIBRARIES}

@@ -88,6 +88,8 @@ add_library(media_plugin_cef
 set_target_properties(media_plugin_cef PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_link_libraries(media_plugin_cef
+  PUBLIC
+  ${LLCOMMON_LIBRARIES}
   ${media_plugin_cef_LINK_LIBRARIES}
 )
 

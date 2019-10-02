@@ -75,6 +75,7 @@ list(APPEND llprimitive_SOURCE_FILES ${llprimitive_HEADER_FILES})
 add_library (llprimitive ${llprimitive_SOURCE_FILES})
 
 target_link_libraries(llprimitive
+    PUBLIC
     ${LLCOMMON_LIBRARIES}
     ${LLMATH_LIBRARIES}
     ${LLMESSAGE_LIBRARIES}

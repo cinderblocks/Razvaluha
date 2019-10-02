@@ -114,18 +114,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>c90ac7697f2216caa4d27077b4e80ce5</string>
+              <string>1a593007e526383f15755ff6437f9fe0</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/packages/common/abseil_cpp-20190407.190972335-common-190972335.tar.bz2</string>
+              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/abseil-cpp/common/abseil_cpp-debac94.2-common-2.tar.bz2</string>
             </map>
             <key>name</key>
             <string>common</string>
           </map>
         </map>
         <key>version</key>
-        <string>20190407.190972335</string>
+        <string>debac94.2</string>
       </map>
       <key>apr_suite</key>
       <map>
@@ -2514,13 +2514,11 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
       <key>nvapi</key>
       <map>
         <key>copyright</key>
-        <string>Copyright © 2012 NVIDIA Corporation.  All rights reserved.</string>
-        <key>description</key>
-        <string>NVAPI provides an interface to NVIDIA devices.</string>
+        <string>Copyright (c) 2007- 2019 NVIDIA Corporation. All rights reserved. </string>
         <key>license</key>
-        <string>NVIDIA Corporation Software License Agreement - NVAPI SDK</string>
+        <string>nvapi</string>
         <key>license_file</key>
-        <string>LICENSES/NVAPI_SDK_License_Agreement.pdf</string>
+        <string>LICENSES/nvapi.txt</string>
         <key>name</key>
         <string>nvapi</string>
         <key>platforms</key>
@@ -2530,9 +2528,11 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>22c7be12c1d2ee87b059be903d7f2fbd</string>
+              <string>408eff309f6f3031d74da5491c1852a9</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/p64_3p-nvapi/rev/314405/arch/CYGWIN/installer/nvapi-352.314405-windows-314405.tar.bz2</string>
+              <string>https://pkg.alchemyviewer.org/repository/autobuild-internal/nvapi/windows/nvapi-R430.192211828-windows-192211828.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -2542,16 +2542,18 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>90e32843a0e21037001dc88240008e1f</string>
+              <string>76a547f558b8499dc85135b8718eb18a</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/p64_3p-nvapi/rev/314405/arch/CYGWIN/installer/nvapi-352.314405-windows64-314405.tar.bz2</string>
+              <string>https://pkg.alchemyviewer.org/repository/autobuild-internal/nvapi/windows64/nvapi-R430.192211828-windows64-192211828.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>352.314405</string>
+        <string>R430.192211828</string>
       </map>
       <key>ogg_vorbis</key>
       <map>

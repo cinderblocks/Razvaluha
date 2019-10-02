@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
 * @file media_plugin_cef.cpp
 * @brief CEF (Chromium Embedding Framework) plugin for LLMedia API plugin system
@@ -563,11 +561,11 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 				settings.webgl_enabled = true;
 				settings.log_file = mCefLogFile;
 				settings.log_verbose = mEnableMediaPluginDebugging;
+				settings.autoplay_without_gesture = true;
 				settings.proxy_enabled = mProxyEnabled;
 				settings.proxy_type = mProxyType;
 				settings.proxy_host = mProxyHost;
 				settings.proxy_port = mProxyPort;
-				settings.autoplay_without_gesture = true;
 
 				std::vector<std::string> custom_schemes;
 				custom_schemes.emplace_back("secondlife");
@@ -582,7 +580,12 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 				}
 
 				// now we can set page zoom factor
-				mCEFLib->setPageZoom(message_in.getValueReal("factor"));
+				F32 factor = (F32)message_in.getValueReal("factor");
+#if LL_DARWIN
+				//temporary fix for SL-10473: issue with displaying checkboxes on Mojave
+				factor*=1.001;
+#endif
+				mCEFLib->setPageZoom(factor);
 
 				// Plugin gets to decide the texture parameters to use.
 				mDepth = 4;
@@ -601,7 +604,6 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 				std::string user_data_path_cache = message_in.getValue("cache_path");
 				std::string user_data_path_cookies = message_in.getValue("cookies_path");
 																	   
-
 				mUserDataPath = user_data_path_cache + "cef_data";
 				mCachePath = user_data_path_cache + "cef_cache";
 				mCookiePath = user_data_path_cookies + "cef_cookies";
@@ -808,6 +810,10 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 			if (message_name == "set_page_zoom_factor")
 			{
 				F32 factor = (F32)message_in.getValueReal("factor");
+#if LL_DARWIN
+				//temporary fix for SL-10473: issue with displaying checkboxes on Mojave
+				factor*=1.001;
+#endif
 				mCEFLib->setPageZoom(factor);
 			}
 			if (message_name == "browse_stop")
@@ -894,7 +900,8 @@ void MediaPluginCEF::keyEvent(dullahan::EKeyEvent key_event, LLSD native_key_dat
 	// adding new code below in unicodeInput means we don't send ascii chars
 	// here too or we get double key presses on a mac.
 	bool esc_key = (event_umodchars == 27);
-	if (esc_key || ((unsigned char)event_chars < 0x10 || (unsigned char)event_chars >= 0x7f ))
+	bool tab_key_up = (event_umodchars == 9) && (key_event == dullahan::EKeyEvent::KE_KEY_UP);
+	if ((esc_key || ((unsigned char)event_chars < 0x10 || (unsigned char)event_chars >= 0x7f )) && !tab_key_up)
 	{
 		mCEFLib->nativeKeyboardEventOSX(key_event, event_modifiers, 
 										event_keycode, event_chars, 

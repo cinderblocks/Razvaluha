@@ -58,6 +58,10 @@ list(APPEND llplugin_SOURCE_FILES ${llplugin_HEADER_FILES})
 
 add_library (llplugin ${llplugin_SOURCE_FILES})
 
+target_link_libraries(llplugin PUBLIC     
+    ${LLCOMMON_LIBRARIES}
+    )
+
 set_target_properties(llplugin PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(slplugin)

@@ -1,5 +1,7 @@
 # -*- cmake -*-
 
+include(Variables)
+
 add_subdirectory(base)
 
 if (LINUX)
@@ -8,13 +10,12 @@ if (LINUX)
 endif (LINUX)
 
 if (DARWIN)
-    add_subdirectory(cef)
     add_subdirectory(libvlc)
 endif (DARWIN)
 
 if (WINDOWS)
-    add_subdirectory(cef)
     add_subdirectory(libvlc)
 endif (WINDOWS)
+add_subdirectory(cef)
 
 ### add_subdirectory(example)

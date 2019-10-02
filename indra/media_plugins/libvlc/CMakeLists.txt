@@ -44,6 +44,7 @@ add_library(media_plugin_libvlc
 )
 
 target_link_libraries(media_plugin_libvlc
+  PUBLIC
   ${LLPLUGIN_LIBRARIES}
   ${MEDIA_PLUGIN_BASE_LIBRARIES}
   ${LLCOMMON_LIBRARIES}

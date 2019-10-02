@@ -298,10 +298,12 @@ endif(LLCOMMON_LINK_SHARED)
 set_target_properties(llcommon PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_compile_features(llcommon PRIVATE cxx_nullptr cxx_range_for)
-target_compile_features(llcommon PUBLIC cxx_nullptr cxx_static_assert)
+target_compile_features(llcommon PUBLIC cxx_decltype cxx_nullptr cxx_static_assert cxx_thread_local cxx_rvalue_references)
 
 target_link_libraries(
     llcommon
+    PUBLIC
+    absl::hash
     ${BREAKPAD_EXCEPTION_HANDLER_LIBRARIES}
     ${APRUTIL_LIBRARIES}
     ${APR_LIBRARIES}

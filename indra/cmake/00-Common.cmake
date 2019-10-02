@@ -114,7 +114,6 @@ if (WINDOWS)
       /TP
       /W3
       /c
-      /permissive-
       /Zc:__cplusplus
       /Zc:externConstexpr
       /Zc:forScope
