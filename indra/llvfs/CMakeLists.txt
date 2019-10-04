@@ -71,14 +71,14 @@ set(vfs_BOOST_LIBRARIES
     ${BOOST_SYSTEM_LIBRARY}
     )
 
+if (DARWIN)
+  include(CMakeFindFrameworks)
+  find_library(COCOA_LIBRARY Cocoa)
+endif (DARWIN)
+
 target_link_libraries(llvfs
     PUBLIC
     ${LLCOMMON_LIBRARIES}
     ${vfs_BOOST_LIBRARIES}
+    ${COCOA_LIBRARY}
     )
-
-if (DARWIN)
-  include(CMakeFindFrameworks)
-  find_library(COCOA_LIBRARY Cocoa)
-  target_link_libraries(llvfs ${COCOA_LIBRARY})
-endif (DARWIN)
