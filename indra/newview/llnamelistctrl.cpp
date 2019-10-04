@@ -36,6 +36,7 @@
 #include "llcachename.h"
 #include "llagent.h"
 #include "llavataractions.h"
+#include "llfloaterexperienceprofile.h"
 #include "llgroupactions.h"
 #include "llinventory.h"
 #include "llscrolllistitem.h"
@@ -156,6 +157,7 @@ BOOL LLNameListCtrl::handleDoubleClick(S32 x, S32 y, MASK mask)
 			{
 				case LLNameListItem::INDIVIDUAL: LLAvatarActions::showProfile(item->getValue()); break;
 				case LLNameListItem::GROUP: LLGroupActions::show(item->getValue()); break;
+				case LLNameListItem::EXPERIENCE: LLFloaterExperienceProfile::showInstance(item->getValue()); break;
 				default: return false;
 			}
 			handled = true;
