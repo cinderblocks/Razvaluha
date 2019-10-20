@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file _httpservice.cpp
  * @brief Internal definitions of the Http service thread
@@ -282,10 +280,9 @@ void HttpService::shutdown()
 	HttpRequestQueue::OpContainer ops;
 	mRequestQueue->fetchAll(false, ops);
 
-    for (HttpRequestQueue::OpContainer::iterator it = ops.begin();
-        it != ops.end(); ++it)
+    for (auto& op : ops)
     {
-        (*it)->cancel();
+        op->cancel();
     }
     ops.clear();
 
@@ -331,7 +328,7 @@ void HttpService::threadRun(LLCoreInt::HttpThread * thread)
         {
             LOG_UNHANDLED_EXCEPTION("");
         }
-        catch (std::bad_alloc)
+        catch (const std::bad_alloc&)
         {
             LLMemory::logMemoryInfo(TRUE);
 

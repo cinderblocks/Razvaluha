@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <panel
-  layout="topleft"
   bottom="48"
   mouse_opaque="false"
   left="0"
@@ -41,8 +40,8 @@
     follows="all"
     left="5"
     right="-3"
-    top="-2"
-    bottom="0"
+    top="-20"
+    bottom="-28"
     name="search_panel">
     <text
       bottom="20"
@@ -65,7 +64,7 @@
             height="18"
             name="find"/>
     <text
-      bottom_delta="-24"
+      bottom_delta="-18"
       left="0"
       follows="top|left"
       width="180">
@@ -74,10 +73,9 @@
     <combo_box
       follows="left|top"
       height="20"
-      label="Moderate"
-      layout="topleft"
+      label="Mature"
       name="maturity"
-      bottom_delta="0"
+      bottom_delta="-6"
       left_delta="180"
       right="-1">
       <combo_box.item
@@ -98,23 +96,22 @@
     </combo_box>
     <scroll_list
       draw_heading="true"
-      left="0"
+      left="-4"
       right="-1"
-      height="239"
-      bottom_delta="-259"
+      top="-60"
+      bottom="200"
       follows="all" 
-      column_padding="5"
       name="search_results">
-      <columns
+      <column
         halign="center"
         width="24"
         name="maturity"
         label=""/>
-      <columns
+      <column
         user_resize="true"
         name="experience_name"
         label="Name"/>
-      <columns
+      <column
         user_resize="true"
         name="owner"
         label="Owner"/>
@@ -126,7 +123,7 @@
       label="OK"
       label_selected="OK"
       name="ok_btn"
-      bottom_delta="-242"
+      bottom_delta="-22"
       left="0"
       width="95" />
     <button
@@ -135,6 +132,7 @@
       label="Cancel"
       name="cancel_btn"
       width="95"
+      bottom_delta="0"
       left_delta="98" />
      <button
         follows="left|bottom"
@@ -142,24 +140,27 @@
         label="View Profile"
         name="profile_btn"
         width="95"
+        bottom_delta="0"
         left_delta="98" />
      <button
         follows="left|bottom"
         height="20"
-        label="&lt;"
+        label=""
         name="left_btn"
         image_overlay="arrow_left.tga"
         width="20"
         left_delta="98"
+        bottom_delta="0"
         enabled="false"/>
      <button
         follows="left|bottom"
         height="20"
-        label="&gt;"
+        label=""
         image_overlay="arrow_right.tga"
         name="right_btn"
         width="20"
         left_delta="23"
+        bottom_delta="0"
         enabled="false" />
      
   </panel>

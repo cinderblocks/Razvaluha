@@ -32,7 +32,7 @@
 #endif
 
 typedef __m128	LLQuad;
-
+typedef __m128i LLIQuad;
 
 #if LL_WINDOWS
 #pragma warning(push)
@@ -42,7 +42,7 @@ typedef __m128	LLQuad;
 class LLBool32
 {
 public:
-	inline LLBool32() {}
+	inline LLBool32() = default;
 	inline LLBool32(int rhs) : m_bool(rhs) {}
 	inline LLBool32(unsigned int rhs) : m_bool(rhs) {}
 	inline LLBool32(bool rhs) { m_bool = static_cast<const int>(rhs); }
@@ -62,7 +62,7 @@ private:
 class LLSimdScalar
 {
 public:
-	inline LLSimdScalar() {}
+	inline LLSimdScalar() = default;
 	inline LLSimdScalar(LLQuad q) 
 	{ 
 		mQ = q; 
@@ -112,8 +112,9 @@ public:
 private:
 	LLQuad mQ;
 };
-
-static_assert(std::is_trivially_copyable<LLBool32>{}, "LLBool32 must be a trivially copyable type");
-static_assert(std::is_trivially_copyable<LLSimdScalar>{}, "LLSimdScalar must be a trivially copyable type");
+static_assert(std::is_trivial<LLBool32>{}, "LLBool32 must be a trivial type");
+static_assert(std::is_standard_layout<LLBool32>{}, "LLBool32 must be a standard layout type");
+static_assert(std::is_trivial<LLSimdScalar>{}, "LLSimdScalar must be a trivial type");
+static_assert(std::is_standard_layout<LLSimdScalar>{}, "LLSimdScalar must be a standard layout type");
 
 #endif //LL_SIMD_TYPES_H

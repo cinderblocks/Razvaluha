@@ -47,6 +47,8 @@
 #include "llconvexdecomposition.h"
 #include "lluploadfloaterobservers.h"
 
+#include <absl/container/node_hash_map.h>
+
 class LLVOVolume;
 class LLMutex;
 class LLCondition;
@@ -581,9 +583,7 @@ public:
 	typedef std::map<LLVolumeParams, uuid_set_t > mesh_load_map;
 	mesh_load_map mLoadingMeshes[4];
 
-	// <alchemy> - War on std::map
-	//typedef std::map<LLUUID, LLMeshSkinInfo> skin_map;
-	typedef boost::unordered_map<LLUUID, LLMeshSkinInfo> skin_map;
+	typedef absl::node_hash_map<LLUUID, LLMeshSkinInfo> skin_map;
 	skin_map mSkinMap;
 
 	typedef std::map<LLUUID, LLModel::Decomposition*> decomposition_map;

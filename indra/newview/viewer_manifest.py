@@ -151,10 +151,6 @@ class ViewerManifest(LLManifest):
                             "Address Size":self.address_size,
                             "Update Service":"https://app.alchemyviewer.org/update",
                             }
-            # Only store this if it's both present and non-empty
-            bugsplat_db = self.args.get('bugsplat')
-            if bugsplat_db:
-                build_data_dict["BugSplat DB"] = bugsplat_db
             build_data_dict = self.finish_build_data_dict(build_data_dict)
             with open(os.path.join(os.pardir,'build_data.json'), 'w') as build_data_handle:
                 json.dump(build_data_dict,build_data_handle)
@@ -414,70 +410,25 @@ class WindowsManifest(ViewerManifest):
         build_data_dict['AppName']    = self.app_name()
         return build_data_dict
 
-    def test_msvcrt_and_copy_action(self, src, dst):
-        # This is used to test a dll manifest.
-        # It is used as a temporary override during the construct method
-        from test_win32_manifest import test_assembly_binding
-        # TODO: This is redundant with LLManifest.copy_action(). Why aren't we
-        # calling copy_action() in conjunction with test_assembly_binding()?
-        if src and (os.path.exists(src) or os.path.islink(src)):
-            # ensure that destination path exists
-            self.cmakedirs(os.path.dirname(dst))
-            self.created_paths.append(dst)
-            if not os.path.isdir(src):
-                if(self.args['configuration'].lower() == 'debug'):
-                    test_assembly_binding(src, "Microsoft.VC80.DebugCRT", "8.0.50727.4053")
-                else:
-                    test_assembly_binding(src, "Microsoft.VC80.CRT", "8.0.50727.4053")
-                self.ccopy(src,dst)
-            else:
-                raise Exception("Directories are not supported by test_CRT_and_copy_action()")
-        else:
-            print "Doesn't exist:", src
-
-    def test_for_no_msvcrt_manifest_and_copy_action(self, src, dst):
-        # This is used to test that no manifest for the msvcrt exists.
-        # It is used as a temporary override during the construct method
-        from test_win32_manifest import test_assembly_binding
-        from test_win32_manifest import NoManifestException, NoMatchingAssemblyException
-        # TODO: This is redundant with LLManifest.copy_action(). Why aren't we
-        # calling copy_action() in conjunction with test_assembly_binding()?
-        if src and (os.path.exists(src) or os.path.islink(src)):
-            # ensure that destination path exists
-            self.cmakedirs(os.path.dirname(dst))
-            self.created_paths.append(dst)
-            if not os.path.isdir(src):
-                try:
-                    if(self.args['configuration'].lower() == 'debug'):
-                        test_assembly_binding(src, "Microsoft.VC80.DebugCRT", "")
-                    else:
-                        test_assembly_binding(src, "Microsoft.VC80.CRT", "")
-                    raise Exception("Unknown condition")
-                except NoManifestException as err:
-                    pass
-                except NoMatchingAssemblyException as err:
-                    pass
-
-                self.ccopy(src,dst)
-            else:
-                raise Exception("Directories are not supported by test_CRT_and_copy_action()")
-        else:
-            print "Doesn't exist:", src
-
     def construct(self):
         super(WindowsManifest, self).construct()
 
+        if self.args['configuration'].lower() == '.':
+            config = 'debug' if self.args['buildtype'].lower() == 'debug' else 'release'
+        else:
+            config = 'debug' if self.args['configuration'].lower() == 'debug' else 'release'
         pkgdir = os.path.join(self.args['build'], os.pardir, 'packages')
         relpkgdir = os.path.join(pkgdir, "lib", "release")
         debpkgdir = os.path.join(pkgdir, "lib", "debug")
+        pkgbindir = os.path.join(pkgdir, "bin", config)
 
         if True: #self.is_packaging_viewer():
             # Find singularity-bin.exe in the 'configuration' dir, then rename it to the result of final_exe.
-            self.path(src='%s\\%s-bin.exe' % (self.args['configuration'],self.viewer_branding_id()), dst=self.final_exe())
+            self.path(src=os.path.join(self.args['dest'], ('%s-bin.exe' % self.viewer_branding_id())), dst=self.final_exe())
 
         # Plugin host application
         self.path2basename(os.path.join(os.pardir,
-                                        'llplugin', 'slplugin', self.args['configuration']),
+                                        'llplugin', 'slplugin', config),
                            "AlchemyPlugin.exe")
 
         # Copy assets for sdl if needed
@@ -486,35 +437,27 @@ class WindowsManifest(ViewerManifest):
 
         # Get shared libs from the shared libs staging directory
         with self.prefix(src=os.path.join(self.args['build'], os.pardir,
-                                          'sharedlibs', self.args['configuration'])):
+                                          'sharedlibs', config)):
 
             # Get llcommon and deps. If missing assume static linkage and continue.
-            try:
-                """Singu Note: Don't spam"""
-                #self.path('llcommon.dll')
-                #self.path('libapr-1.dll')
-                #self.path('libaprutil-1.dll')
-                #self.path('libapriconv-1.dll')
-
-            except RuntimeError as err:
-                print err.message
+            if self.path('llcommon.dll') == 0:
                 print "Skipping llcommon.dll (assuming llcommon was linked statically)"
 
+            self.path('libapr-1.dll')
+            self.path('libaprutil-1.dll')
+            self.path('libapriconv-1.dll')
+
             # Mesh 3rd party libs needed for auto LOD and collada reading
-            try:
-                self.path("glod.dll")
-            except RuntimeError as err:
-                print err.message
+            if self.path("glod.dll") == 0:
                 print "Skipping GLOD library (assumming linked statically)"
 
             # Get fmodstudio dll, continue if missing
-            try:
-                if self.args['configuration'].lower() == 'debug':
-                    self.path("fmodL.dll")
-                else:
-                    self.path("fmod.dll")
-            except:
-                print "Skipping fmodstudio audio library(assuming other audio engine)"
+            if config is "debug":
+                if self.path("fmodL.dll") == 0:
+                   print "Skipping fmodstudio audio library(assuming other audio engine)"
+            else:
+                if self.path("fmod.dll") == 0:
+                   print "Skipping fmodstudio audio library(assuming other audio engine)"
 
             # For textures
             self.path("openjpeg.dll")
@@ -527,22 +470,20 @@ class WindowsManifest(ViewerManifest):
             else:
                 self.path("vivoxsdk.dll")
                 self.path("ortp.dll")
-            #self.path("libsndfile-1.dll")
-            #self.path("vivoxoal.dll")
 
             # Security
             if(self.address_size == 64):
                 self.path("libcrypto-1_1-x64.dll")
                 self.path("libssl-1_1-x64.dll")
-                #if not self.is_packaging_viewer():
-                #    self.path("libcrypto-1_1-x64.pdb")
-                #    self.path("libssl-1_1-x64.pdb")
+                if not self.is_packaging_viewer():
+                    self.path("libcrypto-1_1-x64.pdb")
+                    self.path("libssl-1_1-x64.pdb")
             else:
                 self.path("libcrypto-1_1.dll")
                 self.path("libssl-1_1.dll")
-                #if not self.is_packaging_viewer():
-                #    self.path("libcrypto-1_1.pdb")
-                #    self.path("libssl-1_1.pdb")
+                if not self.is_packaging_viewer():
+                    self.path("libcrypto-1_1.pdb")
+                    self.path("libssl-1_1.pdb")
 
             # HTTP/2
             self.path("nghttp2.dll")
@@ -552,34 +493,22 @@ class WindowsManifest(ViewerManifest):
             if not self.is_packaging_viewer():
                 self.path("libhunspell.pdb")
 
-            # BugSplat
-            if self.args.get('bugsplat'):
-                if(self.address_size == 64):
-                    self.path("BsSndRpt64.exe")
-                    self.path("BugSplat64.dll")
-                    self.path("BugSplatRc64.dll")
-                else:
-                    self.path("BsSndRpt.exe")
-                    self.path("BugSplat.dll")
-                    self.path("BugSplatRc.dll")
-
             # SDL2
             if self.sdl2():
                 self.path("SDL2.dll")
 
             # For google-perftools tcmalloc allocator.
             if(self.address_size == 32):
-                try:
-                    if self.args['configuration'].lower() == 'debug':
-                        self.path('libtcmalloc_minimal-debug.dll')
-                    else:
-                        self.path('libtcmalloc_minimal.dll')
-                except:
-                    print "Skipping libtcmalloc_minimal.dll"
+                if config == 'debug':
+                    if self.path('libtcmalloc_minimal-debug.dll') == 0:
+                        print "Skipping libtcmalloc_minimal.dll"
+                else:
+                    if self.path('libtcmalloc_minimal.dll') == 0:
+                        print "Skipping libtcmalloc_minimal.dll"
 
             # For msvc redist
             try:
-                    self.path('api-ms*.dll')
+                    self.path('api-ms-win-c*.dll')
                     self.path('ucrt*.dll')
                     self.path('concrt*.dll')
                     self.path('msvc*.dll')
@@ -597,24 +526,22 @@ class WindowsManifest(ViewerManifest):
         # Media plugins - CEF
         with self.prefix(dst="llplugin"):
             with self.prefix(src=os.path.join(self.args['build'], os.pardir, 'media_plugins')):
-                with self.prefix(src=os.path.join('cef', self.args['configuration'])):
+                with self.prefix(src=os.path.join('cef', config)):
                     self.path("media_plugin_cef.dll")
 
                 # Media plugins - LibVLC
-                with self.prefix(src=os.path.join('libvlc', self.args['configuration'])):
+                with self.prefix(src=os.path.join('libvlc', config)):
                     self.path("media_plugin_libvlc.dll")
 
                 # Media plugins - Example (useful for debugging - not shipped with release viewer)
-                if self.channel_type() != 'release':
-                    with self.prefix(src=os.path.join('example', self.args['configuration'])):
-                        self.path("media_plugin_example.dll")
+                #if self.channel_type() != 'release':
+                #    with self.prefix(src=os.path.join('example', config)):
+                #        self.path("media_plugin_example.dll")
 
             # CEF runtime files - debug
             # CEF runtime files - not debug (release, relwithdebinfo etc.)
-            config = 'debug' if self.args['configuration'].lower() == 'debug' else 'release'
-            with self.prefix(src=os.path.join(pkgdir, 'bin', config)):
+            with self.prefix(src=pkgbindir):
                 self.path("chrome_elf.dll")
-                self.path("d3dcompiler_43.dll")
                 self.path("d3dcompiler_47.dll")
                 self.path("libcef.dll")
                 self.path("libEGL.dll")
@@ -624,7 +551,8 @@ class WindowsManifest(ViewerManifest):
                 self.path("snapshot_blob.bin")
                 self.path("v8_context_snapshot.bin")
 
-            with self.prefix(src=os.path.join(pkgdir, 'bin', config, 'swiftshader'), dst='swiftshader'):
+            # CEF runtime files for software rendering - debug
+            with self.prefix(src=os.path.join(pkgbindir, 'swiftshader'), dst='swiftshader'):
                 self.path("libEGL.dll")
                 self.path("libGLESv2.dll")
 
@@ -692,7 +620,7 @@ class WindowsManifest(ViewerManifest):
                 self.path("zh-CN.pak")
                 self.path("zh-TW.pak")
 
-            with self.prefix(src=os.path.join(pkgdir, 'bin', 'release')):
+            with self.prefix(src=os.path.join(pkgbindir, 'release')):
                 self.path("libvlc.dll")
                 self.path("libvlccore.dll")
                 self.path("plugins/")
@@ -727,9 +655,9 @@ class WindowsManifest(ViewerManifest):
                     out_path = installed_dir
                     result += 'SetOutPath ' + out_path + '\n'
             if install:
-                result += 'File ' + pkg_file + '\n'
+                result += 'File "' + pkg_file + '"\n'
             else:
-                result += 'Delete ' + wpath(os.path.join('$INSTDIR', rel_file)) + '\n'
+                result += 'Delete "' + wpath(os.path.join('$INSTDIR', rel_file)) + '"\n'
 
         # at the end of a delete, just rmdir all the directories
         if not install:
@@ -764,11 +692,11 @@ class WindowsManifest(ViewerManifest):
     def package_finish(self):
         if 'signature' in self.args and 'VIEWER_SIGNING_PWD' in os.environ:
             try:
-                self.sign(self.args['configuration']+"\\"+self.final_exe())
-                self.sign(self.args['configuration']+"\\AlchemyPlugin.exe")
-                self.sign(self.args['configuration']+"\\SLVoice.exe")
+                self.sign(self.args['dest']+"\\"+self.final_exe())
+                self.sign(self.args['dest']+"\\AlchemyPlugin.exe")
+                self.sign(self.args['dest']+"\\SLVoice.exe")
             except:
-                print "Couldn't sign binaries. Tried to sign %s" % self.args['configuration'] + "\\" + self.final_exe()
+                print "Couldn't sign binaries. Tried to sign %s" % self.args['dest'] + "\\" + self.final_exe()
 
         # a standard map of strings for replacing in the templates
         substitution_strings = {
@@ -787,9 +715,9 @@ class WindowsManifest(ViewerManifest):
         substitution_strings['installer_file'] = installer_file
 
         # Packaging the installer takes forever, dodge it if we can.
-        installer_path = os.path.join(self.args['configuration'], installer_file);
+        installer_path = os.path.join(self.args['dest'], installer_file);
         if os.path.isfile(installer_path):
-            binary_mod = os.path.getmtime(os.path.join(self.args['configuration'], self.final_exe()))
+            binary_mod = os.path.getmtime(os.path.join(self.args['dest'], self.final_exe()))
             installer_mod = os.path.getmtime(installer_path)
             if binary_mod <= installer_mod:
                 print("Binary is unchanged since last package, touch the binary or delete installer to trigger repackage.")
@@ -844,14 +772,12 @@ class WindowsManifest(ViewerManifest):
             except:
                 NSIS_path = os.environ['ProgramFiles(X86)'] + '\\NSIS\\makensis.exe'
                 self.run_command([proper_windows_path(NSIS_path),self.dst_path_of(tempfile)])
-
-
-        # self.remove(self.dst_path_of(tempfile))
+        self.remove(self.dst_path_of(tempfile))
         if 'signature' in self.args and 'VIEWER_SIGNING_PWD' in os.environ:
             try:
-                self.sign(self.args['configuration'] + "\\" + substitution_strings['installer_file'])
+                self.sign(self.args['dest'] + "\\" + substitution_strings['installer_file'])
             except:
-                print "Couldn't sign windows installer. Tried to sign %s" % self.args['configuration'] + "\\" + substitution_strings['installer_file']
+                print "Couldn't sign windows installer. Tried to sign %s" % self.args['dest'] + "\\" + substitution_strings['installer_file']
 
         self.created_path(self.dst_path_of(installer_file))
         self.package_file = installer_file
@@ -913,7 +839,6 @@ class DarwinManifest(ViewerManifest):
                 CEF_framework = "Chromium Embedded Framework.framework"
                 self.path2basename(relpkgdir, CEF_framework)
                 CEF_framework = self.dst_path_of(CEF_framework)
-
 
             with self.prefix(dst="MacOS"):
                 executable = self.dst_path_of(self.app_name_oneword())
@@ -1019,12 +944,12 @@ class DarwinManifest(ViewerManifest):
                                 "libexpat.1.dylib",
                                 "libexception_handler.dylib",
                                 "libGLOD.dylib",
+                                "libfreetype*.dylib",
                                 "libopenjpeg.dylib",
                                 # libnghttp2.dylib is a symlink to
                                 # libnghttp2.major.dylib, which is a symlink to
                                 # libnghttp2.version.dylib. Get all of them.
                                 "libnghttp2.*dylib",
-                                "libfreetype*.dylib",
                                 ):
                     dylibs += path_optional(os.path.join(relpkgdir, libfile), libfile)
 

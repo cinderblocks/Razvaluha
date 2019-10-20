@@ -2086,10 +2086,15 @@ void LLTextureFetchWorker::onCompleted(LLCore::HttpHandle handle, LLCore::HttpRe
 
 	if (log_texture_traffic && data_size > 0)
 	{
-		LLViewerTexture* tex = LLViewerTextureManager::findTexture(mID);
-		if (tex)
+		// one worker per multiple textures
+		std::vector<LLViewerTexture*> textures;
+		LLViewerTextureManager::findTextures(mID, textures);
+		for (auto tex : textures)
 		{
-			gTotalTextureBytesPerBoostLevel[tex->getBoostLevel()] += data_size ;
+			if (tex)
+			{
+				gTotalTextureBytesPerBoostLevel[tex->getBoostLevel()] += data_size;
+			}
 		}
 	}
 
@@ -4318,7 +4323,7 @@ bool LLTextureFetchDebugger::processStartDebug(F32 max_time)
 			in_list = false;
 		}
 		
-		LLViewerFetchedTexture* tex = LLViewerTextureManager::findFetchedTexture(mFetchingHistory[i].mID);
+		LLViewerFetchedTexture* tex = LLViewerTextureManager::findFetchedTexture(mFetchingHistory[i].mID, TEX_LIST_STANDARD);
 		if(tex && tex->isJustBound()) //visible
 		{
 			if(!in_list)
@@ -4436,7 +4441,7 @@ void LLTextureFetchDebugger::addHistoryEntry(LLTextureFetchWorker* worker)
 			mRefetchedAllPixels += worker->mRawImage->getWidth() * worker->mRawImage->getHeight();
 			mRefetchedAllData += worker->mFormattedImage->getDataSize();
 
-			LLViewerFetchedTexture* tex = LLViewerTextureManager::findFetchedTexture(worker->mID);
+			LLViewerFetchedTexture* tex = LLViewerTextureManager::findFetchedTexture(worker->mID, TEX_LIST_STANDARD);
 			if(tex && mRefetchList[tex].begin() != mRefetchList[tex].end())
 			{
 				if(worker->mDecodedDiscard == mFetchingHistory[mRefetchList[tex][0]].mDecodedLevel)
@@ -4663,7 +4668,7 @@ void LLTextureFetchDebugger::debugGLTextureCreation()
 	{
 		if(mFetchingHistory[i].mRawImage.notNull())
 		{
-			LLViewerFetchedTexture* tex = gTextureList.findImage(mFetchingHistory[i].mID) ;
+			LLViewerFetchedTexture* tex = gTextureList.findImage(LLTextureKey(mFetchingHistory[i].mID, TEX_LIST_STANDARD));
 			if(tex && !tex->isForSculptOnly())
 			{
 				tex->destroyGLTexture() ;
@@ -4723,7 +4728,7 @@ void LLTextureFetchDebugger::clearTextures()
 	S32 size = mFetchingHistory.size();
 	for(S32 i = 0 ; i < size ; i++)
 	{
-		LLViewerFetchedTexture* tex = gTextureList.findImage(mFetchingHistory[i].mID) ;
+		LLViewerFetchedTexture* tex = gTextureList.findImage(LLTextureKey(mFetchingHistory[i].mID, TEX_LIST_STANDARD)) ;
 		if(tex)
 		{
 			tex->clearFetchedResults() ;

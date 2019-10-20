@@ -31,16 +31,15 @@
 #error "Please include llmath.h before this file."
 #endif
 
-#if ( ( LL_DARWIN || LL_LINUX ) && !(__SSE2__) ) || ( LL_WINDOWS && ( _M_IX86_FP < 2 )  && !defined(_WIN64))
+#if ( ( LL_DARWIN || LL_LINUX ) && !(__SSE2__) ) || ( LL_WINDOWS && ( _M_IX86_FP < 2 && ADDRESS_SIZE == 32 ) )
 #error SSE2 not enabled. LLVector4a and related class will not compile.
 #endif
 
 #if !LL_WINDOWS
-#include <stdint.h>
+#include <cstdint>
 #endif
 
-#include <xmmintrin.h>
-#include <emmintrin.h>
+#include <immintrin.h>
 
 #include "llmemory.h"
 #include "llsimdtypes.h"

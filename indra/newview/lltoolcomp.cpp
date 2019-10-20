@@ -716,7 +716,7 @@ BOOL LLToolCompGun::handleHover(S32 x, S32 y, MASK mask)
 {
 	// *NOTE: This hack is here to make mouselook kick in again after
 	// item selected from context menu.
-	if ( mCur == mNull && !gPopupMenuView->getVisible() )
+	if (mCur == mNull)
 	{
 		LLSelectMgr::getInstance()->deselectAll();
 		setCurrentTool( (LLTool*) mGrab );

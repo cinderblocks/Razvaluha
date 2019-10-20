@@ -721,6 +721,9 @@ public:
 	void 			updateSexDependentLayerSets(bool upload_bake = false);
 	void	dirtyMesh() override; // Dirty the avatar mesh
 	void 			updateMeshData();
+	void			updateMeshVisibility();
+	LLViewerTexture*		getBakedTexture(const U8 te);
+
 protected:
 	void 			releaseMeshData();
 	virtual void restoreMeshData();

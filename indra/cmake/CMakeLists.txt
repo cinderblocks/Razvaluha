@@ -8,7 +8,6 @@ set(cmake_SOURCE_FILES
     CMakeLists.txt
 
     00-Common.cmake
-    Abseil-CPP.cmake
     APR.cmake
     Audio.cmake
     Boost.cmake
@@ -39,6 +38,7 @@ set(cmake_SOURCE_FILES
     FindZLIB.cmake
     FMODSTUDIO.cmake
     FreeType.cmake
+    GeneratePrecompiledHeader.cmake
     GLOD.cmake
     GStreamer010Plugin.cmake
     Glui.cmake

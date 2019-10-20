@@ -14,6 +14,7 @@ include(BuildBranding)
 include(CMakeCopyIfDifferent)
 include(DBusGlib)
 include(FMODSTUDIO)
+include(GeneratePrecompiledHeader)
 include(GLOD)
 include(Hunspell)
 include(Json)
@@ -366,6 +367,7 @@ set(viewer_SOURCE_FILES
     llnamebox.cpp
     llnameeditor.cpp
     llnamelistctrl.cpp
+    llnameui.cpp
     llnetmap.cpp
     llnotify.cpp
     lloutfitobserver.cpp
@@ -914,6 +916,7 @@ set(viewer_HEADER_FILES
     llnamebox.h
     llnameeditor.h
     llnamelistctrl.h
+    llnameui.h
     llnetmap.h
     llnotify.h
     lloutfitobserver.h
@@ -1191,8 +1194,8 @@ source_group("CMake Rules" FILES ViewerInstall.cmake)
 # the summary.json file is created for the benefit of the TeamCity builds, where
 #   it is used to provide descriptive information to the build results page
 add_custom_target(generate_viewer_version ALL
-                  COMMAND cmake -E echo ${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION} > ${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
-                  COMMAND cmake -E echo {"Type":"viewer","Version":"${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}"} > ${CMAKE_BINARY_DIR}/summary.json
+                  COMMAND ${CMAKE_COMMAND} -E echo ${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION} > ${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
+                  COMMAND ${CMAKE_COMMAND} -E echo {"Type":"viewer","Version":"${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}"} > ${CMAKE_BINARY_DIR}/summary.json
                   COMMENT "Generating viewer_version.txt for manifest processing"
                   )
 
@@ -1290,19 +1293,10 @@ if (WINDOWS)
   endif (NVAPI)
   set_source_files_properties(llappviewerwin32.cpp PROPERTIES COMPILE_FLAGS "${APPVWRW32_COMPILE_FLAGS}")
 
-    # precompiled header configuration
-    # llviewerprecompiledheaders.cpp generates
-    # the .pch file.
-    # All sources added to viewer_SOURCE_FILES
-    # at this point use it.
-    if(USE_PRECOMPILED_HEADERS)
-        set_source_files_properties(llviewerprecompiledheaders.cpp
-            PROPERTIES
-            COMPILE_FLAGS "/Ycllviewerprecompiledheaders.h"
-            )
-        list(APPEND viewer_SOURCE_FILES llviewerprecompiledheaders.cpp)
-    endif(USE_PRECOMPILED_HEADERS)
-
+    # Replace the icons with the appropriate ones for the channel
+    # ('test' is the default)
+    set(ICON_PATH "default")
+    set(VIEWER_MACOSX_PHASE "d")
     message("Copying icons for ${ICON_PATH}")
     execute_process(
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -1367,9 +1361,9 @@ if (WINDOWS)
     set_source_files_properties(${viewer_RESOURCE_FILES}
                                 PROPERTIES HEADER_FILE_ONLY TRUE)
 
-    set(viewer_RESOURCE_FILES
+
+    list(APPEND viewer_RESOURCE_FILES
         ${CMAKE_CURRENT_BINARY_DIR}/viewerRes.rc
-        ${viewer_RESOURCE_FILES}
         )
 
     set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/viewerRes.rc
@@ -1393,6 +1387,7 @@ if (WINDOWS)
         wer
         user32
         Vfw32
+        wer
         Wbemuuid
         winspool
         Normaliz
@@ -1511,6 +1506,12 @@ add_executable(${VIEWER_BINARY_NAME}
     ${viewer_SOURCE_FILES}
     )
 
+if(USE_PRECOMPILED_HEADERS)
+  target_precompiled_header(${VIEWER_BINARY_NAME}
+      ${CMAKE_CURRENT_SOURCE_DIR}/llviewerprecompiledheaders.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/llviewerprecompiledheaders.cpp)
+endif(USE_PRECOMPILED_HEADERS)
+
 set(PACKAGE OFF CACHE BOOL
     "Add a package target that builds an installer package.")
 
@@ -1525,15 +1526,17 @@ if (WINDOWS)
 		LINK_FLAGS_RELWITHDEBINFO "${release_flags} ${EXTRA_LINKER_FLAGS_RELEASE}"
         )
 
-    add_dependencies(${VIEWER_BINARY_NAME} generate_viewer_version)
+    if(GEN_IS_MULTI_CONFIG)
+      set(VIEWER_BUILD_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}")
+      set_target_properties(${VIEWER_BINARY_NAME} PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+    else()
+      set(VIEWER_BUILD_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/package")
+      set_target_properties(${VIEWER_BINARY_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${VIEWER_BUILD_DEST_DIR}")
+    endif()
 
-    if(USE_PRECOMPILED_HEADERS)
-        set_target_properties(
-            ${VIEWER_BINARY_NAME}
-            PROPERTIES
-            COMPILE_FLAGS "/Yullviewerprecompiledheaders.h"
-            )
-    endif(USE_PRECOMPILED_HEADERS)
+    add_dependencies(${VIEWER_BINARY_NAME} generate_viewer_version)
 
     # If adding a file to viewer_manifest.py in the WindowsManifest.construct() method, be sure to add the dependency
     # here.
@@ -1542,71 +1545,57 @@ if (WINDOWS)
     # In the meantime, if you have any ideas on how to easily maintain one list, either here or in viewer_manifest.py
     # and have the build deps get tracked *please* tell me about it.
 
-    if(NOT DISABLE_TCMALLOC)
-      # Configure a var for tcmalloc location, if used.
-      # Note the need to specify multiple names explicitly.
-      set(GOOGLE_PERF_TOOLS_SOURCE
-        ${SHARED_LIB_STAGING_DIR}/Release/libtcmalloc_minimal.dll
-        ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/libtcmalloc_minimal.dll
-        ${SHARED_LIB_STAGING_DIR}/Debug/libtcmalloc_minimal-debug.dll
-        )
-    endif(NOT DISABLE_TCMALLOC)
-
     set(COPY_INPUT_DEPENDENCIES
       # The following commented dependencies are determined at variably at build time. Can't do this here.
       #${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/libtcmalloc_minimal.dll => None ... Skipping libtcmalloc_minimal.dll
       ${CMAKE_SOURCE_DIR}/../etc/message.xml
       ${CMAKE_SOURCE_DIR}/../scripts/messages/message_template.msg
-      ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/llcommon.dll
-      ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/libapr-1.dll
-      ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/libaprutil-1.dll
-      ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/libapriconv-1.dll
       ${SHARED_LIB_STAGING_DIR}/Release/glod.dll
       ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/glod.dll
-      ${SHARED_LIB_STAGING_DIR}/Debug/glod.dll
       ${SHARED_LIB_STAGING_DIR}/Release/openjpeg.dll
       ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/openjpeg.dll
-      ${SHARED_LIB_STAGING_DIR}/Debug/openjpegd.dll
-      ${SHARED_LIB_STAGING_DIR}/Release/libhunspell.dll
-      ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/libhunspell.dll
-      ${SHARED_LIB_STAGING_DIR}/Debug/libhunspell.dll
-      ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/SLVoice.exe
-      ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/libsndfile-1.dll
-      ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/zlib1.dll
-      ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/vivoxoal.dll
-      ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/ca-bundle.crt
       ${GOOGLE_PERF_TOOLS_SOURCE}
       ${CMAKE_CURRENT_SOURCE_DIR}/licenses-win32.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/featuretable.txt
-      ${CMAKE_CURRENT_SOURCE_DIR}/featuretable_xp.txt
-      ${ARCH_PREBUILT_DIRS_RELEASE}/libeay32.dll
-      ${ARCH_PREBUILT_DIRS_RELEASE}/ssleay32.dll
-      ${ARCH_PREBUILT_DIRS_DEBUG}/libeay32.dll
-      ${ARCH_PREBUILT_DIRS_DEBUG}/ssleay32.dll
       AlchemyPlugin
       media_plugin_cef
-      media_plugin_libvlc
       windows-crash-logger
       )
 
     if (ADDRESS_SIZE EQUAL 64)
         list(APPEND COPY_INPUT_DEPENDENCIES
-            ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/vivoxsdk_x64.dll
-            ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/ortp_x64.dll
+            ${SHARED_LIB_STAGING_DIR}/Debug/libcrypto-1_1-x64.dll
+            ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/libcrypto-1_1-x64.dll
+            ${SHARED_LIB_STAGING_DIR}/Release/libcrypto-1_1-x64.dll
+            ${SHARED_LIB_STAGING_DIR}/Debug/libssl-1_1-x64.dll
+            ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/libssl-1_1-x64.dll
+            ${SHARED_LIB_STAGING_DIR}/Release/libssl-1_1-x64.dll
+            ${SHARED_LIB_STAGING_DIR}/Release/vivoxsdk_x64.dll
+            ${SHARED_LIB_STAGING_DIR}/Release/ortp_x64.dll
             )
     else (ADDRESS_SIZE EQUAL 64)
         list(APPEND COPY_INPUT_DEPENDENCIES
-            ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/vivoxsdk.dll
-            ${SHARED_LIB_STAGING_DIR}/${CMAKE_CFG_INTDIR}/ortp.dll
+            ${SHARED_LIB_STAGING_DIR}/Release/libcrypto-1_1.dll
+            ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/libcrypto-1_1.dll
+            ${SHARED_LIB_STAGING_DIR}/Release/libcrypto-1_1.dll
+            ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/libssl-1_1.dll
+            ${SHARED_LIB_STAGING_DIR}/Release/libssl-1_1.dll
+            ${SHARED_LIB_STAGING_DIR}/Release/vivoxsdk.dll
+            ${SHARED_LIB_STAGING_DIR}/Release/ortp.dll
             )
     endif (ADDRESS_SIZE EQUAL 64)
+
+    if(LIBVLCPLUGIN)
+      list(APPEND COPY_INPUT_DEPENDENCIES
+	    media_plugin_libvlc
+	    )
+    endif(LIBVLCPLUGIN)
 
     if (FMODSTUDIO)
       if (ADDRESS_SIZE EQUAL 32)
         list(APPEND COPY_INPUT_DEPENDENCIES
              ${SHARED_LIB_STAGING_DIR}/Release/fmod.dll
              ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod.dll
-             ${SHARED_LIB_STAGING_DIR}/Debug/fmodL.dll
             )
       elseif (ADDRESS_SIZE EQUAL 64)
         list(APPEND COPY_INPUT_DEPENDENCIES
@@ -1617,8 +1606,14 @@ if (WINDOWS)
       endif (ADDRESS_SIZE EQUAL 32)
     endif (FMODSTUDIO)
 
+    if(MSVC_IDE)
+      set(VIEWER_BUILD_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}")
+    else()
+      set(VIEWER_BUILD_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/packaged")
+    endif()
+
     add_custom_command(
-      OUTPUT  ${CMAKE_CFG_INTDIR}/copy_touched.bat
+      OUTPUT  ${VIEWER_BUILD_DEST_DIR}/copy_touched.bat
       COMMAND ${PYTHON_EXECUTABLE}
       ARGS
         ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
@@ -1630,12 +1625,12 @@ if (WINDOWS)
         --buildtype=${CMAKE_BUILD_TYPE}
         --channel=${VIEWER_CHANNEL}
         --configuration=${CMAKE_CFG_INTDIR}
-        --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
+        --dest=${VIEWER_BUILD_DEST_DIR}
         --grid=${GRID}
         --sdl2=${LLWINDOW_SDL2}
-        --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
         --source=${CMAKE_CURRENT_SOURCE_DIR}
-        --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/copy_touched.bat
+        --touch=${VIEWER_BUILD_DEST_DIR}/copy_touched.bat
+        --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
       DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
         generate_viewer_version
@@ -1645,7 +1640,7 @@ if (WINDOWS)
       COMMENT "Performing viewer_manifest copy"
       )
 
-    add_custom_target(copy_w_viewer_manifest ALL DEPENDS ${CMAKE_CFG_INTDIR}/copy_touched.bat)
+    add_custom_target(copy_w_viewer_manifest ALL DEPENDS ${VIEWER_BUILD_DEST_DIR}/copy_touched.bat)
 
     add_dependencies(${VIEWER_BINARY_NAME} stage_third_party_libs llcommon copy_w_viewer_manifest)
 
@@ -1662,7 +1657,7 @@ if (WINDOWS)
 
     if (PACKAGE)
       add_custom_command(
-        OUTPUT ${CMAKE_CFG_INTDIR}/touched.bat
+        OUTPUT ${VIEWER_BUILD_DEST_DIR}/touched.bat
         COMMAND ${PYTHON_EXECUTABLE}
         ARGS
           ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
@@ -1673,12 +1668,12 @@ if (WINDOWS)
           --buildtype=${CMAKE_BUILD_TYPE}
           --channel=${VIEWER_CHANNEL}
           --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
-          --configuration=${CMAKE_CFG_INTDIR}
-          --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
+	  --configuration=${VIEWER_BUILD_DEST_DIR}
+          --dest=${VIEWER_BUILD_DEST_DIR}
           --grid=${GRID}
           --sdl2=${LLWINDOW_SDL2}
           --source=${CMAKE_CURRENT_SOURCE_DIR}
-          --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/touched.bat
+	  --touch=${VIEWER_BUILD_DEST_DIR}/touched.bat
         DEPENDS
             ${VIEWER_BINARY_NAME}
             ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
@@ -1687,7 +1682,7 @@ if (WINDOWS)
         )
 
       add_custom_target(llpackage ALL DEPENDS
-        ${CMAKE_CFG_INTDIR}/touched.bat
+        ${VIEWER_BUILD_DEST_DIR}/touched.bat
         windows-setup-build-all
         )
         # temporarily disable packaging of event_host until hg subrepos get
@@ -1989,13 +1984,13 @@ if (PACKAGE)
   endif (LINUX)
 
   if(RELEASE_CRASH_REPORTING OR NON_RELEASE_CRASH_REPORTING)
-  if(CMAKE_CFG_INTDIR STREQUAL ".")
+  if(GEN_IS_MULTI_CONFIG)
       set(LLBUILD_CONFIG ${CMAKE_BUILD_TYPE})
-  else(CMAKE_CFG_INTDIR STREQUAL ".")
+  else()
       # set LLBUILD_CONFIG to be a shell variable evaluated at build time
       # reflecting the configuration we are currently building.
       set(LLBUILD_CONFIG ${CMAKE_CFG_INTDIR})
-  endif(CMAKE_CFG_INTDIR STREQUAL ".")
+  endif()
   add_custom_command(OUTPUT "${VIEWER_SYMBOL_FILE}"
     COMMAND "${PYTHON_EXECUTABLE}"
     ARGS

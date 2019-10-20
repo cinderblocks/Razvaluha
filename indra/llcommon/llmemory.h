@@ -30,7 +30,7 @@
 #include "llunits.h"
 #include "stdtypes.h"
 #if !LL_WINDOWS
-#include <stdint.h>
+#include <cstdint>
 #endif
 
 class LLMutex ;
@@ -41,7 +41,6 @@ class LLMutex ;
 #define LL_CHECK_MEMORY 
 #endif
 
-
 #if LL_WINDOWS
 #define LL_ALIGN_OF __alignof
 #else
@@ -49,7 +48,11 @@ class LLMutex ;
 #endif
 
 #if LL_WINDOWS
-#define LL_DEFAULT_HEAP_ALIGN 8
+	#if ADDRESS_SIZE == 64
+		#define LL_DEFAULT_HEAP_ALIGN 16
+	#else
+		#define LL_DEFAULT_HEAP_ALIGN 8
+	#endif
 #elif LL_DARWIN
 #define LL_DEFAULT_HEAP_ALIGN 16
 #elif LL_LINUX
@@ -60,12 +63,18 @@ class LLMutex ;
 LL_COMMON_API void ll_assert_aligned_func(uintptr_t ptr,U32 alignment);
 
 #ifdef SHOW_ASSERT
+// This is incredibly expensive - in profiling Windows RWD builds, 30%
+// of CPU time was in aligment checks.
+//#define ASSERT_ALIGNMENT
+#endif
+
+#ifdef ASSERT_ALIGNMENT
 #define ll_assert_aligned(ptr,alignment) ll_assert_aligned_func(uintptr_t(ptr),((U32)alignment))
 #else
 #define ll_assert_aligned(ptr,alignment)
 #endif
 
-#include <xmmintrin.h>
+#include <immintrin.h>
 
 template <typename T> T* LL_NEXT_ALIGNED_ADDRESS(T* address) 
 { 
@@ -142,7 +151,11 @@ template <typename T> T* LL_NEXT_ALIGNED_ADDRESS_64(T* address)
 inline void* ll_aligned_malloc_16(size_t size) // returned hunk MUST be freed with ll_aligned_free_16().
 {
 #if defined(LL_WINDOWS)
+#if ADDRESS_SIZE == 64
+	return malloc(size); // default windows x64 malloc is 16 byte aligned.
+#else
 	return _aligned_malloc(size, 16);
+#endif
 #elif defined(LL_DARWIN)
 	return malloc(size); // default osx malloc is 16 byte aligned.
 #else
@@ -157,7 +170,11 @@ inline void* ll_aligned_malloc_16(size_t size) // returned hunk MUST be freed wi
 inline void ll_aligned_free_16(void *p)
 {
 #if defined(LL_WINDOWS)
+#if ADDRESS_SIZE == 64
+	free(p); // default windows x64 malloc is 16 byte aligned.
+#else
 	_aligned_free(p);
+#endif
 #elif defined(LL_DARWIN)
 	return free(p);
 #else
@@ -168,7 +185,11 @@ inline void ll_aligned_free_16(void *p)
 inline void* ll_aligned_realloc_16(void* ptr, size_t size, size_t old_size) // returned hunk MUST be freed with ll_aligned_free_16().
 {
 #if defined(LL_WINDOWS)
+#if ADDRESS_SIZE == 64
+	return realloc(ptr, size); // default windows x64 malloc is 16 byte aligned.
+#else
 	return _aligned_realloc(ptr, size, 16);
+#endif
 #elif defined(LL_DARWIN)
 	return realloc(ptr,size); // default osx malloc is 16 byte aligned.
 #else
@@ -370,7 +391,7 @@ public:
 	static U64 getCurrentRSS();
 	static void* tryToAlloc(void* address, U32 size);
 	static void initMaxHeapSizeGB(F32Gigabytes max_heap_size, BOOL prevent_heap_failure);
-	static void updateMemoryInfo(bool for_cache = false) ;
+	static void updateMemoryInfo() ;
 	static void logMemoryInfo(BOOL update = FALSE);
 	static bool isMemoryPoolLow();
 

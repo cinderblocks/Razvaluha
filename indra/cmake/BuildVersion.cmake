@@ -39,7 +39,7 @@ if (NOT DEFINED VIEWER_SHORT_VERSION) # will be true in indra/, false in indra/n
               message(STATUS "Revision not set: git not found; using 0")
               set(VIEWER_VERSION_REVISION 0)
            endif (Git_FOUND)
-        endif (DEFINED ENV{revision})
+        endif ()
         message(STATUS "Building '${VIEWER_CHANNEL}' Version ${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}")
     else ( EXISTS ${VIEWER_VERSION_BASE_FILE} )
         message(SEND_ERROR "Cannot get viewer version from '${VIEWER_VERSION_BASE_FILE}'") 
@@ -57,5 +57,6 @@ if (NOT DEFINED VIEWER_SHORT_VERSION) # will be true in indra/, false in indra/n
         "LL_VIEWER_VERSION_MINOR=${VIEWER_VERSION_MINOR}"
         "LL_VIEWER_VERSION_PATCH=${VIEWER_VERSION_PATCH}"
         "LL_VIEWER_VERSION_BUILD=${VIEWER_VERSION_REVISION}"
+        "LLBUILD_CONFIG=\"${CMAKE_BUILD_TYPE}\""
         )
 endif (NOT DEFINED VIEWER_SHORT_VERSION)

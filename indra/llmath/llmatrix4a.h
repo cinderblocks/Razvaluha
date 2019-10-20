@@ -50,13 +50,22 @@ public:
 		return ll_aligned_malloc_16(size);
 	}
 
+	void* operator new[](size_t size)
+	{
+		return ll_aligned_malloc_16(size);
+	}
+
 	void operator delete(void* ptr)
 	{
 		ll_aligned_free_16(ptr);
 	}
 
-	LLMatrix4a()
-	{}
+	void operator delete[](void* ptr)
+	{
+		ll_aligned_free_16(ptr);
+	}
+
+	LLMatrix4a() = default;
 	LLMatrix4a(const LLQuad& q1,const LLQuad& q2,const LLQuad& q3,const LLQuad& q4)
 	{
 		mMatrix[0] = q1;
@@ -324,7 +333,7 @@ public:
 		mMatrix[3].setAdd(a.mMatrix[3],d3);
 	}
 
-	//Singu Note: Don't mess with this. It's intentionally different from LL's. 
+	// Alchemy Note: Don't mess with this. It's intentionally different from LL's. 
 	// Note how res isn't manipulated until the very end.
 	//Fast(er). Treats v[VW] as 0.f
 	inline void rotate(const LLVector4a& v, LLVector4a& res) const
@@ -733,5 +742,6 @@ inline std::ostream& operator<<(std::ostream& s, const LLMatrix4a& m)
 
 void matMulBoundBox(const LLMatrix4a &a, const LLVector4a *in_extents, LLVector4a *out_extents);
 
-static_assert(std::is_trivially_copyable<LLMatrix4a>{}, "LLMatrix4a must be a trivially copyable type");
+static_assert(std::is_trivial<LLMatrix4a>{}, "LLMatrix4a must be a trivial type");
+static_assert(std::is_standard_layout<LLMatrix4a>{}, "LLMatrix4a must be a standard layout type");
 #endif

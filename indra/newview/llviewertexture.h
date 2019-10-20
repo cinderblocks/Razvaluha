@@ -58,11 +58,12 @@ class LLVFile;
 class LLMessageSystem;
 class LLViewerMediaImpl ;
 class LLVOVolume ;
+struct LLTextureKey;
 
 class LLLoadedCallbackEntry
 {
 public:
-	typedef std::set< LLUUID > source_callback_list_t;
+    typedef std::set< LLTextureKey > source_callback_list_t;
 
 public:
 	LLLoadedCallbackEntry(loaded_callback_func cb,
@@ -135,6 +136,8 @@ public:
 	void setID(const LLUUID& id) { mID = id; } // Edit for local assets to cut down on reloads, be sure to remove from wherever this has been added first.
 	void setBoostLevel(S32 level);
 	S32  getBoostLevel() { return mBoostLevel; }
+	void setTextureListType(S32 tex_type) { mTextureListType = tex_type; }
+	S32 getTextureListType() { return mTextureListType; }
 
 	void addTextureStats(F32 virtual_size, BOOL needs_gltexture = TRUE) const;
 	void resetTextureStats();	
@@ -156,10 +159,10 @@ public:
 	S32 getNumFaces(U32 ch) const;
 	const ll_face_list_t* getFaceList(U32 channel) const {llassert(channel < LLRender::NUM_TEXTURE_CHANNELS); return &mFaceList[channel];}
 
-	virtual void addVolume(LLVOVolume* volumep);
-	virtual void removeVolume(LLVOVolume* volumep);
-	S32 getNumVolumes() const;
-	const ll_volume_list_t* getVolumeList() const { return &mVolumeList; }
+	virtual void addVolume(U32 channel, LLVOVolume* volumep);
+	virtual void removeVolume(U32 channel, LLVOVolume* volumep);
+	S32 getNumVolumes(U32 channel) const;
+	const ll_volume_list_t* getVolumeList(U32 channel) const { return &mVolumeList[channel]; }
 
 	
 	virtual void setCachedRawImage(S32 discard_level, LLImageRaw* imageraw) ;
@@ -188,6 +191,8 @@ private:
 	static bool isMemoryForTextureLow() ;
 protected:
 	LLUUID mID;
+	S32 mTextureListType; // along with mID identifies where to search for this texture in TextureList
+
 	F32 mSelectedTime;				// time texture was last selected
 	mutable F32 mMaxVirtualSize;	// The largest virtual size of the image, in pixels - how much data to we need?	
 	mutable S32  mMaxVirtualSizeResetCounter ;
@@ -199,8 +204,8 @@ protected:
 	U32               mNumFaces[LLRender::NUM_TEXTURE_CHANNELS];
 	LLFrameTimer      mLastFaceListUpdateTimer ;
 
-	ll_volume_list_t  mVolumeList;
-	U32					mNumVolumes;
+	ll_volume_list_t  mVolumeList[LLRender::NUM_VOLUME_TEXTURE_CHANNELS];
+	U32					mNumVolumes[LLRender::NUM_VOLUME_TEXTURE_CHANNELS];
 	LLFrameTimer	  mLastVolumeListUpdateTimer;
 
 	//do not use LLPointer here.
@@ -635,8 +640,9 @@ public:
 	//
 	//"find-texture" just check if the texture exists, if yes, return it, otherwise return null.
 	//
-	static LLViewerTexture*           findTexture(const LLUUID& id) ;
-	static LLViewerFetchedTexture*    findFetchedTexture(const LLUUID& id) ;
+	static void                       findFetchedTextures(const LLUUID& id, std::vector<LLViewerFetchedTexture*> &output);
+	static void                       findTextures(const LLUUID& id, std::vector<LLViewerTexture*> &output);
+	static LLViewerFetchedTexture*    findFetchedTexture(const LLUUID& id, S32 tex_type);
 	static LLViewerMediaTexture*      findMediaTexture(const LLUUID& id) ;
 	
 	static LLViewerMediaTexture*      createMediaTexture(const LLUUID& id, BOOL usemipmaps = TRUE, LLImageGL* gl_image = NULL) ;

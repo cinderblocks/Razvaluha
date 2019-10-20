@@ -17,15 +17,24 @@ if(NOT DEFINED COMMON_CMAKE_DIR)
     set(COMMON_CMAKE_DIR "${CMAKE_SOURCE_DIR}/cmake")
 endif(NOT DEFINED COMMON_CMAKE_DIR)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+get_property(_isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+option(GEN_IS_MULTI_CONFIG "" ${_isMultiConfig})
+mark_as_advanced(GEN_IS_MULTI_CONFIG)
+
 set(LIBS_CLOSED_PREFIX)
 set(LIBS_OPEN_PREFIX)
 set(SCRIPTS_PREFIX ../scripts)
 set(VIEWER_PREFIX)
 set(INTEGRATION_TESTS_PREFIX)
+
 option(LL_TESTS "Build and run unit and integration tests (disable for build timing runs to reduce variation" OFF)
-option(INCREMENTAL_LINK "Use incremental linking on win32 builds (enable for faster links on some machines)" OFF)
-option(USE_LTO "Enable global and interprocedural optimizations" OFF)
+option(BUILD_TESTING "Build test suite" OFF)
 option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
+option(INCREMENTAL_LINK "Use incremental linking on win32 builds (enable for faster links on some machines)" OFF)
+option(USE_PRECOMPILED_HEADERS "Enable use of precompiled header directives where supported." ON)
+option(USE_LTO "Enable global and interprocedural optimizations" OFF)
 option(FULL_DEBUG_SYMS "Enable Generation of full pdb on msvc" OFF)
 option(ENABLE_MEDIA_PLUGINS "Turn off building media plugins if they are imported by third-party library mechanism" ON)
 set(VIEWER_SYMBOL_FILE "" CACHE STRING "Name of tarball into which to place symbol files")
@@ -43,6 +52,7 @@ option(LLWINDOW_SDL2 "Use SDL2 for window and input handling" OFF)
 
 # Proprietary Library Features
 option(NVAPI "Use nvapi driver interface library" OFF)
+
 
 if(LIBS_CLOSED_DIR)
   file(TO_CMAKE_PATH "${LIBS_CLOSED_DIR}" LIBS_CLOSED_DIR)
@@ -69,7 +79,7 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/Server.cmake)
   set(INSTALL_PROPRIETARY ON CACHE BOOL "Install proprietary binaries")
 endif (EXISTS ${CMAKE_SOURCE_DIR}/Server.cmake)
 set(TEMPLATE_VERIFIER_OPTIONS "" CACHE STRING "Options for scripts/template_verifier.py")
-set(TEMPLATE_VERIFIER_MASTER_URL "https://forge.alchemyviewer.org/alchemy/tools/Master-Message-Template/raw/master/message_template.msg" CACHE STRING "Location of the master message template")
+set(TEMPLATE_VERIFIER_MASTER_URL "https://bitbucket.org/alchemyviewer/master-message-template/raw/tip/message_template.msg" CACHE STRING "Location of the master message template")
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
@@ -85,34 +95,32 @@ elseif (ADDRESS_SIZE EQUAL 64)
   #message(STATUS "ADDRESS_SIZE is 64")
   set(ARCH x86_64)
 else (ADDRESS_SIZE EQUAL 32)
-  #message(STATUS "ADDRESS_SIZE is UNRECOGNIZED: '${ADDRESS_SIZE}'")
-  # Use Python's platform.machine() since uname -m isn't available everywhere.
-  # Even if you can assume cygwin uname -m, the answer depends on whether
-  # you're running 32-bit cygwin or 64-bit cygwin! But even 32-bit Python will
-  # report a 64-bit processor.
-  execute_process(COMMAND
-                  "${PYTHON_EXECUTABLE}" "-c"
-                  "import platform; print platform.machine()"
-                  OUTPUT_VARIABLE ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-  # We expect values of the form i386, i686, x86_64, AMD64.
-  # In CMake, expressing ARCH.endswith('64') is awkward:
-  string(LENGTH "${ARCH}" ARCH_LENGTH)
-  math(EXPR ARCH_LEN_2 "${ARCH_LENGTH} - 2")
-  string(SUBSTRING "${ARCH}" ${ARCH_LEN_2} 2 ARCH_LAST_2)
-  if (ARCH_LAST_2 STREQUAL 64)
-    #message(STATUS "ARCH is detected as 64; ARCH is ${ARCH}")
-    set(ADDRESS_SIZE 64)
-  else ()
-    #message(STATUS "ARCH is detected as 32; ARCH is ${ARCH}")
-    set(ADDRESS_SIZE 32)
-  endif ()
+    #message(STATUS "ADDRESS_SIZE is UNDEFINED")
+    if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+      message(STATUS "Size of void pointer is detected as 8; ARCH is 64-bit")
+      set(ARCH x86_64)
+      set(ADDRESS_SIZE 64)
+    elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
+      message(STATUS "Size of void pointer is detected as 4; ARCH is 32-bit")
+      set(ADDRESS_SIZE 32)
+      set(ARCH i686)
+    else()
+      message(FATAL_ERROR "Unkown Architecture!")
+    endif()
 endif (ADDRESS_SIZE EQUAL 32)
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   set(WINDOWS ON BOOL FORCE)
-  set(LL_ARCH ${ARCH}_win32)
-  set(LL_ARCH_DIR ${ARCH}-win32)
-endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  if (ADDRESS_SIZE EQUAL 64)
+    set(LL_ARCH ${ARCH}_win64)
+    set(LL_ARCH_DIR ${ARCH}-win64)
+  elseif (ADDRESS_SIZE EQUAL 32)
+    set(LL_ARCH ${ARCH}_win32)
+    set(LL_ARCH_DIR ${ARCH}-win32)
+  else()
+    message(FATAL_ERROR "Unkown Architecture!")
+  endif ()
+endif (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(LINUX ON BOOL FORCE)
@@ -153,20 +161,24 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(DARWIN 1)
+  set(DARWIN ON BOOL FORCE)
 
   # Architecture
   set(CMAKE_OSX_SYSROOT macosx10.14)
   set(CMAKE_OSX_ARCHITECTURES "x86_64")
   set(CMAKE_XCODE_ATTRIBUTE_VALID_ARCHS "x86_64")
 
-  # Build Options
+  # Xcode setup
+  if (XCODE_VERSION LESS 10.2.0)
+    message( FATAL_ERROR "Xcode 10.2.0 or greater is required." )
+  endif (XCODE_VERSION LESS 10.2.0)
+    message( "Building with " ${CMAKE_OSX_SYSROOT} )
+  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
+
+  # Compiler setup
   set(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION "com.apple.compilers.llvm.clang.1_0")
   set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Debug] "dwarf")
   set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] "dwarf-with-dsym")
-
-  # Deployment
-  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
 
   # Linking 
   set(CMAKE_XCODE_ATTRIBUTE_DEAD_CODE_STRIPPING YES)
@@ -182,12 +194,16 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Apple Clang - Custom Compiler Flags
   set(CMAKE_XCODE_ATTRIBUTE_WARNING_CFLAGS "-Wall -Wextra -Wno-reorder -Wno-sign-compare -Wno-ignored-qualifiers -Wno-unused-local-typedef -Wno-unused-parameter -Wno-unused-template")
 
-  # Apple Clang - Language - C++
-  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD c++14)
+  # C++ specifics
+  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
   set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 
   # Apple Clang - Warning Policies
   set(CMAKE_XCODE_ATTRIBUTE_GCC_TREAT_WARNINGS_AS_ERRORS YES)
+
+  set(ADDRESS_SIZE 64)
+  set(ARCH x86_64)
+  set(CMAKE_OSX_ARCHITECTURES x86_64)
 
   set(LL_ARCH ${ARCH}_darwin)
   set(LL_ARCH_DIR universal-darwin)
@@ -231,7 +247,7 @@ set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_ONEWORD} CACHE STRING "Prefix used f
 
 set(VIEWER_BRANDING_ID "singularity" CACHE STRING "Viewer branding id")
 
-set(ENABLE_SIGNING OFF CACHE BOOL "Enable signing the viewer")
+option(ENABLE_SIGNING "Enable signing the viewer" OFF)
 set(SIGNING_IDENTITY "" CACHE STRING "Specifies the signing identity to use, if necessary.")
 
 set(VERSION_BUILD "0" CACHE STRING "Revision number passed in from the outside")

@@ -320,6 +320,8 @@ public:
 	bool meshRezEnabled() const;
 	bool meshUploadEnabled() const;
 
+	bool bakesOnMeshEnabled() const;
+
 	// has region received its simulator features list? Requires an additional query after caps received.
 	void requestSimulatorFeatures();
 	void setSimulatorFeaturesReceived(bool);
@@ -366,6 +368,7 @@ public:
 	friend std::ostream& operator<<(std::ostream &s, const LLViewerRegion &region);
     /// implements LLCapabilityProvider
     virtual std::string getDescription() const override;
+
     std::string getViewerAssetUrl() const { return mViewerAssetUrl; }
 
 	LLSpatialPartition* getSpatialPartition(U32 type);

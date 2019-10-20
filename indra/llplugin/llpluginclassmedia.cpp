@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llpluginclassmedia.cpp
  * @brief LLPluginClassMedia handles a plugin which knows about the "media" message class.
@@ -369,6 +367,12 @@ void LLPluginClassMedia::setSizeInternal(void)
 		mRequestedMediaWidth = nextPowerOf2(mRequestedMediaWidth);
 		mRequestedMediaHeight = nextPowerOf2(mRequestedMediaHeight);
 	}
+
+	if(mRequestedMediaWidth > 6000)
+		mRequestedMediaWidth = 6000;
+
+	if(mRequestedMediaHeight > 6000)
+		mRequestedMediaHeight = 6000;
 }
 
 void LLPluginClassMedia::setAutoScale(bool auto_scale)
@@ -804,9 +808,9 @@ void LLPluginClassMedia::sendPickFileResponse(const std::vector<std::string> fil
 	}
 
 	LLSD file_list = LLSD::emptyArray();
-	for (std::vector<std::string>::const_iterator in_iter = files.begin(); in_iter != files.end(); ++in_iter)
+	for (const auto& file : files)
 	{
-		file_list.append(LLSD::String(*in_iter));
+		file_list.append(LLSD::String(file));
 	}
 	message.setValueLLSD("file_list", file_list);
 

@@ -1229,7 +1229,8 @@ BOOL LLVOAvatar::isFullyBaked()
 	for (U32 i = 0; i < mBakedTextureDatas.size(); i++)
 	{
 		if (!isTextureDefined(mBakedTextureDatas[i].mTextureIndex)
-			&& ( (i != BAKED_SKIRT) || isWearingWearableType(LLWearableType::WT_SKIRT) ) )
+			&& ( (i != BAKED_SKIRT) || isWearingWearableType(LLWearableType::WT_SKIRT) ) 
+			&& (i != BAKED_LEFT_ARM) && (i != BAKED_LEFT_LEG) && (i != BAKED_AUX1) && (i != BAKED_AUX2) && (i != BAKED_AUX3) ) 
 		{
 			return FALSE;
 		}
@@ -1740,11 +1741,11 @@ void LLVOAvatar::calculateSpatialExtents(LLVector4a& newMin, LLVector4a& newMax)
 		for (const auto& mesh_pair : mPolyMeshes)
 		{
 			LLPolyMesh* mesh = mesh_pair.second;
-			for (S32 joint_num = 0; joint_num < mesh->mJointRenderData.size(); joint_num++)
+			for (const auto& joint : mesh->mJointRenderData)
 			{
 				static const LLVector4Logical mask = _mm_load_ps((F32*)&S_V4LOGICAL_MASK_TABLE[3 * 4]);
 				LLVector4a trans;
-				trans.setSelectWithMask(mask, _mm_setzero_ps(), mesh->mJointRenderData[joint_num]->mWorldMatrix->getRow<3>());
+				trans.setSelectWithMask(mask, _mm_setzero_ps(), joint->mWorldMatrix->getRow<3>());
 				update_min_max(newMin, newMax, trans);
 			}
 		}
@@ -2764,7 +2765,7 @@ LLViewerFetchedTexture *LLVOAvatar::getBakedTextureImage(const U8 te, const LLUU
 		uuid == IMG_INVISIBLE)
 	{
 		// Should already exist, don't need to find it on sim or baked-texture host.
-		result = gTextureList.findImage(uuid);
+		result = gTextureList.findImage(uuid, TEX_LIST_STANDARD);
 	}
 	if (!result)
 	{
@@ -5593,7 +5594,7 @@ bool LLVOAvatar::allTexturesCompletelyDownloaded(uuid_set_t& ids) const
 {
 	for (auto it = ids.begin(); it != ids.end(); ++it)
 	{
-		LLViewerFetchedTexture *imagep = gTextureList.findImage(*it);
+		LLViewerFetchedTexture *imagep = gTextureList.findImage(*it, TEX_LIST_STANDARD);
 		if (imagep && imagep->getDiscardLevel()!=0)
 		{
 			return false;
@@ -5627,7 +5628,7 @@ void LLVOAvatar::bakedTextureOriginCounts(S32 &sb_count, // server-bake, has ori
 	collectBakedTextureUUIDs(baked_ids);
 	for (auto it = baked_ids.begin(); it != baked_ids.end(); ++it)
 	{
-		LLViewerFetchedTexture *imagep = gTextureList.findImage(*it);
+		LLViewerFetchedTexture *imagep = gTextureList.findImage(*it, TEX_LIST_STANDARD);
 		bool has_url = false, has_host = false;
 		if (!imagep->getUrl().empty())
 		{
@@ -5652,7 +5653,7 @@ std::string LLVOAvatar::bakedTextureOriginInfo()
 	collectBakedTextureUUIDs(baked_ids);
 	for (auto it = baked_ids.begin(); it != baked_ids.end(); ++it)
 	{
-		LLViewerFetchedTexture *imagep = gTextureList.findImage(*it);
+		LLViewerFetchedTexture *imagep = gTextureList.findImage(*it, TEX_LIST_STANDARD);
 		bool has_url = false, has_host = false;
 		if (!imagep->getUrl().empty())
 		{
@@ -5681,7 +5682,7 @@ S32Bytes LLVOAvatar::totalTextureMemForUUIDS(uuid_set_t& ids)
 	S32Bytes result(0);
 	for (auto it = ids.begin(); it != ids.end(); ++it)
 	{
-		LLViewerFetchedTexture *imagep = gTextureList.findImage(*it);
+		LLViewerFetchedTexture *imagep = gTextureList.findImage(*it, TEX_LIST_STANDARD);
 		if (imagep)
 		{
 			result += imagep->getTextureMemory();
@@ -5770,7 +5771,7 @@ void LLVOAvatar::releaseOldTextures()
 	{
 		if (new_texture_ids.find(*it) == new_texture_ids.end())
 		{
-			LLViewerFetchedTexture *imagep = gTextureList.findImage(*it);
+			LLViewerFetchedTexture *imagep = gTextureList.findImage(*it, TEX_LIST_STANDARD);
 			if (imagep)
 			{
 				current_texture_mem += imagep->getTextureMemory();
@@ -7611,6 +7612,21 @@ const LLViewerJointAttachment *LLVOAvatar::attachObject(LLViewerObject *viewer_o
 		LLSelectMgr::getInstance()->updatePointAt();
 	}
 
+	viewer_object->refreshBakeTexture();
+
+
+	LLViewerObject::const_child_list_t& child_list = viewer_object->getChildren();
+	for (const auto& iter : child_list)
+    {
+		LLViewerObject* objectp = iter;
+		if (objectp)
+		{
+			objectp->refreshBakeTexture();
+		}
+	}
+
+	updateMeshVisibility();
+
 	return attachment;
 }
 
@@ -7817,6 +7833,20 @@ BOOL LLVOAvatar::detachObject(LLViewerObject *viewer_object)
 			{
 				updateAttachmentOverrides();
 			}
+			viewer_object->refreshBakeTexture();
+
+			LLViewerObject::const_child_list_t& child_list = viewer_object->getChildren();
+			for (const auto& iter1 : child_list)
+            {
+				LLViewerObject* objectp = iter1;
+				if (objectp)
+            {
+					objectp->refreshBakeTexture();
+				}
+            }
+
+			updateMeshVisibility();
+
 			LL_DEBUGS() << "Detaching object " << viewer_object->mID << " from " << attachment->getName() << LL_ENDL;
 			return TRUE;
 		}
@@ -8455,11 +8485,11 @@ bool LLVOAvatar::isTooComplex() const
 {
 	static const LLCachedControl<S32> always_render_friends("AlwaysRenderFriends", 0);
 	bool too_complex;
-	if (isSelf() || (always_render_friends && LLAvatarTracker::instance().isBuddy(getID())))
+	if (isSelf() || (always_render_friends && always_render_friends != 3 && LLAvatarTracker::instance().isBuddy(getID())))
 	{
 		too_complex = false;
 	}
-	else if (always_render_friends == 2)
+	else if (always_render_friends >= 2)
 	{
 		too_complex = true;
 	}
@@ -8504,6 +8534,109 @@ void LLVOAvatar::debugColorizeSubMeshes(U32 i, const LLColor4& color)
 			{
 				mesh->setColor(color);
 			}
+		}
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// updateMeshVisibility()
+// Hide the mesh joints if attachments are using baked textures
+//-----------------------------------------------------------------------------
+void LLVOAvatar::updateMeshVisibility()
+{
+	bool bake_flag[BAKED_NUM_INDICES];
+	memset(bake_flag, 0, BAKED_NUM_INDICES*sizeof(bool));
+
+	for (auto& attachment_point : mAttachmentPoints)
+    {
+		LLViewerJointAttachment* attachment = attachment_point.second;
+		if (attachment)
+		{
+			for (auto objectp : attachment->mAttachedObjects)
+            {
+                if (objectp)
+				{
+					for (int face_index = 0; face_index < objectp->getNumTEs(); face_index++)
+					{
+						LLTextureEntry* tex_entry = objectp->getTE(face_index);
+						bake_flag[BAKED_HEAD] |= (tex_entry->getID() == IMG_USE_BAKED_HEAD);
+						bake_flag[BAKED_EYES] |= (tex_entry->getID() == IMG_USE_BAKED_EYES);
+						bake_flag[BAKED_HAIR] |= (tex_entry->getID() == IMG_USE_BAKED_HAIR);
+						bake_flag[BAKED_LOWER] |= (tex_entry->getID() == IMG_USE_BAKED_LOWER);
+						bake_flag[BAKED_UPPER] |= (tex_entry->getID() == IMG_USE_BAKED_UPPER);
+						bake_flag[BAKED_SKIRT] |= (tex_entry->getID() == IMG_USE_BAKED_SKIRT);
+						bake_flag[BAKED_LEFT_ARM] |= (tex_entry->getID() == IMG_USE_BAKED_LEFTARM);
+						bake_flag[BAKED_LEFT_LEG] |= (tex_entry->getID() == IMG_USE_BAKED_LEFTLEG);
+						bake_flag[BAKED_AUX1] |= (tex_entry->getID() == IMG_USE_BAKED_AUX1);
+						bake_flag[BAKED_AUX2] |= (tex_entry->getID() == IMG_USE_BAKED_AUX2);
+						bake_flag[BAKED_AUX3] |= (tex_entry->getID() == IMG_USE_BAKED_AUX3);
+					}
+				}
+
+				LLViewerObject::const_child_list_t& child_list = objectp->getChildren();
+				for (const auto& iter1 : child_list)
+                {
+					LLViewerObject* objectchild = iter1;
+					if (objectchild)
+					{
+						for (int face_index = 0; face_index < objectchild->getNumTEs(); face_index++)
+						{
+							LLTextureEntry* tex_entry = objectchild->getTE(face_index);
+							bake_flag[BAKED_HEAD] |= (tex_entry->getID() == IMG_USE_BAKED_HEAD);
+							bake_flag[BAKED_EYES] |= (tex_entry->getID() == IMG_USE_BAKED_EYES);
+							bake_flag[BAKED_HAIR] |= (tex_entry->getID() == IMG_USE_BAKED_HAIR);
+							bake_flag[BAKED_LOWER] |= (tex_entry->getID() == IMG_USE_BAKED_LOWER);
+							bake_flag[BAKED_UPPER] |= (tex_entry->getID() == IMG_USE_BAKED_UPPER);
+							bake_flag[BAKED_SKIRT] |= (tex_entry->getID() == IMG_USE_BAKED_SKIRT);
+							bake_flag[BAKED_LEFT_ARM] |= (tex_entry->getID() == IMG_USE_BAKED_LEFTARM);
+							bake_flag[BAKED_LEFT_LEG] |= (tex_entry->getID() == IMG_USE_BAKED_LEFTLEG);
+							bake_flag[BAKED_AUX1] |= (tex_entry->getID() == IMG_USE_BAKED_AUX1);
+							bake_flag[BAKED_AUX2] |= (tex_entry->getID() == IMG_USE_BAKED_AUX2);
+							bake_flag[BAKED_AUX3] |= (tex_entry->getID() == IMG_USE_BAKED_AUX3);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//LL_INFOS() << "head " << bake_flag[BAKED_HEAD] << "eyes " << bake_flag[BAKED_EYES] << "hair " << bake_flag[BAKED_HAIR] << "lower " << bake_flag[BAKED_LOWER] << "upper " << bake_flag[BAKED_UPPER] << "skirt " << bake_flag[BAKED_SKIRT] << LL_ENDL;
+
+	for (size_t i = 0; i < mMeshLOD.size(); i++)
+	{
+		LLAvatarJoint* joint = mMeshLOD[i];
+		if (i == MESH_ID_HAIR)
+		{
+			joint->setVisible(!bake_flag[BAKED_HAIR], TRUE);
+		}
+		else if (i == MESH_ID_HEAD)
+		{
+			joint->setVisible(!bake_flag[BAKED_HEAD], TRUE);
+		}
+		else if (i == MESH_ID_SKIRT)
+		{
+			joint->setVisible(!bake_flag[BAKED_SKIRT], TRUE);
+		}
+		else if (i == MESH_ID_UPPER_BODY)
+		{
+			joint->setVisible(!bake_flag[BAKED_UPPER], TRUE);
+		}
+		else if (i == MESH_ID_LOWER_BODY)
+		{
+			joint->setVisible(!bake_flag[BAKED_LOWER], TRUE);
+		}
+		else if (i == MESH_ID_EYEBALL_LEFT)
+		{
+			joint->setVisible(!bake_flag[BAKED_EYES], TRUE);
+		}
+		else if (i == MESH_ID_EYEBALL_RIGHT)
+		{
+			joint->setVisible(!bake_flag[BAKED_EYES], TRUE);
+		}
+		else if (i == MESH_ID_EYELASH)
+		{
+			joint->setVisible(!bake_flag[BAKED_HEAD], TRUE);
 		}
 	}
 }
@@ -8748,6 +8881,30 @@ void LLVOAvatar::updateMeshTextures()
 		call_remove_missing = false;
 		removeMissingBakedTextures();	// May call back into this function if anything is removed
 		call_remove_missing = true;
+	}
+
+	//refresh bakes on any attached objects
+	for (auto& attachment_point : mAttachmentPoints)
+    {
+		LLViewerJointAttachment* attachment = attachment_point.second;
+
+		for (auto attached_object : attachment->mAttachedObjects)
+        {
+            if (attached_object && !attached_object->isDead())
+			{
+				attached_object->refreshBakeTexture();
+
+				LLViewerObject::const_child_list_t& child_list = attached_object->getChildren();
+				for (const auto& iter : child_list)
+                {
+					LLViewerObject* objectp = iter;
+					if (objectp && !objectp->isDead())
+					{
+						objectp->refreshBakeTexture();
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -9129,7 +9286,7 @@ void LLVOAvatar::dumpAppearanceMsgParams( const std::string& dump_prefix,
 
 	apr_file_printf(file, "\n<params>\n");
 	LLVisualParam* param = getFirstVisualParam();
-	for (S32 i = 0; i < params_for_dump.size(); i++)
+	for (const auto& param_for_dump : params_for_dump)
 	{
 		while( param && ((param->getGroup() != VISUAL_PARAM_GROUP_TWEAKABLE) && 
 						 (param->getGroup() != VISUAL_PARAM_GROUP_TRANSMIT_NOT_TWEAKABLE)) ) // should not be any of group VISUAL_PARAM_GROUP_TWEAKABLE_NO_TRANSMIT
@@ -9137,7 +9294,7 @@ void LLVOAvatar::dumpAppearanceMsgParams( const std::string& dump_prefix,
 			param = getNextVisualParam();
 		}
 		LLViewerVisualParam* viewer_param = (LLViewerVisualParam*)param;
-		F32 value = params_for_dump[i];
+		F32 value = param_for_dump;
 		dump_visual_param(file, viewer_param, value);
 		param = getNextVisualParam();
 	}
@@ -9414,7 +9571,7 @@ void LLVOAvatar::applyParsedAppearanceMessage(LLAppearanceMessageContents& conte
 	{
 		if (!isTextureDefined(mBakedTextureDatas[baked_index].mTextureIndex)
 			&& mBakedTextureDatas[baked_index].mLastTextureID != IMG_DEFAULT
-			&& baked_index != BAKED_SKIRT)
+			&& baked_index != BAKED_SKIRT && baked_index != BAKED_LEFT_ARM && baked_index != BAKED_LEFT_LEG && baked_index != BAKED_AUX1 && baked_index != BAKED_AUX2 && baked_index != BAKED_AUX3)
 		{
 			LL_DEBUGS("Avatar") << avString() << " baked_index " << (S32) baked_index << " using mLastTextureID " << mBakedTextureDatas[baked_index].mLastTextureID << LL_ENDL;
 			setTEImage(mBakedTextureDatas[baked_index].mTextureIndex,
@@ -9552,6 +9709,36 @@ void LLVOAvatar::applyParsedAppearanceMessage(LLAppearanceMessageContents& conte
 	}
 
 	updateMeshTextures();
+	updateMeshVisibility();
+}
+
+LLViewerTexture* LLVOAvatar::getBakedTexture(const U8 te)
+{
+	if (te < 0 || te >= BAKED_NUM_INDICES)
+	{
+		return NULL;
+	}
+
+	BOOL is_layer_baked = isTextureDefined(mBakedTextureDatas[te].mTextureIndex);
+
+	LLViewerTexLayerSet* layerset = NULL;
+	layerset = getTexLayerSet(te);
+
+
+	if (!isEditingAppearance() && is_layer_baked)
+	{
+		LLViewerFetchedTexture* baked_img = LLViewerTextureManager::staticCastToFetchedTexture(getImage(mBakedTextureDatas[te].mTextureIndex, 0), TRUE);
+		return baked_img;
+	}
+	else if (layerset && isEditingAppearance())
+	{
+		layerset->createComposite();
+		layerset->setUpdatesEnabled(TRUE);
+
+		return layerset->getViewerComposite();
+	}
+
+	return NULL;
 }
 
 // static

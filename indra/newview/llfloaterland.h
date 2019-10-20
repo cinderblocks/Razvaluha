@@ -140,12 +140,9 @@ public:
 	virtual ~LLPanelLandGeneral();
 	/*virtual*/ void refresh() override;
 	void refreshNames();
-	void draw() override;
 
 	void setGroup(const LLUUID& group_id);
-	void onClickProfile();
 	void onClickSetGroup();
-	static void onClickInfoGroup(void*);
 	static void onClickBuyLand(void* data);
 	static void onClickBuyPass(void* deselect_when_done);
 	void onClickDeed();
@@ -186,8 +183,7 @@ protected:
  	LLButton*		mBtnSetGroup;
 
 	LLTextBox*		mTextOwner;
-	LLButton*		mBtnProfile;
-	
+
 	LLTextBox*		mContentRating;
 	LLTextBox*		mLandType;
 
@@ -241,7 +237,6 @@ public:
 	LLPanelLandObjects(LLSafeHandle<LLParcelSelection>& parcelp);
 	virtual ~LLPanelLandObjects();
 	/*virtual*/ void refresh() override;
-	void draw() override;
 
 	bool callbackReturnOwnerObjects(const LLSD& notification, const LLSD& response);
 	bool callbackReturnGroupObjects(const LLSD& notification, const LLSD& response);
@@ -259,9 +254,7 @@ public:
 	void onClickReturnOwnerList();
 	void onClickRefresh();
 
-	void onDoubleClickOwner();	
-
-	void onCommitList(LLUICtrl* ctrl);
+	void onCommitList();
 	static void onLostFocus(LLFocusableElement* caller, void* user_data);
 		   void onCommitClean();
 	static void processParcelObjectOwnersReply(LLMessageSystem *msg, void **);
@@ -400,7 +393,7 @@ public:
 	static void updateCovenantText(const std::string& string);
 	static void updateEstateName(const std::string& name);
 	static void updateLastModified(const std::string& text);
-	static void updateEstateOwnerName(const std::string& name);
+	static void updateEstateOwnerID(const LLUUID& id);
 
 protected:
 	LLSafeHandle<LLParcelSelection>&	mParcel;

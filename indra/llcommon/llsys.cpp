@@ -63,7 +63,7 @@ using namespace llsd;
 #	include <errno.h>
 #	include <sys/sysctl.h>
 #	include <sys/utsname.h>
-#	include <stdint.h>
+#	include <cstdint>
 #	include <CoreServices/CoreServices.h>
 #   include <stdexcept>
 #	include <mach/host_info.h>
@@ -71,7 +71,7 @@ using namespace llsd;
 #	include <mach/task.h>
 #	include <mach/task_info.h>
 #elif LL_LINUX
-#	include <errno.h>
+#	include <cerrno>
 #	include <sys/utsname.h>
 #	include <unistd.h>
 #	include <sys/sysinfo.h>
@@ -101,10 +101,6 @@ static const F32 MEM_INFO_THROTTLE = 20;
 // If we only triggered FrameWatcher logging when the session framerate
 // dropped below the login framerate, we'd have very little additional data.
 static const F32 MEM_INFO_WINDOW = 10*60;
-
-#if LL_WINDOWS
-#pragma warning(disable : 4996)
-#endif // LL_WINDOWS
 
 // Wrap boost::regex_match() with a function that doesn't throw.
 template <typename S, typename M, typename R>
@@ -201,8 +197,14 @@ LLOSInfo::LLOSInfo() :
 	///get native system info if available..
 	typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO); ///function pointer for loading GetNativeSystemInfo
 	SYSTEM_INFO si; //System Info object file contains architecture info
+	PGNSI pGNSI; //pointer object
 	ZeroMemory(&si, sizeof(SYSTEM_INFO)); //zero out the memory in information
-	GetNativeSystemInfo(&si); //if it fails get regular system info 
+	pGNSI = (PGNSI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetNativeSystemInfo"); //load kernel32 get function
+	if (nullptr != pGNSI) //check if it has failed
+		pGNSI(&si); //success
+	else
+		GetSystemInfo(&si); //if it fails get regular system info 
+	//(Warning: If GetSystemInfo it may result in incorrect information in a WOW64 machine, if the kernel fails to load)
 
 	//msdn microsoft finds 32 bit and 64 bit flavors this way..
 	//http://msdn.microsoft.com/en-us/library/ms724429(VS.85).aspx (example code that contains quite a few more flavors
@@ -216,6 +218,10 @@ LLOSInfo::LLOSInfo() :
 		mOSStringSimple += "32-bit ";
 	}
 
+#if LL_WINDOWS
+#pragma warning (push)
+#pragma warning (disable : 4996) // compiler thinks might use uninitialized var, but no
+#endif
 	OSVERSIONINFOEX osvi;
 	BOOL bOsVersionInfoEx;
 	// Try calling GetVersionEx using the OSVERSIONINFOEX structure.
@@ -227,7 +233,9 @@ LLOSInfo::LLOSInfo() :
 		osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		bOsVersionInfoEx = GetVersionEx((OSVERSIONINFO *) &osvi);
 	}
-
+#if LL_WINDOWS
+#pragma warning (pop)
+#endif
 	
 	std::string tmpstr;
 	if (bOsVersionInfoEx)
@@ -692,11 +700,6 @@ U32Kilobytes LLMemoryInfo::getPhysicalMemoryKB() const
 #elif LL_LINUX
 	U64 phys = 0;
 	phys = (U64)(getpagesize()) * (U64)(get_phys_pages());
-	return U64Bytes(phys);
-
-#elif LL_SOLARIS
-	U64 phys = 0;
-	phys = (U64)(getpagesize()) * (U64)(sysconf(_SC_PHYS_PAGES));
 	return U64Bytes(phys);
 
 #else

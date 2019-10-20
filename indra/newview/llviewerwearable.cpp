@@ -238,7 +238,6 @@ BOOL LLViewerWearable::isDirty() const
 			
 			U8 a = F32_to_U8( saved_weight, param->getMinWeight(), param->getMaxWeight() );
 			U8 b = F32_to_U8( current_weight, param->getMinWeight(), param->getMaxWeight() );
-
 			if( a != b  )
 			{
 				return TRUE;
@@ -319,7 +318,7 @@ void LLViewerWearable::setTexturesToDefaults()
 LLUUID LLViewerWearable::getDefaultTextureImageID(ETextureIndex index) const
 {
 	const LLAvatarAppearanceDictionary::TextureEntry *texture_dict = LLAvatarAppearanceDictionary::getInstance()->getTexture(index);
-	const std::string &default_image_name = texture_dict->mDefaultImageName;
+	const std::string &default_image_name = texture_dict ? texture_dict->mDefaultImageName : "";
 	if (default_image_name.empty())
 	{
 		return IMG_DEFAULT_AVATAR;
@@ -562,9 +561,9 @@ void LLViewerWearable::saveNewAsset() const
 		else
 #endif // 0
 		{
-		 LLWearableSaveData* data = new LLWearableSaveData;
-		 data->mType = mType;
-		 gAssetStorage->storeAssetData(filename, mTransactionID, getAssetType(),
+			 LLWearableSaveData* data = new LLWearableSaveData;
+			 data->mType = mType;
+			 gAssetStorage->storeAssetData(filename, mTransactionID, getAssetType(),
                                      &LLViewerWearable::onSaveNewAssetComplete,
                                      (void*)data);
 		}
@@ -608,21 +607,19 @@ std::ostream& operator<<(std::ostream &s, const LLViewerWearable &w)
 	//w.mSaleInfo
 
 	s << "    Params:" << "\n";
-	for (LLViewerWearable::visual_param_index_map_t::const_iterator iter = w.mVisualParamIndexMap.begin(); // <alchemy/>
-		 iter != w.mVisualParamIndexMap.end(); ++iter)
+	for (const auto& iter : w.mVisualParamIndexMap)
 	{
-		S32 param_id = iter->first;
-		LLVisualParam *wearable_param = iter->second;
+		S32 param_id = iter.first;
+		LLVisualParam *wearable_param = iter.second;
 		F32 param_weight = wearable_param->getWeight();
 		s << "        " << param_id << " " << param_weight << "\n";
 	}
 
 	s << "    Textures:" << "\n";
-	for (LLViewerWearable::te_map_t::const_iterator iter = w.mTEMap.begin();
-		 iter != w.mTEMap.end(); ++iter)
+	for (const auto& iter : w.mTEMap)
 	{
-		S32 te = iter->first;
-		const LLUUID& image_id = iter->second->getID();
+		S32 te = iter.first;
+		const LLUUID& image_id = iter.second->getID();
 		s << "        " << te << " " << image_id << "\n";
 	}
 	return s;

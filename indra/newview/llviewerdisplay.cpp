@@ -260,7 +260,7 @@ void display_stats()
 	{
 		gMemoryAllocated = U64Bytes(LLMemory::getCurrentRSS());
 		U32Megabytes memory = gMemoryAllocated;
-		LL_INFOS() << llformat("MEMORY: %d MB", memory.value()) << LL_ENDL;
+		LL_INFOS() << "MEMORY: " << memory << LL_ENDL;
 		LL_INFOS() << "MALLOC: " << SGMemStat::getPrintableStat() <<LL_ENDL;
 		LLMemory::logMemoryInfo(TRUE) ;
 		gRecentMemoryTime.reset();

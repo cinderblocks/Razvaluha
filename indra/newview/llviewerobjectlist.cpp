@@ -1302,16 +1302,11 @@ BOOL LLViewerObjectList::killObject(LLViewerObject *objectp)
 
 	if (objectp)
 	{
-		if (objectp->isDead())
-		{
-			// This object is already dead.  Don't need to do more.
-			return TRUE;
-		}
-		else
-		{
-			objectp->markDead();
-		}
-
+		// We are going to cleanup a lot of smart pointers to this object, they might be last,
+		// and object being NULLed while inside it's own function won't be pretty
+		// so create a pointer to make sure object will stay alive untill markDead() finishes
+		LLPointer<LLViewerObject> sp(objectp);
+		sp->markDead(); // does the right thing if object already dead
 		return TRUE;
 	}
 	return FALSE;
@@ -1948,13 +1943,13 @@ LLViewerObject *LLViewerObjectList::createObjectViewer(const LLPCode pcode, LLVi
 		return NULL;
 	}
 
-	mUUIDObjectMap[fullid] = objectp;
+	mUUIDObjectMap.insert_or_assign(fullid, objectp);
 	if(objectp->isAvatar())
 	{
 		LLVOAvatar *pAvatar = dynamic_cast<LLVOAvatar*>(objectp);
 		if(pAvatar)
 		{
-			mUUIDAvatarMap[fullid] = pAvatar;
+			mUUIDAvatarMap.insert_or_assign(fullid, pAvatar);
 			// <singu>
 			if (LLFloaterIMPanel* im = find_im_floater(fullid))
 				im->addDynamicFocus();
@@ -1999,13 +1994,13 @@ LLViewerObject *LLViewerObjectList::createObject(const LLPCode pcode, LLViewerRe
 		regionp->addToCreatedList(local_id); 
 	}
 
-	mUUIDObjectMap[fullid] = objectp;
+	mUUIDObjectMap.insert_or_assign(fullid, objectp);
 	if(objectp->isAvatar())
 	{
 		LLVOAvatar *pAvatar = dynamic_cast<LLVOAvatar*>(objectp);
 		if(pAvatar)
 		{
-			mUUIDAvatarMap[fullid] = pAvatar;
+			mUUIDAvatarMap.insert_or_assign(fullid, pAvatar);
 			// <singu>
 			if (LLFloaterIMPanel* im = find_im_floater(fullid))
 				im->addDynamicFocus();

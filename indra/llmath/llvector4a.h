@@ -30,7 +30,7 @@
 
 class LLRotation;
 
-#include <assert.h>
+#include <cassert>
 #include "llpreprocessor.h"
 #include "llmemory.h"
 
@@ -92,10 +92,10 @@ public:
 	// CONSTRUCTORS 
 	////////////////////////////////////
 	
-	LLVector4a()
-	{ //DO NOT INITIALIZE -- The overhead is completely unnecessary
+	LLVector4a() = default;
+	/*{ //DO NOT INITIALIZE -- The overhead is completely unnecessary
 		ll_assert_aligned(this,16);
-	}
+	}*/
 
 	LLVector4a(F32 x, F32 y, F32 z, F32 w = 0.f)
 	{
@@ -320,7 +320,7 @@ public:
 	////////////////////////////////////	
 	
 	// Do NOT add aditional operators without consulting someone with SSE experience
-	//inline const LLVector4a& operator= ( const LLVector4a& rhs );
+	//inline const LLVector4a& operator= ( const LLVector4a& rhs )
 	//{
 	//	mQ = rhs.mQ;
 	//	return *this;
@@ -346,5 +346,6 @@ inline std::ostream& operator<<(std::ostream& s, const LLVector4a& v)
 	return s;
 }
 
-static_assert(std::is_trivially_copyable<LLVector4a>{}, "LLVector4a must be a trivially copyable type");
+static_assert(std::is_trivial<LLVector4a>{}, "LLVector4a must be a trivial type");
+static_assert(std::is_standard_layout<LLVector4a>{}, "LLVector4a must be a standard layout type");
 #endif

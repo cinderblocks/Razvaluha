@@ -52,7 +52,6 @@
 #include "llviewerstats.h"
 #include "llmarketplacefunctions.h"
 #include "llmarketplacenotifications.h"
-#include "llmd5.h"
 #include "llmeshrepository.h"
 #include "llmodaldialog.h"
 #include "llpumpio.h"
@@ -62,7 +61,6 @@
 #include "llfocusmgr.h"
 #include "llviewerjoystick.h"
 #include "llcalc.h"
-#include "lltexturestats.h"
 #include "lltrace.h"
 //#include "lltracethreadrecorder.h"
 #include "llviewerwindow.h"
@@ -152,8 +150,6 @@
 #include "llassetstorage.h"
 #include "llpolymesh.h"
 #include "llaudioengine.h"
-#include "llstreamingaudio.h"
-#include "llviewermenu.h"
 #include "llselectmgr.h"
 #include "lltrans.h"
 #include "lltracker.h"
@@ -161,7 +157,6 @@
 #include "llworldmapview.h"
 #include "llpostprocess.h"
 #include "llwlparammanager.h"
-#include "llwaterparammanager.h"
 
 #include "lldebugview.h"
 #include "llconsole.h"
@@ -181,9 +176,7 @@
 #include "llbutton.h"
 #include "llcombobox.h"
 #include "floaterlocalassetbrowse.h"
-#include "llstatusbar.h"
 #include "llsurface.h"
-#include "llvosky.h"
 #include "llvotree.h"
 #include "llfolderview.h"
 #include "lltoolbar.h"
@@ -236,6 +229,8 @@
 //----------------------------------------------------------------------------
 // llviewernetwork.h
 #include "llviewernetwork.h"
+
+#include <random>
 
 
 ////// Windows-specific includes to the bottom - nasty defines in these pollute the preprocessor
@@ -492,8 +487,9 @@ static void settings_to_globals()
 	BTN_HEIGHT_SMALL	= gSavedSettings.getS32("ButtonHeightSmall");
 	BTN_HEIGHT			= gSavedSettings.getS32("ButtonHeight");
 
+	extern S32 MENU_BAR_HEIGHT;
 	MENU_BAR_HEIGHT		= gSavedSettings.getS32("MenuBarHeight");
-	MENU_BAR_WIDTH		= gSavedSettings.getS32("MenuBarWidth");
+	extern S32 STATUS_BAR_HEIGHT;
 	STATUS_BAR_HEIGHT	= gSavedSettings.getS32("StatusBarHeight");
 
 	LLCOMBOBOX_HEIGHT	= BTN_HEIGHT - 2;
@@ -927,7 +923,7 @@ bool LLAppViewer::init()
 #endif
 	LLMIMETypes::parseMIMETypes( mime_types_name ); 
 
-	// Copy settings to globals. *TODO: Remove or move to appropriage class initializers
+	// Copy settings to globals. *TODO: Remove or move to appropriate class initializers
 	settings_to_globals();
 	// Setup settings listeners
 	settings_setup_listeners();
@@ -1736,6 +1732,7 @@ bool LLAppViewer::cleanup()
 	
 	LL_INFOS() << "Cache files removed" << LL_ENDL;
 
+	void cleanup_menus();
 	cleanup_menus();
 
 	// Wait for any pending VFS IO
@@ -1751,6 +1748,8 @@ bool LLAppViewer::cleanup()
 	// Cleanup Inventory after the UI since it will delete any remaining observers
 	// (Deleted observers should have already removed themselves)
 	gInventory.cleanupInventory();
+
+	//LLCoros::getInstance()->printActiveCoroutines();
 
 	LL_INFOS() << "Cleaning up Selections" << LL_ENDL;
 	
@@ -2897,12 +2896,8 @@ void LLAppViewer::writeSystemInfo()
 	gDebugInfo["ClientInfo"]["MinorVersion"] = LLVersionInfo::getMinor();
 	gDebugInfo["ClientInfo"]["PatchVersion"] = LLVersionInfo::getPatch();
 	gDebugInfo["ClientInfo"]["BuildVersion"] = LLVersionInfo::getBuild();
+	gDebugInfo["ClientInfo"]["AddressSize"] = LLVersionInfo::getAddressSize();
 
-#if defined(_WIN64) || defined(__x86_64__)
-	gDebugInfo["ClientInfo"]["Architecture"] = "x86_64";
-#else
-	gDebugInfo["ClientInfo"]["Architecture"] = "i386";
-#endif
 	gDebugInfo["CAFilename"] = gDirUtilp->getCAFile();
 
 	gDebugInfo["CPUInfo"]["CPUString"] = gSysCPU.getCPUString();
@@ -3668,8 +3663,14 @@ bool LLAppViewer::initCache()
 		// </edit>
 	}
 
-	LLSplashScreen::update(LLTrans::getString("StartupInitializingTextureCache"));
-	
+    {
+        std::random_device rnddev;
+        std::mt19937 rng(rnddev());
+        std::uniform_int_distribution<> dist(0, 4);
+        LLSplashScreen::update(LLTrans::getString(
+            llformat("StartupInitializingTextureCache%d", dist(rng))));
+    }
+
 	// Init the texture cache
 	// Allocate 80% of the cache size for textures
 	const U64Bytes MIN_CACHE_SIZE = U32Megabytes(64);

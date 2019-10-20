@@ -43,14 +43,11 @@
 #include "lleditmenuhandler.h"
 
 #include "llpreeditor.h"
-#include "llmenugl.h"
 
 class LLFontGL;
-class LLScrollbar;
-class LLViewBorder;
 class LLKeywordToken;
+class LLMenuGL;
 class LLTextCmd;
-class LLUICtrlFactory;
 
 class LLTextEditor : public LLUICtrl, LLEditMenuHandler, protected LLPreeditor
 {
@@ -127,16 +124,6 @@ public:
 	virtual BOOL	isDirty() const override { return( mLastCmd != NULL || (mPristineCmd && (mPristineCmd != mLastCmd)) ); }
 	BOOL	isSpellDirty() const { return mWText != mPrevSpelledText; }	// Returns TRUE if user changed value at all
 	void	resetSpellDirty() { mPrevSpelledText = mWText; }		// Clear dirty state
-
-	struct SpellMenuBind
-	{
-		LLTextEditor* origin;
-		LLMenuItemCallGL * menuItem;
-		std::string word;
-		S32 wordPositionStart;
-		S32 wordPositionEnd;
-		S32 wordY;
-	};
 	
 	// LLEditMenuHandler interface
 	virtual void	undo() override;
@@ -151,8 +138,6 @@ public:
 	virtual BOOL	canCopy() const override;
 	virtual void	paste() override;
 	virtual BOOL	canPaste() const override;
- 
-	virtual void	spellReplace(SpellMenuBind* spellData);
  
 	virtual void	updatePrimary();
 	virtual void	copyPrimary();
@@ -581,7 +566,6 @@ private:
 	typedef std::vector<line_info> line_list_t;
 
 	//to keep track of what we have to remove before showing menu
-	std::vector<SpellMenuBind* > suggestionMenuItems;
 	S32 mLastContextMenuX;
 	S32 mLastContextMenuY;
 

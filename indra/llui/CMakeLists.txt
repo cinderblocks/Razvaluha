@@ -34,6 +34,7 @@ include_directories(SYSTEM
 
 set(llui_SOURCE_FILES
     aialert.cpp
+    lfidbearer.cpp
     llaccordionctrl.cpp
     llaccordionctrltab.cpp
     llalertdialog.cpp
@@ -110,8 +111,8 @@ set(llui_SOURCE_FILES
 set(llui_HEADER_FILES
     CMakeLists.txt
 
-    aialert.h
     ailist.h
+    lfidbearer.h
     llaccordionctrl.h
     llaccordionctrltab.h
     llalertdialog.h
