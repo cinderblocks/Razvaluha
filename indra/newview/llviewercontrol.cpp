@@ -92,7 +92,6 @@ BOOL 				gHackGodmode = FALSE;
 LLControlGroup gSavedSettings("Global");	// saved at end of session
 LLControlGroup gSavedPerAccountSettings("PerAccount"); // saved at end of session
 LLControlGroup gColors("Colors");	// saved at end of session
-LLControlGroup gCrashSettings("CrashSettings");	// saved at end of session
 
 std::string gLastRunVersion;
 

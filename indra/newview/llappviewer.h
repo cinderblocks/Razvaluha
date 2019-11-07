@@ -1,3 +1,4 @@
+
 /** 
  * @mainpage
  *
@@ -94,6 +95,7 @@ public:
 
     bool quitRequested() { return mQuitRequested; }
     bool logoutRequestSent() { return mLogoutRequestSent; }
+	bool isSecondInstance() { return mSecondInstance; }
 
 	void writeDebugInfo(bool isStatic=true);
 
@@ -104,7 +106,7 @@ public:
 
 	virtual bool restoreErrorTrap() = 0; // Require platform specific override to reset error handling mechanism.
 	                                     // return false if the error trap needed restoration.
-	virtual void initCrashReporting(bool reportFreeze = false) = 0; // What to do with crash report?
+	void initCrashReporting(); // What to do with crash report?
 	static void handleViewerCrash(); // Hey! The viewer crashed. Do this, soon.
     
 	// Thread accessors
@@ -119,7 +121,7 @@ public:
 	
 	bool getPurgeCache() const { return mPurgeCache; }
 	
-	const std::string& getSecondLifeTitle() const; // The Second Life title.
+	std::string getSecondLifeTitle() const; // The Second Life title.
 	const std::string& getWindowTitle() const; // The window display name.
 
     void forceDisconnect(const std::string& msg); // Force disconnection, with a message to the user.
@@ -143,14 +145,13 @@ public:
     virtual void forceErrorSoftwareException();
     virtual void forceErrorDriverCrash();
 
-	// *NOTE: There are currently 3 settings files: 
-	// "Global", "PerAccount" and "CrashSettings"
+	// *NOTE: There are currently 2 settings files: 
+	// "Global", and "PerAccount"
 	// The list is found in app_settings/settings_files.xml
 	// but since they are used explicitly in code,
 	// the follow consts should also do the trick.
 	static const std::string sGlobalSettingsName; 
 	static const std::string sPerAccountSettingsName; 
-	static const std::string sCrashSettingsName; 
 
 	// Load settings from the location specified by loction_key.
 	// Key availale and rules for loading, are specified in 
@@ -195,7 +196,7 @@ public:
 protected:
 	virtual bool initWindow(); // Initialize the viewer's window.
 	virtual void initLoggingAndGetLastDuration(); // Initialize log files, logging system
-	virtual void initLoggingPortable(); // <singu/> Portability mode
+	void initLoggingInternal();
 	virtual void initConsole() {}; // Initialize OS level debugging console.
 	virtual bool initHardwareTest() { return true; } // A false result indicates the app should quit.
 	virtual bool initSLURLHandler();
@@ -212,7 +213,6 @@ private:
 	void initMaxHeapSize();
 	bool initThreads(); // Initialize viewer threads, return false on failure.
 	bool initConfiguration(); // Initialize settings from the command line/config file.
-
 	bool initCache(); // Initialize local client cache.
 	void checkMemory() ;
 

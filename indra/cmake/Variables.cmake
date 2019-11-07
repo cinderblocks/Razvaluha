@@ -32,13 +32,30 @@ set(INTEGRATION_TESTS_PREFIX)
 option(LL_TESTS "Build and run unit and integration tests (disable for build timing runs to reduce variation" OFF)
 option(BUILD_TESTING "Build test suite" OFF)
 option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
+
+# Compiler and toolchain options
+option(USESYSTEMLIBS "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
+option(STANDALONE "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
+if (USESYSTEMLIBS)
+    set(STANDALONE ON)
+elseif (STANDALONE)
+    set(USESYSTEMLIBS ON)
+endif (USESYSTEMLIBS)
+
+set(USE_PRECOMPILED_HEADERS ON CACHE BOOL "Enable use of precompiled header directives where supported.")
 option(INCREMENTAL_LINK "Use incremental linking on win32 builds (enable for faster links on some machines)" OFF)
 option(USE_PRECOMPILED_HEADERS "Enable use of precompiled header directives where supported." ON)
 option(USE_LTO "Enable global and interprocedural optimizations" OFF)
 option(FULL_DEBUG_SYMS "Enable Generation of full pdb on msvc" OFF)
-option(ENABLE_MEDIA_PLUGINS "Turn off building media plugins if they are imported by third-party library mechanism" ON)
+option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
+
+# Configure crash reporting
+option(USE_CRASHPAD "Build support for crashpad reporting engine" OFF)
+set(CRASHPAD_URL "" CACHE STRING "Crashpad endpoint url")
 set(VIEWER_SYMBOL_FILE "" CACHE STRING "Name of tarball into which to place symbol files")
-set(BUGSPLAT_DB "" CACHE STRING "BugSplat database name, if BugSplat crash reporting is desired")
+
+# Media Plugins
+option(ENABLE_MEDIA_PLUGINS "Turn off building media plugins if they are imported by third-party library mechanism" ON)
 
 # Mallocs
 set(DISABLE_TCMALLOC OFF CACHE BOOL "Disable linkage of TCMalloc. (64bit builds automatically disable TCMalloc)")
@@ -51,7 +68,7 @@ option(FMODSTUDIO "Build with support for the FMOD Studio audio engine" ON)
 option(LLWINDOW_SDL2 "Use SDL2 for window and input handling" OFF)
 
 # Proprietary Library Features
-option(NVAPI "Use nvapi driver interface library" OFF)
+option(USE_NVAPI "Use nvapi driver interface library" OFF)
 
 
 if(LIBS_CLOSED_DIR)
@@ -249,17 +266,7 @@ set(VIEWER_BRANDING_ID "singularity" CACHE STRING "Viewer branding id")
 
 option(ENABLE_SIGNING "Enable signing the viewer" OFF)
 set(SIGNING_IDENTITY "" CACHE STRING "Specifies the signing identity to use, if necessary.")
-
 set(VERSION_BUILD "0" CACHE STRING "Revision number passed in from the outside")
-set(USESYSTEMLIBS OFF CACHE BOOL "Use libraries from your system rather than Linden-supplied prebuilt libraries.")
-option(STANDALONE "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
-if (USESYSTEMLIBS)
-    set(STANDALONE ON)
-elseif (STANDALONE)
-    set(USESYSTEMLIBS ON)
-endif (USESYSTEMLIBS)
-
-set(USE_PRECOMPILED_HEADERS ON CACHE BOOL "Enable use of precompiled header directives where supported.")
 
 source_group("CMake Rules" FILES CMakeLists.txt)
 

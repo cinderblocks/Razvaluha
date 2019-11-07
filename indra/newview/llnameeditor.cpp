@@ -36,6 +36,7 @@
 
 #include "llmenugl.h"
 #include "lluictrlfactory.h"
+#include "llwindow.h"
 
 static LLRegisterWidget<LLNameEditor> r("name_editor");
 
@@ -88,6 +89,18 @@ BOOL LLNameEditor::handleRightMouseDown(S32 x, S32 y, MASK mask)
 	sActive = this;
 
 	return LLLineEditor::handleRightMouseDown(x, y, mask);
+}
+
+// virtual
+BOOL LLNameEditor::handleHover(S32 x, S32 y, MASK mask)
+{
+	auto handled = LLLineEditor::handleHover(x, y, mask);
+	if (mAllowInteract && mClickForProfile && !mIsSelecting)
+	{
+		getWindow()->setCursor(UI_CURSOR_HAND);
+		handled = true;
+	}
+	return handled;
 }
 
 void LLNameEditor::displayAsLink(bool link)

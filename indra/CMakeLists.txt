@@ -3,18 +3,13 @@
 # cmake_minimum_required should appear before any
 # other commands to guarantee full compatibility
 # with the version specified
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 set(ROOT_PROJECT_NAME "Singularity" CACHE STRING
     "The root project/makefile/solution name. Defaults to Singularity.")
-project(${ROOT_PROJECT_NAME})
+project(${ROOT_PROJECT_NAME} LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-
-include(Variables)
-include(00-Common)
-include(BuildVersion)
-include(CTest)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,10 +19,14 @@ if (NOT CMAKE_BUILD_TYPE)
       "Build type.  One of: Debug Release RelWithDebInfo" FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
 
+include(Variables)
+include(00-Common)
+include(BuildVersion)
+include(CTest)
+
 add_subdirectory(deps)
 
 add_subdirectory(cmake)
-
 add_subdirectory(${LIBS_OPEN_PREFIX}llaudio)
 add_subdirectory(${LIBS_OPEN_PREFIX}llappearance)
 add_subdirectory(${LIBS_OPEN_PREFIX}llcharacter)
@@ -52,7 +51,7 @@ if (WINDOWS AND EXISTS ${LIBS_CLOSED_DIR}copy_win_scripts)
 endif (WINDOWS AND EXISTS ${LIBS_CLOSED_DIR}copy_win_scripts)
 
 add_custom_target(viewer)
-add_subdirectory(${LIBS_OPEN_PREFIX}llcrashlogger)
+
 add_subdirectory(${LIBS_OPEN_PREFIX}llplugin)
 add_subdirectory(${LIBS_OPEN_PREFIX}llui)
 
@@ -60,23 +59,14 @@ add_subdirectory(${LIBS_OPEN_PREFIX}llui)
 add_subdirectory(${LIBS_OPEN_PREFIX}media_plugins)
 
 if (LINUX)
-  add_subdirectory(${VIEWER_PREFIX}linux_crash_logger)
   if (INSTALL_PROPRIETARY)
       include(LLAppearanceUtility)
       add_subdirectory(${LLAPPEARANCEUTILITY_SRC_DIR} ${LLAPPEARANCEUTILITY_BIN_DIR})
   endif (INSTALL_PROPRIETARY)
-  add_dependencies(viewer linux-crash-logger)
 elseif (DARWIN)
-  add_subdirectory(${VIEWER_PREFIX}mac_crash_logger)
-  add_dependencies(viewer mac-crash-logger)
+  # add crash logger here in the future
 elseif (WINDOWS)
-  add_subdirectory(${VIEWER_PREFIX}win_crash_logger)
-  # cmake EXISTS requires an absolute path, see indra/cmake/Variables.cmake
-  if (EXISTS ${VIEWER_DIR}win_setup)
-    add_subdirectory(${VIEWER_DIR}win_setup)
-  endif (EXISTS ${VIEWER_DIR}win_setup)
-  # add_dependencies(viewer windows-setup windows-crash-logger)
-  add_dependencies(viewer windows-crash-logger)
+  # add crash logger here in the future
 endif (LINUX)
 
 add_subdirectory(${VIEWER_PREFIX}newview)

@@ -133,14 +133,6 @@ bool LLAppViewerLinux::init()
 	
 	bool success = LLAppViewer::init();
 
-#if LL_SEND_CRASH_REPORTS
-    if (success)
-    {
-        LLAppViewer* pApp = LLAppViewer::instance();
-        pApp->initCrashReporting();
-    }
-#endif
-
 	return success;
 }
 
@@ -336,12 +328,6 @@ bool LLAppViewerLinux::sendURLToOtherInstance(const std::string& url)
 	return false; // not implemented without dbus
 }
 #endif // LL_DBUS_ENABLED
-
-void LLAppViewerLinux::initCrashReporting(bool reportFreeze)
-{
-	// Singu Note: this is where original code forks crash logger process.
-	// Singularity doesn't need it
-}
 
 bool LLAppViewerLinux::beingDebugged()
 {

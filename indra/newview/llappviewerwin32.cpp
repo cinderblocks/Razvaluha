@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llappviewerwin32.cpp
  * @brief The LLAppViewerWin32 class definitions
@@ -28,11 +26,13 @@
 
 #include "llviewerprecompiledheaders.h"
 
+
 #ifdef INCLUDE_VLD
 #define VLD_FORCE_ENABLE 1
 #include "vld.h"
 #endif
-#include "llwin32headers.h"
+#include "llwin32headerslean.h"
+# include <psapi.h>
 
 #include "llwindow.h" // *FIX: for setting gIconResource.
 
@@ -51,12 +51,12 @@
 #include "llviewercontrol.h"
 #include "lldxhardware.h"
 
-#ifdef USE_NVAPI
+#if USE_NVAPI
 #include "nvapi/nvapi.h"
 #include "nvapi/NvApiDriverSettings.h"
 #endif
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "llweb.h"
 
@@ -246,10 +246,8 @@ int APIENTRY WINMAIN(HINSTANCE hInstance,
 
 	LLAppViewerWin32* viewer_app_ptr = new LLAppViewerWin32(lpCmdLine);
 	
+#if !defined(USE_CRASHPAD)
 	viewer_app_ptr->setErrorHandler(LLAppViewer::handleViewerCrash);
-
-#if LL_SEND_CRASH_REPORTS 
-	// ::SetUnhandledExceptionFilter(catchallCrashHandler); 
 #endif
 
 	// Set a debug info flag to indicate if multiple instances are running.
@@ -263,7 +261,7 @@ int APIENTRY WINMAIN(HINSTANCE hInstance,
 		return -1;
 	}
 	
-#ifdef USE_NVAPI
+#if USE_NVAPI
 	NvAPI_Status status;
     
 	// Initialize NVAPI
@@ -351,7 +349,7 @@ int APIENTRY WINMAIN(HINSTANCE hInstance,
 		LLAppViewer::sUpdaterInfo = nullptr ;
 	}
 
-#ifdef USE_NVAPI
+#if USE_NVAPI
 	// (NVAPI) (6) We clean up. This is analogous to doing a free()
 	if (hSession)
 	{
@@ -450,14 +448,9 @@ bool LLAppViewerWin32::init()
 	LLWinDebug::instance().init();
 #endif
 
-#if LL_WINDOWS
-#if LL_SEND_CRASH_REPORTS
-
-
+#if defined(USE_CRASHPAD)
 	LLAppViewer* pApp = LLAppViewer::instance();
 	pApp->initCrashReporting();
-
-#endif
 #endif
 
 	bool success = LLAppViewer::init();
@@ -608,11 +601,6 @@ bool LLAppViewerWin32::initParseCommandLine(LLCommandLineParser& clp)
 bool LLAppViewerWin32::restoreErrorTrap()
 {	
 	return true;
-}
-
-void LLAppViewerWin32::initCrashReporting(bool reportFreeze)
-{
-	// Singu Note: we don't fork the crash logger on start
 }
 
 //virtual

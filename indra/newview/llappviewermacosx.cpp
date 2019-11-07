@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llappviewermacosx.cpp
  * @brief The LLAppViewerMacOSX class definitions
@@ -32,8 +30,6 @@
 	#error "Use only with Mac OS X"
 #endif
 
-#define LL_CARBON_CRASH_HANDLER 1
-
 #include "llwindowmacosx.h"
 #include "llappviewermacosx-objc.h"
 
@@ -47,9 +43,6 @@
 #include "llfloaterworldmap.h"
 #include "llurldispatcher.h"
 #include <ApplicationServices/ApplicationServices.h>
-#ifdef LL_CARBON_CRASH_HANDLER
-#include <Carbon/Carbon.h>
-#endif
 #include <vector>
 #include <exception>
 
@@ -57,6 +50,7 @@
 #include "lldir.h"
 #include <signal.h>
 #include <CoreAudio/CoreAudio.h>	// for systemwide mute
+
 class LLMediaCtrl;		// for LLURLDispatcher
 
 namespace 
@@ -278,21 +272,6 @@ bool LLAppViewerMacOSX::restoreErrorTrap()
 	return reset_count == 0;
 }
 
-void LLAppViewerMacOSX::initCrashReporting(bool reportFreeze)
-{
-	std::string command_str = "mac-crash-logger.app";
-    
-    std::stringstream pid_str;
-    pid_str <<  LLApp::getPid();
-    std::string logdir = gDirUtilp->getExpandedFilename(LL_PATH_DUMP, "");
-    std::string appname = gDirUtilp->getExecutableFilename();
-    std::string str[] = { "-pid", pid_str.str(), "-dumpdir", logdir, "-procname", appname.c_str() };
-    std::vector< std::string > args( str, str + ( sizeof ( str ) /  sizeof ( std::string ) ) );
-    LL_WARNS() << "about to launch mac-crash-logger" << pid_str.str()
-               << " " << logdir << " " << appname << LL_ENDL;
-    launchApplication(&command_str, &args);
-}
-
 std::string LLAppViewerMacOSX::generateSerialNumber()
 {
 	char serial_md5[MD5HEX_STR_SIZE];		// Flawfinder: ignore
@@ -403,12 +382,19 @@ void dispatchUrl(std::string url)
     // Safari 3.2 silently mangles secondlife:///app/ URLs into
     // secondlife:/app/ (only one leading slash).
     // Fix them up to meet the URL specification. JC
-    const std::string prefix = "secondlife:/app/";
-    std::string test_prefix = url.substr(0, prefix.length());
-    LLStringUtil::toLower(test_prefix);
-    if (test_prefix == prefix)
+    const std::string sl_prefix = "secondlife:/app/";
+    const std::string xgrid_prefix = "x-grid-info:/app/";
+    std::string test_sl_prefix = url.substr(0, sl_prefix.length());
+    std::string test_xgrid_prefix = url.substr(0, xgrid_prefix.length());
+    LLStringUtil::toLower(test_sl_prefix);
+    LLStringUtil::toLower(test_xgrid_prefix);
+    if (test_sl_prefix == sl_prefix)
     {
-        url.replace(0, prefix.length(), "secondlife:///app/");
+        url.replace(0, sl_prefix.length(), "secondlife:///app/");
+    }
+    else if (test_xgrid_prefix == xgrid_prefix)
+    {
+        url.replace(0, xgrid_prefix.length(), "x-grid-info:///app/");
     }
     
     LLMediaCtrl* web = NULL;

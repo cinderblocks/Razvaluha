@@ -1,6 +1,6 @@
 # -*- cmake -*-
 
-project(viewer)
+project(viewer LANGUAGES CXX)
 
 include(00-Common)
 # DON'T move Linking.cmake to its place in the alphabetized list below: it
@@ -12,6 +12,7 @@ include(BuildPackagesInfo)
 include(BuildVersion)
 include(BuildBranding)
 include(CMakeCopyIfDifferent)
+include(CrashPad)
 include(DBusGlib)
 include(FMODSTUDIO)
 include(GeneratePrecompiledHeader)
@@ -51,6 +52,15 @@ include(WinManifest)
 include(ZLIB)
 include(URIPARSER)
 
+
+if(FMODSTUDIO)
+  include_directories(${FMODSTUDIO_INCLUDE_DIR})
+endif(FMODSTUDIO)
+
+if(USE_CRASHPAD)
+  include_directories(${CRASHPAD_INCLUDE_DIRS})
+endif(USE_CRASHPAD)
+
 include_directories(
     ${DBUSGLIB_INCLUDE_DIRS}
     ${ZLIB_INCLUDE_DIRS}
@@ -75,6 +85,7 @@ include_directories(
     ${LLXML_INCLUDE_DIRS}
     ${LIBS_PREBUILT_DIR}/include/collada
     ${HUNSPELL_INCLUDE_DIR}
+    ${OPENAL_LIB_INCLUDE_DIRS}
     ${LIBS_PREBUILT_DIR}/include/collada/1.4
     ${LLAPPEARANCE_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -1430,7 +1441,6 @@ set(viewer_APPSETTINGS_FILES
     app_settings/settings.xml
     app_settings/settings_ascent.xml
     app_settings/settings_ascent_coa.xml
-    app_settings/settings_crash_behavior.xml
     app_settings/settings_files.xml
     app_settings/settings_per_account.xml
     app_settings/settings_sh.xml
@@ -1485,15 +1495,15 @@ endif (OPENAL)
 
 if (FMODSTUDIO)
   list(APPEND LLSTARTUP_COMPILE_DEFINITIONS "LL_FMODSTUDIO=1")
-  set(FMODWRAPPER_LIBRARY ${FMODSTUDIO_LIBRARY})
 endif (FMODSTUDIO)
 
-if (LIBVLCPLUGIN)
-  list(APPEND LLSTARTUP_COMPILE_DEFINITIONS "VLCPLUGIN=1")
-endif (LIBVLCPLUGIN)
-
 set_source_files_properties(llstartup.cpp PROPERTIES COMPILE_DEFINITIONS "${LLSTARTUP_COMPILE_DEFINITIONS}")
-set_source_files_properties(llfloaterabout.cpp PROPERTIES COMPILE_DEFINITIONS "${LLSTARTUP_COMPILE_DEFINITIONS}")
+
+if (LIBVLCPLUGIN)
+    set_source_files_properties(llfloaterabout.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=1")
+else (LIBVLCPLUGIN)
+    set_source_files_properties(llfloaterabout.cpp PROPERTIES COMPILE_DEFINITIONS "VLCPLUGIN=0")
+endif (LIBVLCPLUGIN)
 
 list(APPEND viewer_SOURCE_FILES ${viewer_HEADER_FILES})
 
@@ -1552,14 +1562,16 @@ if (WINDOWS)
       ${CMAKE_SOURCE_DIR}/../scripts/messages/message_template.msg
       ${SHARED_LIB_STAGING_DIR}/Release/glod.dll
       ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/glod.dll
+      ${SHARED_LIB_STAGING_DIR}/Release/SLVoice.exe
+      ${SHARED_LIB_STAGING_DIR}/Release/vivoxplatform.dll
       ${SHARED_LIB_STAGING_DIR}/Release/openjpeg.dll
       ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/openjpeg.dll
       ${GOOGLE_PERF_TOOLS_SOURCE}
       ${CMAKE_CURRENT_SOURCE_DIR}/licenses-win32.txt
       ${CMAKE_CURRENT_SOURCE_DIR}/featuretable.txt
       AlchemyPlugin
+      media_plugin_libvlc
       media_plugin_cef
-      windows-crash-logger
       )
 
     if (ADDRESS_SIZE EQUAL 64)
@@ -1650,7 +1662,6 @@ if (WINDOWS)
 
     add_dependencies(${VIEWER_BINARY_NAME}
       AlchemyPlugin
-      windows-crash-logger
       )
 
     EMBED_MANIFEST(${VIEWER_BINARY_NAME} 1)
@@ -1735,6 +1746,7 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${PNG_PRELOAD_ARCHIVES}
     ${ZLIB_PRELOAD_ARCHIVES}
     ${GOOGLE_PERFTOOLS_LIBRARIES}
+    ${CRASHPAD_LIBRARIES}
     ${LLAUDIO_LIBRARIES}
     ${LLAUDIO_VORBIS_LIBRARIES}
     ${LLCHARACTER_LIBRARIES}
@@ -1782,6 +1794,7 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${LLAPPEARANCE_LIBRARIES}
     absl::flat_hash_map
     absl::node_hash_map
+    ${FMT_LIBRARY}
     )
 
 if (LINUX)
@@ -1790,7 +1803,6 @@ if (LINUX)
   # These are the generated targets that are copied to package/
   set(COPY_INPUT_DEPENDENCIES
     ${VIEWER_BINARY_NAME}
-    linux-crash-logger
     AlchemyPlugin
     media_plugin_gstreamer010
     media_plugin_libvlc
@@ -1910,7 +1922,7 @@ if (DARWIN)
       ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
     )
 
-    add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin media_plugin_libvlc media_plugin_cef mac-crash-logger)
+    add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin media_plugin_libvlc media_plugin_cef)
 
   if (ENABLE_SIGNING)
       set(SIGNING_SETTING "--signature=${SIGNING_IDENTITY}")
@@ -1951,8 +1963,10 @@ if (INSTALL)
   include(${CMAKE_CURRENT_SOURCE_DIR}/ViewerInstall.cmake)
 endif (INSTALL)
 
-if (PACKAGE)
+if (FALSE)
+  # Breakpad symbol-file generation
   set(SYMBOL_NAME ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${VIEWER_CHANNEL_NOSPACE}-${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}-symbols)
+
   set(SYMBOL_SEARCH_DIRS "")
   # Note that the path to VIEWER_SYMBOL_FILE must match that in ../../build.sh
   if (WINDOWS)
@@ -1969,10 +1983,9 @@ if (PACKAGE)
     # *TODO: Generate these search dirs in the cmake files related to each binary.
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/llplugin/slplugin/${CMAKE_CFG_INTDIR}")
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/llplugin/AlchemyPlugin/${CMAKE_CFG_INTDIR}")
-    list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/mac_crash_logger/${CMAKE_CFG_INTDIR}")
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_BINARY_DIR}/media_plugins/gstreamer010/${CMAKE_CFG_INTDIR}")
     set(VIEWER_SYMBOL_FILE "${SYMBOL_NAME}-darwin.tar.bz2")
-    set(VIEWER_EXE_GLOBS "'${VIEWER_CHANNEL_ONEWORD}' AlchemyPlugin mac-crash-logger")
+    set(VIEWER_EXE_GLOBS "'${VIEWER_CHANNEL_ONEWORD}' AlchemyPlugin")
     set(VIEWER_LIB_GLOB "*.dylib")
   endif (DARWIN)
   if (LINUX)
@@ -1983,7 +1996,6 @@ if (PACKAGE)
     set(VIEWER_COPY_MANIFEST copy_l_viewer_manifest)
   endif (LINUX)
 
-  if(RELEASE_CRASH_REPORTING OR NON_RELEASE_CRASH_REPORTING)
   if(GEN_IS_MULTI_CONFIG)
       set(LLBUILD_CONFIG ${CMAKE_BUILD_TYPE})
   else()
@@ -2004,15 +2016,14 @@ if (PACKAGE)
     DEPENDS generate_breakpad_symbols.py
         VERBATIM)
 
-  add_custom_target(generate_breakpad_symbols DEPENDS "${VIEWER_SYMBOL_FILE}")
-  if (WINDOWS OR LINUX)
-    add_dependencies(generate_breakpad_symbols "${VIEWER_BINARY_NAME}" "${VIEWER_COPY_MANIFEST}")
-  elseif (DARWIN)
-    add_dependencies(generate_breakpad_symbols "${VIEWER_BINARY_NAME}")
-  endif (WINDOWS OR LINUX)
-  add_dependencies(llpackage generate_breakpad_symbols)
-  endif(RELEASE_CRASH_REPORTING OR NON_RELEASE_CRASH_REPORTING)
-endif (PACKAGE)
+    add_custom_target(generate_symbols DEPENDS "${VIEWER_SYMBOL_FILE}" ${VIEWER_BINARY_NAME} "${VIEWER_COPY_MANIFEST}")
+    add_dependencies(generate_symbols ${VIEWER_BINARY_NAME})
+    if (WINDOWS OR LINUX)
+      add_dependencies(generate_symbols "${VIEWER_COPY_MANIFEST}")
+    endif (WINDOWS OR LINUX)
+
+  add_dependencies(llpackage generate_symbols)
+endif ()
 
 if (LL_TESTS)
 endif (LL_TESTS)

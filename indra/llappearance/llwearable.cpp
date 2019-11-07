@@ -198,7 +198,7 @@ void LLWearable::createLayers(S32 te, LLAvatarAppearance *avatarp)
 	}
 	else
 	{
-		   LL_ERRS() << "could not find layerset for LTO in wearable!" << LL_ENDL;
+		   LL_WARNS() << "could not find layerset for LTO in wearable!" << LL_ENDL;
 	}
 }
 

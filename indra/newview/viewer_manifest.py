@@ -462,6 +462,10 @@ class WindowsManifest(ViewerManifest):
             # For textures
             self.path("openjpeg.dll")
 
+            # Get OpenAL dlls, continue if missing
+            if self.path("alut.dll","OpenAL32.dll") == 0:
+                print "Skipping OpenAL audio library (assuming other audio engine)"
+
             # Vivox runtimes
             self.path("SLVoice.exe")
             if (self.address_size == 64):
@@ -516,6 +520,12 @@ class WindowsManifest(ViewerManifest):
                     self.path('vccor*.dll')
             except:
                 print "Skipping msvc redist files"
+
+        # For crashpad
+        with self.prefix(src=pkgbindir):
+            self.path("crashpad_handler.exe")
+            if not self.is_packaging_viewer():
+                self.path("crashpad_handler.pdb")
 
         self.path(src="licenses-win32.txt", dst="licenses.txt")
         self.path("featuretable.txt")
@@ -620,7 +630,7 @@ class WindowsManifest(ViewerManifest):
                 self.path("zh-CN.pak")
                 self.path("zh-TW.pak")
 
-            with self.prefix(src=os.path.join(pkgbindir, 'release')):
+            with self.prefix(src=pkgbindir):
                 self.path("libvlc.dll")
                 self.path("libvlccore.dll")
                 self.path("plugins/")
@@ -648,6 +658,8 @@ class WindowsManifest(ViewerManifest):
         out_path = None
         for pkg_file in dest_files:
             rel_file = os.path.normpath(pkg_file.replace(self.get_dst_prefix()+os.path.sep,''))
+            if install and rel_file.startswith(("llplugin\\libvlc", "llplugin\\plugins\\")):
+                continue
             installed_dir = wpath(os.path.join('$INSTDIR', os.path.dirname(rel_file)))
             pkg_file = wpath(os.path.normpath(pkg_file))
             if installed_dir != out_path:

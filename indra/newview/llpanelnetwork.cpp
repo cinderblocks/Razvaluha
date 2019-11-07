@@ -37,6 +37,7 @@
 #include "llstartup.h"
 
 // project includes
+#include "hippogridmanager.h"
 #include "llcheckboxctrl.h"
 #include "llradiogroup.h"
 #include "lldirpicker.h"
@@ -72,10 +73,26 @@ BOOL LLPanelNetwork::postBuild()
 		ctrl->setCommitCallback(boost::bind(LLPanelNetwork::onClickClearCache, (void*)NULL));
 	}
 	childSetValue("max_bandwidth", gSavedSettings.getF32("ThrottleBandwidthKBPS"));
-	childSetValue("http_textures", gSavedSettings.getBOOL("ImagePipelineUseHTTP"));
-	childSetValue("http_inventory", gSavedSettings.getBOOL("UseHTTPInventory"));
+
 	childSetValue("connection_port_enabled", gSavedSettings.getBOOL("ConnectionPortEnabled"));
 	childSetValue("connection_port", (F32)gSavedSettings.getU32("ConnectionPort"));
+
+	const auto& grid = gHippoGridManager->getConnectedGrid();
+	if (!grid->isSecondLife())
+	{
+		if (auto view = getChildView("use_http_for"))
+			view->setVisible(true);
+		if (auto view = getChildView("http_textures"))
+		{
+			view->setVisible(true);
+			view->setValue(gSavedSettings.getBOOL("ImagePipelineUseHTTP"));
+		}
+		if (auto view = getChildView("http_inventory"))
+		{
+			view->setVisible(true);
+			view->setValue(gSavedSettings.getBOOL("UseHTTPInventory"));
+		}
+	}
 
 	// Socks 5 proxy settings, commit callbacks
 	childSetCommitCallback("socks5_proxy_enabled", onCommitSocks5ProxyEnabled, this);
@@ -114,8 +131,12 @@ void LLPanelNetwork::apply()
 {
 	gSavedSettings.setU32("CacheSize", childGetValue("cache_size").asInteger());
 	gSavedSettings.setF32("ThrottleBandwidthKBPS", childGetValue("max_bandwidth").asReal());
-	gSavedSettings.setBOOL("ImagePipelineUseHTTP", childGetValue("http_textures"));
-	gSavedSettings.setBOOL("UseHTTPInventory", childGetValue("http_inventory"));
+	if (const auto& view = getChildView("http_textures"))
+		if (view->getVisible())
+			gSavedSettings.setBOOL("ImagePipelineUseHTTP", view->getValue());
+	if (const auto& view = getChildView("http_inventory"))
+		if (view->getVisible())
+			gSavedSettings.setBOOL("UseHTTPInventory", view->getValue());
 	gSavedSettings.setBOOL("ConnectionPortEnabled", childGetValue("connection_port_enabled"));
 	gSavedSettings.setU32("ConnectionPort", childGetValue("connection_port").asInteger());
 

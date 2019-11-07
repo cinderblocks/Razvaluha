@@ -50,7 +50,6 @@ protected:
 	bool initParseCommandLine(LLCommandLineParser& clp) override;
 
 	bool restoreErrorTrap() override;
-	void initCrashReporting(bool reportFreeze) override;
 
 	bool sendURLToOtherInstance(const std::string& url) override;
 

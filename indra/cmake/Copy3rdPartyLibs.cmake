@@ -104,6 +104,11 @@ if(WINDOWS)
       list(APPEND release_files alut.dll OpenAL32.dll)
     endif(OPENAL)
 
+    if(OPENAL)
+      set(debug_files ${debug_files} alut.dll OpenAL32.dll)
+      set(release_files ${release_files} alut.dll OpenAL32.dll)
+    endif(OPENAL)
+
     if (FMODSTUDIO)
       list(APPEND debug_files fmodL.dll)
       list(APPEND release_files fmod.dll)
@@ -151,13 +156,13 @@ elseif(DARWIN)
         libaprutil-1.0.dylib
         libaprutil-1.dylib
         libexception_handler.dylib
-        libopenjpeg.dylib
         libfreetype.6.dylib
         libGLOD.dylib
         libndofdev.dylib
         libnghttp2.dylib
         libnghttp2.14.dylib
         libnghttp2.14.14.0.dylib
+        libopenjpeg.dylib
        )
 
     if (OPENAL)

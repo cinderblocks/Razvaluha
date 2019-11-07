@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llcompilequeue.cpp
  * @brief LLCompileQueueData class implementation
@@ -323,7 +321,7 @@ void LLFloaterCompileQueue::handleScriptRetrieval(LLVFS *vfs, const LLUUID& asse
 
     result["asset_id"] = assetId;
     if (status)
-	{
+    {
         result["error"] = status;
 
         if (status == LL_ERR_ASSET_REQUEST_NOT_IN_DATABASE)
@@ -465,7 +463,7 @@ bool LLFloaterCompileQueue::processScript(LLHandle<LLFloaterCompileQueue> hfloat
     if (result.has("error"))
     {
         LL_WARNS("SCRIPTQ") << "Inventory fetch returned with error. Code: " << result["error"].asString() << LL_ENDL;
-        std::string buffer = result["message"].asString() + " " + inventory->getName();
+        std::string buffer = result["message"].asString() + ' ' + inventory->getName();
         floater->addStringMessage(buffer);
 
         if (result.has("alert"))

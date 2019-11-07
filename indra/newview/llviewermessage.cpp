@@ -1282,6 +1282,8 @@ bool LLOfferInfo::inventory_offer_callback(const LLSD& notification, const LLSD&
 		return false;
 	}
 
+	chat.mSourceType = CHAT_SOURCE_SYSTEM; // There's a slim potential of a user-editable field being a url here?
+
 	LLViewerInventoryCategory* catp = NULL;
 	catp = gInventory.getCategory(mObjectID);
 	LLViewerInventoryItem* itemp = NULL;
@@ -2078,12 +2080,10 @@ std::string replace_wildcards(std::string input, const LLUUID& id, const std::st
 
 void autoresponder_finish(bool show_autoresponded, const LLUUID& session_id, const LLUUID& from_id, const std::string& name, const LLUUID& itemid, bool is_muted)
 {
-	LLAvatarName av_name;
-	const std::string ns_name(LLAvatarNameCache::get(from_id, &av_name) ? av_name.getNSName() : name);
 	void cmdline_printchat(const std::string& message);
 	if (show_autoresponded)
 	{
-		const std::string notice(LLTrans::getString("IM_autoresponded_to") + " [secondlife:///app/agent/" + from_id.asString() + "/about " + ns_name + ']');
+		const std::string notice(LLTrans::getString("IM_autoresponded_to") + ' ' + LLAvatarActions::getSLURL(from_id));
 		is_muted ? cmdline_printchat(notice) : gIMMgr->addMessage(session_id, from_id, name, notice);
 	}
 	if (LLViewerInventoryItem* item = gInventory.getItem(itemid))
@@ -2091,7 +2091,7 @@ void autoresponder_finish(bool show_autoresponded, const LLUUID& session_id, con
 		LLGiveInventory::doGiveInventoryItem(from_id, item, session_id);
 		if (show_autoresponded)
 		{
-			const std::string notice(llformat("%s %s \"%s\"", ns_name.c_str(), LLTrans::getString("IM_autoresponse_sent_item").c_str(), item->getName().c_str()));
+			const std::string notice(llformat("%s %s \"%s\"", LLAvatarActions::getSLURL(from_id).data(), LLTrans::getString("IM_autoresponse_sent_item").c_str(), item->getName().c_str()));
 			is_muted ? cmdline_printchat(notice) : gIMMgr->addMessage(session_id, from_id, name, notice);
 		}
 	}
@@ -2657,12 +2657,7 @@ void process_improved_im(LLMessageSystem *msg, void **user_data)
 				info->mTransactionID = session_id;
 				info->mType = (LLAssetType::EType) asset_type;
 				info->mFolderID = gInventory.findCategoryUUIDForType(LLFolderType::assetTypeToFolderType(info->mType));
-				std::string from_name;
-
-				from_name += LLTrans::getString("AGroupMemberNamed") + " ";
-				from_name += name;
-
-				info->mFromName = from_name;
+				info->mFromName = LLTrans::getString("AGroupMemberNamed", LLSD().with("GROUP_ID", group_id).with("FROM_ID", from_id));
 				info->mDesc = item_name;
 				info->mHost = msg->getSender();
 			}
@@ -3210,7 +3205,7 @@ void process_improved_im(LLMessageSystem *msg, void **user_data)
 
 						// <edit>
 						if (IM_LURE_USER == dialog)
-							gAgent.showLureDestination(name, region_handle, pos.mV[VX], pos.mV[VY], pos.mV[VZ]);
+							gAgent.showLureDestination(LLAvatarActions::getSLURL(from_id), region_handle, pos.mV[VX], pos.mV[VY], pos.mV[VZ]);
 						script_msg_api(from_id.asString().append(IM_LURE_USER == dialog ? ", 2" : ", 3"));
 						// </edit>
 					}
@@ -3558,7 +3553,7 @@ void translateFailure(LLChat chat, int status, const std::string err_msg, bool h
 }
 #endif
 
-void add_floater_chat(const LLChat &chat, const bool history)
+void add_floater_chat(LLChat &chat, const bool history)
 {
 	if (history)
 	{
@@ -6250,39 +6245,6 @@ static std::string reason_from_transaction_type(S32 transaction_type,
 	}
 }
 
-static void money_balance_group_notify(const LLUUID& group_id,
-									   const std::string& name,
-									   bool is_group,
-									   std::string message,
-									   LLStringUtil::format_map_t args,
-									   LLSD payload)
-{
-	bool no_transaction_clutter = gSavedSettings.getBOOL("LiruNoTransactionClutter");
-	std::string notification = no_transaction_clutter ? "Payment" : "SystemMessage";
-	args["NAME"] = name;
-	LLSD msg_args;
-	msg_args["MESSAGE"] = LLTrans::getString(message,args);
-	LLNotificationsUtil::add(notification,msg_args,payload);
-
-	if (!no_transaction_clutter) LLFloaterChat::addChat(msg_args["MESSAGE"].asString()); // Alerts won't automatically log to chat.
-}
-
-static void money_balance_avatar_notify(const LLUUID& agent_id,
-										const LLAvatarName& av_name,
-										std::string message,
-									   	LLStringUtil::format_map_t args,
-									   	LLSD payload)
-{
-	bool no_transaction_clutter = gSavedSettings.getBOOL("LiruNoTransactionClutter");
-	std::string notification = no_transaction_clutter ? "Payment" : "SystemMessage";
-	args["NAME"] = av_name.getNSName();
-	LLSD msg_args;
-	msg_args["MESSAGE"] = LLTrans::getString(message,args);
-	LLNotificationsUtil::add(notification,msg_args,payload);
-
-	if (!no_transaction_clutter) LLFloaterChat::addChat(msg_args["MESSAGE"].asString()); // Alerts won't automatically log to chat.
-}
-
 static void process_money_balance_reply_extended(LLMessageSystem* msg)
 {
 	// Added in server 1.40 and viewer 2.1, support for localization
@@ -6388,20 +6350,15 @@ static void process_money_balance_reply_extended(LLMessageSystem* msg)
 	// Despite using SLURLs, wait until the name is available before
 	// showing the notification, otherwise the UI layout is strange and
 	// the user sees a "Loading..." message
-	if (is_name_group)
-	{
-		gCacheName->getGroup(name_id,
-						boost::bind(&money_balance_group_notify,
-									_1, _2, _3, message,
-									args, payload));
-	}
-	else
-	{
-		LLAvatarNameCache::get(name_id,
-							   boost::bind(&money_balance_avatar_notify,
-										   _1, _2, message,
-										   args, payload));
-	}
+	// Singu Note: Wat? SLURLs resolve over time, not the end of the world.
+	bool no_transaction_clutter = gSavedSettings.getBOOL("LiruNoTransactionClutter");
+	std::string notification = no_transaction_clutter ? "Payment" : "SystemMessage";
+	args["NAME"] = is_name_group ? LLGroupActions::getSLURL(name_id) : LLAvatarActions::getSLURL(name_id);
+	LLSD msg_args;
+	msg_args["MESSAGE"] = LLTrans::getString(message,args);
+	LLNotificationsUtil::add(notification,msg_args,payload);
+
+	if (!no_transaction_clutter) LLFloaterChat::addChat(msg_args["MESSAGE"].asString()); // Alerts won't automatically log to chat.
 }
 
 bool handle_prompt_for_maturity_level_change_callback(const LLSD& notification, const LLSD& response)
@@ -7013,7 +6970,7 @@ void chat_mean_collision(const LLUUID& id, const LLAvatarName& avname, const EMe
 	args["MAG"] = llformat("%f", mag);
 	LLChat chat(LLTrans::getString("BumpedYou", args));
 	chat.mFromName = name;
-	chat.mURL = llformat("secondlife:///app/agent/%s/about", id.asString().c_str());
+	chat.mURL = LLAvatarActions::getSLURL(id);
 	chat.mSourceType = CHAT_SOURCE_SYSTEM;
 	LLFloaterChat::addChat(chat);
 }
