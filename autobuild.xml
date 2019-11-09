@@ -580,9 +580,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>7ee7b9aed3c0c8c09e7bf26bba7af8e1</string>
+              <string>84e51f2e14db023be5419e74ab3b51d3</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/p64_3p-dbus-glib/rev/314266/arch/Linux/installer/dbus_glib-0.76-linux64-314266.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib/dbus_glib-0.76-linux64-201501030130.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -676,7 +678,7 @@
               <key>hash</key>
               <string>3c4288eb71fae42e3d44fc7e9f315cb4</string>
               <key>url</key>
-              <string>https://bitbucket.org/router_gray/3p-dullahan/downloads/dullahan-1.1.1320_73.1.12+gee4b49f+chromium-73.0.3683.75-darwin64-191320724.tar.bz2</string>
+              <string>https://bitbucket.org/router_gray/3p-dullahan/downloads/dullahan-1.1.1320_73.1.122Bgee4b49f2Bchromium-73.0.3683.75-darwin64-191320724.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -1366,9 +1368,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>de7bba8fd2275a11b077b124413065d0</string>
+              <string>4e3acd35ff384ebc6f399585c0aeb77a</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/p64_3p-gtk-atk-pango-glib/rev/314220/arch/Linux/installer/gtk_atk_pango_glib-0.1-linux64-314220.tar.bz2</string>
+              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/gtk_atk_pango_glib-0.0.3-linux64-201711061729.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
