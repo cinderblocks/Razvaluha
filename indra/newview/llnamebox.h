@@ -41,7 +41,7 @@ class LLNameBox
 ,	public LLNameUI
 {
 public:
-	virtual void initFromXML(LLXMLNodePtr node, LLView* parent);
+	virtual void initFromXML(LLXMLNodePtr node, LLView* parent) override;
 	static LLView* fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFactory *factory);
 
 	void displayAsLink(bool link) override final;
