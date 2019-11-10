@@ -3512,7 +3512,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
                 <array>
                   <string>-G</string>
                   <string>Ninja</string>
-                  <string>-DWORD_SIZE:STRING=64</string>
+                  <string>-DADDRESS_SIZE:STRING=64</string>
                 </array>
               </map>
               <key>default</key>
@@ -3537,7 +3537,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
                 <array>
                   <string>-G</string>
                   <string>Ninja</string>
-                  <string>-DWORD_SIZE:STRING=64</string>
+                  <string>-DADDRESS_SIZE:STRING=64</string>
                 </array>
               </map>
               <key>name</key>
