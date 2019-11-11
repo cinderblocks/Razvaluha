@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfilepicker.cpp
  * @brief OS-specific file picker
@@ -88,7 +86,8 @@ LLFilePicker LLFilePicker::sInstance;
 #endif
 
 #ifdef LL_DARWIN
-#include "llfilepicker_mac.h"
+#include "llfilepicker-objc.h"
+using namespace LLDarwin;
 //#include <boost/algorithm/string/predicate.hpp>
 #endif
 
@@ -1066,15 +1065,15 @@ bool	LLFilePicker::doNavSaveDialog(ESaveFilter filter, const std::string& filena
 	gViewerWindow->getWindow()->beforeDialog();
 
 	// Run the dialog
-    std::string* filev = doSaveDialog(namestring,
+    std::string filev = doSaveDialog(namestring,
                  extension,
                  mPickOptions);
 
 	gViewerWindow->getWindow()->afterDialog();
 
-	if ( filev && !filev->empty() )
+	if ( !filev.empty() )
 	{
-        mFiles.push_back(*filev);
+        mFiles.push_back(filev);
 		return true;
     }
 	

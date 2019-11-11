@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llsys.cpp
  * @brief Implementation of the basic system query functions.
@@ -34,7 +32,6 @@
 
 #include "llsys.h"
 
-#include <iostream>
 #ifdef LL_STANDALONE
 # include <zlib.h>
 #else
@@ -59,7 +56,7 @@ using namespace llsd;
 #   include <psapi.h>               // GetPerformanceInfo() et al.
 #	include <VersionHelpers.h>
 #elif LL_DARWIN
-#   include "llsys_objc.h"
+#   include "llsys-objc.h"
 #	include <errno.h>
 #	include <sys/sysctl.h>
 #	include <sys/utsname.h>
@@ -264,7 +261,7 @@ LLOSInfo::LLOSInfo() :
 	{
 		S32 major_version, minor_version, bugfix_version = 0;
 
-		if (LLSysDarwin::getOperatingSystemInfo(major_version, minor_version, bugfix_version))
+		if (LLDarwin::getOperatingSystemInfo(major_version, minor_version, bugfix_version))
 		{
 			mMajorVer = major_version;
 			mMinorVer = minor_version;

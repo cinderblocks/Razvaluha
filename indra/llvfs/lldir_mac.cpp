@@ -33,13 +33,13 @@
 #include "lldir_mac.h"
 #include "llerror.h"
 #include "llrand.h"
+#include "llvfs-objc.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <glob.h>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
-#include "llvfs_objc.h"
 
 // --------------------------------------------------------------------------------
 
@@ -69,7 +69,7 @@ LLDir_Mac::LLDir_Mac()
 	
 	const std::string     secondLifeString = "SecondLife";
 	
-	std::string executablepathstr = getSystemExecutableFolder();
+	std::string executablepathstr = LLDarwin::getSystemExecutableFolder();
 	
 	//NOTE:  LLINFOS/LLERRS will not output to log here.  The streams are not initialized.
 	
@@ -84,12 +84,12 @@ LLDir_Mac::LLDir_Mac()
 		mExecutableDir = executablepath.parent_path().string();
 		
 		// mAppRODataDir
-		std::string resourcepath = getSystemResourceFolder();
+		std::string resourcepath = LLDarwin::getSystemResourceFolder();
 		mAppRODataDir = resourcepath;
 		mSkinBaseDir = mAppRODataDir + mDirDelimiter + "skins";
 
 		// mOSUserDir
-		std::string appdir = getSystemApplicationSupportFolder();
+		std::string appdir = LLDarwin::getSystemApplicationSupportFolder();
 		std::string rootdir;
 		
 		//Create root directory
@@ -106,7 +106,7 @@ LLDir_Mac::LLDir_Mac()
 		}
 		
 		//mOSCacheDir
-		std::string cachedir = getSystemCacheFolder();
+		std::string cachedir = LLDarwin::getSystemCacheFolder();
 		
 		if (!cachedir.empty())
 			
@@ -121,7 +121,7 @@ LLDir_Mac::LLDir_Mac()
 		
 		// mTempDir
 		//Aura 120920 boost::filesystem::temp_directory_path() not yet implemented on mac. :(
-		std::string tmpdir = getSystemTempFolder();
+		std::string tmpdir = LLDarwin::getSystemTempFolder();
 		if (!tmpdir.empty())
 		{
 			CreateDirectory(tmpdir, secondLifeString, &mTempDir);

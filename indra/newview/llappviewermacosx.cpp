@@ -34,6 +34,7 @@
 #include "llappviewermacosx-objc.h"
 
 #include "llappviewermacosx.h"
+//#include "llappviewermacosx-for-objc.h"
 #include "llwindowmacosx-objc.h"
 #include "llcommandlineparser.h"
 
@@ -46,12 +47,13 @@
 #include <vector>
 #include <exception>
 
-#include "llsys_objc.h"
+#include "llsys-objc.h"
 #include "lldir.h"
 #include <signal.h>
 #include <CoreAudio/CoreAudio.h>	// for systemwide mute
 
 class LLMediaCtrl;		// for LLURLDispatcher
+using namespace LLDarwin;
 
 namespace 
 {
@@ -78,7 +80,7 @@ static void exceptionTerminateHandler()
 	gOldTerminateHandler(); // call old terminate() handler
 }
 
-bool initViewer()
+bool LLDarwin::initViewer()
 {
 	// Set the working dir to <bundle>/Contents/Resources
 	if (chdir(gDirUtilp->getAppRODataDir().c_str()) == -1)
@@ -109,7 +111,7 @@ bool initViewer()
 	return ok;
 }
 
-void handleQuit()
+void LLDarwin::handleQuit()
 {
 	LLAppViewer::instance()->userQuit();
 }
@@ -119,7 +121,7 @@ void handleQuit()
 // LLAppViewer::frame(), it returns 'true' when it's done. Until then, it
 // expects to be called again by the timer in LLAppDelegate
 // (llappdelegate-objc.mm).
-bool pumpMainLoop()
+bool LLDarwin::pumpMainLoop()
 {
 	bool ret = LLApp::isQuitting();
 	if (!ret && gViewerAppPtr != NULL)
@@ -132,7 +134,7 @@ bool pumpMainLoop()
 	return ret;
 }
 
-void cleanupViewer()
+void LLDarwin::cleanupViewer()
 {
 	if(!LLApp::isError())
 	{
@@ -205,11 +207,10 @@ bool LLAppViewerMacOSX::initParseCommandLine(LLCommandLineParser& clp)
 		return false;
 	}
 
-	std::string lang(LLSysDarwin::getPreferredLanguage());
 	LLControlVariable* c = gSavedSettings.getControl("SystemLanguage");
 	if(c)
 	{
-		c->setValue(lang, false);
+		c->setValue(getPreferredLanguage(), false);
 	}
 	
     return true;
@@ -302,6 +303,44 @@ std::string LLAppViewerMacOSX::generateSerialNumber()
 	return serial_md5;
 }
 
+void LLDarwin::handleUrl(const char* url_utf8)
+{
+    if (url_utf8 && gViewerAppPtr)
+    {
+        gHandleSLURL = "";
+        dispatchUrl(url_utf8);
+    }
+    else if (url_utf8)
+    {
+        gHandleSLURL = url_utf8;
+    }
+}
+
+void LLDarwin::dispatchUrl(std::string url)
+{
+    // Safari 3.2 silently mangles secondlife:///app/ URLs into
+    // secondlife:/app/ (only one leading slash).
+    // Fix them up to meet the URL specification. JC
+    const std::string sl_prefix = "secondlife:/app/";
+    const std::string xgrid_prefix = "x-grid-info:/app/";
+    std::string test_sl_prefix = url.substr(0, sl_prefix.length());
+    std::string test_xgrid_prefix = url.substr(0, xgrid_prefix.length());
+    LLStringUtil::toLower(test_sl_prefix);
+    LLStringUtil::toLower(test_xgrid_prefix);
+    if (test_sl_prefix == sl_prefix)
+    {
+        url.replace(0, sl_prefix.length(), "secondlife:///app/");
+    }
+    else if (test_xgrid_prefix == xgrid_prefix)
+    {
+        url.replace(0, xgrid_prefix.length(), "x-grid-info:///app/");
+    }
+    
+    LLMediaCtrl* web = NULL;
+    const bool trusted_browser = false;
+    LLURLDispatcher::dispatch(url, "", web, trusted_browser);
+}
+
 static AudioDeviceID get_default_audio_output_device(void)
 {
 	AudioDeviceID device = 0;
@@ -364,40 +403,3 @@ bool LLAppViewerMacOSX::getMasterSystemAudioMute()
 	return (mute != 0);
 }
 
-void handleUrl(const char* url_utf8)
-{
-    if (url_utf8 && gViewerAppPtr)
-    {
-        gHandleSLURL = "";
-        dispatchUrl(url_utf8);
-    }
-    else if (url_utf8)
-    {
-        gHandleSLURL = url_utf8;
-    }
-}
-
-void dispatchUrl(std::string url)
-{
-    // Safari 3.2 silently mangles secondlife:///app/ URLs into
-    // secondlife:/app/ (only one leading slash).
-    // Fix them up to meet the URL specification. JC
-    const std::string sl_prefix = "secondlife:/app/";
-    const std::string xgrid_prefix = "x-grid-info:/app/";
-    std::string test_sl_prefix = url.substr(0, sl_prefix.length());
-    std::string test_xgrid_prefix = url.substr(0, xgrid_prefix.length());
-    LLStringUtil::toLower(test_sl_prefix);
-    LLStringUtil::toLower(test_xgrid_prefix);
-    if (test_sl_prefix == sl_prefix)
-    {
-        url.replace(0, sl_prefix.length(), "secondlife:///app/");
-    }
-    else if (test_xgrid_prefix == xgrid_prefix)
-    {
-        url.replace(0, xgrid_prefix.length(), "x-grid-info:///app/");
-    }
-    
-    LLMediaCtrl* web = NULL;
-    const bool trusted_browser = false;
-    LLURLDispatcher::dispatch(url, "", web, trusted_browser);
-}

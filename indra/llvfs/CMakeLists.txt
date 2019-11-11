@@ -4,10 +4,12 @@ project(llvfs)
 
 include(00-Common)
 include(LLCommon)
+include(LLDarwin)
 include(UnixInstall)
 
 include_directories(
     ${LLCOMMON_INCLUDE_DIRS}
+    ${LLDARWIN_INCLUDE_DIRS}
     )
 
 include_directories(
@@ -38,8 +40,6 @@ set(llvfs_HEADER_FILES
 if (DARWIN)
   LIST(APPEND llvfs_SOURCE_FILES lldir_mac.cpp)
   LIST(APPEND llvfs_HEADER_FILES lldir_mac.h)
-  LIST(APPEND llvfs_SOURCE_FILES llvfs_objc.mm)
-  LIST(APPEND llvfs_HEADER_FILES llvfs_objc.h)
 endif (DARWIN)
 
 if (LINUX)
@@ -74,11 +74,6 @@ set(vfs_BOOST_LIBRARIES
 target_link_libraries(llvfs
     PUBLIC
     ${LLCOMMON_LIBRARIES}
+    ${LLDARWIN_LIBRARIES}
     ${vfs_BOOST_LIBRARIES}
     )
-
-if (DARWIN)
-  include(CMakeFindFrameworks)
-  find_library(COCOA_LIBRARY Cocoa)
-  target_link_libraries(llvfs ${COCOA_LIBRARY})
-endif (DARWIN)

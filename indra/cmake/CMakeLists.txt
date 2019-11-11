@@ -52,6 +52,7 @@ set(cmake_SOURCE_FILES
     LLAudio.cmake
     LLCharacter.cmake
     LLCommon.cmake
+    LLDarwin.cmake
     LLImage.cmake
     LLImageJ2COJ.cmake
     LLInventory.cmake
