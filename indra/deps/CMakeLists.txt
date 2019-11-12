@@ -32,17 +32,14 @@ if(WINDOWS)
   target_compile_options(absl_strings PRIVATE /wd4018)
   target_compile_options(absl_str_format_internal PRIVATE /wd4018)
   target_compile_options(absl_flags_usage_internal PRIVATE /wd4018)
-elseif (DARWIN)
-  add_definitions(-DTARGET_OS_IPHONE_SIMULATOR=0)
 endif()
-
 
 if (BUILD_TESTING)
   FetchContent_MakeAvailable(Catch2)
 endif()
 
 #Download the rest of the libraries
-if(WINDOWS)
+if(WINDOWS OR DARWIN)
 FetchContent_MakeAvailable(fmt)
 endif()
 
