@@ -1222,8 +1222,8 @@ set_source_files_properties(
 set(ICON_PATH "default")
 if (VIEWER_CHANNEL_BASE STREQUAL "Alpha")
   set(ICON_PATH "alpha")
-elseif (VIEWER_CHANNEL_BASE STREQUAL "Beta")
-  set(ICON_PATH "beta")
+#elseif (VIEWER_CHANNEL_BASE STREQUAL "Beta")
+#  set(ICON_PATH "beta")        # Not till we actually have beta icons. - RG
 endif()
 
 if (DARWIN)
