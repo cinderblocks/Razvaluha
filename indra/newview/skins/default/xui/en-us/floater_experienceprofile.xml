@@ -286,7 +286,7 @@
                 valign="center"
                 name="OwnerText"
                 use_ellipses="true"
-                bottom_delta="2"
+                bottom_delta="0"
                 width="188">
               </text>
             </layout_panel>
@@ -318,7 +318,7 @@
                 valign="center"
                 name="GroupText"
                 use_ellipses="true"
-                bottom_delta="2"
+                bottom_delta="0"
                 width="188">
               </text>
             </layout_panel>
