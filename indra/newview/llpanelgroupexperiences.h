@@ -40,6 +40,7 @@ public:
 
 	// LLPanelGroupTab
 	void activate() override;
+	BOOL isVisibleByAgent(LLAgent* agentp) override;
 
 	BOOL postBuild() override;
 

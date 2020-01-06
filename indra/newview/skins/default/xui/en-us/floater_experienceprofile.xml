@@ -33,8 +33,6 @@
     follows="top|left|right"
     font="SansSerifHugeBold"
     height="26"
-    layout="topleft"
-    left_pad="4"
     name="edit_title"
     bottom="-32"
     value="Experience Profile"
@@ -45,55 +43,49 @@
     hide_tabs="true"
     follows="all"
     height="615"
-    layout="topleft"
     left="5"
     min_height="250"
-    top_pad="3"
+    bottom_delta="-618"
     width="348"
     name="tab_container">
     <panel
       background_visible="true"
       follows="all"
       height="540"
-      layout="topleft"
       left="0"
       min_height="250"
-      top="0"
+      bottom="-540"
       width="348"
       name="panel_experience_info">
       <scroll_container
         follows="all"
         height="520"
-        layout="topleft"
         left="9"
         name="xp_scroll"
         opaque="true"
-        top_pad="10"
+        bottom="-530"
         width="330">
         <panel
           follows="top|left|right"
           height="550"
-          layout="topleft"
           left="0"
           name="scrolling_panel"
-          top="0"
+          bottom="-550"
           width="315"
           min_width="315">
           <layout_stack
             follows="all"
             height="550"
-            layout="topleft"
             left="0"
             animate="false"
-            top="0"
+            bottom="-550"
             orientation="vertical"
             width="315">
             <layout_panel
               follows="all"
               height="29"
-              layout="topleft"
               left="0"
-              top="0"
+              bottom="-29"
               auto_resize="false"
               visible="false"
               width="315"
@@ -104,8 +96,7 @@
                 follows="left|top|right"
                 font="SansSerif"
                 height="19"
-                top="10"
-                layout="topleft"
+                bottom_delta="-29"
                 left="10"
                 right="-123"
                 visible="false"
@@ -114,19 +105,17 @@
                 follows="top|right"
                 height="23"
                 label="Edit"
-                layout="topleft"
                 name="edit_btn"
                 width="100"
                 visible="false"
-                top_pad="-23"
+                bottom_delta="-46"
                 right="-14"/>
             </layout_panel>
             <layout_panel
               follows="all"
               height="197"
-              layout="topleft"
               left="0"
-              top="0"
+              bottom="-197"
               auto_resize="false"
               visible="false"
               width="315"
@@ -136,28 +125,25 @@
                 fallback_image="default_land_picture.j2c"
                 follows="left|top"
                 height="197"
-                layout="topleft"
                 left="10"
                 name="logo"
-                top="10"
+                bottom="-207"
                 width="290" />
             </layout_panel>
             <layout_panel
               follows="all"
               height="19"
-              layout="topleft"
               left="0"
-              top="5"
+              bottom="-24"
               width="313"
               auto_resize="false">
               <text
                 follows="left|top|right"
                 font="SansSerifLarge"
                 height="14"
-                layout="topleft"
                 left="10"
                 name="experience_title"
-                top="0"
+                bottom="-14"
                 use_ellipses="true"
                 value=""
                 width="288"/>
@@ -165,9 +151,8 @@
             <layout_panel
               follows=""
               height="50"
-              layout="topleft"
               left="0"
-              top="0"
+              bottom="-50"
               auto_resize="false"
               width="315"
               visible="false"
@@ -176,10 +161,9 @@
                 follows="left|top|right"
                 font="SansSerif"
                 height="50"
-                layout="topleft"
                 left="7"
                 name="experience_description"
-                top="0"
+                bottom="-50"
                 value=""
                 width="293"
 				max_length="2048"/>
@@ -187,9 +171,8 @@
             <layout_panel
               follows=""
               height="18"
-              layout="topleft"
               left="0"
-              top="0"
+              bottom="-18"
               auto_resize="false"
               width="315"
               visible="true"
@@ -199,7 +182,6 @@
                 length="1"
                 follows="left|top"
                 height="16"
-                layout="topleft"
                 left="10"
                 name="ContentRating"
                 width="75">
@@ -210,20 +192,18 @@
                 length="1"
                 follows="left|top|right"
                 height="18"
-                layout="topleft"
-                left_pad="2"
+                left_delta="77"
                 valign="center"
                 name="ContentRatingText"
-                top_delta="-3"
+                bottom_delta="3"
                 width="188">
               </text>
             </layout_panel>
             <layout_panel
               follows="all"
               height="46"
-              layout="topleft"
               left="0"
-              top="5"
+              bottom="-51"
               width="313"
               visible="false"
               auto_resize="false"
@@ -233,7 +213,6 @@
                 length="1"
                 follows="left|top"
                 height="16"
-                layout="topleft"
                 left="10"
                 name="Location"
                 width="290">
@@ -244,7 +223,6 @@
                 length="1"
                 follows="left|top|right"
                 height="18"
-                layout="topleft"
                 left="10"
                 valign="center"
                 use_ellipses="true"
@@ -255,9 +233,8 @@
             <layout_panel
               follows="all"
               height="53"
-              layout="topleft"
               left="0"
-              top="5"
+              bottom="-58"
               width="313"
               visible="false"
               auto_resize="false"
@@ -267,7 +244,6 @@
                 length="1"
                 follows="left|top"
                 height="16"
-                layout="topleft"
                 left="10"
                 width="290">
                 Marketplace store:
@@ -277,7 +253,6 @@
                 length="1"
                 follows="left|top|right"
                 height="18"
-                layout="topleft"
                 left="10"
                 valign="center"
                 use_ellipses="true"
@@ -289,7 +264,7 @@
               follows="left|top|right"
               height="18"
               left="0"
-              top="0"
+              bottom="-18"
               auto_resize="false"
               width="315">
               <text
@@ -297,7 +272,6 @@
                 length="1"
                 follows="left|top"
                 height="16"
-                layout="topleft"
                 left="10"
                 name="Owner"
                 width="75">
@@ -308,21 +282,19 @@
                 length="1"
                 follows="left|top|right"
                 height="18"
-                layout="topleft"
-                left_pad="2"
+                left_delta="77"
                 valign="center"
                 name="OwnerText"
                 use_ellipses="true"
-                top_delta="-2"
+                bottom_delta="2"
                 width="188">
               </text>
             </layout_panel>
             <layout_panel
               follows="all"
               height="18"
-              layout="topleft"
               left="0"
-              top="5"
+              bottom="-23"
               width="313"
               visible="false"
               auto_resize="false"
@@ -332,7 +304,6 @@
                 length="1"
                 follows="left|top"
                 height="16"
-                layout="topleft"
                 left="10"
                 name="Group"
                 width="75">
@@ -343,21 +314,19 @@
                 length="1"
                 follows="left|top|right"
                 height="18"
-                layout="topleft"
-                left_pad="2"
+                left_delta="77"
                 valign="center"
                 name="GroupText"
                 use_ellipses="true"
-                top_delta="-2"
+                bottom_delta="2"
                 width="188">
               </text>
             </layout_panel>
             <layout_panel
               follows="all"
               height="75"
-              layout="topleft"
               left="0"
-              top="5"
+              bottom="-80"
               width="313"
               auto_resize="false"
               visible="true"
@@ -366,31 +335,28 @@
                 follows="bottom|left"
                 height="23"
                 label="Allow"
-                layout="topleft"
                 name="allow_btn"
                 width="94"
-                top_pad="3"
+                bottom_delta="-26"
                 left="10"
                 enabled="false"/>
               <button
                 follows="bottom|left"
                 height="23"
                 label="Forget"
-                layout="topleft"
                 name="forget_btn"
                 width="94"
-                top_pad="-23"
-                left_pad="3"
+                bottom_delta="0"
+                left_delta="97"
                 enabled="false"/>
               <button
                 follows="bottom|left"
                 height="23"
                 label="Block"
-                layout="topleft"
                 name="block_btn"
                 width="94"
-                top_pad="-23"
-                left_pad="3"
+                bottom_delta="0"
+                left_delta="97"
                 enabled="false"/>
               <text
                 type="string"
@@ -398,7 +364,6 @@
                 length="1"
                 follows="left|top|right"
                 height="16"
-                layout="topleft"
                 left="10"
                 name="privileged"
                 visible="false"
@@ -409,10 +374,9 @@
                 follows="bottom|left"
                 height="23"
                 label="Report Abuse"
-                layout="topleft"
                 name="report_btn"
                 width="94"
-                top_pad="3"
+                bottom_delta="-3"
                 left="107"
                 enabled="true"/>
             </layout_panel>
@@ -423,7 +387,6 @@
     <panel
       background_visible="true"
       follows="all"
-      layout="topleft"
       height="540"
       left="0"
       top="0"
@@ -432,16 +395,14 @@
       <scroll_container
         follows="all"
         height="520"
-        layout="topleft"
         left="9"
         name="edit_xp_scroll"
         opaque="true"
-        top_pad="10"
+        bottom_delta="-530"
         width="330">
         <panel
           follows="top|left|right"
           height="590"
-          layout="topleft"
           left="0"
           name="edit_scrolling_panel"
           top="0"
@@ -451,7 +412,6 @@
             fallback_image="default_land_picture.j2c"
             follows="left|top"
             height="197"
-            layout="topleft"
             left="10"
             name="edit_logo"
             top="10"
@@ -459,7 +419,6 @@
           <text
             follows="left|top|right"
             height="14"
-            layout="topleft"
             left="10"
             name="edit_experience_title_label"
             use_ellipses="true"
@@ -468,7 +427,6 @@
           <line_editor
             follows="left|top|right"
             height="19"
-            layout="topleft"
             left="10"
             name="edit_experience_title"
             max_length_bytes="63"
@@ -476,9 +434,8 @@
           <text
             follows="left|top|right"
             height="14"
-            layout="topleft"
             left="10"
-            top_pad="10"
+            bottom_delta="-24"
             name="edit_experience_desc_label"
             use_ellipses="true"
             value="Description:"
@@ -486,14 +443,13 @@
           <text_editor
             follows="left|top|right"
             height="57"
-            layout="topleft"
             left="11"
             name="edit_experience_description"
             max_length="2048"
             right="-11"
             word_wrap="true"/>
           <button
-            top_pad="10"
+            bottom_delta="-33"
             left="10"
             width="125"
             height="23"
@@ -505,19 +461,17 @@
             length="1"
             follows="left|top|right"
             height="14"
-            layout="topleft"
-            left_pad="10"
-            top_pad="-18"
+            left_delta="135"
+            bottom_delta="-32"
             use_ellipses="true"
             name="edit_GroupText"
             right="-10" />
           <text
-            top_pad="10"
+            bottom_delta="-26"
             type="string"
             length="1"
             follows="left|top|right"
             height="16"
-            layout="topleft"
             left="10"
             name="edit_ContentRating"
             right="-10">
@@ -527,9 +481,8 @@
             follows="right|top"
             height="20"
             label="Moderate"
-            layout="topleft"
             right="-10"
-            top_pad="-19"
+            bottom_delta="-1"
             tool_tip="Increasing the maturity rating on an experience will reset permission for all residents which have allowed the experience."
             name="edit_ContentRatingText"
             width="105">
@@ -551,9 +504,8 @@
             length="1"
             follows="left|top"
             height="14"
-            layout="topleft"
             left="10"
-            top_pad="10"
+            bottom_delta="-24"
             name="edit_Location"
             right="90">
             Location:
@@ -563,9 +515,8 @@
             length="1"
             follows="left|top|right"
             height="14"
-            layout="topleft"
-            left_pad="5"
-            top_pad="-14"
+            left_delta="85"
+            bottom_delta="-28"
             use_ellipses="true"
             name="edit_LocationTextText"
             right="-10" />
@@ -577,7 +528,8 @@
             label="Set to Current"
             />
           <button
-            top_pad="-23"
+            bottom_delta="0"
+            height="23"
             follows="top|right"
             right="-10"
             width="125"
@@ -588,8 +540,7 @@
             length="1"
             follows="left|top|right"
             height="14"
-            top_pad="10"
-            layout="topleft"
+            bottom_delta="-33"
             left="10"
             right="-10">
             Marketplace store:
@@ -599,7 +550,6 @@
             length="1"
             follows="left|top|right"
             height="19"
-            layout="topleft"
             left="10"
             max_length_bytes="255"
             valign="center"
@@ -608,26 +558,23 @@
           <check_box width="140"
                      height="21"
                      left="10"
-                     layout="topleft"
                      follows="top|left"
                      tool_tip=""
                      label="Enable Experience"
                      name="edit_enable_btn"/>
           <check_box width="125"
                      height="21"
-                     top_pad="-21"
+                     bottom_delta="-42"
                      right="-10"
                      visible="false"
-                     layout="topleft"
                      follows="top|left|right"
                      label="Hide In Search"
                      name="edit_private_btn"/>
           <text
             follows="left|top|right"
             height="25"
-            layout="topleft"
             left="10"
-            top_pad="10"
+            bottom_delta="35"
             name="changes"
             use_ellipses="true"
             word_wrap="true"
@@ -637,19 +584,17 @@
             follows="top|left"
             height="23"
             label="Back"
-            layout="topleft"
             name="cancel_btn"
             width="125"
-            top_pad="15"
+            botttom_delta="38"
             left="10"
             visible="true"/>
           <button
             follows="top|right"
             height="23"
             label="Save"
-            layout="topleft"
             name="save_btn"
-            top_pad="-23"
+            bottom_delta="-46"
             width="125"
             right="-10"
             visible="true"/>

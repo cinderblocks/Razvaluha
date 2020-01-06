@@ -58,6 +58,12 @@ LLPanelGroupExperiences::~LLPanelGroupExperiences()
 {
 }
 
+BOOL LLPanelGroupExperiences::isVisibleByAgent(LLAgent* agentp)
+{
+	//default to being visible
+	return TRUE;
+}
+
 BOOL LLPanelGroupExperiences::postBuild()
 {
 	mExperiencesList = getChild<LLFlatListView>("experiences_list");
