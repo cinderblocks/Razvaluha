@@ -857,6 +857,7 @@ void LLVOAvatarSelf::updateRegion(LLViewerRegion *regionp)
 	}
 	mRegionCrossingTimer.reset();
 	LLViewerObject::updateRegion(regionp);
+	gAgent.setIsCrossingRegion(false); // Attachments getting lost on TP
 }
 
 //--------------------------------------------------------------------

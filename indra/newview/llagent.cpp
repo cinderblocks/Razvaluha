@@ -392,6 +392,7 @@ LLAgent::LLAgent() :
 	mbTempRun(false),
 // [/RLVa:KB]
 	mbTeleportKeepsLookAt(false),
+	mIsCrossingRegion(false),
 	mIsAwaySitting(false),
 	mIsDoNotDisturb(false),
 	mControlFlags(0x00000000),
@@ -4450,6 +4451,7 @@ void LLAgent::setTeleportState(ETeleportState state)
 	{
 		case TELEPORT_NONE:
 			mbTeleportKeepsLookAt = false;
+			mIsCrossingRegion = false; // Attachments getting lost on TP; finished TP
 			break;
 
 		case TELEPORT_MOVING:

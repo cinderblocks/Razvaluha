@@ -2202,23 +2202,22 @@ U32 LLViewerObject::processUpdateMessage(LLMessageSystem *mesgsys,
 		mStatic = FALSE;
 	}
 
-	// BUG: This code leads to problems during group rotate and any scale operation.
-	// Small discepencies between the simulator and viewer representations cause the
-	// selection center to creep, leading to objects moving around the wrong center.
-	//
-	// Removing this, however, means that if someone else drags an object you have
-	// selected, your selection center and dialog boxes will be wrong.  It also means
-	// that higher precision information on selected objects will be ignored.
-	//
-	// I believe the group rotation problem is fixed.  JNC 1.21.2002
-	//
+// BUG: This code leads to problems during group rotate and any scale operation.
+// Small discepencies between the simulator and viewer representations cause the 
+// selection center to creep, leading to objects moving around the wrong center.
+// 
+// Removing this, however, means that if someone else drags an object you have
+// selected, your selection center and dialog boxes will be wrong.  It also means
+// that higher precision information on selected objects will be ignored.
+//
+// I believe the group rotation problem is fixed.  JNC 1.21.2002
+//
 	// Additionally, if any child is selected, need to update the dialogs and selection
 	// center.
 	BOOL needs_refresh = mUserSelected;
-	for (child_list_t::iterator iter = mChildList.begin();
-		 iter != mChildList.end(); iter++)
+	for (auto& iter : mChildList)
 	{
-		LLViewerObject* child = *iter;
+		LLViewerObject* child = iter;
 		needs_refresh = needs_refresh || child->mUserSelected;
 	}
 
@@ -2963,10 +2962,9 @@ void LLViewerObject::updateControlAvatar()
 	{
 		bool any_rigged_mesh = root->isRiggedMesh();
 		LLViewerObject::const_child_list_t& child_list = root->getChildren();
-		for (LLViewerObject::const_child_list_t::const_iterator iter = child_list.begin();
-			 iter != child_list.end(); ++iter)
+        for (const auto& iter : child_list)
 		{
-			const LLViewerObject* child = *iter;
+            const LLViewerObject* child = iter;
 			any_rigged_mesh = any_rigged_mesh || child->isRiggedMesh();
 		}
 		should_have_control_avatar = is_animated_object && any_rigged_mesh;
@@ -3104,7 +3102,7 @@ void LLViewerObject::linkControlAvatar()
 {
 	if (!getControlAvatar() && isRootEdit())
 	{
-		LLVOVolume *volp = dynamic_cast<LLVOVolume*>(this);
+        LLVOVolume *volp = asVolume();
 		if (!volp)
 		{
 			LL_WARNS() << "called with null or non-volume object" << LL_ENDL;
@@ -3147,6 +3145,7 @@ void LLViewerObject::unlinkControlAvatar()
 		if (mControlAvatar)
 		{
 			mControlAvatar->markForDeath();
+			mControlAvatar->mRootVolp = NULL;
 			mControlAvatar = NULL;
 		}
 	}
@@ -3280,7 +3279,7 @@ void LLViewerObject::processTaskInvFile(void** user_data, S32 error_code, LLExtS
 			LLInventoryObject::object_list_t::iterator end = object->mInventory->end();
 			std::list<LLUUID>& pending_lst = object->mPendingInventoryItemsIDs;
 
-			for (; it != end && pending_lst.size(); ++it)
+			for (; it != end && !pending_lst.empty(); ++it)
 			{
 				LLViewerInventoryItem* item = dynamic_cast<LLViewerInventoryItem*>(it->get());
 				if(item && item->getType() != LLAssetType::AT_CATEGORY)
@@ -3537,7 +3536,7 @@ void LLViewerObject::getInventoryContents(LLInventoryObject::object_list_t& obje
 
 LLInventoryObject* LLViewerObject::getInventoryRoot()
 {
-	if (!mInventory || !mInventory->size())
+	if (!mInventory || mInventory->empty())
 	{
 		return NULL;
 	}
@@ -3787,10 +3786,9 @@ F32 LLViewerObject::getLinksetPhysicsCost()
 F32 LLViewerObject::recursiveGetEstTrianglesMax() const
 {
 	F32 est_tris = getEstTrianglesMax();
-	for (child_list_t::const_iterator iter = mChildList.begin();
-		 iter != mChildList.end(); iter++)
+    for (const auto& iter : mChildList)
 	{
-		const LLViewerObject* child = *iter;
+        const LLViewerObject* child = iter;
 		if (!child->isAvatar())
 		{
 			est_tris += child->recursiveGetEstTrianglesMax();
@@ -3858,10 +3856,9 @@ U32 LLViewerObject::recursiveGetTriangleCount(S32* vcount) const
 {
 	S32 total_tris = getTriangleCount(vcount);
 	LLViewerObject::const_child_list_t& child_list = getChildren();
-	for (LLViewerObject::const_child_list_t::const_iterator iter = child_list.begin();
-		 iter != child_list.end(); ++iter)
+    for (const auto& iter : child_list)
 	{
-		LLViewerObject* childp = *iter;
+        LLViewerObject* childp = iter;
 		if (childp)
 		{
 			total_tris += childp->getTriangleCount(vcount);
@@ -3888,13 +3885,11 @@ F32 LLViewerObject::recursiveGetScaledSurfaceArea() const
 				const LLVector3& scale = volume->getScale();
 				area += volume->getVolume()->getSurfaceArea() * llmax(llmax(scale.mV[0], scale.mV[1]), scale.mV[2]);
 			}
-			LLViewerObject::const_child_list_t children = volume->getChildren();
-			for (LLViewerObject::const_child_list_t::const_iterator child_iter = children.begin();
-				 child_iter != children.end();
-				 ++child_iter)
+            LLViewerObject::const_child_list_t const& children = volume->getChildren();
+            for (const auto& child_iter : children)
 			{
-				LLViewerObject* child_obj = *child_iter;
-				LLVOVolume *child = dynamic_cast<LLVOVolume*>( child_obj );
+                LLViewerObject* child_obj = child_iter;
+                LLVOVolume *child = child_obj ? child_obj->asVolume() : nullptr;
 				if (child && child->getVolume())
 				{
 					const LLVector3& scale = child->getScale();
@@ -3905,6 +3900,7 @@ F32 LLViewerObject::recursiveGetScaledSurfaceArea() const
 	}
 	return area;
 }
+
 void LLViewerObject::updateSpatialExtents(LLVector4a& newMin, LLVector4a &newMax)
 {
 	if(mDrawable.isNull())
@@ -5594,6 +5590,12 @@ void LLViewerObject::updateText()
 LLVOAvatar* LLViewerObject::asAvatar()
 {
 	return NULL;
+}
+
+// virtual 
+LLVOVolume* LLViewerObject::asVolume()
+{
+	return nullptr;
 }
 
 // If this object is directly or indirectly parented by an avatar,

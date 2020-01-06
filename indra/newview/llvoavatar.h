@@ -543,7 +543,7 @@ private:
 	// Impostors
 	//--------------------------------------------------------------------
 public:
-	BOOL 		isImpostor() const;
+	virtual BOOL isImpostor() const;
 	BOOL 		shouldImpostor(const U32 rank_factor = 1) const;
 	BOOL 		needsImpostorUpdate() const;
 	const LLVector3& getImpostorOffset() const;
@@ -558,6 +558,7 @@ public:
 	F32SecondsImplicit mLastImpostorUpdateFrameTime;
 	const LLVector3*  getLastAnimExtents() const { return mLastAnimExtents; }
 	void		setNeedsExtentUpdate(bool val) { mNeedsExtentUpdate = val; }
+
 private:
 	LLVector3	mImpostorOffset;
 	LLVector2	mImpostorDim;
@@ -993,7 +994,7 @@ private:
  **/
 
 public:
-	std::string		getFullname() const; // Returns "FirstName LastName"
+	virtual std::string	getFullname() const; // Returns "FirstName LastName"
 	std::string		avString() const; // Frequently used string in log messages "Avatar '<full name'"
 protected:
 	static void		getAnimLabels(std::vector<std::string>* labels);

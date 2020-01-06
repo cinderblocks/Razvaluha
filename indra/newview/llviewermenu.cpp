@@ -2836,12 +2836,11 @@ class LLObjectPFLinksetsSelected : public view_listener_t
 
 // </edit>
 
-bool handle_go_to()
+void handle_go_to(const LLVector3d& pos)
 {
 	// try simulator autopilot
 	std::vector<std::string> strings;
 	std::string val;
-	LLVector3d pos = LLToolPie::getInstance()->getPick().mPosGlobal;
 	val = llformat("%.9g", pos.mdV[VX]);
 	strings.push_back(val);
 	val = llformat("%.9g", pos.mdV[VY]);
@@ -2867,14 +2866,14 @@ bool handle_go_to()
 
 	// Could be first use
 	LLFirstUse::useGoTo();
-	return true;
 }
 
 class LLGoToObject : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		return handle_go_to();
+		handle_go_to(LLToolPie::instance().getPick().mPosGlobal);
+		return true;
 	}
 };
 
@@ -8500,6 +8499,7 @@ void handle_rebake_textures(void*)
 	{
 		LLAppearanceMgr::instance().requestServerAppearanceUpdate();
 	}
+	gAgent.setIsCrossingRegion(false); // Attachments getting lost on TP
 }
 
 void toggle_visibility(void* user_data)
@@ -8970,19 +8970,19 @@ template<typename T> T* get_focused()
 	return t;
 }
 
-const std::string get_slurl_for(const LLUUID& id, LFIDBearer::Type type)
+const std::string get_slurl_for(const LLUUID& id, const LFIDBearer::Type& type)
 {
 	return type == LFIDBearer::GROUP ? LLGroupActions::getSLURL(id) :
 		type == LFIDBearer::EXPERIENCE ? LLSLURL("experience", id, "profile").getSLURLString() :
 		LLAvatarActions::getSLURL(id);
 }
 
-const LLWString get_wslurl_for(const LLUUID& id, LFIDBearer::Type type)
+const LLWString get_wslurl_for(const LLUUID& id, const LFIDBearer::Type& type)
 {
 	return utf8str_to_wstring(get_slurl_for(id, type));
 }
 
-void copy_profile_uri(const LLUUID& id, LFIDBearer::Type type)
+void copy_profile_uri(const LLUUID& id, const LFIDBearer::Type& type)
 {
 	gViewerWindow->getWindow()->copyTextToClipboard(get_wslurl_for(id, type));
 }
@@ -9330,6 +9330,17 @@ class ListIsNearby : public view_listener_t
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
 		gMenuHolder->findControl(userdata["control"].asString())->setValue(is_nearby(LFIDBearer::getActiveSelectedID()));
+		return true;
+	}
+};
+
+const LLVector3d& get_av_pos(const LLUUID& id);
+class ListGoTo : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		auto id = LFIDBearer::getActiveSelectedID();
+		handle_go_to(LFIDBearer::getActiveType() == LFIDBearer::AVATAR ? get_av_pos(id) : gObjectList.findObject(id)->getPositionGlobal());
 		return true;
 	}
 };
@@ -9867,6 +9878,7 @@ void initialize_menus()
 	addMenu(new ListStartIM(), "List.StartIM");
 	addMenu(new ListAbuseReport(), "List.AbuseReport");
 	addMenu(new ListIsNearby, "List.IsNearby");
+	addMenu(new ListGoTo, "List.GoTo");
 	addMenu(new ListTrack, "List.Track");
 	addMenu(new ListEject(), "List.ParcelEject");
 	addMenu(new ListFreeze(), "List.Freeze");

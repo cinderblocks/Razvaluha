@@ -4691,9 +4691,10 @@ void process_agent_movement_complete(LLMessageSystem* msg, void**)
 
 	if (!gLastVersionChannel.empty() && gSavedSettings.getBOOL("SGServerVersionChangedNotification"))
 	{
-		LLSD payload;
-		payload["message"] = version_channel;
-		LLNotificationsUtil::add("ServerVersionChanged", LLSD(), payload);
+		LLSD args;
+		args["OLD_VERSION"] = gLastVersionChannel;
+		args["NEW_VERSION"] = version_channel;
+		LLNotificationsUtil::add("ServerVersionChanged", args);
 	}
 
 	gLastVersionChannel = version_channel;
@@ -4713,6 +4714,8 @@ void process_crossed_region(LLMessageSystem* msg, void**)
 	}
 	LL_INFOS("Messaging") << "process_crossed_region()" << LL_ENDL;
 	gAgentAvatarp->resetRegionCrossingTimer();
+	gAgent.setIsCrossingRegion(false); // Attachments getting lost on TP, region crossing hook
+
 
 	U32 sim_ip;
 	msg->getIPAddrFast(_PREHASH_RegionData, _PREHASH_SimIP, sim_ip);
@@ -5115,10 +5118,33 @@ void process_kill_object(LLMessageSystem *mesgsys, void **user_data)
 		LLViewerObject *objectp = gObjectList.findObject(id);
 		if (objectp)
 		{
-			if (different_region && gAgentAvatarp == objectp->getAvatar())
-			{
-				LL_WARNS() << "Region other than our own killing our attachments!!" << LL_ENDL;
-				continue;
+				if (gAgentAvatarp == objectp->getAvatar())
+				{
+					if (different_region)
+					{
+						LL_WARNS() << "Region other than our own killing our attachments!!" << LL_ENDL;
+						continue;
+					}
+					else if (gAgent.getTeleportState() != LLAgent::TELEPORT_NONE)
+					{
+						LL_WARNS() << "Region killing our attachments during teleport!!" << LL_ENDL;
+						continue;
+					}
+					else if (gAgent.isCrossingRegion())
+					{
+						LL_WARNS() << "Region killing our attachments during region cross!!" << LL_ENDL;
+						continue;
+					}
+				}
+				// Display green bubble on kill
+				if ( gShowObjectUpdates )
+				{
+					LLColor4 color(0.f,1.f,0.f,1.f);
+					gPipeline.addDebugBlip(objectp->getPositionAgent(), color);
+				}
+
+				// Do the kill
+				gObjectList.killObject(objectp);
 			}
 
 			// Display green bubble on kill
@@ -5740,7 +5766,7 @@ void process_object_animation(LLMessageSystem *mesgsys, void **user_data)
         return;
     }
     
-	LLVOVolume *volp = dynamic_cast<LLVOVolume*>(objp);
+	LLVOVolume *volp = objp->asVolume();
     if (!volp)
     {
 		LL_DEBUGS("AnimatedObjectsNotify") << "Received animation state for non-volume object " << uuid << LL_ENDL;
@@ -6629,7 +6655,6 @@ bool attempt_standard_notification(LLMessageSystem* msgsystem)
 
 		std::string llsdRaw;
 		LLSD llsdBlock;
-		msgsystem->getStringFast(_PREHASH_AlertInfo, _PREHASH_Message, notificationID);
 		msgsystem->getStringFast(_PREHASH_AlertInfo, _PREHASH_ExtraParams, llsdRaw);
 		if (llsdRaw.length())
 		{
@@ -6680,6 +6705,11 @@ bool attempt_standard_notification(LLMessageSystem* msgsystem)
 				return true;
 			}
 		}
+		else if (notificationID == "expired_region_handoff" || notificationID == "invalid_region_handoff") // borked region handoff
+		{
+			gAgent.setIsCrossingRegion(false); // Attachments getting lost on TP
+		}
+		else
 		// HACK -- handle callbacks for specific alerts.
 		if (notificationID == "HomePositionSet")
 		{

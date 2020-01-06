@@ -86,7 +86,7 @@ public:
 };
 
 // Class which embodies all Volume objects (with pcode LL_PCODE_VOLUME)
-class LLVOVolume : public LLViewerObject
+class LLVOVolume final : public LLViewerObject
 {
 	LOG_CLASS(LLVOVolume);
 protected:
@@ -108,6 +108,8 @@ public:
 
 public:
 						LLVOVolume(const LLUUID &id, const LLPCode pcode, LLViewerRegion *regionp);
+
+				LLVOVolume* asVolume() final;
 	/*virtual*/ void markDead() override;		// Override (and call through to parent) to clean up media references
 
 	/*virtual*/ LLDrawable* createDrawable(LLPipeline *pipeline) override;
