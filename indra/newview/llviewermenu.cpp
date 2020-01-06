@@ -42,6 +42,7 @@
 #include "lfidbearer.h"
 #include "llanimationstates.h" // For ANIM_AGENT_AWAY
 #include "llavatarnamecache.h"	// IDEVO
+#include "llexperiencecache.h"
 #include "llinventorypanel.h"
 #include "llnotifications.h"
 #include "llnotificationsutil.h"
@@ -9121,10 +9122,16 @@ class ListCopyNames : public view_listener_t
 		return ret;
 	}
 
+	static std::string getExperienceName(const LLUUID& id)
+	{
+		return LLExperienceCache::instance().get(id)[LLExperienceCache::NAME];
+	}
+
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
 		LLWString str;
-		copy_from_ids(LFIDBearer::getActiveSelectedIDs(), LFIDBearer::getActiveType() == LFIDBearer::GROUP ? getGroupName : getAvatarName);
+		const auto type = LFIDBearer::getActiveType();
+		copy_from_ids(LFIDBearer::getActiveSelectedIDs(), type == LFIDBearer::GROUP ? getGroupName : type == LFIDBearer::EXPERIENCE ? getExperienceName : getAvatarName);
 		if (!str.empty()) LLView::getWindow()->copyTextToClipboard(str);
 		return true;
 	}
