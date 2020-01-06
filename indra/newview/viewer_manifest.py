@@ -160,9 +160,6 @@ class ViewerManifest(LLManifest):
             if not self.path2basename(os.pardir, "build_data.json"):
                 print "No build_data.json file"
 
-    def finish_build_data_dict(self, build_data_dict):
-        return build_data_dict
-
     def standalone(self):
         return self.args['standalone'] == "ON"
 

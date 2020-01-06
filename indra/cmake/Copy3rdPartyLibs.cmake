@@ -104,15 +104,10 @@ if(WINDOWS)
       list(APPEND release_files alut.dll OpenAL32.dll)
     endif(OPENAL)
 
-    if(OPENAL)
-      set(debug_files ${debug_files} alut.dll OpenAL32.dll)
-      set(release_files ${release_files} alut.dll OpenAL32.dll)
-    endif(OPENAL)
-
-    if (FMODSTUDIO)
+    if (USE_FMODSTUDIO)
       list(APPEND debug_files fmodL.dll)
       list(APPEND release_files fmod.dll)
-    endif (FMODSTUDIO)
+    endif (USE_FMODSTUDIO)
 
     foreach(redistfullfile IN LISTS CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
         get_filename_component(redistfilepath ${redistfullfile} DIRECTORY )
@@ -169,10 +164,10 @@ elseif(DARWIN)
       list(APPEND release_files libopenal.dylib libalut.dylib)
     endif (OPENAL)
 
-    if (FMODSTUDIO)
+    if (USE_FMODSTUDIO)
       list(APPEND debug_files libfmodL.dylib)
       list(APPEND release_files libfmod.dylib)
-    endif (FMODSTUDIO)
+    endif (USE_FMODSTUDIO)
 
 elseif(LINUX)
     # linux is weird, multiple side by side configurations aren't supported
@@ -222,10 +217,10 @@ elseif(LINUX)
       list(APPEND release_files "libtcmalloc_minimal.so")
     endif (USE_TCMALLOC)
 
-    if (FMODSTUDIO)
+    if (USE_FMODSTUDIO)
       list(APPEND debug_files "libfmodL.so")
       list(APPEND release_files "libfmod.so")
-    endif (FMODSTUDIO)
+    endif (USE_FMODSTUDIO)
 
 else(WINDOWS)
     message(STATUS "WARNING: unrecognized platform for staging 3rd party libs, skipping...")

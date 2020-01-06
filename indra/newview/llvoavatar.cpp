@@ -8486,11 +8486,13 @@ bool LLVOAvatar::isTooComplex() const
 {
 	static const LLCachedControl<S32> always_render_friends("AlwaysRenderFriends", 0);
 	bool too_complex;
-	if (isSelf() || (always_render_friends && always_render_friends != 3 && LLAvatarTracker::instance().isBuddy(getID())))
+	// 'AlwaysRenderFriends' == 0, or an animesh, falls through to the complexity limits, if not self. Self is always rendered.
+	// 1 always render friends, 2 render only friends, 3 render only self
+	if (isSelf() || (always_render_friends && always_render_friends != 3 && !isControlAvatar() && LLAvatarTracker::instance().isBuddy(getID())))
 	{
 		too_complex = false;
 	}
-	else if (always_render_friends >= 2)
+	else if (always_render_friends >= 2 && !isControlAvatar())
 	{
 		too_complex = true;
 	}
@@ -8836,7 +8838,7 @@ void LLVOAvatar::updateMeshTextures()
 	// set texture and color of hair manually if we are not using a baked image.
 	// This can happen while loading hair for yourself, or for clients that did not
 	// bake a hair texture. Still needed for yourself after 1.22 is depricated.
-	if (!is_layer_baked[BAKED_HAIR] || isEditingAppearance())
+	if (!is_layer_baked[BAKED_HAIR])
 	{
 		const LLColor4 color = mTexHairColor ? mTexHairColor->getColor() : LLColor4(1,1,1,1);
 		LLViewerTexture* hair_img = getImage( TEX_HAIR, 0 );

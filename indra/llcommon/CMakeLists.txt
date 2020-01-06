@@ -319,6 +319,7 @@ target_link_libraries(
     ${BOOST_SYSTEM_LIBRARY}
 
     ${URIPARSER_LIBRARY}
+    ${RT_LIBRARY}
     )
 
 add_dependencies(llcommon stage_third_party_libs)

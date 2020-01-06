@@ -70,9 +70,10 @@ elseif (WINDOWS)
 endif (LINUX)
 
 add_subdirectory(${VIEWER_PREFIX}newview)
-add_dependencies(viewer ${VIEWER_BRANDING_ID}-bin)
+add_dependencies(viewer ${VIEWER_BINARY_NAME})
+
 
 if (WINDOWS)
   set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    PROPERTY VS_STARTUP_PROJECT ${VIEWER_BRANDING_ID}-bin)
+    PROPERTY VS_STARTUP_PROJECT ${VIEWER_BINARY_NAME})
 endif (WINDOWS)

@@ -1248,7 +1248,7 @@ void LLFloaterAvatarList::removeFocusFromAll()
 // static
 void LLFloaterAvatarList::setFocusAvatar(const LLUUID& id)
 {
-	if (!gAgentCamera.lookAtObject(id, false) && !lookAtAvatar(id)) return;
+	if (/*!gAgentCamera.lookAtObject(id, false) &&*/ !lookAtAvatar(id)) return;
 	if (instanceExists())
 		instance().setFocusAvatarInternal(id);
 }

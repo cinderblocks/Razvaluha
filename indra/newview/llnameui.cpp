@@ -46,26 +46,35 @@
 // statics
 std::set<LLNameUI*> LLNameUI::sInstances;
 
-LLNameUI::LLNameUI(const std::string& loading, bool rlv_sensitive, const LLUUID& id, bool is_group)
-: mNameID(id), mRLVSensitive(rlv_sensitive), mIsGroup(is_group), mAllowInteract(false)
-, mInitialValue(!loading.empty() ? loading : LLTrans::getString("LoadingData"))
+LLNameUI::LLNameUI(const std::string& loading, bool rlv_sensitive, const LLUUID& id, bool is_group, const std::string& name_system)
+: mNameID(id), mRLVSensitive(rlv_sensitive), mIsGroup(!is_group), mAllowInteract(false)
+, mNameSystem(name_system.empty() ? "PhoenixNameSystem" : name_system), mInitialValue(!loading.empty() ? loading : LLTrans::getString("LoadingData"))
 {
-	if (mIsGroup) sInstances.insert(this);
+	setIsGroup(is_group);
+}
+
+void LLNameUI::setIsGroup(bool is_group)
+{
+	// Disconnect active connections if needed
+	for (auto& connection : mConnections)
+		connection.disconnect();
+
+	if (mIsGroup != is_group)
+	{
+		if (mIsGroup = is_group)
+			sInstances.insert(this);
+		else
+		{
+			sInstances.erase(this);
+			mConnections[1] = gSavedSettings.getControl(mNameSystem)->getCommitSignal()->connect(boost::bind(&LLNameUI::setNameText, this));
+		}
+	}
 }
 
 void LLNameUI::setNameID(const LLUUID& name_id, bool is_group)
 {
 	mNameID = name_id;
-	mConnection.disconnect();
-
-	if (mIsGroup != is_group)
-	{
-		if (is_group)
-			sInstances.insert(this);
-		else
-			sInstances.erase(this);
-	}
-	mIsGroup = is_group;
+	setIsGroup(is_group);
 
 	if (mAllowInteract = mNameID.notNull())
 	{
@@ -91,9 +100,9 @@ void LLNameUI::setNameText()
 	{
 		LLAvatarName av_name;
 		if (got_name = LLAvatarNameCache::get(mNameID, &av_name))
-			name = mShowCompleteName ? av_name.getCompleteName() : av_name.getNSName();
+			name = mNameSystem.empty() ? av_name.getNSName() : av_name.getNSName(gSavedSettings.getS32(mNameSystem));
 		else
-			mConnection = LLAvatarNameCache::get(mNameID, boost::bind(&LLNameUI::setNameText, this));
+			mConnections[0] = LLAvatarNameCache::get(mNameID, boost::bind(&LLNameUI::setNameText, this));
 	}
 
 	if (!mIsGroup && got_name && mRLVSensitive) // Filter if needed

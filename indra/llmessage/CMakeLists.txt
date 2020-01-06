@@ -226,6 +226,7 @@ target_link_libraries(
   ${BOOST_CONTEXT_LIBRARY}
   ${BOOST_SYSTEM_LIBRARY}
   rt
+  ${PTHREAD_LIBRARY}
   )
 else (LINUX)
 target_link_libraries(
@@ -241,6 +242,7 @@ target_link_libraries(
   ${BOOST_COROUTINE_LIBRARY}
   ${BOOST_CONTEXT_LIBRARY}
   ${BOOST_SYSTEM_LIBRARY}
+  ${PTHREAD_LIBRARY}
   )
 endif(LINUX)
 

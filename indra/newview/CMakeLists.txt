@@ -53,9 +53,9 @@ include(ZLIB)
 include(URIPARSER)
 
 
-if(FMODSTUDIO)
+if(USE_FMODSTUDIO)
   include_directories(${FMODSTUDIO_INCLUDE_DIR})
-endif(FMODSTUDIO)
+endif(USE_FMODSTUDIO)
 
 if(USE_CRASHPAD)
   include_directories(${CRASHPAD_INCLUDE_DIRS})
@@ -641,9 +641,6 @@ set(viewer_SOURCE_FILES
     wlfPanel_AdvSettings.cpp
     )
 
-set(VIEWER_BINARY_NAME "singularity-bin" CACHE STRING
-    "The name of the viewer executable to create.")
-
 set(viewer_HEADER_FILES
     CMakeLists.txt
     ViewerInstall.cmake
@@ -1201,12 +1198,12 @@ set(viewer_HEADER_FILES
 
 source_group("CMake Rules" FILES ViewerInstall.cmake)
 
+#build_data.json creation moved to viewer_manifest.py MAINT-6413
 # the viewer_version.txt file created here is for passing to viewer_manifest and autobuild
 # the summary.json file is created for the benefit of the TeamCity builds, where
 #   it is used to provide descriptive information to the build results page
 add_custom_target(generate_viewer_version ALL
                   COMMAND ${CMAKE_COMMAND} -E echo ${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION} > ${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
-                  COMMAND ${CMAKE_COMMAND} -E echo {"Type":"viewer","Version":"${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}"} > ${CMAKE_BINARY_DIR}/summary.json
                   COMMENT "Generating viewer_version.txt for manifest processing"
                   )
 
@@ -1297,11 +1294,11 @@ if (WINDOWS)
          llwindebug.h
          )
 
-  if (NVAPI)
+  if (USE_NVAPI)
     set(APPVWRW32_COMPILE_FLAGS "${APPVWRW32_COMPILE_FLAGS} -DUSE_NVAPI=1")
-  else (NVAPI)
+  else (USE_NVAPI)
     set(APPVWRW32_COMPILE_FLAGS "${APPVWRW32_COMPILE_FLAGS} -UUSE_NVAPI")
-  endif (NVAPI)
+  endif (USE_NVAPI)
   set_source_files_properties(llappviewerwin32.cpp PROPERTIES COMPILE_FLAGS "${APPVWRW32_COMPILE_FLAGS}")
 
     # Replace the icons with the appropriate ones for the channel
@@ -1493,9 +1490,9 @@ if (OPENAL)
   list(APPEND LLSTARTUP_COMPILE_DEFINITIONS "LL_OPENAL=1")
 endif (OPENAL)
 
-if (FMODSTUDIO)
+if (USE_FMODSTUDIO)
   list(APPEND LLSTARTUP_COMPILE_DEFINITIONS "LL_FMODSTUDIO=1")
-endif (FMODSTUDIO)
+endif (USE_FMODSTUDIO)
 
 set_source_files_properties(llstartup.cpp PROPERTIES COMPILE_DEFINITIONS "${LLSTARTUP_COMPILE_DEFINITIONS}")
 
@@ -1522,8 +1519,7 @@ if(USE_PRECOMPILED_HEADERS)
       ${CMAKE_CURRENT_SOURCE_DIR}/llviewerprecompiledheaders.cpp)
 endif(USE_PRECOMPILED_HEADERS)
 
-set(PACKAGE OFF CACHE BOOL
-    "Add a package target that builds an installer package.")
+option(PACKAGE "Add a package target that builds an installer package." ON)
 
 if (WINDOWS)
     set(release_flags "/MAP")
@@ -1603,20 +1599,20 @@ if (WINDOWS)
 	    )
     endif(LIBVLCPLUGIN)
 
-    if (FMODSTUDIO)
-      if (ADDRESS_SIZE EQUAL 32)
-        list(APPEND COPY_INPUT_DEPENDENCIES
-             ${SHARED_LIB_STAGING_DIR}/Release/fmod.dll
-             ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod.dll
-            )
-      elseif (ADDRESS_SIZE EQUAL 64)
+    if (USE_FMODSTUDIO)
+      if (ADDRESS_SIZE EQUAL 64)
         list(APPEND COPY_INPUT_DEPENDENCIES
              ${SHARED_LIB_STAGING_DIR}/Release/fmod64.dll
              ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod64.dll
              ${SHARED_LIB_STAGING_DIR}/Debug/fmodL64.dll
             )
-      endif (ADDRESS_SIZE EQUAL 32)
-    endif (FMODSTUDIO)
+      else (ADDRESS_SIZE EQUAL 64)
+        list(APPEND COPY_INPUT_DEPENDENCIES
+             ${SHARED_LIB_STAGING_DIR}/Release/fmod.dll
+             ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod.dll
+            )
+      endif (ADDRESS_SIZE EQUAL 64)
+    endif (USE_FMODSTUDIO)
 
     if(MSVC_IDE)
       set(VIEWER_BUILD_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}")
@@ -1679,7 +1675,7 @@ if (WINDOWS)
           --buildtype=${CMAKE_BUILD_TYPE}
           --channel=${VIEWER_CHANNEL}
           --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
-	  --configuration=${VIEWER_BUILD_DEST_DIR}
+          --configuration=${VIEWER_BUILD_DEST_DIR}
           --dest=${VIEWER_BUILD_DEST_DIR}
           --grid=${GRID}
           --sdl2=${LLWINDOW_SDL2}
@@ -1991,7 +1987,7 @@ if (FALSE)
   if (LINUX)
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_CURRENT_BINARY_DIR}/packaged")
     set(VIEWER_SYMBOL_FILE "${SYMBOL_NAME}-${AUTOBUILD_PLATFORM_NAME}.tar.bz2")
-    set(VIEWER_EXE_GLOBS "${VIEWER_BRANDING_ID}-do-not-run-directly AlchemyPlugin")
+    set(VIEWER_EXE_GLOBS "do-not-directly-run-${VIEWER_BINARY_NAME} AlchemyPlugin")
     set(VIEWER_LIB_GLOB "*${CMAKE_SHARED_MODULE_SUFFIX}*")
     set(VIEWER_COPY_MANIFEST copy_l_viewer_manifest)
   endif (LINUX)

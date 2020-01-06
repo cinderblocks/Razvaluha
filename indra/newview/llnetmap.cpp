@@ -84,6 +84,82 @@
 // [/RLVa:KB]
 
 using namespace LLOldEvents;
+typedef LLMemberListener<LLView> view_listener_t;
+
+class LLScaleMap : public view_listener_t
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+
+class LLChatRings : public view_listener_t
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+
+class LLCheckChatRings : public view_listener_t
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+
+class LLStopTracking : public view_listener_t
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+
+class LLIsTracking : public view_listener_t
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+
+//moymod - Custom minimap markers :o
+class mmsetred : public view_listener_t //moymod
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+class mmsetgreen : public view_listener_t //moymod
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+class mmsetblue : public view_listener_t //moymod
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+class mmsetyellow : public view_listener_t //moymod
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+class mmsetcustom : public view_listener_t //moymod
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+class mmsetunmark : public view_listener_t //moymod
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+class mmenableunmark : public view_listener_t //moymod
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+
+// [SL:KB] - Patch: World-MiniMap | Checked: 2012-07-08 (Catznip-3.3.0)
+class OverlayToggle : public view_listener_t
+{
+public:
+	/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override final;
+};
+// [/SL:KB]
 
 const F32 LLNetMap::MAP_SCALE_MIN = 32;
 const F32 LLNetMap::MAP_SCALE_MID = 256;
@@ -103,7 +179,7 @@ const S32 CIRCLE_STEPS = 100;
 const F64 COARSEUPDATE_MAX_Z = 1020.0f;
 
 std::map<LLUUID, LLVector3d>	LLNetMap::mClosestAgentsToCursor; // <exodus/>
-static std::map<LLUUID, LLVector3d> mClosestAgentsAtLastClick; // <exodus/>
+uuid_vec_t						LLNetMap::mClosestAgentsAtLastClick; // <exodus/>
 
 LLNetMap::LLNetMap(const std::string& name) :
 	LLPanel(name),
@@ -139,26 +215,29 @@ LLNetMap::~LLNetMap()
 
 BOOL LLNetMap::postBuild()
 {
+	mELabel = getChild<LLTextBox>("e_label");
+	mNLabel = getChild<LLTextBox>("n_label");
+	mWLabel = getChild<LLTextBox>("w_label");
+	mSLabel = getChild<LLTextBox>("s_label");
+	mNELabel = getChild<LLTextBox>("ne_label");
+	mNWLabel = getChild<LLTextBox>("nw_label");
+	mSWLabel = getChild<LLTextBox>("sw_label");
+	mSELabel = getChild<LLTextBox>("se_label");
+
 	// Register event listeners for popup menu
-	(new LLScaleMap())->registerListener(this, "MiniMap.ZoomLevel");
-	(new LLCenterMap())->registerListener(this, "MiniMap.Center");
-	(new LLCheckCenterMap())->registerListener(this, "MiniMap.CheckCenter");
-	(new LLChatRings())->registerListener(this, "MiniMap.ChatRings");
-	(new LLCheckChatRings())->registerListener(this, "MiniMap.CheckChatRings");
-	(new LLStopTracking())->registerListener(this, "MiniMap.StopTracking");
-	(new LLEnableTracking())->registerListener(this, "MiniMap.EnableTracking");
-	(new LLShowAgentProfile())->registerListener(this, "MiniMap.ShowProfile");
-	(new LLEnableProfile())->registerListener(this, "MiniMap.EnableProfile");
-	(new LLCamFollow())->registerListener(this, "MiniMap.CamFollow"); //moymod - add cam follow crap thingie
-	(new mmsetred())->registerListener(this, "MiniMap.setred");
-	(new mmsetgreen())->registerListener(this, "MiniMap.setgreen");
-	(new mmsetblue())->registerListener(this, "MiniMap.setblue");
-	(new mmsetyellow())->registerListener(this, "MiniMap.setyellow");
-	(new mmsetcustom())->registerListener(this, "MiniMap.setcustom");
-	(new mmsetunmark())->registerListener(this, "MiniMap.setunmark");
-	(new mmenableunmark())->registerListener(this, "MiniMap.enableunmark");
-	(new LLToggleControl())->registerListener(this, "MiniMap.ToggleControl");
-	(new OverlayToggle())->registerListener(this, "Minimap.ToggleOverlay");
+	(new LLScaleMap())->registerListener(gMenuHolder, "MiniMap.ZoomLevel");
+	(new LLChatRings())->registerListener(gMenuHolder, "MiniMap.ChatRings");
+	(new LLCheckChatRings())->registerListener(gMenuHolder, "MiniMap.CheckChatRings");
+	(new LLStopTracking())->registerListener(gMenuHolder, "StopTracking");
+	(new LLIsTracking())->registerListener(gMenuHolder, "IsTracking");
+	(new mmsetred())->registerListener(gMenuHolder, "MiniMap.setred");
+	(new mmsetgreen())->registerListener(gMenuHolder, "MiniMap.setgreen");
+	(new mmsetblue())->registerListener(gMenuHolder, "MiniMap.setblue");
+	(new mmsetyellow())->registerListener(gMenuHolder, "MiniMap.setyellow");
+	(new mmsetcustom())->registerListener(gMenuHolder, "MiniMap.setcustom");
+	(new mmsetunmark())->registerListener(gMenuHolder, "MiniMap.setunmark");
+	(new mmenableunmark())->registerListener(gMenuHolder, "MiniMap.enableunmark");
+	(new OverlayToggle())->registerListener(gMenuHolder, "Minimap.ToggleOverlay");
 
 // [SL:KB] - Patch: World-MinimapOverlay | Checked: 2012-06-20 (Catznip-3.3.0)
 	LLViewerParcelMgr::instance().setCollisionUpdateCallback(boost::bind(&LLNetMap::refreshParcelOverlay, this));
@@ -167,7 +246,7 @@ BOOL LLNetMap::postBuild()
 
 	updateMinorDirections();
 
-	mPopupMenu = LLUICtrlFactory::getInstance()->buildMenu("menu_mini_map.xml", this);
+	mPopupMenu = LLUICtrlFactory::getInstance()->buildMenu("menu_mini_map.xml", gMenuHolder);
 	if (!mPopupMenu) mPopupMenu = new LLMenuGL(LLStringUtil::null);
 	mPopupMenu->setVisible(FALSE);
 	return TRUE;
@@ -249,8 +328,8 @@ void LLNetMap::draw()
 		createParcelImage();
 	}
 
-	static LLUICachedControl<S32> center("MiniMapCenter");
-	if (center != MAP_CENTER_NONE)
+	static const LLUICachedControl<S32> center("MiniMapCenter");
+	if (center)
 	{
 		mCurPan = lerp(mCurPan, mTargetPan, LLSmoothInterpolation::getInterpolant(0.1f));
 	}
@@ -543,14 +622,14 @@ void LLNetMap::draw()
 			gmSelected = LLFloaterAvatarList::instance().getSelectedIDs();
 
 		// Draw avatars
-		for(LLWorld::pos_map_t::const_iterator iter = positions.cbegin(), iter_end = positions.cend(); iter != iter_end; ++iter)
+		for(const auto& pair : positions)
 		{
-			const LLUUID& uuid = iter->first;
+			const LLUUID& uuid = pair.first;
 			static const LLCachedControl<LLColor4>	standard_color("MapAvatar",LLColor4(0.f,1.f,0.f,1.f));
 			LLColor4 color = standard_color;
 			// TODO: it'd be very cool to draw these in sorted order from lowest Z to highest.
 			// just be careful to sort the avatar IDs along with the positions. -MG
-			const LLVector3d& position = iter->second;
+			const LLVector3d& position = pair.second;
 			pos_map = globalPosToView(position);
 			if (position.mdV[VZ] == 0.f || position.mdV[VZ] == COARSEUPDATE_MAX_Z)
 			{
@@ -714,15 +793,15 @@ void LLNetMap::draw()
 	gGL.popUIMatrix();
 
 	// Rotation of 0 means that North is up
-	setDirectionPos( getChild<LLTextBox>("e_label"), rotation);
-	setDirectionPos( getChild<LLTextBox>("n_label"), rotation + F_PI_BY_TWO);
-	setDirectionPos( getChild<LLTextBox>("w_label"), rotation + F_PI);
-	setDirectionPos( getChild<LLTextBox>("s_label"), rotation + F_PI + F_PI_BY_TWO);
+	setDirectionPos(mELabel, rotation);
+	setDirectionPos(mNLabel, rotation + F_PI_BY_TWO);
+	setDirectionPos(mWLabel, rotation + F_PI);
+	setDirectionPos(mSLabel, rotation + F_PI + F_PI_BY_TWO);
 
-	setDirectionPos( getChild<LLTextBox>("ne_label"), rotation + F_PI_BY_TWO / 2);
-	setDirectionPos( getChild<LLTextBox>("nw_label"), rotation + F_PI_BY_TWO + F_PI_BY_TWO / 2);
-	setDirectionPos( getChild<LLTextBox>("sw_label"), rotation + F_PI + F_PI_BY_TWO / 2);
-	setDirectionPos( getChild<LLTextBox>("se_label"), rotation + F_PI + F_PI_BY_TWO + F_PI_BY_TWO / 2);
+	setDirectionPos(mNELabel, rotation + F_PI_BY_TWO / 2);
+	setDirectionPos(mNWLabel, rotation + F_PI_BY_TWO + F_PI_BY_TWO / 2);
+	setDirectionPos(mSWLabel, rotation + F_PI + F_PI_BY_TWO / 2);
+	setDirectionPos(mSELabel, rotation + F_PI + F_PI_BY_TWO + F_PI_BY_TWO / 2);
 
 	LLUICtrl::draw();
 }
@@ -837,8 +916,8 @@ BOOL LLNetMap::handleScrollWheel(S32 x, S32 y, S32 clicks)
 
 	setScale(new_scale);
 
-	static LLUICachedControl<S32> center("MiniMapCenter");
-	if (center == MAP_CENTER_NONE)
+	static const LLUICachedControl<S32> center("MiniMapCenter");
+	if (!center)
 	{
 		// Adjust pan to center the zoom on the mouse pointer
 		LLVector2 zoom_offset;
@@ -867,7 +946,7 @@ BOOL LLNetMap::handleToolTip( S32 x, S32 y, std::string& tool_tip, LLRect* stick
 		sticky_rect.mRight = sticky_rect.mLeft + 2 * SLOP;
 		sticky_rect.mTop = sticky_rect.mBottom + 2 * SLOP;
 
-		tool_tip.assign("");
+		tool_tip.clear();
 
 		if (region->mMapAvatarIDs.size())
 		{
@@ -879,10 +958,10 @@ BOOL LLNetMap::handleToolTip( S32 x, S32 y, std::string& tool_tip, LLRect* stick
 
 				LLVector3d myPosition = gAgent.getPositionGlobal();
 
-				for (auto& agent : mClosestAgentsToCursor)
+				for (const auto& target : mClosestAgentsToCursor)
 				{
-					LLUUID targetUUID = agent.first;
-					LLVector3d targetPosition = agent.second;
+					const auto& targetUUID = target.first;
+					auto targetPosition = target.second;
 
 					std::string fullName;
 					if (targetUUID.notNull() && LLAvatarNameCache::getNSName(targetUUID, fullName))
@@ -909,7 +988,7 @@ BOOL LLNetMap::handleToolTip( S32 x, S32 y, std::string& tool_tip, LLRect* stick
 							tool_tip.append(llformat(" (%.02fm)\n", distance));
 					}
 				}
-				tool_tip.append("\n");
+				tool_tip += '\n';
 			}
 		}
 // [RLVa:KB] - Version: 1.23.4 | Checked: 2009-07-04 (RLVa-1.0.0a) | Modified: RLVa-0.2.0b
@@ -917,9 +996,9 @@ BOOL LLNetMap::handleToolTip( S32 x, S32 y, std::string& tool_tip, LLRect* stick
 // [/RLVa:KB]
 		//tool_tip.append("\n\n" + region->getName());
 
-		tool_tip.append("\n" + region->getHost().getHostName());
-		tool_tip.append("\n" + region->getHost().getString());
-		tool_tip.append("\n" + getToolTip());
+		tool_tip.append('\n' + region->getHost().getHostName());
+		tool_tip.append('\n' + region->getHost().getString());
+		tool_tip.append('\n' + getToolTip());
 	}
 	else
 	{
@@ -948,19 +1027,16 @@ void LLNetMap::setDirectionPos( LLTextBox* text_box, F32 rotation )
 
 void LLNetMap::updateMinorDirections()
 {
-	if (getChild<LLTextBox>("ne_label", TRUE, FALSE) == NULL)
-	{
-		return;
-	}
+	if (!mNELabel) return;
 
 	// Hide minor directions if they cover too much of the map
-	bool show_minors = getChild<LLTextBox>("ne_label")->getRect().getHeight() < MAP_MINOR_DIR_THRESHOLD *
+	bool show_minors = mNELabel->getRect().getHeight() < MAP_MINOR_DIR_THRESHOLD *
 			llmin(getRect().getWidth(), getRect().getHeight());
 
-	getChild<LLTextBox>("ne_label")->setVisible(show_minors);
-	getChild<LLTextBox>("nw_label")->setVisible(show_minors);
-	getChild<LLTextBox>("sw_label")->setVisible(show_minors);
-	getChild<LLTextBox>("se_label")->setVisible(show_minors);
+	mNELabel->setVisible(show_minors);
+	mNWLabel->setVisible(show_minors);
+	mSWLabel->setVisible(show_minors);
+	mSELabel->setVisible(show_minors);
 }
 
 void LLNetMap::renderScaledPointGlobal( const LLVector3d& pos, const LLColor4U &color, F32 radius_meters )
@@ -1253,29 +1329,29 @@ BOOL LLNetMap::handleMouseUp( S32 x, S32 y, MASK mask )
 }
 
 // [SL:KB] - Patch: World-MiniMap | Checked: 2012-07-08 (Catznip-3.3.0)
-bool LLNetMap::OverlayToggle::handleEvent(LLPointer<LLEvent> event, const LLSD& sdParam)
+bool OverlayToggle::handleEvent(LLPointer<LLEvent> event, const LLSD& sdParam)
 {
-	// Toggle the setting
-	const std::string strControl = sdParam.asString();
-	BOOL fCurValue = gSavedSettings.getBOOL(strControl);
-	gSavedSettings.setBOOL(strControl, !fCurValue);
-
 	// Force an overlay update
-	mPtr->mUpdateParcelImage = true;
+	LFIDBearer::getActive<LLNetMap>()->mUpdateParcelImage = true;
 	return true;
 }
 // [/SL:KB]
 
 BOOL LLNetMap::handleRightMouseDown(S32 x, S32 y, MASK mask)
 {
-	mClosestAgentsAtLastClick = mClosestAgentsToCursor;
+	mClosestAgentsAtLastClick.clear();
+	mClosestAgentsAtLastClick.reserve(mClosestAgentsToCursor.size());
+	for (const auto& pair : mClosestAgentsToCursor)
+		mClosestAgentsAtLastClick.push_back(pair.first);
 	mClosestAgentAtLastRightClick = mClosestAgentToCursor;
 	if (mPopupMenu)
 	{
-		// Singu TODO: It'd be spectacular to address multiple avatars from here.
-		mPopupMenu->buildDrawLabels();
-		mPopupMenu->updateParent(LLMenuGL::sMenuContainer);
-		LLMenuGL::showPopup(this, mPopupMenu, x, y);
+		showMenu(this, mPopupMenu, x, y);
+	mPopupMenu->getChildView("avs_menu")->setVisible(!mClosestAgentsAtLastClick.empty() && !
+// [RLVa:LF] - 2019
+			gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES)
+// [/RLVa:LF]
+		);
 	}
 	return TRUE;
 }
@@ -1366,22 +1442,22 @@ BOOL LLNetMap::handleHover( S32 x, S32 y, MASK mask )
 }
 
 // static
-bool LLNetMap::LLScaleMap::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+bool LLScaleMap::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
-	LLNetMap *self = mPtr;
+	LLNetMap *self = LFIDBearer::getActive<LLNetMap>();
 
 	S32 level = userdata.asInteger();
 
 	switch(level)
 	{
 	case 0:
-		self->setScale(MAP_SCALE_MIN);
+		self->setScale(LLNetMap::MAP_SCALE_MIN);
 		break;
 	case 1:
-		self->setScale(MAP_SCALE_MID);
+		self->setScale(LLNetMap::MAP_SCALE_MID);
 		break;
 	case 2:
-		self->setScale(MAP_SCALE_MAX);
+		self->setScale(LLNetMap::MAP_SCALE_MAX);
 		break;
 	default:
 		break;
@@ -1393,133 +1469,85 @@ bool LLNetMap::LLScaleMap::handleEvent(LLPointer<LLEvent> event, const LLSD& use
 //moymod - minimap color shit
 void markMassAgents(const LLColor4& color)
 {
-	for(const auto& agent : mClosestAgentsAtLastClick) LLNetMap::mm_setcolor(agent.first, color);
+	auto self = LFIDBearer::getActive<LLNetMap>();
+	for (const auto& id : self->getSelectedIDs())
+		self->mm_setcolor(id, color);
 }
 
-bool LLNetMap::mmsetred::handleEvent(LLPointer<LLEvent>, const LLSD&)
+bool mmsetred::handleEvent(LLPointer<LLEvent>, const LLSD&)
 {
-	markMassAgents(LLColor4::red); return true;
-}
-bool LLNetMap::mmsetgreen::handleEvent(LLPointer<LLEvent>, const LLSD&)
-{
-	markMassAgents(LLColor4::green); return true;
-}
-bool LLNetMap::mmsetblue::handleEvent(LLPointer<LLEvent>, const LLSD&)
-{
-	markMassAgents(LLColor4::blue); return true;
-}
-bool LLNetMap::mmsetyellow::handleEvent(LLPointer<LLEvent>, const LLSD&)
-{
-	markMassAgents(LLColor4::yellow); return true;
-}
-bool LLNetMap::mmsetcustom::handleEvent(LLPointer<LLEvent>, const LLSD&)
-{
-	markMassAgents(gSavedSettings.getColor4("MoyMiniMapCustomColor")); return true;
-}
-bool LLNetMap::mmsetunmark::handleEvent(LLPointer<LLEvent>, const LLSD&)
-{
-	for(const auto& agent : mClosestAgentsAtLastClick) mm_MarkerColors.erase(agent.first);
+	markMassAgents(LLColor4::red);
 	return true;
 }
-bool LLNetMap::mmenableunmark::handleEvent(LLPointer<LLEvent>, const LLSD& userdata)
+bool mmsetgreen::handleEvent(LLPointer<LLEvent>, const LLSD&)
+{
+	markMassAgents(LLColor4::green);
+	return true;
+}
+bool mmsetblue::handleEvent(LLPointer<LLEvent>, const LLSD&)
+{
+	markMassAgents(LLColor4::blue);
+	return true;
+}
+bool mmsetyellow::handleEvent(LLPointer<LLEvent>, const LLSD&)
+{
+	markMassAgents(LLColor4::yellow);
+	return true;
+}
+bool mmsetcustom::handleEvent(LLPointer<LLEvent>, const LLSD&)
+{
+	markMassAgents(gSavedSettings.getColor4("MoyMiniMapCustomColor"));
+	return true;
+}
+bool mmsetunmark::handleEvent(LLPointer<LLEvent>, const LLSD&)
+{
+	for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+		mm_MarkerColors.erase(id);
+	return true;
+}
+bool mmenableunmark::handleEvent(LLPointer<LLEvent>, const LLSD& userdata)
 {
 	bool enabled(false);
-	for (const auto& agent : mClosestAgentsAtLastClick) enabled = mm_MarkerColors.find(agent.first) != mm_MarkerColors.end();
+	for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+		if (enabled = mm_MarkerColors.find(id) != mm_MarkerColors.end())
+			break;
 	mPtr->findControl(userdata["control"].asString())->setValue(enabled);
 	return true;
 }
 
-bool LLNetMap::LLCenterMap::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+bool LLChatRings::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
-	EMiniMapCenter center = (EMiniMapCenter)userdata.asInteger();
+	auto whisper = gSavedSettings.getControl("MiniMapWhisperRing");
+	auto chat = gSavedSettings.getControl("MiniMapChatRing");
+	auto shout = gSavedSettings.getControl("MiniMapShoutRing");
+	bool all_enabled = whisper->get() && chat->get() && shout->get();
 
-	if (gSavedSettings.getS32("MiniMapCenter") == center)
-	{
-		gSavedSettings.setS32("MiniMapCenter", MAP_CENTER_NONE);
-	}
-	else
-	{
-		gSavedSettings.setS32("MiniMapCenter", userdata.asInteger());
-	}
+	whisper->set(!all_enabled);
+	chat->set(!all_enabled);
+	shout->set(!all_enabled);
 
 	return true;
 }
 
-bool LLNetMap::LLCheckCenterMap::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+bool LLCheckChatRings::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
-	mPtr->findControl(userdata["control"].asString())->
-		setValue(gSavedSettings.getS32("MiniMapCenter") == userdata["data"].asInteger());
-	return true;
-}
-
-bool LLNetMap::LLChatRings::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
-{
-	BOOL whisper_enabled = gSavedSettings.getBOOL("MiniMapWhisperRing");
-	BOOL chat_enabled = gSavedSettings.getBOOL("MiniMapChatRing");
-	BOOL shout_enabled = gSavedSettings.getBOOL("MiniMapShoutRing");
-	BOOL all_enabled = whisper_enabled && chat_enabled && shout_enabled;
-
-	gSavedSettings.setBOOL("MiniMapWhisperRing", !all_enabled);
-	gSavedSettings.setBOOL("MiniMapChatRing", !all_enabled);
-	gSavedSettings.setBOOL("MiniMapShoutRing", !all_enabled);
-
-	return true;
-}
-
-bool LLNetMap::LLCheckChatRings::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
-{
-	BOOL whisper_enabled = gSavedSettings.getBOOL("MiniMapWhisperRing");
-	BOOL chat_enabled = gSavedSettings.getBOOL("MiniMapChatRing");
-	BOOL shout_enabled = gSavedSettings.getBOOL("MiniMapShoutRing");
-	BOOL all_enabled = whisper_enabled && chat_enabled && shout_enabled;
+	bool all_enabled = gSavedSettings.getBOOL("MiniMapWhisperRing")
+		&& gSavedSettings.getBOOL("MiniMapChatRing")
+		&& gSavedSettings.getBOOL("MiniMapShoutRing");
 
 	mPtr->findControl(userdata["control"].asString())->setValue(all_enabled);
 	return true;
 }
 
-bool LLNetMap::LLStopTracking::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+bool LLStopTracking::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
 	LLTracker::instance().stopTracking(false);
 	return true;
 }
 
-bool LLNetMap::LLEnableTracking::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+bool LLIsTracking::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 {
 	mPtr->findControl(userdata["control"].asString())->setValue(LLTracker::instance().isTracking());
 	return true;
 }
 
-
-bool LLNetMap::LLCamFollow::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
-{
-	LLFloaterAvatarList::lookAtAvatar(mPtr->mClosestAgentAtLastRightClick);
-	return true;
-}
-
-
-bool LLNetMap::LLShowAgentProfile::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
-{
-// [RLVa:KB] - Version: 1.23.4 | Checked: 2009-07-08 (RLVa-1.0.0e) | Modified: RLVa-0.2.0b
-	if (!gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES))
-// [/RLVa:KB]
-		LLAvatarActions::showProfile(mPtr->mClosestAgentAtLastRightClick);
-	return true;
-}
-
-bool LLNetMap::LLEnableProfile::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
-{
-	LLNetMap *self = mPtr;
-// [RLVa:KB] - Version: 1.23.4 | Checked: 2009-07-08 (RLVa-1.0.0e) | Modified: RLVa-0.2.0b
-	self->findControl(userdata["control"].asString())->setValue(
-		(self->isAgentUnderCursor()) && (!gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES)) );
-// [/RLVa:KB]
-	//self->findControl(userdata["control"].asString())->setValue(self->isAgentUnderCursor());
-	return true;
-}
-
-bool LLNetMap::LLToggleControl::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
-{
-	const std::string& control_name = userdata.asString();
-	gSavedSettings.setBOOL(control_name, !gSavedSettings.getBOOL(control_name));
-	return true;
-}
