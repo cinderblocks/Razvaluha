@@ -3,60 +3,50 @@
   background_visible="true"
   follows="all"
   height="570"
-  layout="topleft"
   left="5"
   min_height="350"
-  top="5"
+  bottom="-575"
   width="348"
   name="panel_experience_info">
   <text
     follows="top|left|right"
     font="SansSerifHugeBold"
     height="26"
-    layout="topleft"
-    left_pad="4"
     name="title"
-    text_color="1 1 1 1"
-    top="2"
+    bottom="-28"
     value="Experience Profile"
     use_ellipses="true"
     left="3"
     right="-3"/>
   <scroll_container
-    color="0.169 0.169 0.169 1"
     follows="all"
     height="532"
-    layout="topleft"
     left="9"
     name="xp_scroll"
     opaque="true"
-    top_pad="10"
+    bottom_delta="-542"
     width="330">
     <panel
-      bg_alpha_color="0.169 0.169 0.169 1"
       follows="top|left"
       height="480"
-      layout="topleft"
       left="0"
       min_height="480"
       name="scrolling_panel"
-      top="0"
+      bottom="-480"
       width="315"
       min_width="315">
       <layout_stack
         follows="all"
         height="480"
-        layout="topleft"
         left="0"
-        top="0"
+        bottom="-480"
         orientation="vertical"
         width="315">
         <layout_panel
           follows="all"
           height="197"
-          layout="topleft"
           left="0"
-          top="0"
+          bottom="-197"
           auto_resize="false"
           visible="true"
           width="315"
@@ -66,18 +56,16 @@
             fallback_image="default_land_picture.j2c"
             follows="left|top"
             height="197"
-            layout="topleft"
             left="10"
             name="logo"
-            top="10"
+            bottom="-207"
             width="290" />
         </layout_panel>
         <layout_panel
           follows="all"
           height="19"
-          layout="topleft"
           left="0"
-          top="5"
+          bottom="-24"
           width="313"
           auto_resize="false"
             >
@@ -85,11 +73,9 @@
             follows="left|top|right"
             font="SansSerifLarge"
             height="14"
-            layout="topleft"
             left="10"
             name="experience_title"
-            text_color="1 1 1 1"
-            top="0"
+            bottom="-14"
             use_ellipses="true"
             value="Kyle's Superhero RPG"
             width="288"/>
@@ -97,9 +83,8 @@
         <layout_panel
           follows=""
           height="50"
-          layout="topleft"
           left="0"
-          top="0"
+          bottom="-50"
           auto_resize="false"
           width="315"
           name="description panel">
@@ -107,19 +92,17 @@
             follows="left|top|right"
             font="SansSerif"
             height="50"
-            layout="topleft"
             left="7"
             name="experience_description"
-            top="0"
+            bottom="-50"
             value=""
             width="293"/>
         </layout_panel>
         <layout_panel
           follows="all"
           height="69"
-          layout="topleft"
           left="0"
-          top="5"
+          bottom="-74"
           width="313"
           visible="true"
           auto_resize="false"
@@ -130,7 +113,7 @@
             length="1"
             follows="left|top"
             height="16"
-            layout="topleft"
+            bottom="-16"
             left="10"
             name="Location"
             width="290">
@@ -141,7 +124,6 @@
             length="1"
             follows="left|top|right"
             height="18"
-            layout="topleft"
             left="10"
             valign="center"
             name="LocationTextText"
@@ -152,7 +134,6 @@
             follows="bottom|left"
             height="23"
             label="Teleport"
-            layout="topleft"
             name="teleport_btn"
             width="151"
             left="10"/>
@@ -160,18 +141,16 @@
             follows="bottom|left"
             height="23"
             label="Map"
-            layout="topleft"
             name="map_btn"
-            top_pad="-23"
+            bottom_delta="0"
             width="101"
-            left_pad="5"/>
+            left_delta="156"/>
         </layout_panel>
         <layout_panel
           follows="all"
           height="53"
-          layout="topleft"
           left="0"
-          top="5"
+          bottom="-58"
           width="313"
           visible="true"
           auto_resize="false"
@@ -183,7 +162,7 @@
             length="1"
             follows="left|top"
             height="16"
-            layout="topleft"
+            bottom="-16"
             left="10"
             name="Location"
             width="290">
@@ -194,7 +173,7 @@
             length="1"
             follows="left|top|right"
             height="18"
-            layout="topleft"
+            bottom_delta="-18"
             left="10"
             valign="center"
             name="LocationTextText"
@@ -206,7 +185,7 @@
           follows="left|top|right"
           height="69"
           left="0"
-          top="0"
+          bottom="-69"
           auto_resize="false"
           width="315"
             >
@@ -215,7 +194,7 @@
             length="1"
             follows="left|top"
             height="16"
-            layout="topleft"
+            bottom="-16"
             left="10"
             name="ContentRating"
             width="100">
@@ -226,11 +205,10 @@
             length="1"
             follows="left|top|right"
             height="18"
-            layout="topleft"
-            left_pad="2"
+            left_delta="102"
             valign="center"
             name="ContentRatingText"
-            top_delta="-2"
+            bottom_delta="-2"
             width="188">
             Adult
           </text>
@@ -239,7 +217,6 @@
             length="1"
             follows="left|top"
             height="16"
-            layout="topleft"
             left="10"
             name="Owner"
             width="100">
@@ -250,11 +227,10 @@
             length="1"
             follows="left|top|right"
             height="18"
-            layout="topleft"
-            left_pad="2"
+            left_delta="102"
             valign="center"
             name="OwnerText"
-            top_delta="-2"
+            bottom_delta="-2"
             width="188">
             Kyle
           </text>
@@ -262,9 +238,8 @@
             follows="bottom|left"
             height="23"
             label="Edit"
-            layout="topleft"
             name="edit_btn"
-            top_pad="0"
+            bottom_delta="-23"
             width="151"
             left="10"/>
           <!--
@@ -277,14 +252,12 @@
             h_pad="0"
             height="35"
             width="280"
-            layout="topleft"
             font="SansSerifBig"
             font.style="BOLD"
             left="10"
-            top_pad="10"
+            bottom_delta="-45"
             name="pick_name"
             read_only="false"
-            text_color="1 1 1 1"
             v_pad="0"
             use_ellipses="true"
             value="It's an experience" />
@@ -292,27 +265,24 @@
           <text
             follows="left|top"
             height="16"
-            layout="topleft"
             left="10"
-            top_pad="10"
+            bottom_delta="-26"
             value="Maturity level:"
             width="130" />
           <icon
             follows="top|left"
             height="16"
             image_name="unknown"
-            layout="topleft"
-            left_pad="10"
+            left_delta="140"
             name="maturity_icon"
-            top_pad="-18"
+            bottom_delta="2"
             width="18" />
           <text
             follows="top|left"
             height="16"
-            layout="topleft"
-            left_pad="5"
+            left_delta="23"
             name="maturity_value"
-            top_pad="-14"
+            bottom_delta="2"
             value="unknown"
             width="118" />
           <panel
@@ -321,23 +291,21 @@
             left="10"
             width="280"
             visible="false"
-            top_pad="10"
+            bottom_delta="20"
             height="42">
             <text
               follows="left|top|right"
               height="16"
-              layout="topleft"
               left="00"
-              top="0"
+              bottom="-16"
               value="Location:"
               width="280" />
 
             <text
               follows="left|top|right"
               height="16"
-              layout="topleft"
               left="0"
-              top_pad="10"
+              bottom_delta="-26"
               value="Location:"
               width="280" />
           </panel>
@@ -347,23 +315,21 @@
             name="location_panel"
             left="10"
             width="280"
-            top_pad="10"
+            bottom_delta="-52"
             height="42">
             <text
               follows="left|top|right"
               height="16"
-              layout="topleft"
               left="00"
-              top="0"
+              bottom="-16"
               value="Location:"
               width="280" />
 
             <text
               follows="left|top|right"
               height="16"
-              layout="topleft"
               left="0"
-              top_pad="10"
+              bottom_delta="-26"
               value="Location:"
               width="280" />
           </panel>
@@ -375,4 +341,3 @@
   </scroll_container>
 
 </panel>
-

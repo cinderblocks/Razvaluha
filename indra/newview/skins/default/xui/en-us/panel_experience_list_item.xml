@@ -2,7 +2,7 @@
 
 <panel
   layout="topleft"
-  top="100"
+  bottom="-119"
   left="5"
   width="100"
   height="19"
@@ -10,7 +10,7 @@
   follows="top|right|left">
   <text
     left="3"
-    top="3"
+    bottom="-19"
     height="16"
     width="177"
     follows="all"
