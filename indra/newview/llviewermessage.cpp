@@ -5136,16 +5136,6 @@ void process_kill_object(LLMessageSystem *mesgsys, void **user_data)
 						continue;
 					}
 				}
-				// Display green bubble on kill
-				if ( gShowObjectUpdates )
-				{
-					LLColor4 color(0.f,1.f,0.f,1.f);
-					gPipeline.addDebugBlip(objectp->getPositionAgent(), color);
-				}
-
-				// Do the kill
-				gObjectList.killObject(objectp);
-			}
 
 			// Display green bubble on kill
 			if ( gShowObjectUpdates )

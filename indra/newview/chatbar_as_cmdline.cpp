@@ -63,6 +63,7 @@
 #include "llregioninfomodel.h"
 #include "llselectmgr.h"
 #include "llslurl.h"
+#include "llstartup.h"
 #include "llurlaction.h"
 
 #include "llchat.h"
