@@ -306,6 +306,8 @@ void LLHoverView::updateText()
 				line.append(LLTrans::getString("TooltipPerson"));
 			}
 			mText.push_back(line);
+
+			mText.push_back(llformat("ARC: %d", hit_object->asAvatar()->getVisualComplexity()));
 		}
 		else
 		{
@@ -542,10 +544,15 @@ void LLHoverView::updateText()
 						line.append(LLTrans::getString("TooltipForSaleMsg", args));
 					}
 					mText.push_back(line);
+
+					auto objects = LLSelectMgr::getInstance()->getHoverObjects();
+
 					line.clear();
-					S32 prim_count = LLSelectMgr::getInstance()->getHoverObjects()->getObjectCount();
+					S32 prim_count = objects->getObjectCount();
 					line.append(llformat("Prims: %d", prim_count));
 					mText.push_back(line);
+
+					mText.push_back(llformat("LI: %.2f", objects->getSelectedLinksetCost()));
 
 					line.clear();
 					line.append("Position: ");

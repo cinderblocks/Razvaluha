@@ -1700,7 +1700,7 @@ void LLAgent::startFollowPilot(const LLUUID &leader_id, BOOL allow_flying, F32 s
 	}
 
 	startAutoPilotGlobal(object->getPositionGlobal(), 
-						 std::string(),	// behavior_name
+						 "Follow",	// behavior_name
 						 nullptr,			// target_rotation
 						 nullptr,			// finish_callback
 						 nullptr,			// callback_data
@@ -1717,6 +1717,9 @@ void LLAgent::stopAutoPilot(BOOL user_cancel)
 {
 	if (mAutoPilot)
 	{
+		if (!user_cancel && mAutoPilotBehaviorName == "Follow")
+			return; // Follow means actually follow
+
 		mAutoPilot = FALSE;
 		if (mAutoPilotUseRotation && !user_cancel)
 		{
@@ -1736,6 +1739,7 @@ void LLAgent::stopAutoPilot(BOOL user_cancel)
 			mAutoPilotFinishedCallback = nullptr;
 		}
 		mLeaderID = LLUUID::null;
+		mAutoPilotNoProgressFrameCount = 0;
 
 		setControlFlags(AGENT_CONTROL_STOP);
 
@@ -1760,20 +1764,24 @@ void LLAgent::autoPilot(F32 *delta_yaw)
 {
 	if (mAutoPilot)
 	{
-		if (!mLeaderID.isNull())
+		bool follow = !mLeaderID.isNull(); //mAutoPilotBehaviorName == "Follow";
+		if (follow)
 		{
 			LLViewerObject* object = gObjectList.findObject(mLeaderID);
-			if (!object) 
+			if (!object)
 			{
+				mAutoPilotBehaviorName.clear(); // Nothing left to follow pilot
 				stopAutoPilot();
 				return;
 			}
 			mAutoPilotTargetGlobal = object->getPositionGlobal();
+			if (const auto& av = object->asAvatar()) // Fly if avatar target is flying
+				setFlying(av->mInAir);
 		}
 		
 		if (!isAgentAvatarValid()) return;
 
-		if (gAgentAvatarp->mInAir && mAutoPilotAllowFlying)
+		if (!follow && gAgentAvatarp->mInAir && mAutoPilotAllowFlying)
 		{
 			setFlying(TRUE);
 		}
@@ -1785,7 +1793,7 @@ void LLAgent::autoPilot(F32 *delta_yaw)
 
 		F32 target_dist = direction.magVec();
 
-		if (target_dist >= mAutoPilotTargetDist)
+		if (!follow && target_dist >= mAutoPilotTargetDist)
 		{
 			mAutoPilotNoProgressFrameCount++;
 			if (mAutoPilotNoProgressFrameCount > AUTOPILOT_MAX_TIME_NO_PROGRESS * gFPSClamped)

@@ -349,18 +349,6 @@ void track_av(const LLUUID& id)
 	LLTracker::instance().trackLocation(avatars[id], LLStringUtil::null, LLStringUtil::null);
 }
 
-void teleport_to(const LLUUID& id)
-{
-	if (auto entry = LLFloaterAvatarList::instanceExists() ? LLFloaterAvatarList::instance().getAvatarEntry(id) : nullptr)
-		gAgent.teleportViaLocation(entry->getPosition());
-	else
-	{
-		LLWorld::pos_map_t avatars;
-		LLWorld::instance().getAvatars(&avatars);
-		gAgent.teleportViaLocation(avatars[id]);
-	}
-}
-
 static void cmd_profile(const LLAvatarListEntry* entry);
 static void cmd_toggle_mark(LLAvatarListEntry* entry);
 static void cmd_ar(const LLAvatarListEntry* entry);
@@ -414,15 +402,6 @@ namespace
 		}
 	};
 
-	class RadarTeleportTo : public view_listener_t
-	{
-		bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
-		{
-			teleport_to(LFIDBearer::getActiveSelectedID());
-			return true;
-		}
-	};
-
 	class RadarAnnounceKeys : public view_listener_t
 	{
 		bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
@@ -442,7 +421,6 @@ void add_radar_listeners()
 	addMenu(new RadarFocus, "Radar.Focus");
 	addMenu(new RadarFocusPrev, "Radar.FocusPrev");
 	addMenu(new RadarFocusNext, "Radar.FocusNext");
-	addMenu(new RadarTeleportTo, "Radar.TeleportTo");
 	addMenu(new RadarAnnounceKeys, "Radar.AnnounceKeys");
 }
 
