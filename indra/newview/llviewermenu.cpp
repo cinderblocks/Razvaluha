@@ -142,6 +142,7 @@
 #include "llfloaternotificationsconsole.h"
 
 // <edit>
+#include "jcfloaterareasearch.h"
 #include "llcorehttputil.h"
 #include "llfloatermessagebuilder.h"
 #include "lltexteditor.h" // Initialize the text editor menu listeners in here
@@ -8977,11 +8978,39 @@ template<typename T> T* get_focused()
 	return t;
 }
 
+const JCFloaterAreaSearch::ObjectData* get_obj_data(const LLUUID& id)
+{
+	auto areasearch = JCFloaterAreaSearch::findInstance();
+	return areasearch ? areasearch->getObjectData(id) : nullptr;
+}
+
 const std::string get_slurl_for(const LLUUID& id, const LFIDBearer::Type& type)
 {
-	return type == LFIDBearer::GROUP ? LLGroupActions::getSLURL(id) :
-		type == LFIDBearer::EXPERIENCE ? LLSLURL("experience", id, "profile").getSLURLString() :
-		LLAvatarActions::getSLURL(id);
+	switch (type)
+	{
+	case LFIDBearer::GROUP: return LLGroupActions::getSLURL(id);
+	case LFIDBearer::AVATAR: return LLAvatarActions::getSLURL(id);
+	case LFIDBearer::OBJECT:
+	{
+		const auto& obj_data = get_obj_data(id);
+		if (!obj_data) return LLStringUtil::null;
+
+		LLSD sdQuery;
+		sdQuery["name"] = obj_data->name;
+		sdQuery["owner"] = obj_data->owner_id;
+
+		if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES) && (obj_data->owner_id != gAgentID))
+			sdQuery["rlv_shownames"] = true;
+
+		if (const auto obj = gObjectList.findObject(id))
+			if (const auto region = obj->getRegion())
+				sdQuery["slurl"] = LLSLURL(region->getName(), obj->getPositionAgent()).getLocationString();
+
+		return LLSLURL("objectim", id, LLURI::mapToQueryString(sdQuery)).getSLURLString();
+	}
+	case LFIDBearer::EXPERIENCE: return LLSLURL("experience", id, "profile").getSLURLString();
+	default: return LLStringUtil::null;
+	}
 }
 
 const LLWString get_wslurl_for(const LLUUID& id, const LFIDBearer::Type& type)
@@ -9131,6 +9160,12 @@ class ListCopyNames : public view_listener_t
 		return ret;
 	}
 
+	static std::string getObjectName(const LLUUID& id)
+	{
+		const auto& obj_data = get_obj_data(id);
+		return obj_data ? obj_data->name : LLStringUtil::null;
+	}
+
 	static std::string getExperienceName(const LLUUID& id)
 	{
 		return LLExperienceCache::instance().get(id)[LLExperienceCache::NAME];
@@ -9139,8 +9174,11 @@ class ListCopyNames : public view_listener_t
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
 		LLWString str;
-		const auto type = LFIDBearer::getActiveType();
-		copy_from_ids(LFIDBearer::getActiveSelectedIDs(), type == LFIDBearer::GROUP ? getGroupName : type == LFIDBearer::EXPERIENCE ? getExperienceName : getAvatarName);
+		const auto& type = LFIDBearer::getActiveType();
+		copy_from_ids(LFIDBearer::getActiveSelectedIDs(), type == LFIDBearer::GROUP ? getGroupName :
+			type == LFIDBearer::OBJECT ? getObjectName :
+			type == LFIDBearer::EXPERIENCE ? getExperienceName :
+			getAvatarName);
 		if (!str.empty()) LLView::getWindow()->copyTextToClipboard(str);
 		return true;
 	}
@@ -9231,13 +9269,13 @@ bool can_show_web_profile()
 	return !gSavedSettings.getString("WebProfileURL").empty();
 }
 
-void show_log_browser(const LLUUID& id);
+void show_log_browser(const LLUUID& id, const LFIDBearer::Type& type);
 class ListShowLog : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
 		for (const LLUUID& id : LFIDBearer::getActiveSelectedIDs())
-			show_log_browser(id);
+			show_log_browser(id, LFIDBearer::getActiveType());
 		return true;
 	}
 };
@@ -9250,6 +9288,7 @@ class ListShowProfile : public view_listener_t
 		{
 		case LFIDBearer::AVATAR: LLAvatarActions::showProfiles(LFIDBearer::getActiveSelectedIDs()); break;
 		case LFIDBearer::GROUP: LLGroupActions::showProfiles(LFIDBearer::getActiveSelectedIDs()); break;
+		case LFIDBearer::OBJECT: for (const auto& id : LFIDBearer::getActiveSelectedIDs()) LLUrlAction::openURL(get_slurl_for(id, LFIDBearer::OBJECT)); break;
 		case LFIDBearer::EXPERIENCE: for (const auto& id : LFIDBearer::getActiveSelectedIDs()) LLFloaterExperienceProfile::showInstance(id); break;
 		default: break;
 		}
@@ -9348,7 +9387,7 @@ class ListIsNearby : public view_listener_t
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
 		const auto&& id = LFIDBearer::getActiveSelectedID();
-		gMenuHolder->findControl(userdata["control"].asString())->setValue(LFIDBearer::getActiveType() == LFIDBearer::OBJECT ? gObjectList.findObject(id) : is_nearby(id));
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(LFIDBearer::getActiveType() == LFIDBearer::OBJECT ? !!gObjectList.findObject(id) : is_nearby(id));
 		return true;
 	}
 };
@@ -9524,6 +9563,15 @@ class ListActivate : public view_listener_t
 	{
 		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
 			LLGroupActions::activate(id);
+		return true;
+	}
+};
+
+class ListObjectCamTo : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		gAgentCamera.lookAtObject(LFIDBearer::getActiveSelectedID(), false);
 		return true;
 	}
 };
@@ -9920,6 +9968,7 @@ void initialize_menus()
 	addMenu(new ListLeave, "List.Leave");
 	addMenu(new ListJoin, "List.Join");
 	addMenu(new ListActivate, "List.Activate");
+	addMenu(new ListObjectCamTo, "List.Object.CamTo");
 
 	add_radar_listeners();
 

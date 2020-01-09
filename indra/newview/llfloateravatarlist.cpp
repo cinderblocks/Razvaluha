@@ -133,8 +133,9 @@ namespace
 	}
 } //namespace
 
+const LLColor4* mm_getMarkerColor(const LLUUID& id);
 LLAvatarListEntry::LLAvatarListEntry(const LLUUID& id, const std::string& name, const LLVector3d& position) :
-		mID(id), mName(name), mPosition(position), mMarked(false), mFocused(false),
+		mID(id), mName(name), mPosition(position), mMarked(mm_getMarkerColor(id)), mFocused(false),
 		mStats(),
 		mActivityType(ACTIVITY_NEW), mActivityTimer(),
 		mIsInList(false), mAge(-1), mTime(time(NULL))
@@ -350,7 +351,14 @@ void track_av(const LLUUID& id)
 }
 
 static void cmd_profile(const LLAvatarListEntry* entry);
-static void cmd_toggle_mark(LLAvatarListEntry* entry);
+static void cmd_toggle_mark(LLAvatarListEntry* entry)
+{
+	bool mark = !entry->isMarked();
+	void mm_setcolor(LLUUID key, LLColor4 col);
+	void mm_clearMark(const LLUUID & id);
+	mark ? mm_setcolor(entry->getID(), LLColor4::red) : mm_clearMark(entry->getID());
+	entry->setMarked(mark);
+}
 static void cmd_ar(const LLAvatarListEntry* entry);
 static void cmd_teleport(const LLAvatarListEntry* entry);
 
@@ -362,15 +370,6 @@ namespace
 		bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 		{
 			LLFloaterAvatarList::instance().onClickTrack();
-			return true;
-		}
-	};
-
-	class RadarMark : public view_listener_t
-	{
-		bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
-		{
-			LLFloaterAvatarList::instance().doCommand(cmd_toggle_mark);
 			return true;
 		}
 	};
@@ -417,7 +416,6 @@ void addMenu(view_listener_t* menu, const std::string& name);
 void add_radar_listeners()
 {
 	addMenu(new RadarTrack, "Radar.Track");
-	addMenu(new RadarMark, "Radar.Mark");
 	addMenu(new RadarFocus, "Radar.Focus");
 	addMenu(new RadarFocusPrev, "Radar.FocusPrev");
 	addMenu(new RadarFocusNext, "Radar.FocusNext");
@@ -781,7 +779,7 @@ void LLFloaterAvatarList::refreshAvatarList()
 			if (entry->isMarked())
 			{
 				mark.value = "X";
-				mark.color = LLColor4::blue;
+				mark.color = *mm_getMarkerColor(av_id);
 				mark.font_style = "BOLD";
 			}
 			element.columns.add(mark);
@@ -1451,7 +1449,6 @@ void send_estate_message(const std::string request, const std::vector<std::strin
 
 static void cmd_append_names(const LLAvatarListEntry* entry, std::string &str, std::string &sep)
 															{ if(!str.empty())str.append(sep);str.append(entry->getName()); }
-static void cmd_toggle_mark(LLAvatarListEntry* entry)		{ entry->toggleMark(); }
 static void cmd_ar(const LLAvatarListEntry* entry)			{ LLFloaterReporter::showFromObject(entry->getID()); }
 static void cmd_profile(const LLAvatarListEntry* entry)		{ LLAvatarActions::showProfile(entry->getID()); }
 static void cmd_teleport(const LLAvatarListEntry* entry)	{ gAgent.teleportViaLocation(entry->getPosition()); }

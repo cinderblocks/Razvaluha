@@ -288,15 +288,25 @@ std::size_t hash_value(const LLUUID& uuid)
 	return (std::size_t)uuid.getCRC32();
 }
 boost::unordered_map<const LLUUID,LLColor4> mm_MarkerColors;
-bool mm_getMarkerColor(const LLUUID& id, LLColor4& color)
+const LLColor4* mm_getMarkerColor(const LLUUID& id)
 {
-	boost::unordered_map<const LLUUID,LLColor4>::const_iterator it = mm_MarkerColors.find(id);
-	if (it == mm_MarkerColors.end()) return false;
-	color = it->second;
-	return true;
+	auto it = mm_MarkerColors.find(id);
+	return it == mm_MarkerColors.end() ? nullptr : &it->second;
 }
 
-void LLNetMap::mm_setcolor(LLUUID key,LLColor4 col)
+bool mm_getMarkerColor(const LLUUID& id, LLColor4& color)
+{
+	auto c = mm_getMarkerColor(id);
+	if (c) color = *c;
+	return c;
+}
+
+void mm_clearMark(const LLUUID& id)
+{
+	mm_MarkerColors.erase(id);
+}
+
+void mm_setcolor(LLUUID key,LLColor4 col)
 {
 	mm_MarkerColors[key] = col;
 }
@@ -984,7 +994,7 @@ BOOL LLNetMap::handleToolTip( S32 x, S32 y, std::string& tool_tip, LLRect* stick
 						LLVector3d delta = targetPosition - myPosition;
 						F32 distance = (F32)delta.magVec();
 						if (single_agent)
-							tool_tip.append( llformat("\n\n(Distance: %.02fm)\n",distance) );
+							tool_tip.append( llformat("\n(Distance: %.02fm)\n",distance) );
 						else
 							tool_tip.append(llformat(" (%.02fm)\n", distance));
 					}
@@ -1470,9 +1480,13 @@ bool LLScaleMap::handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 //moymod - minimap color shit
 void markMassAgents(const LLColor4& color)
 {
-	auto self = LFIDBearer::getActive<LLNetMap>();
-	for (const auto& id : self->getSelectedIDs())
-		self->mm_setcolor(id, color);
+	auto radar = LLFloaterAvatarList::getInstance();
+	for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+	{
+		mm_setcolor(id, color);
+		if (auto entry = radar ? radar->getAvatarEntry(id) : nullptr)
+			entry->setMarked(true);
+	}
 }
 
 bool mmsetred::handleEvent(LLPointer<LLEvent>, const LLSD&)
@@ -1502,8 +1516,13 @@ bool mmsetcustom::handleEvent(LLPointer<LLEvent>, const LLSD&)
 }
 bool mmsetunmark::handleEvent(LLPointer<LLEvent>, const LLSD&)
 {
+	auto radar = LLFloaterAvatarList::getInstance();
 	for (const auto& id : LFIDBearer::getActiveSelectedIDs())
-		mm_MarkerColors.erase(id);
+	{
+		mm_clearMark(id);
+		if (auto entry = radar ? radar->getAvatarEntry(id) : nullptr)
+			entry->setMarked(false);
+	}
 	return true;
 }
 bool mmenableunmark::handleEvent(LLPointer<LLEvent>, const LLSD& userdata)

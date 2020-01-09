@@ -33,8 +33,8 @@ struct LFIDBearer
 		NONE = -1,
 		AVATAR = 0,
 		GROUP,
-		EXPERIENCE,
 		OBJECT,
+		EXPERIENCE,
 		COUNT
 	};
 
