@@ -56,6 +56,26 @@
       <on_click function="List.TeleportTo"/>
       <on_visible function="List.IsNearby"/>
     </menu_item_call>
+    <menu_item_call label="Sit On" name="Sit On">
+      <on_click function="List.Object.Sit"/>
+      <on_visible function="List.IsNearby"/>
+    </menu_item_call>
+    <menu_item_call label="Pay" name="Pay">
+      <on_click function="List.Object.Pay"/>
+      <on_visible function="List.Object.EnablePay"/>
+    </menu_item_call>
+    <menu_item_call label="Touch" name="Touch">
+      <on_click function="List.Object.Touch"/>
+      <on_visible function="List.Object.EnableTouch"/>
+    </menu_item_call>
+    <menu_item_call label="Edit" name="Edit">
+      <on_click function="List.Object.Edit" userdata="true"/>
+      <on_visible function="List.Object.CanEdit" userdata="true"/>
+    </menu_item_call>
+    <menu_item_call label="Add to Selection" name="Add to Selection">
+      <on_click function="List.Object.Edit" userdata=""/>
+      <on_visible function="List.Object.CanEdit" userdata=""/>
+    </menu_item_call>
     <menu_item_separator
      layout="topleft" />
     <menu_item_call

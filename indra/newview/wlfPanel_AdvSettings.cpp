@@ -489,11 +489,14 @@ void wlfPanel_AdvSettings::onSimulatorFeaturesReceived(const LLUUID& region_id)
 
 void wlfPanel_AdvSettings::updateEditHoverEnabled()
 {
-	const LLViewerRegion* region = gAgent.getRegion();
-	bool enabled = region && region->avatarHoverHeightEnabled();
-	if (mHoverHeight) mHoverHeight->setEnabled(enabled);
-	if (enabled)
+	if (mHoverHeight)
 	{
-		syncFromPreferenceSetting(mHoverHeight);
+		const LLViewerRegion* region = gAgent.getRegion();
+		bool enabled = region && region->avatarHoverHeightEnabled();
+		mHoverHeight->setEnabled(enabled);
+		if (enabled)
+		{
+			syncFromPreferenceSetting(mHoverHeight);
+		}
 	}
 }

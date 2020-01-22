@@ -1740,6 +1740,14 @@ void LLAgent::stopAutoPilot(BOOL user_cancel)
 			mAutoPilotFinishedCallback(!user_cancel && dist_vec_squared(gAgent.getPositionGlobal(), mAutoPilotTargetGlobal) < (mAutoPilotStopDistance * mAutoPilotStopDistance), mAutoPilotCallbackData);
 			mAutoPilotFinishedCallback = nullptr;
 		}
+
+		// Sit response during follow pilot, now complete, resume follow
+		if (!user_cancel && mAutoPilotBehaviorName == "Sit" && mLeaderID.notNull())
+		{
+			startFollowPilot(mLeaderID, true, gSavedSettings.getF32("SinguFollowDistance"));
+			return;
+		}
+
 		mLeaderID = LLUUID::null;
 		mAutoPilotNoProgressFrameCount = 0;
 
@@ -1751,6 +1759,8 @@ void LLAgent::stopAutoPilot(BOOL user_cancel)
 				LLNotificationsUtil::add("CancelledSit");
 			else if (mAutoPilotBehaviorName == "Attach")
 				LLNotificationsUtil::add("CancelledAttach");
+			else if (mAutoPilotBehaviorName == "Follow")
+				LLNotificationsUtil::add("CancelledFollow");
 			else
 				LLNotificationsUtil::add("Cancelled");
 		}
@@ -1758,22 +1768,79 @@ void LLAgent::stopAutoPilot(BOOL user_cancel)
 }
 
 
+bool LLAgent::getAutoPilotNoProgress() const
+{
+	return mAutoPilotNoProgressFrameCount > AUTOPILOT_MAX_TIME_NO_PROGRESS * gFPSClamped;
+}
+
 // Returns necessary agent pitch and yaw changes, radians.
 //-----------------------------------------------------------------------------
 // autoPilot()
 //-----------------------------------------------------------------------------
 void LLAgent::autoPilot(F32 *delta_yaw)
 {
-	if (mAutoPilot)
+	if (mAutoPilot && isAgentAvatarValid())
 	{
-		bool follow = !mLeaderID.isNull(); //mAutoPilotBehaviorName == "Follow";
+		U8 follow = mAutoPilotBehaviorName == "Follow";
 		if (follow)
 		{
+			llassert(mLeaderID.notNull());
+			const auto old_pos = mAutoPilotTargetGlobal;
 			if (auto object = gObjectList.findObject(mLeaderID))
 			{
 				mAutoPilotTargetGlobal = object->getPositionGlobal();
 				if (const auto& av = object->asAvatar()) // Fly if avatar target is flying
+				{
 					setFlying(av->mInAir);
+					if (av->isSitting() && (!rlv_handler_t::isEnabled() || !gRlvHandler.hasBehaviour(RLV_BHVR_SIT)))
+					{
+						if (auto seat = av->getParent())
+						{
+							if (gAgentAvatarp->getParent() == seat)
+							{
+								mAutoPilotNoProgressFrameCount = 0; // We may have incremented this before making it here, reset it
+								return; // We're seated with them, nothing more to do
+							}
+							else if (!getAutoPilotNoProgress())
+							{
+								void handle_object_sit(LLViewerObject*, const LLVector3&);
+								handle_object_sit(static_cast<LLViewerObject*>(seat), LLVector3::zero);
+								follow = 2; // Indicate ground sitting is okay if we can't make it
+							}
+							else return; // If the server just wouldn't let us sit there, we won't be moving, exit here
+						}
+						else // Ground sit, but only if near enough
+						{
+							if (dist_vec(av->getPositionAgent(), getPositionAgent()) <= mAutoPilotStopDistance) // We're close enough, sit.
+							{
+								if (!gAgentAvatarp->isSittingAvatarOnGround())
+									setControlFlags(AGENT_CONTROL_SIT_ON_GROUND);
+								mAutoPilotNoProgressFrameCount = 0; // Ground Sit may have incremented this, reset it now
+								return; // We're already sitting on the ground, we have nothing to do
+							}
+							else // We're not close enough yet
+							{
+								if (/*!gAgentAvatarp->isSitting() && */ // RLV takes care of sitting check for us inside standUp
+									getAutoPilotNoProgress()) // Only stand up if we haven't exhausted our no progress frames
+									standUp(); // Unsit if need be, so we can move
+								follow = 2; // Indicate we want to groundsit
+							}
+						}
+					}
+					else
+					{
+						if (dist_vec(av->getPositionAgent(), getPositionAgent()) <= mAutoPilotStopDistance)
+						{
+							follow = 3; // We're close enough, indicate no walking
+						}
+
+						if (gAgentAvatarp->isSitting()) // Leader isn't sitting, standUp if needed
+						{
+							standUp();
+							mAutoPilotNoProgressFrameCount = 0; // Ground Sit may have incremented this, reset it
+						}
+					}
+				}
 			}
 			else // We might still have a valid avatar pos
 			{
@@ -1781,18 +1848,24 @@ void LLAgent::autoPilot(F32 *delta_yaw)
 				auto pos = get_av_pos(mLeaderID);
 				if (pos.isExactlyZero()) // Default constructed or invalid from server
 				{
-					mAutoPilotBehaviorName.clear(); // Nothing left to follow pilot
-					stopAutoPilot();
+					// Wait for them for more follow pilot
 					return;
 				}
+				standUp(); // Leader not rendered, we mustn't be sitting
+				mAutoPilotNoProgressFrameCount = 0; // Ground Sit may have incremented this, reset it
 				mAutoPilotTargetGlobal = pos;
-				// Should we fly if the height difference is great enough here? Altitude is often invalid...
-			}
-		}
-		
-		if (!isAgentAvatarValid()) return;
+				setFlying(true); // Should we fly here? Altitude is often invalid...
 
-		if (!follow && gAgentAvatarp->mInAir && mAutoPilotAllowFlying)
+				if (dist_vec(mAutoPilotTargetGlobal, getPositionGlobal()) <= mAutoPilotStopDistance)
+				{
+					follow = 3; // We're close enough, indicate no walking
+				}
+			}
+			if (old_pos != mAutoPilotTargetGlobal) // Reset if position changes
+				mAutoPilotNoProgressFrameCount = 0;
+		}
+
+		if (follow % 2 == 0 && gAgentAvatarp->mInAir && mAutoPilotAllowFlying)
 		{
 			setFlying(TRUE);
 		}
@@ -1804,12 +1877,15 @@ void LLAgent::autoPilot(F32 *delta_yaw)
 
 		F32 target_dist = direction.magVec();
 
-		if (!follow && target_dist >= mAutoPilotTargetDist)
+		if (follow % 2 == 0 && target_dist >= mAutoPilotTargetDist)
 		{
 			mAutoPilotNoProgressFrameCount++;
-			if (mAutoPilotNoProgressFrameCount > AUTOPILOT_MAX_TIME_NO_PROGRESS * gFPSClamped)
+			if (getAutoPilotNoProgress())
 			{
-				stopAutoPilot();
+				if (follow) // Well, we tried to reach them, let's just ground sit for now.
+					setControlFlags(AGENT_CONTROL_SIT_ON_GROUND);
+				else
+					stopAutoPilot();
 				return;
 			}
 		}
@@ -1851,6 +1927,7 @@ void LLAgent::autoPilot(F32 *delta_yaw)
 		}
 
 		*delta_yaw = yaw;
+		if (follow == 3) return; // We're close enough, all we need to do is turn
 
 		// Compute when to start slowing down
 		F32 slow_distance;

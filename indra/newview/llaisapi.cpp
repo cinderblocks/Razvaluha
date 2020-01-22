@@ -40,7 +40,6 @@
 #include "llviewerregion.h"
 #include "llinventoryobserver.h"
 #include "llviewercontrol.h"
-#include <boost/bind.hpp>
 
 ///----------------------------------------------------------------------------
 /// Classes for AISv3 support.
@@ -453,15 +452,40 @@ void AISAPI::InvokeAISCommandCoro(LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t ht
 
     if (callback && callback != nullptr)
     {   
-        LLUUID id(LLUUID::null);
+// [SL:KB] - Patch: Appearance-SyncAttach | Checked: Catznip-3.7
+		uuid_list_t ids;
+		switch (type)
+		{
+			case COPYLIBRARYCATEGORY:
+				if (result.has("category_id"))
+				{
+					ids.insert(result["category_id"]);
+				}
+				break;
+			case COPYINVENTORY:
+				{
+					AISUpdate::parseUUIDArray(result, "_created_items", ids);
+					AISUpdate::parseUUIDArray(result, "_created_categories", ids);
+				}
+				break;
+			default:
+				break;
+		}
 
-        if (result.has("category_id") && (type == COPYLIBRARYCATEGORY))
-	    {
-		    id = result["category_id"];
-	    }
-
-        callback(id);
-    }
+		// If we were feeling daring we'd call LLInventoryCallback::fire for every item but it would take additional work to investigate whether all LLInventoryCallback derived classes
+		// were designed to handle multiple fire calls (with legacy link creation only one would ever fire per link creation) so we'll be cautious and only call for the first one for now
+		// (note that the LL code as written below will always call fire once with the NULL UUID for anything but CopyLibraryCategoryCommand so even the above is an improvement)
+		callback( (!ids.empty()) ? *ids.begin() : LLUUID::null);
+// [/SL:KB]
+//        LLUUID id(LLUUID::null);
+//
+//        if (result.has("category_id") && (type == COPYLIBRARYCATEGORY))
+//	    {
+//		    id = result["category_id"];
+//	    }
+//
+//        callback(id);
+	}
 
 }
 
@@ -497,18 +521,17 @@ void AISUpdate::parseMeta(const LLSD& update)
 	// parse _categories_removed -> mObjectsDeletedIds
 	uuid_list_t cat_ids;
 	parseUUIDArray(update,"_categories_removed",cat_ids);
-	for (uuid_list_t::const_iterator it = cat_ids.begin();
-		 it != cat_ids.end(); ++it)
+	for (auto cat_id : cat_ids)
 	{
-		LLViewerInventoryCategory *cat = gInventory.getCategory(*it);
+		LLViewerInventoryCategory *cat = gInventory.getCategory(cat_id);
 		if(cat)
 		{
 			mCatDescendentDeltas[cat->getParentUUID()]--;
-			mObjectsDeletedIds.insert(*it);
+			mObjectsDeletedIds.insert(cat_id);
 		}
 		else
 		{
-			LL_WARNS("Inventory") << "removed category not found " << *it << LL_ENDL;
+			LL_WARNS("Inventory") << "removed category not found " << cat_id << LL_ENDL;
 		}
 	}
 
@@ -516,36 +539,34 @@ void AISUpdate::parseMeta(const LLSD& update)
 	uuid_list_t item_ids;
 	parseUUIDArray(update,"_category_items_removed",item_ids);
 	parseUUIDArray(update,"_removed_items",item_ids);
-	for (uuid_list_t::const_iterator it = item_ids.begin();
-		 it != item_ids.end(); ++it)
+	for (auto item_id : item_ids)
 	{
-		LLViewerInventoryItem *item = gInventory.getItem(*it);
+		LLViewerInventoryItem *item = gInventory.getItem(item_id);
 		if(item)
 		{
 			mCatDescendentDeltas[item->getParentUUID()]--;
-			mObjectsDeletedIds.insert(*it);
+			mObjectsDeletedIds.insert(item_id);
 		}
 		else
 		{
-			LL_WARNS("Inventory") << "removed item not found " << *it << LL_ENDL;
+			LL_WARNS("Inventory") << "removed item not found " << item_id << LL_ENDL;
 		}
 	}
 
 	// parse _broken_links_removed -> mObjectsDeletedIds
 	uuid_list_t broken_link_ids;
 	parseUUIDArray(update,"_broken_links_removed",broken_link_ids);
-	for (uuid_list_t::const_iterator it = broken_link_ids.begin();
-		 it != broken_link_ids.end(); ++it)
+	for (auto broken_link_id : broken_link_ids)
 	{
-		LLViewerInventoryItem *item = gInventory.getItem(*it);
+		LLViewerInventoryItem *item = gInventory.getItem(broken_link_id);
 		if(item)
 		{
 			mCatDescendentDeltas[item->getParentUUID()]--;
-			mObjectsDeletedIds.insert(*it);
+			mObjectsDeletedIds.insert(broken_link_id);
 		}
 		else
 		{
-			LL_WARNS("Inventory") << "broken link not found " << *it << LL_ENDL;
+			LL_WARNS("Inventory") << "broken link not found " << broken_link_id << LL_ENDL;
 		}
 	}
 
@@ -889,7 +910,7 @@ void AISUpdate::parseEmbeddedCategories(const LLSD& categories)
 
 void AISUpdate::doUpdate()
 {
-	// Do version/descendent accounting.
+	// Do version/descendant accounting.
 	for (std::map<LLUUID,S32>::const_iterator catit = mCatDescendentDeltas.begin();
 		 catit != mCatDescendentDeltas.end(); ++catit)
 	{
@@ -910,7 +931,7 @@ void AISUpdate::doUpdate()
 			continue;
 		}
 
-		// If we have a known descendent count, set that now.
+		// If we have a known descendant count, set that now.
 		LLViewerInventoryCategory* cat = gInventory.getCategory(cat_id);
 		if (cat)
 		{
@@ -947,7 +968,7 @@ void AISUpdate::doUpdate()
 		LLUUID category_id(update_it->first);
 		LLPointer<LLViewerInventoryCategory> new_category = update_it->second;
 		// Since this is a copy of the category *before* the accounting update, above,
-		// we need to transfer back the updated version/descendent count.
+		// we need to transfer back the updated version/descendant count.
 		LLViewerInventoryCategory* curr_cat = gInventory.getCategory(new_category->getUUID());
 		if (!curr_cat)
 		{
@@ -991,21 +1012,19 @@ void AISUpdate::doUpdate()
 	}
 
 	// DELETE OBJECTS
-	for (uuid_list_t::const_iterator del_it = mObjectsDeletedIds.begin();
-		 del_it != mObjectsDeletedIds.end(); ++del_it)
+	for (auto deleted_id : mObjectsDeletedIds)
 	{
-		LL_DEBUGS("Inventory") << "deleted item " << *del_it << LL_ENDL;
-		gInventory.onObjectDeletedFromServer(*del_it, false, false, false);
+		LL_DEBUGS("Inventory") << "deleted item " << deleted_id << LL_ENDL;
+		gInventory.onObjectDeletedFromServer(deleted_id, false, false, false);
 	}
 
 	// TODO - how can we use this version info? Need to be sure all
 	// changes are going through AIS first, or at least through
 	// something with a reliable responder.
-	for (uuid_int_map_t::iterator ucv_it = mCatVersionsUpdated.begin();
-		 ucv_it != mCatVersionsUpdated.end(); ++ucv_it)
+	for (auto& ucv_it : mCatVersionsUpdated)
 	{
-		const LLUUID id = ucv_it->first;
-		S32 version = ucv_it->second;
+		const LLUUID id = ucv_it.first;
+		S32 version = ucv_it.second;
 		LLViewerInventoryCategory *cat = gInventory.getCategory(id);
 		LL_DEBUGS("Inventory") << "cat version update " << cat->getName() << " to version " << cat->getVersion() << LL_ENDL;
 		if (cat->getVersion() != version)

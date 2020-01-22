@@ -247,7 +247,7 @@ LLSpeakersDelayActionsStorage::~LLSpeakersDelayActionsStorage()
 void LLSpeakersDelayActionsStorage::setActionTimer(const LLUUID& speaker_id)
 {
 	bool not_found = true;
-	if (mActionTimersMap.size() > 0)
+	if (!mActionTimersMap.empty())
 	{
 		not_found = mActionTimersMap.find(speaker_id) == mActionTimersMap.end();
 	}
@@ -265,7 +265,7 @@ void LLSpeakersDelayActionsStorage::setActionTimer(const LLUUID& speaker_id)
 
 void LLSpeakersDelayActionsStorage::unsetActionTimer(const LLUUID& speaker_id)
 {
-	if (mActionTimersMap.size() == 0) return;
+	if (mActionTimersMap.empty()) return;
 
 	LLSpeakerActionTimer::action_timer_iter_t it_speaker = mActionTimersMap.find(speaker_id);
 
@@ -397,8 +397,8 @@ void LLSpeakerMgr::update(BOOL resort_ok)
 		return;
 	}
 
-	LLColor4 speaking_color = gSavedSettings.getColor4("SpeakingColor");
-	LLColor4 overdriven_color = gSavedSettings.getColor4("OverdrivenColor");
+	static const LLCachedControl<LLColor4> speaking_color(gSavedSettings, "SpeakingColor");
+	static const LLCachedControl<LLColor4> overdriven_color(gSavedSettings, "OverdrivenColor");
 
 	if(resort_ok) // only allow list changes when user is not interacting with it
 	{
@@ -408,10 +408,10 @@ void LLSpeakerMgr::update(BOOL resort_ok)
 	// update status of all current speakers
 	BOOL voice_channel_active = (!mVoiceChannel && LLVoiceClient::getInstance()->inProximalChannel()) || (mVoiceChannel && mVoiceChannel->isActive());
 	bool re_sort = false;
-	for (speaker_map_t::iterator speaker_it = mSpeakers.begin(); speaker_it != mSpeakers.end(); ++speaker_it)
+	for (auto& speaker : mSpeakers)
 	{
-		LLUUID speaker_id = speaker_it->first;
-		LLSpeaker* speakerp = speaker_it->second;
+		LLUUID speaker_id = speaker.first;
+		LLSpeaker* speakerp = speaker.second;
 
 		if (voice_channel_active && LLVoiceClient::getInstance()->getVoiceEnabled(speaker_id))
 		{
@@ -495,12 +495,8 @@ void LLSpeakerMgr::update(BOOL resort_ok)
 		bool index_changed = false;
 		S32 recent_speaker_count = 0;
 		S32 sort_index = 0;
-		for (speaker_list_t::iterator sorted_speaker_it = mSpeakersSorted.begin();
-			sorted_speaker_it != mSpeakersSorted.end();
-			++sorted_speaker_it)
+		for (auto speakerp : mSpeakersSorted)
 		{
-			LLPointer<LLSpeaker> speakerp = *sorted_speaker_it;
-
 			// color code recent speakers who are not currently speaking
 			if (speakerp->mStatus == LLSpeaker::STATUS_HAS_SPOKEN)
 			{
@@ -524,9 +520,6 @@ void LLSpeakerMgr::update(BOOL resort_ok)
 
 void LLSpeakerMgr::updateSpeakerList()
 {
-	// Always add the current agent (it has to be there...). Will do nothing if already there.
-	setSpeaker({ gAgentID, LLSpeaker::SPEAKER_AGENT, LLSpeaker::STATUS_VOICE_ACTIVE });
-
 	// Are we bound to the currently active voice channel?
 	if ((!mVoiceChannel && LLVoiceClient::getInstance()->inProximalChannel()) || (mVoiceChannel && mVoiceChannel->isActive()))
 	{
@@ -535,15 +528,14 @@ void LLSpeakerMgr::updateSpeakerList()
 		// If we are, add all voice client participants to our list of known speakers
 		std::vector<speaker_entry_t> speakers;
 		speakers.reserve(participants.size());
-		for (auto participant_it = participants.begin(); participant_it != participants.end(); ++participant_it)
+		for (auto participant : participants)
 		{
-			speakers.emplace_back(
-				*participant_it,
-				(LLVoiceClient::getInstance()->isParticipantAvatar(*participant_it) ? LLSpeaker::SPEAKER_AGENT : LLSpeaker::SPEAKER_EXTERNAL),
+			speakers.emplace_back(participant,
+				(LLVoiceClient::getInstance()->isParticipantAvatar(participant) ? LLSpeaker::SPEAKER_AGENT : LLSpeaker::SPEAKER_EXTERNAL),
 				LLSpeaker::STATUS_VOICE_ACTIVE,
 				boost::none,
 				boost::none,
-				LLVoiceClient::getInstance()->getDisplayName(*participant_it));
+				LLVoiceClient::getInstance()->getDisplayName(participant));
 		}
 		setSpeakers(speakers);
 	}
@@ -599,15 +591,16 @@ void LLSpeakerMgr::updateSpeakerList()
 					mSpeakerListUpdated = true;
 				}
 			}
-			else if (floater && mSpeakers.size() == 0)
+			else if (floater && mSpeakers.empty())
 			{
 				// For all other session type (ad-hoc, P2P, avaline), we use the initial participants targets list
-				for (const auto& id : floater->mInitialTargetIDs)
+				for (const auto& target_id : floater->mInitialTargetIDs)
 				{
 					// Add buddies if they are on line, add any other avatar.
-					if (!LLAvatarTracker::instance().isBuddy(id) || LLAvatarTracker::instance().isBuddyOnline(id))
+					if (!LLAvatarTracker::instance().isBuddy(target_id) || LLAvatarTracker::instance().isBuddyOnline(
+                        target_id))
 					{
-						setSpeaker({ id, LLSpeaker::SPEAKER_AGENT, LLSpeaker::STATUS_VOICE_ACTIVE });
+						setSpeaker({target_id, LLSpeaker::SPEAKER_AGENT, LLSpeaker::STATUS_VOICE_ACTIVE });
 					}
 				}
 				mSpeakerListUpdated = true;
@@ -619,6 +612,8 @@ void LLSpeakerMgr::updateSpeakerList()
 			}
 		}
 	}
+	// Always add the current agent (it has to be there...). Will do nothing if already there.
+	setSpeaker({ gAgentID, LLSpeaker::SPEAKER_AGENT, LLSpeaker::STATUS_VOICE_ACTIVE });
 }
 
 void LLSpeakerMgr::setSpeakerNotInChannel(LLPointer<LLSpeaker> speakerp)
@@ -657,7 +652,7 @@ bool LLSpeakerMgr::removeSpeaker(const LLUUID& speaker_id)
 LLPointer<LLSpeaker> LLSpeakerMgr::findSpeaker(const LLUUID& speaker_id)
 {
 	//In some conditions map causes crash if it is empty(Windows only), adding check (EK)
-	if (mSpeakers.size() == 0)
+	if (mSpeakers.empty())
 		return nullptr;
 	speaker_map_t::iterator found_it = mSpeakers.find(speaker_id);
 	if (found_it == mSpeakers.end())
@@ -670,9 +665,9 @@ LLPointer<LLSpeaker> LLSpeakerMgr::findSpeaker(const LLUUID& speaker_id)
 void LLSpeakerMgr::getSpeakerList(speaker_list_t* speaker_list, BOOL include_text)
 {
 	speaker_list->clear();
-	for (speaker_map_t::iterator speaker_it = mSpeakers.begin(); speaker_it != mSpeakers.end(); ++speaker_it)
+	for (auto& speaker : mSpeakers)
 	{
-		LLPointer<LLSpeaker> speakerp = speaker_it->second;
+		LLPointer<LLSpeaker> speakerp = speaker.second;
 		// what about text only muted or inactive?
 		if (include_text || speakerp->mStatus != LLSpeaker::STATUS_TEXT_ONLY)
 		{
@@ -683,7 +678,7 @@ void LLSpeakerMgr::getSpeakerList(speaker_list_t* speaker_list, BOOL include_tex
 
 const LLUUID LLSpeakerMgr::getSessionID() const
 { 
-	return mVoiceChannel->getSessionID(); 
+	return mVoiceChannel->getSessionID();
 }
 
 bool LLSpeakerMgr::isSpeakerToBeRemoved(const LLUUID& speaker_id) const
@@ -798,7 +793,7 @@ void LLIMSpeakerMgr::updateSpeakers(const LLSD& update)
 
 			if (agent_data.isMap() && agent_data.has("transition"))
 			{
-				if (agent_data["transition"].asString() == "LEAVE" && speakerp.notNull())
+				if (agent_data["transition"].asString() == "LEAVE")
 				{
 					setSpeakerNotInChannel(speakerp);
 				}
@@ -843,14 +838,14 @@ void LLIMSpeakerMgr::updateSpeakers(const LLSD& update)
 	else if ( update.has("updates") && update["updates"].isMap() )
 	{
 		for (LLSD::map_const_iterator update_it = update["updates"].beginMap();
-			 update_it != update["updates"].endMap();
-			 ++update_it)
+			update_it != update["updates"].endMap();
+			++update_it)
 		{
 			LLUUID agent_id(update_it->first);
 			LLPointer<LLSpeaker> speakerp = findSpeaker(agent_id);
 
 			std::string agent_transition = update_it->second.asString();
-			if (agent_transition == "LEAVE" && speakerp.notNull())
+			if (agent_transition == "LEAVE")
 			{
 				setSpeakerNotInChannel(speakerp);
 			}
@@ -997,13 +992,13 @@ void LLIMSpeakerMgr::moderateVoiceSession(const LLUUID& session_id, bool disallo
 
 void LLIMSpeakerMgr::forceVoiceModeratedMode(bool should_be_muted)
 {
-	for (speaker_map_t::iterator speaker_it = mSpeakers.begin(); speaker_it != mSpeakers.end(); ++speaker_it)
+	for (auto& speaker : mSpeakers)
 	{
-		LLUUID speaker_id = speaker_it->first;
-		LLSpeaker* speakerp = speaker_it->second;
+		LLUUID speaker_id = speaker.first;
+		LLSpeaker* speakerp = speaker.second;
 
 		// participant does not match requested state
-		if (should_be_muted != (bool)speakerp->mModeratorMutedVoice)
+		if (should_be_muted != static_cast<bool>(speakerp->mModeratorMutedVoice))
 		{
 			moderateVoiceParticipant(speaker_id, !should_be_muted);
 		}
@@ -1037,10 +1032,9 @@ void LLActiveSpeakerMgr::updateSpeakerList()
 	LLSpeakerMgr::updateSpeakerList();
 
 	// clean up text only speakers
-	for (speaker_map_t::iterator speaker_it = mSpeakers.begin(); speaker_it != mSpeakers.end(); ++speaker_it)
+	for (auto& speaker : mSpeakers)
 	{
-		LLUUID speaker_id = speaker_it->first;
-		LLSpeaker* speakerp = speaker_it->second;
+		LLSpeaker* speakerp = speaker.second;
 		if (speakerp->mStatus == LLSpeaker::STATUS_TEXT_ONLY)
 		{
 			// automatically flag text only speakers for removal
@@ -1086,10 +1080,10 @@ void LLLocalSpeakerMgr::updateSpeakerList()
 	setSpeakers(speakers);
 
 	// check if text only speakers have moved out of chat range
-	for (speaker_map_t::iterator speaker_it = mSpeakers.begin(); speaker_it != mSpeakers.end(); ++speaker_it)
+	for (auto& speaker : mSpeakers)
 	{
-		LLUUID speaker_id = speaker_it->first;
-		LLPointer<LLSpeaker> speakerp = speaker_it->second;
+		LLUUID speaker_id = speaker.first;
+		LLPointer<LLSpeaker> speakerp = speaker.second;
 		if (speakerp.notNull() && speakerp->mStatus == LLSpeaker::STATUS_TEXT_ONLY)
 		{
 			LLVOAvatar* avatarp = gObjectList.findAvatar(speaker_id);

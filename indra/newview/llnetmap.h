@@ -70,7 +70,6 @@ public:
 
 	LLUUID getStringUUIDSelectedItem() const override final { return mClosestAgentAtLastRightClick; }
 	uuid_vec_t getSelectedIDs() const override final { return mClosestAgentsAtLastClick; }
-	S32 getNumSelected() const override final { return mClosestAgentsAtLastClick.size(); }
 
 	void			refreshParcelOverlay() { mUpdateParcelImage = true; }
 

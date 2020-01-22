@@ -38,7 +38,7 @@ class LLSpeakerMgr;
 class LLVoiceChannel;
 
 // data for a given participant in a voice channel
-class LLSpeaker : public LLRefCount, public LLOldEvents::LLObservable, public LLHandleProvider<LLSpeaker>, public boost::signals2::trackable
+class LLSpeaker final : public LLRefCount, public LLOldEvents::LLObservable, public LLHandleProvider<LLSpeaker>, public boost::signals2::trackable
 {
 public:
 	typedef enum e_speaker_type
@@ -82,7 +82,7 @@ public:
 	};
 
 	LLSpeaker(const speaker_entry_t& entry);
-	~LLSpeaker() {};
+	~LLSpeaker() = default;
 	void update(const speaker_entry_t& entry);
 	void lookupName();
 
@@ -132,7 +132,7 @@ public:
 	S32				mSortIndex;
 };
 
-class LLSpeakerUpdateSpeakerEvent : public LLOldEvents::LLEvent
+class LLSpeakerUpdateSpeakerEvent final : public LLOldEvents::LLEvent
 {
 public:
 	LLSpeakerUpdateSpeakerEvent(LLSpeaker* source);
@@ -141,7 +141,7 @@ private:
 	const LLUUID& mSpeakerID;
 };
 
-class LLSpeakerUpdateModeratorEvent : public LLOldEvents::LLEvent
+class LLSpeakerUpdateModeratorEvent final : public LLOldEvents::LLEvent
 {
 public:
 	LLSpeakerUpdateModeratorEvent(LLSpeaker* source);
@@ -151,21 +151,21 @@ private:
 	BOOL mIsModerator;
 };
 
-class LLSpeakerTextModerationEvent : public LLOldEvents::LLEvent
+class LLSpeakerTextModerationEvent final : public LLOldEvents::LLEvent
 {
 public:
 	LLSpeakerTextModerationEvent(LLSpeaker* source);
 	/*virtual*/ LLSD getValue() override;
 };
 
-class LLSpeakerVoiceModerationEvent : public LLOldEvents::LLEvent
+class LLSpeakerVoiceModerationEvent final : public LLOldEvents::LLEvent
 {
 public:
 	LLSpeakerVoiceModerationEvent(LLSpeaker* source);
 	/*virtual*/ LLSD getValue() override;
 };
 
-class LLSpeakerListChangeEvent : public LLOldEvents::LLEvent
+class LLSpeakerListChangeEvent final : public LLOldEvents::LLEvent
 {
 public:
 	LLSpeakerListChangeEvent(LLSpeakerMgr* source, const LLUUID& speaker_id);
@@ -185,7 +185,7 @@ private:
  * Otherwise it should be deleted manually in place where it is used.
  * If action callback is not set timer will tick only once and deleted.
  */
-class LLSpeakerActionTimer : public LLEventTimer
+class LLSpeakerActionTimer final : public LLEventTimer
 {
 public:
 	typedef std::function<bool(const LLUUID&)>	action_callback_t;
@@ -202,7 +202,7 @@ public:
 	 * @param speaker_id - LLUUID of speaker which will be passed into action callback.
 	 */
 	LLSpeakerActionTimer(action_callback_t action_cb, F32 action_period, const LLUUID& speaker_id);
-	virtual ~LLSpeakerActionTimer() {};
+	virtual ~LLSpeakerActionTimer() = default;
 
 	/**
 	 * Implements timer "tick".
@@ -338,7 +338,7 @@ protected:
 	bool mModerateModeHandledFirstTime;
 };
 
-class LLIMSpeakerMgr : public LLSpeakerMgr
+class LLIMSpeakerMgr final : public LLSpeakerMgr
 {
 	LOG_CLASS(LLIMSpeakerMgr);
 
@@ -391,7 +391,7 @@ protected:
 
 };
 
-class LLActiveSpeakerMgr : public LLSpeakerMgr, public LLSingleton<LLActiveSpeakerMgr>
+class LLActiveSpeakerMgr final : public LLSpeakerMgr, public LLSingleton<LLActiveSpeakerMgr>
 {
 	LLSINGLETON(LLActiveSpeakerMgr);
 	LOG_CLASS(LLActiveSpeakerMgr);
@@ -400,7 +400,7 @@ protected:
 	void updateSpeakerList() override;
 };
 
-class LLLocalSpeakerMgr : public LLSpeakerMgr, public LLSingleton<LLLocalSpeakerMgr>
+class LLLocalSpeakerMgr final : public LLSpeakerMgr, public LLSingleton<LLLocalSpeakerMgr>
 {
 	LLSINGLETON(LLLocalSpeakerMgr);
 	~LLLocalSpeakerMgr ();

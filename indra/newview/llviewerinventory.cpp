@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llviewerinventory.cpp
  * @brief Implementation of the viewer side inventory objects.
@@ -105,7 +103,7 @@ void doInventoryCb(LLPointer<LLInventoryCallback> cb, LLUUID id)
 ///----------------------------------------------------------------------------
 /// Helper class to store special inventory item names and their localized values.
 ///----------------------------------------------------------------------------
-class LLLocalizedInventoryItemsDictionary : public LLSingleton<LLLocalizedInventoryItemsDictionary>
+class LLLocalizedInventoryItemsDictionary final : public LLSingleton<LLLocalizedInventoryItemsDictionary>
 {
 	LLSINGLETON(LLLocalizedInventoryItemsDictionary);
 public:
@@ -485,6 +483,7 @@ void LLViewerInventoryItem::packMessage(LLMessageSystem* msg) const
 	U32 crc = getCRC32();
 	msg->addU32Fast(_PREHASH_CRC, crc);
 }
+
 // virtual
 BOOL LLViewerInventoryItem::importFile(LLFILE* fp)
 {
@@ -845,7 +844,7 @@ bool LLViewerInventoryCategory::acceptItem(LLInventoryItem* inv_item)
 			LLInventoryModel::item_array_t* item_array;
 			gInventory.getDirectDescendentsOf(getUUID(),cat_array,item_array);
 			// Destination stock folder must be empty OR types of incoming and existing items must be identical and have the same permissions
-			accept = (!item_array->size() ||
+            accept = (item_array->empty() ||
 					  ((item_array->at(0)->getInventoryType() == inv_item->getInventoryType()) &&
 					   (item_array->at(0)->getPermissions().getMaskNextOwner() == inv_item->getPermissions().getMaskNextOwner())));
 		}
@@ -993,10 +992,10 @@ void LLInventoryCallbackManager::destroyClass()
 {
 	if (sInstance)
 	{
-		for (callback_map_t::iterator it = sInstance->mMap.begin(), end_it = sInstance->mMap.end(); it != end_it; ++it)
+		for (auto& it : sInstance->mMap)
 		{
 			// drop LLPointer reference to callback
-			it->second = NULL;
+            it.second = NULL;
 		}
 		sInstance->mMap.clear();
 	}
@@ -1119,6 +1118,7 @@ void create_gesture_cb(const LLUUID& inv_item)
 	}
 }
 
+
 void create_notecard_cb(const LLUUID& inv_item)
 {
 	if (!inv_item.isNull())
@@ -1185,10 +1185,10 @@ void create_inventory_item(const LLUUID& agent_id, const LLUUID& session_id,
 void create_inventory_callingcard(const LLUUID& avatar_id, const LLUUID& parent /*= LLUUID::null*/, LLPointer<LLInventoryCallback> cb/*=NULL*/)
 {
 	std::string item_desc = avatar_id.asString();
-	std::string item_name;
-	gCacheName->getFullName(avatar_id, item_name);
+	LLAvatarName av_name;
+	LLAvatarNameCache::get(avatar_id, &av_name);
 	create_inventory_item(gAgent.getID(), gAgent.getSessionID(),
-						  parent, LLTransactionID::tnull, item_name, item_desc, LLAssetType::AT_CALLINGCARD,
+						  parent, LLTransactionID::tnull, av_name.getLegacyName(), item_desc, LLAssetType::AT_CALLINGCARD,
 						  LLInventoryType::IT_CALLINGCARD, NOT_WEARABLE, PERM_MOVE | PERM_TRANSFER, cb);
 }
 
@@ -1451,15 +1451,7 @@ void update_inventory_item(
 	const LLSD& updates,
 	LLPointer<LLInventoryCallback> cb)
 {
-	//Singu Note: 
-	// There was some rlva-specific code here, however it adversely affected serverside
-	// baking when using AISv3. Its omission looks likeley to be inconsequental, but if that's incorrect
-	// any bugs introduced by its removal are minor compared to non-functional serverside baking.
-
-//    if (AISAPI::isAvailable())
-// [SL:KB] - Patch: Appearance-AISFilter | Checked: 2015-03-01 (Catznip-3.7)
-	if (AISAPI::isAvailable(AISAPI::CMD_ITEM_UPDATE))
-// [/SL:KB]
+    if (AISAPI::isAvailable())
 	{
         AISAPI::completion_t cr = (cb) ? boost::bind(&doInventoryCb, cb, _1) : AISAPI::completion_t();
         AISAPI::UpdateItem(item_id, updates, cr);
@@ -1488,7 +1480,6 @@ void update_inventory_item(
 			LLInventoryModel::LLCategoryUpdate up(new_item->getParentUUID(), 0);
 			gInventory.accountForUpdate(up);
 			gInventory.updateItem(new_item);
-
 			if (cb)
 			{
 				cb->fire(item_id);
@@ -1550,11 +1541,9 @@ void remove_inventory_items(
 	LLPointer<LLInventoryCallback> cb
 	)
 {
-	for (LLInventoryObject::object_list_t::iterator it = items_to_kill.begin();
-		 it != items_to_kill.end();
-		 ++it)
+	for (auto& it : items_to_kill)
 	{
-		remove_inventory_item(*it, cb);
+		remove_inventory_item(it, cb);
 	}
 }
 
@@ -1631,7 +1620,7 @@ public:
 		mCB(cb)
 	{
 	}
-	/* virtual */ void fire(const LLUUID& item_id) {}
+	/* virtual */ void fire(const LLUUID& item_id) override {}
 	~LLRemoveCategoryOnDestroy()
 	{
 		LLInventoryModel::EHasChildren children = gInventory.categoryHasChildren(mID);
@@ -1657,6 +1646,10 @@ void remove_inventory_category(
 	LLPointer<LLViewerInventoryCategory> obj = gInventory.getCategory(cat_id);
 	if(obj)
 	{
+		if (!gInventory.isCategoryComplete(cat_id))
+		{
+			LL_WARNS() << "Removing (purging) incomplete category " << obj->getName() << LL_ENDL;
+		}
 		if(LLFolderType::lookupIsProtectedType(obj->getPreferredType()))
 		{
 			LLNotificationsUtil::add("CannotRemoveProtectedCategories");
@@ -1876,7 +1869,7 @@ void create_new_item(const std::string& name,
 	LLViewerAssetType::generateDescriptionFor(asset_type, desc);
 	next_owner_perm = (next_owner_perm) ? next_owner_perm : PERM_MOVE | PERM_TRANSFER;
 
-	LLPointer<LLInventoryCallback> cb = NULL;
+	LLPointer<LLInventoryCallback> cb = nullptr;
 
 	switch (inv_type)
 	{
@@ -2033,9 +2026,9 @@ void remove_folder_contents(const LLUUID& category, bool keep_outfit_links,
 	LLInventoryModel::item_array_t items;
 	gInventory.collectDescendents(category, cats, items,
 								  LLInventoryModel::EXCLUDE_TRASH);
-	for (U32 i = 0; i < items.size(); ++i)
+	for (auto& i : items)
 	{
-		LLViewerInventoryItem *item = items.at(i);
+		LLViewerInventoryItem *item = i;
 		if (keep_outfit_links && (item->getActualType() == LLAssetType::AT_LINK_FOLDER))
 			continue;
 		if (item->getIsLinkType())
@@ -2401,9 +2394,9 @@ PermissionMask LLViewerInventoryItem::getPermissionMask() const
 
 //----------
 
-void LLViewerInventoryItem::onCallingCardNameLookup(const LLUUID& id, const std::string& name, bool is_group)
+void LLViewerInventoryItem::onCallingCardNameLookup(const LLUUID& id, const LLAvatarName& name)
 {
-	rename(name);
+	rename(name.getLegacyName());
 	gInventory.addChangedMask(LLInventoryObserver::LABEL, getUUID());
 	gInventory.notifyObservers();
 }
@@ -2412,9 +2405,10 @@ class LLRegenerateLinkCollector : public LLInventoryCollectFunctor
 {
 public:
 	LLRegenerateLinkCollector(const LLViewerInventoryItem *target_item) : mTargetItem(target_item) {}
-	virtual ~LLRegenerateLinkCollector() {}
-	virtual bool operator()(LLInventoryCategory* cat,
-							LLInventoryItem* item)
+	virtual ~LLRegenerateLinkCollector() = default;
+
+    bool operator()(LLInventoryCategory* cat,
+							LLInventoryItem* item) override
 	{
 		if (item)
 		{
@@ -2442,11 +2436,8 @@ LLUUID find_possible_item_for_regeneration(const LLViewerInventoryItem *target_i
 									items,
 									LLInventoryModel::EXCLUDE_TRASH,
 									candidate_matches);
-	for (LLViewerInventoryItem::item_array_t::const_iterator item_iter = items.begin();
-		 item_iter != items.end();
-		 ++item_iter)
+	for (const LLViewerInventoryItem* item : items)
 	{
-		const LLViewerInventoryItem *item = (*item_iter);
 		if(item)
 			return item->getUUID();
 	}
@@ -2468,11 +2459,9 @@ BOOL LLViewerInventoryItem::regenerateLink()
 									items,
 									LLInventoryModel::EXCLUDE_TRASH,
 									asset_id_matches);
-	for (LLViewerInventoryItem::item_array_t::iterator item_iter = items.begin();
-		 item_iter != items.end();
-		 item_iter++)
+	for (auto& item_iter : items)
 	{
-	    LLViewerInventoryItem *item = (*item_iter);
+	    LLViewerInventoryItem *item = item_iter;
 		item->setAssetUUID(target_item_id);
 		item->updateServer(FALSE);
 		gInventory.addChangedMask(LLInventoryObserver::REBUILD, item->getUUID());

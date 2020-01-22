@@ -1757,34 +1757,24 @@ void inventory_offer_handler(LLOfferInfo* info, bool is_friend, bool is_owned_by
 
 	// Name cache callbacks don't store userdata, so can't save
 	// off the LLOfferInfo.  Argh.
-	BOOL name_found = FALSE;
 	payload["from_id"] = info->mFromID;
 	args["OBJECTFROMNAME"] = info->mFromName;
 	args["NAME"] = info->mFromName;
 	if (info->mFromGroup)
 	{
-		std::string group_name;
-		if (gCacheName->getGroupName(info->mFromID, group_name))
-		{
-			args["NAME"] = group_name;
-			name_found = TRUE;
-		}
+		args["NAME"] = LLGroupActions::getSLURL(info->mFromID);
 	}
 	else
 	{
-		std::string full_name;
-		if (gCacheName->getFullName(info->mFromID, full_name))
-		{
+		std::string full_name = LLAvatarActions::getSLURL(info->mFromID);
 // [RLVa:KB] - Checked: 2010-11-02 (RLVa-1.2.2a) | Modified: RLVa-1.2.2a
 		// Only filter if the object owner is a nearby agent
-			if ( (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES)) && (RlvUtil::isNearbyAgent(info->mFromID)) )
-			{
-				full_name = RlvStrings::getAnonym(full_name);
-			}
-// [/RLVa:KB]
-			args["NAME"] = full_name;
-			name_found = TRUE;
+		if ( (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES)) && (RlvUtil::isNearbyAgent(info->mFromID)) )
+		{
+			full_name = RlvStrings::getAnonym(full_name);
 		}
+// [/RLVa:KB]
+		args["NAME"] = full_name;
 	}
 
 
@@ -1794,7 +1784,7 @@ void inventory_offer_handler(LLOfferInfo* info, bool is_friend, bool is_owned_by
 	// Object -> Agent Inventory Offer
 	if (info->mFromObject)
 	{
-		p.name = name_found ? "ObjectGiveItem" : "ObjectGiveItemUnknownUser";
+		p.name = "ObjectGiveItem";
 	}
 	else // Agent -> Agent Inventory Offer
 	{
@@ -3053,13 +3043,15 @@ void process_improved_im(LLMessageSystem *msg, void **user_data)
 				  ((IM_TELEPORT_REQUEST == dialog) && (RlvActions::autoAcceptTeleportRequest(from_id))) );
 // [/RLVa:KB]
 
-			if (is_muted)
+			bool following = gAgent.getAutoPilotLeaderID() == from_id;
+
+			if (!following && is_muted)
 			{ 
 				return;
 			}
-//			else if (is_do_not_disturb)
+//			else if (!following && is_do_not_disturb)
 // [RLVa:KB] - Checked: 2013-11-08 (RLVa-1.4.9)
-			else if ( (is_do_not_disturb) && (!fRlvAutoAccept) )
+			else if (!following && is_do_not_disturb && !fRlvAutoAccept )
 // [/RLVa:KB]
 			{
 				send_do_not_disturb_message(msg, from_id);
@@ -3141,7 +3133,7 @@ void process_improved_im(LLMessageSystem *msg, void **user_data)
 
 				LLSD args;
 				// *TODO: Translate -> [FIRST] [LAST] (maybe)
-				args["NAME"] = name;
+				args["NAME"] = LLAvatarActions::getSLURL(from_id);
 				args["MESSAGE"] = message;
 				args["MATURITY_STR"] = region_access_str;
 				args["MATURITY_ICON"] = region_access_icn;
@@ -3186,10 +3178,14 @@ void process_improved_im(LLMessageSystem *msg, void **user_data)
 					}
 					*/
 					LLNotification::Params params(IM_LURE_USER == dialog ? "TeleportOffered" : "TeleportRequest");
-
 					params.substitutions = args;
 					params.payload = payload;
 
+					if (following)
+					{
+						LLNotifications::instance().forceResponse(LLNotification::Params(params.name).payload(payload), 0);
+					}
+					else
 // [RLVa:KB] - Checked: 20103-11-08 (RLVa-1.4.9)
 					if ( (rlv_handler_t::isEnabled()) && (fRlvAutoAccept) )
 					{
@@ -5082,6 +5078,9 @@ void process_kill_object(LLMessageSystem *mesgsys, void **user_data)
 {
 	LL_RECORD_BLOCK_TIME(FTM_PROCESS_OBJECTS);
 
+	auto agent_region = gAgent.getRegion();
+	if (!agent_region) return;
+
 	LLUUID		id;
 
 	U32 ip = mesgsys->getSenderIP();
@@ -5092,7 +5091,7 @@ void process_kill_object(LLMessageSystem *mesgsys, void **user_data)
 		regionp = LLWorld::getInstance()->getRegion(host);
 	}
 
-	bool different_region = mesgsys->getSender().getIPandPort() != gAgent.getRegion()->getHost().getIPandPort();
+	bool different_region = mesgsys->getSender().getIPandPort() != agent_region->getHost().getIPandPort();
 
 	S32 num_objects = mesgsys->getNumberOfBlocksFast(_PREHASH_ObjectData);
 	for (S32 i = 0; i < num_objects; ++i)
@@ -7935,7 +7934,7 @@ void send_lures(const LLSD& notification, const LLSD& response)
 				target_name = RlvStrings::getAnonym(target_name);
 			else
 // [/RLVa:KB]
-				LLAvatarNameCache::getNSName(target_id, target_name);
+				target_name = LLAvatarActions::getSLURL(target_id);
 			args["TO_NAME"] = target_name;
 
 			LLSD payload;

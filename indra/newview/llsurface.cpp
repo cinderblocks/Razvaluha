@@ -166,10 +166,10 @@ void LLSurface::create(const S32 grids_per_edge,
 	mGridsPerEdge = grids_per_edge + 1;  // Add 1 for the east and north buffer
 	mOOGridsPerEdge = 1.f / mGridsPerEdge;
 	mGridsPerPatchEdge = grids_per_patch_edge;
-	mPatchesPerEdge = (mGridsPerEdge - 1) / mGridsPerPatchEdge;
+	mPatchesPerEdge = grids_per_edge / mGridsPerPatchEdge;
 	mNumberOfPatches = mPatchesPerEdge * mPatchesPerEdge;
-	mMetersPerGrid = width / ((F32)(mGridsPerEdge - 1));
-	mMetersPerEdge = mMetersPerGrid * (mGridsPerEdge - 1);
+	mMetersPerGrid = width / (F32)grids_per_edge;
+	mMetersPerEdge = mMetersPerGrid * grids_per_edge;
 // <FS:CR> Aurora Sim
 	sTextureSize = width;
 // </FS:CR> Aurora Sim
@@ -729,6 +729,7 @@ void LLSurface::disconnectNeighbor(LLSurface *surfacep)
 	}
 
 	// Iterate through surface patches, removing any connectivity to removed surface.
+	if (mPatchList) // Don't crash if removed before
 	for (i = 0; i < mNumberOfPatches; i++)
 	{
 		(mPatchList + i)->disconnectNeighbor(surfacep);
