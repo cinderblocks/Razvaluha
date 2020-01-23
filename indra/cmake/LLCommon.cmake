@@ -6,6 +6,11 @@ include(EXPAT)
 include(Linking)
 include(ZLIB)
 
+if (DARWIN)
+  include(CMakeFindFrameworks)
+  find_library(CORESERVICES_LIBRARY CoreServices)
+endif (DARWIN)
+
 set(LLCOMMON_INCLUDE_DIRS
     ${LIBS_OPEN_DIR}/llcommon
     ${CMAKE_BINARY_DIR}/llcommon/generated
@@ -28,7 +33,6 @@ set(LLCOMMON_LIBRARIES llcommon
     absl::node_hash_map
     ${RT_LIBRARY}
     )
-
 
 set(LLCOMMON_LINK_SHARED OFF CACHE BOOL "Build the llcommon target as a static library.")
 if(LLCOMMON_LINK_SHARED)

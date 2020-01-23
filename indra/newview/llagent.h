@@ -588,13 +588,14 @@ public:
 public:
 	BOOL			getAutoPilot() const				{ return mAutoPilot; }
 	LLVector3d		getAutoPilotTargetGlobal() const 	{ return mAutoPilotTargetGlobal; }
-	LLUUID			getAutoPilotLeaderID() const		{ return mLeaderID; }
+	const LLUUID&	getAutoPilotLeaderID() const		{ return mLeaderID; }
 	F32				getAutoPilotStopDistance() const	{ return mAutoPilotStopDistance; }
 	F32				getAutoPilotTargetDist() const		{ return mAutoPilotTargetDist; }
 	BOOL			getAutoPilotUseRotation() const		{ return mAutoPilotUseRotation; }
 	LLVector3		getAutoPilotTargetFacing() const	{ return mAutoPilotTargetFacing; }
 	F32				getAutoPilotRotationThreshold() const	{ return mAutoPilotRotationThreshold; }
-	std::string		getAutoPilotBehaviorName() const	{ return mAutoPilotBehaviorName; }
+	const std::string&	getAutoPilotBehaviorName() const	{ return mAutoPilotBehaviorName; }
+	bool			getAutoPilotNoProgress() const;
 
 	void			startAutoPilotGlobal(const LLVector3d &pos_global, 
 										 const std::string& behavior_name = std::string(), 
@@ -735,6 +736,13 @@ private:
 /**                    Teleport
  **                                                                            **
  *******************************************************************************/
+
+	// Attachments getting lost on TP
+public:
+	void setIsCrossingRegion(bool is_crossing) { mIsCrossingRegion = is_crossing; }
+	bool isCrossingRegion() const { return mIsCrossingRegion; }
+private:
+	bool mIsCrossingRegion;
 
 	// Build
 public:

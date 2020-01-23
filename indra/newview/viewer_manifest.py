@@ -160,9 +160,6 @@ class ViewerManifest(LLManifest):
             if not self.path2basename(os.pardir, "build_data.json"):
                 print "No build_data.json file"
 
-    def finish_build_data_dict(self, build_data_dict):
-        return build_data_dict
-
     def standalone(self):
         return self.args['standalone'] == "ON"
 
@@ -635,11 +632,6 @@ class WindowsManifest(ViewerManifest):
                 self.path("libvlccore.dll")
                 self.path("plugins/")
 
-        # pull in the crash logger from other projects
-        # tag:"crash-logger" here as a cue to the exporter
-        self.path(src='../win_crash_logger/%s/windows-crash-logger.exe' % self.args['configuration'],
-                  dst="win_crash_logger.exe")
-
         if not self.is_packaging_viewer():
             self.package_file = "copied_deps"
 
@@ -990,22 +982,6 @@ class DarwinManifest(ViewerManifest):
 
                 # our apps
                 executable_path = {}
-                for app_bld_dir, app in (("mac_crash_logger", "mac-crash-logger.app"),
-                                         # plugin launcher
-                                         (os.path.join("llplugin", "slplugin"), "AlchemyPlugin.app"),
-                                         ):
-                    self.path2basename(os.path.join(os.pardir,
-                                                    app_bld_dir, self.args['configuration']),
-                                       app)
-                    executable_path[app] = \
-                        self.dst_path_of(os.path.join(app, "Contents", "MacOS"))
-
-                    # our apps dependencies on shared libs
-                    # for each app, for each dylib we collected in dylibs,
-                    # create a symlink to the real copy of the dylib.
-                    with self.prefix(dst=os.path.join(app, "Contents", "Resources")):
-                        for libfile in dylibs:
-                            self.relsymlinkf(os.path.join(libfile_parent, libfile))
 
                 # Dullahan helper apps go inside SLPlugin.app
                 with self.prefix(dst=os.path.join(
@@ -1322,7 +1298,6 @@ class LinuxManifest(ViewerManifest):
 
         with self.prefix(dst="bin"):
             self.path("%s-bin"%self.viewer_branding_id(),"do-not-directly-run-%s-bin"%self.viewer_branding_id())
-            self.path("../linux_crash_logger/linux-crash-logger","linux-crash-logger.bin")
 
         # recurses, packaged again
         self.path("res-sdl")

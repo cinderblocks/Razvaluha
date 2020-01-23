@@ -408,11 +408,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>849f515d4d77162c15614ebff8599c13</string>
+              <string>4614b29cc98021cf1770a8290171602b</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/crashpad/windows/crashpad-365c520b.6-windows-6.tar.bz2</string>
+              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/crashpad/windows/crashpad-ce32d093.7-windows-7.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -422,18 +422,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>7ea820b6a2cfa172f47d673c07dfa62c</string>
+              <string>d801461b7a6a40fffab828aa1e01e3e6</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/crashpad/windows64/crashpad-365c520b.6-windows64-6.tar.bz2</string>
+              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/crashpad/windows64/crashpad-ce32d093.7-windows64-7.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>365c520b.6</string>
+        <string>ce32d093.7</string>
       </map>
       <key>curl</key>
       <map>
@@ -898,11 +898,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>54dbd41322a08a1fc333ca6d96af5502</string>
+              <string>ccd495598894c8e2e541a348015ee3f0</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>/opt/devel/secondlife/pkg/fmodstudio-2.00.02.191991250-linux64-191991250.tar.bz2</string>
+              <string>/opt/devel/fmodstudio-2.00.07.200182252-linux64-200182252.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -912,11 +912,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>e0e87e0423fa42e4d2997b47b92eac6e</string>
+              <string>22daed7c860daaef217eb8d90dfc1119</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-internal/fmodstudio/windows/fmodstudio-2.00.03.192211030-windows-192211030.tar.bz2</string>
+              <string>https://pkg.alchemyviewer.org/repository/autobuild-internal/fmodstudio/windows/fmodstudio-2.00.06.3-windows-3.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows</string>
@@ -926,18 +926,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>c2e55e1bfef7e066a0e40867a64b4cce</string>
+              <string>ccf7b1935743df55244139c4323c0465</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-internal/fmodstudio/windows64/fmodstudio-2.00.03.192211029-windows64-192211029.tar.bz2</string>
+              <string>https://pkg.alchemyviewer.org/repository/autobuild-internal/fmodstudio/windows64/fmodstudio-2.00.06.3-windows64-3.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>2.00.03.192211300</string>
+        <string>2.00.06.3</string>
       </map>
       <key>fonts</key>
       <map>
@@ -3550,7 +3550,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
         <key>windows</key>
         <map>
           <key>build_directory</key>
-          <string>build-vc${AUTOBUILD_WIN_VSVER|161}-$AUTOBUILD_ADDRSIZE</string>
+          <string>build-vc-$AUTOBUILD_ADDRSIZE</string>
           <key>configurations</key>
           <map>
             <key>RelWithDebInfo</key>
@@ -3605,6 +3605,7 @@ Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
                   <string>/p:Configuration=Release</string>
                   <string>/p:Platform=${AUTOBUILD_WIN_VSPLATFORM|NOTWIN}</string>
                   <string>/t:Build</string>
+                  <string>/p:PreferredToolArchitecture=x64</string>
                   <string>/p:useenv=true</string>
                   <string>/verbosity:minimal</string>
                   <string>/p:VCBuildAdditionalOptions= /incremental</string>

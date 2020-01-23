@@ -813,6 +813,8 @@ void LLAppViewer::initCrashReporting()
 	annotations.emplace("sentry[contexts][app][app_version]", LLVersionInfo::getVersion());
 	annotations.emplace("sentry[contexts][app][app_build]", LLVersionInfo::getChannelAndVersion());
 
+	annotations.emplace("sentry[release]", LLVersionInfo::getChannelAndVersion());
+
 	annotations.emplace("sentry[tags][second_instance]", fmt::to_string(isSecondInstance()));
 	//annotations.emplace("sentry[tags][bitness]", fmt::to_string(ADDRESS_SIZE));
 	annotations.emplace("sentry[tags][bitness]",
@@ -825,7 +827,6 @@ void LLAppViewer::initCrashReporting()
 
 	// Optional arguments to pass to the handler
 	std::vector<std::string> arguments;
-	arguments.push_back("--no-upload-gzip");
 	arguments.push_back("--no-rate-limit");
 	arguments.push_back("--monitor-self");
 
@@ -2495,7 +2496,9 @@ bool LLAppViewer::initConfiguration()
 	LL_INFOS() << "Loading settings file list" << settings_file_list << LL_ENDL;
 	if (0 == settings_control.loadFromFile(settings_file_list))
 	{
-		LL_ERRS() << "Cannot load default configuration file " << settings_file_list << LL_ENDL;
+		OSMessageBox("Cannot load default configuration file " + settings_file_list + " The installation may be corrupted.",
+			LLStringUtil::null,OSMB_OK);
+		return false;
 	}
 
 	mSettingsLocationList = settings_control.getLLSD("Locations");

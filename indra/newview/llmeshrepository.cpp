@@ -1804,11 +1804,10 @@ bool LLMeshRepoThread::skinInfoReceived(const LLUUID& mesh_id, U8* data, S32 dat
 		LLMeshSkinInfo info(skin);
 		info.mMeshID = mesh_id;
 
-		// LL_DEBUGS(LOG_MESH) << "info pelvis offset" << info.mPelvisOffset << LL_ENDL;
-		{
-			LLMutexLock lock(mMutex);
-			mSkinInfoQ.push_back(info);
-		}
+		//LL_INFOS() <<"info pelvis offset"<<info.mPelvisOffset<<LL_ENDL;
+		mSkinInfoQMutex->lock();
+		mSkinInfoQ.push(info);
+		mSkinInfoQMutex->unlock();
 	}
 
 	return true;
@@ -1831,10 +1830,9 @@ bool LLMeshRepoThread::decompositionReceived(const LLUUID& mesh_id, U8* data, S3
 	{
 		LLModel::Decomposition* d = new LLModel::Decomposition(decomp);
 		d->mMeshID = mesh_id;
-		{
-			LLMutexLock lock(mMutex);
-			mDecompositionQ.push_back(d);
-		}
+		mDecompositionQMutex->lock();
+		mDecompositionQ.push(d);
+		mDecompositionQMutex->unlock();
 	}
 
 	return true;
@@ -1892,10 +1890,9 @@ bool LLMeshRepoThread::physicsShapeReceived(const LLUUID& mesh_id, U8* data, S32
 		}
 	}
 
-	{
-		LLMutexLock lock(mMutex);
-		mDecompositionQ.push_back(d);
-	}
+	mDecompositionQMutex->lock();
+	mDecompositionQ.push(d);
+	mDecompositionQMutex->unlock();
 	return true;
 }
 
@@ -2733,37 +2730,51 @@ void LLMeshRepoThread::notifyLoadedMeshes()
 		gMeshRepo.notifyMeshUnavailable(req.mMeshParams, req.mLOD);
 	}
 
-	if (! mSkinInfoQ.empty() || ! mDecompositionQ.empty())
+	if (!mSkinInfoQ.empty())
 	{
 		if (mMutex->try_lock())
 		{
-			std::list<LLMeshSkinInfo> skin_info_q;
-			std::list<LLModel::Decomposition*> decomp_q;
-
+			std::queue<LLMeshSkinInfo> skin_info_q;
 			if (! mSkinInfoQ.empty())
 			{
 				skin_info_q.swap(mSkinInfoQ);
 			}
+			mMutex->unlock();
+
+			// Process the elements free of the lock
+			while (!skin_info_q.empty())
+			{
+				gMeshRepo.notifySkinInfoReceived(skin_info_q.front());
+				skin_info_q.pop();
+			}
+		}
+	}
+
+	if (!mDecompositionQ.empty())
+	{
+		if (mMutex->try_lock())
+		{
+			std::queue<LLModel::Decomposition*> decomp_q;
 			if (! mDecompositionQ.empty())
 			{
 				decomp_q.swap(mDecompositionQ);
 			}
-
 			mMutex->unlock();
 
 			// Process the elements free of the lock
-			while (! skin_info_q.empty())
-			{
-				gMeshRepo.notifySkinInfoReceived(skin_info_q.front());
-				skin_info_q.pop_front();
-			}
-
 			while (! decomp_q.empty())
 			{
 				gMeshRepo.notifyDecompositionReceived(decomp_q.front());
-				decomp_q.pop_front();
+				decomp_q.pop();
 			}
 		}
+
+		mSkinInfoQMutex->lock();
+		auto req = mSkinInfoQ.front();
+		mSkinInfoQ.pop();
+		mSkinInfoQMutex->unlock();
+
+		gMeshRepo.notifySkinInfoReceived(req);
 	}
 
 	if (update_metrics)

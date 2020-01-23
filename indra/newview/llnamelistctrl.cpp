@@ -166,6 +166,32 @@ BOOL LLNameListCtrl::handleDoubleClick(S32 x, S32 y, MASK mask)
 	return handled;
 }
 
+#define CONVERT_TO_RETTYPE(nametype, rettype)	\
+nametype:										\
+{												\
+	if (ret == NONE)							\
+		ret = rettype;							\
+	else if (ret != rettype)					\
+		return MULTIPLE;						\
+	break;										\
+}
+
+LFIDBearer::Type LLNameListCtrl::getSelectedType() const
+{
+	auto ret = NONE;
+	for (const auto& item : getAllSelected())
+	{
+		switch (static_cast<LLNameListItem*>(item)->getNameType())
+		{
+			CONVERT_TO_RETTYPE(case LLNameListItem::INDIVIDUAL, AVATAR);
+			CONVERT_TO_RETTYPE(case LLNameListItem::GROUP, GROUP)
+			CONVERT_TO_RETTYPE(default, COUNT) // Invalid, but just use count instead
+		}
+	}
+	return ret;
+}
+#undef CONVERT_TO_RETTYPE
+
 // public
 void LLNameListCtrl::addGroupNameItem(const LLUUID& group_id, EAddPosition pos,
 									  BOOL enabled)
@@ -461,13 +487,13 @@ LLView* LLNameListCtrl::fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFacto
 	LLRect rect;
 	createRect(node, rect, parent, LLRect());
 
-	BOOL multi_select = FALSE;
+	BOOL multi_select = false;
 	node->getAttributeBOOL("multi_select", multi_select);
 
-	BOOL draw_border = TRUE;
+	BOOL draw_border = true;
 	node->getAttributeBOOL("draw_border", draw_border);
 
-	BOOL draw_heading = FALSE;
+	BOOL draw_heading = false;
 	node->getAttributeBOOL("draw_heading", draw_heading);
 
 	S32 name_column_index = 0;
@@ -493,109 +519,6 @@ LLView* LLNameListCtrl::fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFacto
 	name_list->setScrollListParameters(node);
 
 	name_list->initFromXML(node, parent);
-
-	LLSD columns;
-	S32 index = 0;
-	LLXMLNodePtr child;
-	for (child = node->getFirstChild(); child.notNull(); child = child->getNextSibling())
-	{
-		if (child->hasName("column"))
-		{
-			std::string labelname("");
-			child->getAttributeString("label", labelname);
-
-			std::string columnname(labelname);
-			child->getAttributeString("name", columnname);
-
-			std::string sortname(columnname);
-			child->getAttributeString("sort", sortname);
-		
-			if (child->hasAttribute("relative_width"))
-			{
-				F32 columnrelwidth = 0.f;
-				child->getAttributeF32("relative_width", columnrelwidth);
-				columns[index]["relative_width"] = columnrelwidth;
-			}
-			else if (child->hasAttribute("relwidth"))
-			{
-				F32 columnrelwidth = 0.f;
-				child->getAttributeF32("relwidth", columnrelwidth);
-				columns[index]["relative_width"] = columnrelwidth;
-			}
-			else if (child->hasAttribute("dynamic_width"))
-			{
-				BOOL columndynamicwidth = FALSE;
-				child->getAttributeBOOL("dynamic_width", columndynamicwidth);
-				columns[index]["dynamic_width"] = columndynamicwidth;
-			}
-			else if (child->hasAttribute("dynamicwidth"))
-			{
-				BOOL columndynamicwidth = FALSE;
-				child->getAttributeBOOL("dynamicwidth", columndynamicwidth);
-				columns[index]["dynamic_width"] = columndynamicwidth;
-			}
-			else
-			{
-				S32 columnwidth = -1;
-				child->getAttributeS32("width", columnwidth);
-				columns[index]["width"] = columnwidth;
-			}
-
-			LLFontGL::HAlign h_align = LLFontGL::LEFT;
-			h_align = LLView::selectFontHAlign(child);
-
-			columns[index]["name"] = columnname;
-			columns[index]["label"] = labelname;
-			columns[index]["halign"] = (S32)h_align;
-			columns[index]["sort"] = sortname;
-
-			index++;
-		}
-	}
-	name_list->setColumnHeadings(columns);
-
-
-	for (child = node->getFirstChild(); child.notNull(); child = child->getNextSibling())
-	{
-		if (child->hasName("row"))
-		{
-			LLUUID id;
-			child->getAttributeUUID("id", id);
-
-			LLSD row;
-
-			row["id"] = id;
-
-			S32 column_idx = 0;
-			LLXMLNodePtr row_child;
-			for (row_child = node->getFirstChild(); row_child.notNull(); row_child = row_child->getNextSibling())
-			{
-				if (row_child->hasName("column"))
-				{
-					std::string value = row_child->getTextContents();
-
-					std::string columnname("");
-					row_child->getAttributeString("name", columnname);
-
-					std::string font("");
-					row_child->getAttributeString("font", font);
-
-					std::string font_style("");
-					row_child->getAttributeString("font-style", font_style);
-
-					row["columns"][column_idx]["column"] = columnname;
-					row["columns"][column_idx]["value"] = value;
-					row["columns"][column_idx]["font"] = font;
-					row["columns"][column_idx]["font-style"] = font_style;
-					column_idx++;
-				}
-			}
-			name_list->addElement(row);
-		}
-	}
-
-	std::string contents = node->getTextContents();
-	name_list->setCommentText(contents);
 
 	return name_list;
 }

@@ -42,6 +42,7 @@
 #include "lfidbearer.h"
 #include "llanimationstates.h" // For ANIM_AGENT_AWAY
 #include "llavatarnamecache.h"	// IDEVO
+#include "llexperiencecache.h"
 #include "llinventorypanel.h"
 #include "llnotifications.h"
 #include "llnotificationsutil.h"
@@ -78,6 +79,7 @@
 #include "llfloatercustomize.h"
 #include "llfloaterdirectory.h"
 #include "llfloatereditui.h"
+#include "llfloaterexperienceprofile.h"
 #include "llfloaterfonttest.h"
 #include "llfloatergodtools.h"
 #include "llfloaterhtmlcurrency.h"
@@ -98,6 +100,7 @@
 #include "llframestats.h"
 #include "llavataractions.h"
 #include "llgivemoney.h"
+#include "llgroupactions.h"
 #include "llgroupmgr.h"
 #include "llhoverview.h"
 #include "llhudeffecttrail.h"
@@ -139,6 +142,7 @@
 #include "llfloaternotificationsconsole.h"
 
 // <edit>
+#include "jcfloaterareasearch.h"
 #include "llcorehttputil.h"
 #include "llfloatermessagebuilder.h"
 #include "lltexteditor.h" // Initialize the text editor menu listeners in here
@@ -605,21 +609,26 @@ void set_merchant_SLM_menu()
 	gToolBar->getChild<LLView>("marketplace_listings_btn")->setEnabled(isInSecondlife);
 }
 
-void check_merchant_status()
+void check_merchant_status(bool force)
 {
 	if (!gSavedSettings.getBOOL("InventoryOutboxDisplayBoth"))
 	{
-		// Reset the SLM status: we actually want to check again, that's the point of calling check_merchant_status()
-		LLMarketplaceData::instance().setSLMStatus(MarketplaceStatusCodes::MARKET_PLACE_NOT_INITIALIZED);
-
+		if (force)
+		{
+			// Reset the SLM status: we actually want to check again, that's the point of calling check_merchant_status()
+			LLMarketplaceData::instance().setSLMStatus(MarketplaceStatusCodes::MARKET_PLACE_NOT_INITIALIZED);
+		}
 		// Hide SLM related menu item
 		gMenuHolder->getChild<LLView>("MarketplaceListings")->setVisible(FALSE);
 
 		// Also disable the toolbar button for Marketplace Listings
 		gToolBar->getChild<LLView>("marketplace_listings_btn")->setEnabled(false);
 
-		// Launch an SLM test connection to get the merchant status
-		LLMarketplaceData::instance().initializeSLM(boost::bind(&set_merchant_SLM_menu));
+		if (!gAgent.getRegionCapability("DirectDelivery").empty())
+		{
+			// Launch an SLM test connection to get the merchant status
+			LLMarketplaceData::instance().initializeSLM(boost::bind(&set_merchant_SLM_menu));
+		}
 	}
 }
 
@@ -755,8 +764,7 @@ void init_menus()
 	gMenuHolder->addChild(gLoginMenuBarView);
 
 	// Singu Note: Initialize common ScrollListMenus here
-	LFIDBearer::addCommonMenu(LLUICtrlFactory::getInstance()->buildMenu("menu_avs_list.xml", gMenuHolder)); // 0
-	//LFIDBearer::addCommonMenu(LLUICtrlFactory::getInstance()->buildMenu("menu_groups_list.xml")); // 1 // Singu TODO
+	LFIDBearer::buildMenus();
 
 	LLView* ins = gMenuBarView->getChildView("insert_world", true, false);
 	ins->setVisible(false);
@@ -1788,21 +1796,18 @@ class LLObjectTouch : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		handle_object_touch();
+		handle_object_touch(LLSelectMgr::getInstance()->getSelection()->getPrimaryObject(), &LLToolPie::getInstance()->getPick());
 		return true;
 	}
 };
 
-void handle_object_touch()
+void handle_object_touch(LLViewerObject* object, const LLPickInfo* const pick)
 {
-	LLViewerObject* object = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
 	if (!object) return;
-
-	LLPickInfo pick = LLToolPie::getInstance()->getPick();
 
 // [RLVa:KB] - Checked: 2010-04-11 (RLVa-1.2.0e) | Modified: RLVa-1.1.0l
 		// NOTE: fallback code since we really shouldn't be getting an active selection if we can't touch this
-		if ( (rlv_handler_t::isEnabled()) && (!gRlvHandler.canTouch(object, pick.mObjectOffset)) )
+		if ( (rlv_handler_t::isEnabled()) && (!gRlvHandler.canTouch(object, pick ? pick->mObjectOffset : LLVector3::zero)) )
 		{
 			RLV_ASSERT(false);
 			return;
@@ -1812,28 +1817,30 @@ void handle_object_touch()
 	// *NOTE: Hope the packets arrive safely and in order or else
 	// there will be some problems.
 	// *TODO: Just fix this bad assumption.
-	send_ObjectGrab_message(object, pick, LLVector3::zero);
-	send_ObjectDeGrab_message(object, pick);
+	send_ObjectGrab_message(object, true, pick);
+	send_ObjectGrab_message(object, false, pick);
 }
 
+bool enable_object_touch(LLViewerObject* obj, const LLVector3& offset = LLVector3::zero)
+{
+	bool new_value = obj && obj->flagHandleTouch();
+// [RLVa:KB] - Checked: 2010-11-12 (RLVa-1.2.1g) | Added: RLVa-1.2.1g
+	if (new_value && rlv_handler_t::isEnabled())
+	{
+		// RELEASE-RLVa: [RLVa-1.2.1] Make sure this stays in sync with handle_object_touch()
+		new_value = gRlvHandler.canTouch(obj, offset);
+	}
+// [/RLVa:KB]
+	return new_value;
+}
 
 bool enable_object_touch(const LLSD& userdata)
 {
-	LLViewerObject* obj = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
-
-	bool new_value = obj && obj->flagHandleTouch();
-// [RLVa:KB] - Checked: 2010-11-12 (RLVa-1.2.1g) | Added: RLVa-1.2.1g
-	if ( (rlv_handler_t::isEnabled()) && (new_value) )
-	{
-		// RELEASE-RLVa: [RLVa-1.2.1] Make sure this stays in sync with handle_object_touch()
-		new_value = gRlvHandler.canTouch(obj, LLToolPie::getInstance()->getPick().mObjectOffset);
-	}
-// [/RLVa:KB]
-
 	std::string touch_text;
 
 	// Update label based on the node touch name if available.
-	LLSelectNode* node = LLSelectMgr::getInstance()->getSelection()->getFirstRootNode();
+	auto selection = LLSelectMgr::getInstance()->getSelection();
+	LLSelectNode* node = selection->getFirstRootNode();
 	if (node && node->mValid && !node->mTouchName.empty())
 	{
 		touch_text = node->mTouchName;
@@ -1845,7 +1852,8 @@ bool enable_object_touch(const LLSD& userdata)
 
 	gMenuHolder->childSetText("Object Touch", touch_text);
 	gMenuHolder->childSetText("Attachment Object Touch", touch_text);
-	return new_value;
+
+	return enable_object_touch(selection->getPrimaryObject(), LLToolPie::getInstance()->getPick().mObjectOffset);
 };
 
 // One object must have touch sensor
@@ -2502,15 +2510,22 @@ BOOL enable_has_attachments(void*)
 //---------------------------------------------------------------------------
 // Avatar pie menu
 //---------------------------------------------------------------------------
-//void handle_follow(void *userdata)
-//{
-//	// follow a given avatar by ID
-//	LLViewerObject* objectp = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
-//	if (objectp)
-//	{
-//		gAgent.startFollowPilot(objectp->getID());
-//	}
-//}
+
+class LLObjectFollow : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		// follow a given avatar by ID
+		LLViewerObject* objectp = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
+		if (objectp)
+		{
+			if (auto av = objectp->getAvatarAncestor()) // Follow the avatar, not a control avatar or an attachment, if possible
+				objectp = av;
+			gAgent.startFollowPilot(objectp->getID(), true, gSavedSettings.getF32("SinguFollowDistance"));
+		}
+		return true;
+	}
+};
 
 bool enable_object_mute()
 {
@@ -2834,12 +2849,10 @@ class LLObjectPFLinksetsSelected : public view_listener_t
 
 // </edit>
 
-bool handle_go_to()
+void simulator_autopilot(const LLVector3d& pos)
 {
-	// try simulator autopilot
 	std::vector<std::string> strings;
 	std::string val;
-	LLVector3d pos = LLToolPie::getInstance()->getPick().mPosGlobal;
 	val = llformat("%.9g", pos.mdV[VX]);
 	strings.push_back(val);
 	val = llformat("%.9g", pos.mdV[VY]);
@@ -2847,6 +2860,14 @@ bool handle_go_to()
 	val = llformat("%.9g", pos.mdV[VZ]);
 	strings.push_back(val);
 	send_generic_message("autopilot", strings);
+}
+
+void handle_go_to(const LLVector3d& pos)
+{
+	gAgent.stopAutoPilot(true); // Go To cancels viewer autopilot
+
+	// try simulator autopilot
+	simulator_autopilot(pos);
 
 	LLViewerParcelMgr::getInstance()->deselectLand();
 
@@ -2865,14 +2886,14 @@ bool handle_go_to()
 
 	// Could be first use
 	LLFirstUse::useGoTo();
-	return true;
 }
 
 class LLGoToObject : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		return handle_go_to();
+		handle_go_to(LLToolPie::instance().getPick().mPosGlobal);
+		return true;
 	}
 };
 
@@ -3555,6 +3576,7 @@ class LLSelfSitOrStand : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
+		gAgent.stopAutoPilot(true);
 		if (gAgentAvatarp && gAgentAvatarp->isSitting())
 		{
 			gAgent.standUp();
@@ -3867,28 +3889,14 @@ bool is_object_sittable()
 }
 
 
-// only works on pie menu
-void handle_object_sit_or_stand()
+void handle_object_sit(LLViewerObject* object, const LLVector3& offset = LLVector3::zero)
 {
-	LLPickInfo pick = LLToolPie::getInstance()->getPick();
-	LLViewerObject *object = pick.getObject();;
-	if (!object || pick.mPickType == LLPickInfo::PICK_FLORA)
-	{
-		return;
-	}
-
-	if (sitting_on_selection())
-	{
-		gAgent.standUp();
-		return;
-	}
-
 	// get object selection offset 
 
 //	if (object && object->getPCode() == LL_PCODE_VOLUME)
 // [RLVa:KB] - Checked: 2010-03-06 (RLVa-1.2.0c) | Modified: RLVa-1.2.0c
 	if ( (object && object->getPCode() == LL_PCODE_VOLUME) &&
-		 ((!rlv_handler_t::isEnabled()) || (gRlvHandler.canSit(object, pick.mObjectOffset))) )
+		 ((!rlv_handler_t::isEnabled()) || (gRlvHandler.canSit(object, offset))) )
 // [/RLVa:KB]
 	{
 // [RLVa:KB] - Checked: 2010-08-29 (RLVa-1.2.1c) | Added: RLVa-1.2.1c
@@ -3909,10 +3917,31 @@ void handle_object_sit_or_stand()
 		gMessageSystem->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID());
 		gMessageSystem->nextBlockFast(_PREHASH_TargetObject);
 		gMessageSystem->addUUIDFast(_PREHASH_TargetID, object->mID);
-		gMessageSystem->addVector3Fast(_PREHASH_Offset, pick.mObjectOffset);
+		gMessageSystem->addVector3Fast(_PREHASH_Offset, offset);
 
 		object->getRegion()->sendReliableMessage();
 	}
+}
+
+// only works on pie menu
+void handle_object_sit_or_stand()
+{
+	LLPickInfo pick = LLToolPie::getInstance()->getPick();
+	LLViewerObject *object = pick.getObject();;
+	if (!object || pick.mPickType == LLPickInfo::PICK_FLORA)
+	{
+		return;
+	}
+
+	gAgent.stopAutoPilot(true);
+
+	if (sitting_on_selection())
+	{
+		gAgent.standUp();
+		return;
+	}
+
+	handle_object_sit(object, pick.mObjectOffset);
 }
 
 class LLObjectSitOrStand : public view_listener_t
@@ -4069,6 +4098,11 @@ void handle_reset_view()
 	}
 	else
 	{
+		if (gAgent.getAutoPilot())
+		{
+			gAgent.stopAutoPilot(true);
+		}
+
 		reset_view_final( true );
 	}
 }
@@ -6096,15 +6130,13 @@ class LLAvatarResetSkeletonAndAnimations : public view_listener_t
 
 };
 
-bool complete_give_money(const LLSD& notification, const LLSD& response, LLObjectSelectionHandle selection)
+bool complete_give_money(const LLSD& notification, const LLSD& response, LLViewerObject* objectp)
 {
 	S32 option = LLNotification::getSelectedOption(notification, response);
 	if (option == 0)
 	{
 		gAgent.setDoNotDisturb(false);
 	}
-
-	LLViewerObject* objectp = selection->getPrimaryObject();
 
 	// Show avatar's name if paying attachment
 	if (objectp && objectp->isAttachment())
@@ -6132,10 +6164,10 @@ bool complete_give_money(const LLSD& notification, const LLSD& response, LLObjec
 	return false;
 }
 
-void handle_give_money_dialog()
+void handle_give_money_dialog(LLViewerObject* obj)
 {
 	LLNotification::Params params("BusyModePay");
-	params.functor(boost::bind(complete_give_money, _1, _2, LLSelectMgr::getInstance()->getSelection()));
+	params.functor(boost::bind(complete_give_money, _1, _2, obj));
 
 	if (gAgent.isDoNotDisturb())
 	{
@@ -6152,7 +6184,7 @@ class LLPayObject : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		handle_give_money_dialog();
+		handle_give_money_dialog(LLSelectMgr::getInstance()->getSelection()->getPrimaryObject());
 		return true;
 	}
 };
@@ -6167,9 +6199,8 @@ bool enable_pay_avatar()
 // [/RLVa:KB]
 }
 
-bool enable_pay_object()
+bool enable_pay_object(LLViewerObject* object)
 {
-	LLViewerObject* object = LLSelectMgr::getInstance()->getSelection()->getPrimaryObject();
 	if( object )
 	{
 		LLViewerObject *parent = (LLViewerObject *)object->getParent();
@@ -6275,7 +6306,7 @@ class LLEnablePayObject : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		gMenuHolder->findControl(userdata["control"].asString())->setValue(enable_pay_avatar() || enable_pay_object());
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(enable_pay_avatar() || enable_pay_object(LLSelectMgr::getInstance()->getSelection()->getPrimaryObject()));
 		return true;
 	}
 };
@@ -8498,6 +8529,7 @@ void handle_rebake_textures(void*)
 	{
 		LLAppearanceMgr::instance().requestServerAppearanceUpdate();
 	}
+	gAgent.setIsCrossingRegion(false); // Attachments getting lost on TP
 }
 
 void toggle_visibility(void* user_data)
@@ -8968,23 +9000,56 @@ template<typename T> T* get_focused()
 	return t;
 }
 
-const LLWString get_slurl_for(const LLUUID& id, bool group)
+const JCFloaterAreaSearch::ObjectData* get_obj_data(const LLUUID& id)
 {
-	std::string str("secondlife:///app/");
-	str += group ? "group/" : "agent/";
-	return utf8str_to_wstring(str + id.asString() + "/about");
+	auto areasearch = JCFloaterAreaSearch::findInstance();
+	return areasearch ? areasearch->getObjectData(id) : nullptr;
 }
 
-void copy_profile_uri(const LLUUID& id, bool group)
+const std::string get_slurl_for(const LLUUID& id, const LFIDBearer::Type& type)
 {
-	gViewerWindow->getWindow()->copyTextToClipboard(get_slurl_for(id, group));
+	switch (type)
+	{
+	case LFIDBearer::GROUP: return LLGroupActions::getSLURL(id);
+	case LFIDBearer::AVATAR: return LLAvatarActions::getSLURL(id);
+	case LFIDBearer::OBJECT:
+	{
+		const auto& obj_data = get_obj_data(id);
+		if (!obj_data) return LLStringUtil::null;
+
+		LLSD sdQuery;
+		sdQuery["name"] = obj_data->name;
+		sdQuery["owner"] = obj_data->owner_id;
+
+		if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES) && (obj_data->owner_id != gAgentID))
+			sdQuery["rlv_shownames"] = true;
+
+		if (const auto obj = gObjectList.findObject(id))
+			if (const auto region = obj->getRegion())
+				sdQuery["slurl"] = LLSLURL(region->getName(), obj->getPositionAgent()).getLocationString();
+
+		return LLSLURL("objectim", id, LLURI::mapToQueryString(sdQuery)).getSLURLString();
+	}
+	case LFIDBearer::EXPERIENCE: return LLSLURL("experience", id, "profile").getSLURLString();
+	default: return LLStringUtil::null;
+	}
+}
+
+const LLWString get_wslurl_for(const LLUUID& id, const LFIDBearer::Type& type)
+{
+	return utf8str_to_wstring(get_slurl_for(id, type));
+}
+
+void copy_profile_uri(const LLUUID& id, const LFIDBearer::Type& type)
+{
+	gViewerWindow->getWindow()->copyTextToClipboard(get_wslurl_for(id, type));
 }
 
 class ListEnableAnySelected : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		gMenuHolder->findControl(userdata["control"].asString())->setValue(LFIDBearer::getActiveNumSelected());
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(LFIDBearer::getActiveNumSelected() != 0);
 		return true;
 	}
 };
@@ -9034,15 +9099,39 @@ class ListEnableIsNotFriend : public view_listener_t
 	}
 };
 
+class ListEnableUnmute : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		bool are_blocked = false;
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+			if (are_blocked = LLAvatarActions::isBlocked(id)) // If any are blocked, allow unblocking
+				break;
+
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(are_blocked);
+		return true;
+	}
+};
+
 class ListEnableMute : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		const uuid_vec_t& ids = LFIDBearer::getActiveSelectedIDs();
-		bool can_block = true;
-		for (uuid_vec_t::const_iterator it = ids.begin(); can_block && it != ids.end(); ++it)
-			can_block = LLAvatarActions::canBlock(*it);
-		gMenuHolder->findControl(userdata["control"].asString())->setValue(can_block);
+		bool blockable = false;
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+		{
+			if (!LLAvatarActions::canBlock(id)) // Exit early only when someone is unblockable
+			{
+				blockable = false;
+				break;
+			}
+			else if (blockable) // At least one is unblocked, keep looking for unblockables
+				continue;
+
+			blockable = !LLAvatarActions::isBlocked(id);
+		}
+
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(blockable);
 		return true;
 	}
 };
@@ -9075,11 +9164,52 @@ class ListBanFromGroup : public view_listener_t
 	}
 };
 
+void copy_from_ids(const uuid_vec_t & ids, std::function<std::string(const LLUUID&)> func);
+
+class ListCopyNames : public view_listener_t
+{
+	static std::string getGroupName(const LLUUID& id)
+	{
+		std::string ret;
+		gCacheName->getGroupName(id, ret);
+		return ret;
+	}
+
+	static std::string getAvatarName(const LLUUID& id)
+	{
+		std::string ret;
+		LLAvatarNameCache::getNSName(id, ret);
+		return ret;
+	}
+
+	static std::string getObjectName(const LLUUID& id)
+	{
+		const auto& obj_data = get_obj_data(id);
+		return obj_data ? obj_data->name : LLStringUtil::null;
+	}
+
+	static std::string getExperienceName(const LLUUID& id)
+	{
+		return LLExperienceCache::instance().get(id)[LLExperienceCache::NAME];
+	}
+
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		LLWString str;
+		const auto& type = LFIDBearer::getActiveType();
+		copy_from_ids(LFIDBearer::getActiveSelectedIDs(), type == LFIDBearer::GROUP ? getGroupName :
+			type == LFIDBearer::OBJECT ? getObjectName :
+			type == LFIDBearer::EXPERIENCE ? getExperienceName :
+			getAvatarName);
+		if (!str.empty()) LLView::getWindow()->copyTextToClipboard(str);
+		return true;
+	}
+};
 class ListCopySLURL : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		copy_profile_uri(LFIDBearer::getActiveSelectedID(), false);
+		copy_profile_uri(LFIDBearer::getActiveSelectedID(), LFIDBearer::getActiveType());
 		return true;
 	}
 };
@@ -9161,13 +9291,13 @@ bool can_show_web_profile()
 	return !gSavedSettings.getString("WebProfileURL").empty();
 }
 
-void show_log_browser(const LLUUID& id);
+void show_log_browser(const LLUUID& id, const LFIDBearer::Type& type);
 class ListShowLog : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
 		for (const LLUUID& id : LFIDBearer::getActiveSelectedIDs())
-			show_log_browser(id);
+			show_log_browser(id, LFIDBearer::getActiveType());
 		return true;
 	}
 };
@@ -9176,7 +9306,14 @@ class ListShowProfile : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		LLAvatarActions::showProfiles(LFIDBearer::getActiveSelectedIDs());
+		switch (LFIDBearer::getActiveType())
+		{
+		case LFIDBearer::AVATAR: LLAvatarActions::showProfiles(LFIDBearer::getActiveSelectedIDs()); break;
+		case LFIDBearer::GROUP: LLGroupActions::showProfiles(LFIDBearer::getActiveSelectedIDs()); break;
+		case LFIDBearer::OBJECT: for (const auto& id : LFIDBearer::getActiveSelectedIDs()) LLUrlAction::openURL(get_slurl_for(id, LFIDBearer::OBJECT)); break;
+		case LFIDBearer::EXPERIENCE: for (const auto& id : LFIDBearer::getActiveSelectedIDs()) LLFloaterExperienceProfile::showInstance(id); break;
+		default: break;
+		}
 		return true;
 	}
 };
@@ -9203,7 +9340,7 @@ class ListStartCall : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		LLAvatarActions::startCall(LFIDBearer::getActiveSelectedID());
+		(LFIDBearer::getActiveType() == LFIDBearer::GROUP ? LLGroupActions::startCall : LLAvatarActions::startCall)(LFIDBearer::getActiveSelectedID());
 		return true;
 	}
 };
@@ -9221,7 +9358,40 @@ class ListStartIM : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		LLAvatarActions::startIM(LFIDBearer::getActiveSelectedID());
+		const auto&& im = LFIDBearer::getActiveType() == LFIDBearer::GROUP ? [](const LLUUID& id) { LLGroupActions::startIM(id); } : LLAvatarActions::startIM;
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+			im(id);
+		return true;
+	}
+};
+
+const LLVector3d& get_av_pos(const LLUUID& id);
+class ListTeleportTo : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		const auto& id = LFIDBearer::getActiveSelectedID();
+		gAgent.teleportViaLocation(LFIDBearer::getActiveType() == LFIDBearer::OBJECT ? gObjectList.findObject(id)->getPositionGlobal() : get_av_pos(id));
+		return true;
+	}
+};
+
+class ListStalk : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		LLAvatarActions::showOnMap(LFIDBearer::getActiveSelectedID());
+		return true;
+	}
+};
+
+class ListStalkable : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		BOOL is_agent_mappable(const LLUUID& agent_id);
+		const auto& ids = LFIDBearer::getActiveSelectedIDs();
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(ids.size() == 1 && is_agent_mappable(ids[0]));
 		return true;
 	}
 };
@@ -9258,7 +9428,27 @@ class ListIsNearby : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		gMenuHolder->findControl(userdata["control"].asString())->setValue(is_nearby(LFIDBearer::getActiveSelectedID()));
+		const auto& id = LFIDBearer::getActiveSelectedID();
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(LFIDBearer::getActiveType() == LFIDBearer::OBJECT ? !!gObjectList.findObject(id) : is_nearby(id));
+		return true;
+	}
+};
+
+class ListFollow : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		gAgent.startFollowPilot(LFIDBearer::getActiveSelectedID(), true, gSavedSettings.getF32("SinguFollowDistance"));
+		return true;
+	}
+};
+
+class ListGoTo : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		auto id = LFIDBearer::getActiveSelectedID();
+		handle_go_to(LFIDBearer::getActiveType() == LFIDBearer::AVATAR ? get_av_pos(id) : gObjectList.findObject(id)->getPositionGlobal());
 		return true;
 	}
 };
@@ -9357,65 +9547,179 @@ class ListToggleMute : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		const uuid_vec_t& ids = LFIDBearer::getActiveSelectedIDs();
-		for (const auto& id : ids)
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
 			LLAvatarActions::toggleBlock(id);
 		return true;
 	}
 };
 
-struct MenuSLURLDict : public LLSingleton<MenuSLURLDict>
+class ListIsInGroup : public view_listener_t
 {
-	typedef std::function<void (const LLUUID&)> cb;
-	typedef std::function<bool (const LLUUID&)> vcb;
-	typedef std::map<std::string, std::pair<cb, vcb>> slurl_menu_map;
-	slurl_menu_map mEntries;
-	LLSINGLETON(MenuSLURLDict)
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		// Text Editor menus
-		LLTextEditor::setIsObjectBlockedCallback(boost::bind(&LLMuteList::isMuted, LLMuteList::getInstance(), _1, _2, 0));
-		LLTextEditor::setIsFriendCallback(LLAvatarActions::isFriend);
-		LLTextEditor::addMenuListeners(boost::bind(&MenuSLURLDict::action, this, _1, _2), boost::bind(&MenuSLURLDict::visible, this, _1, _2));
-
-		// Add the entries
-		insert("ShowWebProfile", boost::bind(LLAvatarActions::showProfile, _1, true), boost::bind(can_show_web_profile));
-		insert("Pay", LLAvatarActions::pay);
-		insert("Call", LLAvatarActions::startCall);
-		insert("Share", LLAvatarActions::share);
-		insert("AbuseReport", [](const LLUUID& id) { LLFloaterReporter::showFromObject(id); });
-		insert("InviteToGroup", [](const LLUUID& id) { LLAvatarActions::inviteToGroup(id); });
-		insert("BanFromGroup", [](const LLUUID& id) { ban_from_group(uuid_vec_t(1, id)); });
-		insert("ShowLog", [](const LLUUID& id) { show_log_browser(id); });
-		insert("OfferTeleport", [](const LLUUID& id) { LLAvatarActions::offerTeleport(id); }, [](const LLUUID& id) { return LLAvatarActions::canOfferTeleport(id); });
-		insert("RequestTeleport", LLAvatarActions::teleportRequest);
-		void teleport_to(const LLUUID& id);
-		insert("TeleportTo", teleport_to, is_nearby);
-		insert("Track", track_av, is_nearby);
-		insert("Focus", LLFloaterAvatarList::setFocusAvatar, is_nearby);
-		insert("ParcelEject", [](const LLUUID& id) { confirm_eject(uuid_vec_t(1, id)); }, is_nearby);
-		insert("Freeze", [](const LLUUID& id) { confirm_freeze(uuid_vec_t(1, id)); }, is_nearby);
-		insert("EstateBan", [](const LLUUID& id) { confirm_estate_ban(uuid_vec_t(1, id)); }, is_nearby);
-		insert("EstateEject", [](const LLUUID & id) { confirm_estate_kick(uuid_vec_t(1, id)); }, is_nearby);
-		insert("Mute", LLAvatarActions::toggleBlock, [](const LLUUID& id) { return LLAvatarActions::canBlock(id) && !LLAvatarActions::isBlocked(id); });
-		insert("Unmute", LLAvatarActions::toggleBlock, LLAvatarActions::isBlocked);
+		auto in_group = false;
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+			if (!(in_group = LLGroupActions::isInGroup(id)))
+				break;
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(in_group);
+		return true;
 	}
+};
 
-public:
-	void insert(const std::string& key, cb callback, vcb vcallback = nullptr)
+class ListNotInGroup : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		mEntries[key] = std::make_pair(callback, vcallback);
+		auto in_group = true;
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+			if (in_group = LLGroupActions::isInGroup(id))
+				break;
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(!in_group);
+		return true;
 	}
+};
 
-	void action(const std::string& cmd, LLUUID id) const
+class ListLeave : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		auto it = mEntries.find(cmd);
-		if (it != mEntries.end())
-			(*it).second.first(id);
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+			LLGroupActions::leave(id);
+		return true;
 	}
-	bool visible(const std::string& cmd, LLUUID id) const
+};
+
+class ListJoin : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		auto it = mEntries.find(cmd);
-		return it == mEntries.end() || !(*it).second.second || (*it).second.second(id);
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+			LLGroupActions::join(id);
+		return true;
+	}
+};
+
+class ListActivate : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+			LLGroupActions::activate(id);
+		return true;
+	}
+};
+
+class ListObjectCamTo : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		gAgentCamera.lookAtObject(LFIDBearer::getActiveSelectedID(), false);
+		return true;
+	}
+};
+
+class ListObjectSit : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		gAgent.stopAutoPilot(true);
+		handle_object_sit(gObjectList.findObject(LFIDBearer::getActiveSelectedID()));
+		return true;
+	}
+};
+
+class ListObjectPay : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		handle_give_money_dialog(gObjectList.findObject(LFIDBearer::getActiveSelectedID()));
+		return true;
+	}
+};
+
+class ListObjectEnablePay : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		const auto& ids = LFIDBearer::getActiveSelectedIDs();
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(ids.size() == 1 && enable_pay_object(gObjectList.findObject(ids[0])));
+		return true;
+	}
+};
+
+void list_for_each_object(std::function<void(LLViewerObject*)> func)
+{
+	for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+		if (auto obj = gObjectList.findObject(id))
+			func(obj);
+}
+
+class ListObjectTouch : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		list_for_each_object([](LLViewerObject* obj) { if (enable_object_touch(obj)) handle_object_touch(obj); });
+		return true;
+	}
+};
+
+bool list_has_valid_object(std::function<bool(LLViewerObject*)> func)
+{
+	for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+		if (func(gObjectList.findObject(id)))
+			return true; // First is fine enough, we'll use all we can
+	return false;
+}
+
+// One object must have touch sensor
+class ListObjectEnableTouch : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		gMenuHolder->findControl(userdata["control"].asString())->setValue(list_has_valid_object([](LLViewerObject* obj){ return enable_object_touch(obj); }));
+		return true;
+	}
+};
+
+class ListObjectEdit : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		std::vector<LLViewerObject*> objs;
+		auto func = rlv_handler_t::isEnabled() ? static_cast<std::function<void(LLViewerObject* obj)>>([&objs](LLViewerObject* obj) { if (gRlvHandler.canEdit(obj)) objs.push_back(obj); }) : [&objs](LLViewerObject* obj) { if (obj) objs.push_back(obj); };
+		list_for_each_object(func);
+
+		if (objs.empty()) return true;
+
+		bool new_selection = userdata.asBoolean();
+
+		auto& selmgr = LLSelectMgr::instance();
+		if (new_selection) selmgr.deselectAll();
+
+		auto selection = new_selection ? nullptr : selmgr.getSelection();
+		auto old_primary = selection ? selection->getPrimaryObject() : nullptr;
+		for (const auto& obj : objs)
+			selmgr.selectObjectAndFamily(obj, true);
+
+		if (old_primary) selmgr.selectObjectAndFamily(old_primary);
+
+		if (new_selection) handle_object_edit();
+		return true;
+	}
+};
+
+class ListObjectCanEdit : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		bool new_selection = userdata["data"].asBoolean();
+		auto& selmgr = LLSelectMgr::instance();
+		auto selection = new_selection ? nullptr : selmgr.getSelection();
+		bool has_old_selection = selection && !selection->isEmpty() && !selection->isAttachment();
+		auto func = rlv_handler_t::isEnabled() ? static_cast<std::function<bool(LLViewerObject* obj)>>([](LLViewerObject* obj) { return !!gRlvHandler.canEdit(obj); }) : [](LLViewerObject* obj) { return !!obj; };
+		gMenuHolder->findControl(userdata["control"].asString())
+			->setValue((new_selection || has_old_selection) && list_has_valid_object(func));
+		return true;
 	}
 };
 
@@ -9665,6 +9969,7 @@ void initialize_menus()
 	addMenu(new LLOHGOD(), "Object.EnableExplode");
 	add_wave_listeners();
 	add_dae_listeners();
+	addMenu(new LLObjectFollow(), "Object.Follow");
 	// </edit>
 	addMenu(new LLObjectMute(), "Object.Mute");
 	addMenu(new LLObjectBuy(), "Object.Buy");
@@ -9772,10 +10077,12 @@ void initialize_menus()
 	addMenu(new ListEnableCall(), "List.EnableCall");
 	addMenu(new ListEnableIsFriend(), "List.EnableIsFriend");
 	addMenu(new ListEnableIsNotFriend(), "List.EnableIsNotFriend");
+	addMenu(new ListEnableUnmute(), "List.EnableUnmute");
 	addMenu(new ListEnableMute(), "List.EnableMute");
 	addMenu(new ListEnableOfferTeleport(), "List.EnableOfferTeleport");
 	addMenu(new ListVisibleWebProfile(), "List.VisibleWebProfile");
 	addMenu(new ListBanFromGroup(), "List.BanFromGroup");
+	addMenu(new ListCopyNames(), "List.CopyNames");
 	addMenu(new ListCopySLURL(), "List.CopySLURL");
 	addMenu(new ListCopyUUIDs(), "List.CopyUUIDs");
 	addMenu(new ListInviteToGroup(), "List.InviteToGroup");
@@ -9792,18 +10099,36 @@ void initialize_menus()
 	addMenu(new ListStartCall(), "List.StartCall");
 	addMenu(new ListStartConference(), "List.StartConference");
 	addMenu(new ListStartIM(), "List.StartIM");
+	addMenu(new ListStalk, "List.Stalk");
+	addMenu(new ListStalkable, "List.Stalkable");
+	addMenu(new ListTeleportTo, "List.TeleportTo");
 	addMenu(new ListAbuseReport(), "List.AbuseReport");
 	addMenu(new ListIsNearby, "List.IsNearby");
+	addMenu(new ListFollow, "List.Follow");
+	addMenu(new ListGoTo, "List.GoTo");
 	addMenu(new ListTrack, "List.Track");
 	addMenu(new ListEject(), "List.ParcelEject");
 	addMenu(new ListFreeze(), "List.Freeze");
 	addMenu(new ListEstateBan(), "List.EstateBan");
 	addMenu(new ListEstateEject(), "List.EstateEject");
 	addMenu(new ListToggleMute(), "List.ToggleMute");
+	addMenu(new ListIsInGroup, "List.IsInGroup");
+	addMenu(new ListNotInGroup, "List.NotInGroup");
+	addMenu(new ListLeave, "List.Leave");
+	addMenu(new ListJoin, "List.Join");
+	addMenu(new ListActivate, "List.Activate");
+	addMenu(new ListObjectCamTo, "List.Object.CamTo");
+	addMenu(new ListObjectSit, "List.Object.Sit");
+	addMenu(new ListObjectPay, "List.Object.Pay");
+	addMenu(new ListObjectEnablePay, "List.Object.EnablePay");
+	addMenu(new ListObjectTouch, "List.Object.Touch");
+	addMenu(new ListObjectEnableTouch, "List.Object.EnableTouch");
+	addMenu(new ListObjectEdit, "List.Object.Edit");
+	addMenu(new ListObjectCanEdit, "List.Object.CanEdit");
 
 	add_radar_listeners();
 
-	MenuSLURLDict::getInstance();
+	LLTextEditor::addMenuListeners();
 
 	// Media Ctrl menus
 	addMenu(new MediaCtrlCopyURL(), "Copy.PageURL");
@@ -9836,9 +10161,8 @@ void initialize_menus()
 void region_change()
 {
 	// Remove current dynamic items
-	for (custom_menu_item_list_t::iterator i = gCustomMenuItems.begin(); i != gCustomMenuItems.end(); ++i)
+	for (auto item : gCustomMenuItems)
 	{
-		LLMenuItemCallGL* item = (*i);
 		item->getParent()->removeChild(item);
 		delete item;
 	}
@@ -9877,7 +10201,7 @@ void parse_simulator_features()
 		LLMenuGL* menu = dynamic_cast<LLMenuGL*>(marker->getParent());
 		if (!menu) continue;
 
-		std::list<LLMenuItemGL*>::iterator it = menu->find(marker);
+		auto it = menu->find(marker);
 
 		for (LLSD::map_iterator j = i->second.beginMap(); j != i->second.endMap(); ++j)
 		{

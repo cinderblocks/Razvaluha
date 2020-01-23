@@ -336,12 +336,21 @@ void LLPanelAvatarFirstLife::enableControls(BOOL self)
 void show_picture(const LLUUID& id, const std::string& name);
 static std::string profile_picture_title(const std::string& str) { return "Profile Picture: " + str; }
 static void show_partner_help() { LLNotificationsUtil::add("ClickPartnerHelpAvatar", LLSD(), LLSD(), boost::bind(LLPanelAvatarSecondLife::onClickPartnerHelpLoadURL, _1, _2)); }
-void show_log_browser(const LLUUID& id)
+void show_log_browser(const LLUUID& id, const LFIDBearer::Type& type)
 {
 	void show_log_browser(const std::string& name, const std::string& id);
-	LLAvatarName av_name;
-	LLAvatarNameCache::get(id, &av_name);
-	show_log_browser(av_name.getLegacyName(), id.asString());
+	std::string name;
+	if (type == LFIDBearer::AVATAR)
+	{
+		LLAvatarName av_name;
+		LLAvatarNameCache::get(id, &av_name);
+		name = av_name.getLegacyName();
+	}
+	else // GROUP
+	{
+		gCacheName->getGroupName(id, name);
+	}
+	show_log_browser(name, id.asString());
 }
 BOOL LLPanelAvatarSecondLife::postBuild()
 {
@@ -367,7 +376,7 @@ BOOL LLPanelAvatarSecondLife::postBuild()
 	getChild<LLUICtrl>("GroupInvite_Button")->setCommitCallback(boost::bind(static_cast<void(*)(const LLUUID&)>(LLAvatarActions::inviteToGroup), boost::bind(&LLPanelAvatar::getAvatarID, pa)));
 
 	getChild<LLUICtrl>("Add Friend...")->setCommitCallback(boost::bind(LLAvatarActions::requestFriendshipDialog, boost::bind(&LLPanelAvatar::getAvatarID, pa)));
-	getChild<LLUICtrl>("Log")->setCommitCallback(boost::bind(show_log_browser, boost::bind(&LLPanelAvatar::getAvatarID, pa)));
+	getChild<LLUICtrl>("Log")->setCommitCallback(boost::bind(show_log_browser, boost::bind(&LLPanelAvatar::getAvatarID, pa), LFIDBearer::AVATAR));
 	getChild<LLUICtrl>("Pay...")->setCommitCallback(boost::bind(LLAvatarActions::pay, boost::bind(&LLPanelAvatar::getAvatarID, pa)));
 	if (LLUICtrl* ctrl = findChild<LLUICtrl>("Mute"))
 	{
@@ -1239,13 +1248,12 @@ void LLPanelAvatar::setOnlineStatus(EOnlineStatus online_status)
 
 void LLPanelAvatar::setAvatarID(const LLUUID &avatar_id)
 {
-	auto dnname = getChild<LLNameEditor>("dnname");
 	if (avatar_id != mAvatarID)
 	{
 		if (mAvatarID.notNull())
 			LLAvatarPropertiesProcessor::getInstance()->removeObserver(mAvatarID, this);
 		mAvatarID = avatar_id;
-		dnname->setNameID(avatar_id, false);
+		getChild<LLNameEditor>("dnname")->setNameID(avatar_id, LFIDBearer::AVATAR);
 	}
 
 	if (avatar_id.isNull()) return;
@@ -1273,8 +1281,6 @@ void LLPanelAvatar::setAvatarID(const LLUUID &avatar_id)
 
 	if (LLDropTarget* drop_target = findChild<LLDropTarget>("drop_target_rect"))
 		drop_target->setEntityID(mAvatarID);
-
-	dnname->setShowCompleteName(gSavedSettings.getBOOL("SinguCompleteNameProfiles"));
 
 	if (auto key_edit = getChildView("avatar_key"))
 		key_edit->setValue(mAvatarID.asString());
@@ -1405,7 +1411,7 @@ void LLPanelAvatar::onClickCopy(const LLSD& val)
 	}
 	else
 	{
-		void copy_profile_uri(const LLUUID& id, bool group = false);
+		void copy_profile_uri(const LLUUID& id, const LFIDBearer::Type& type = LFIDBearer::AVATAR);
 		copy_profile_uri(mAvatarID);
 	}
 }

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <panel
-  layout="topleft"
   left="0"
-  top="0"
+  bottom="100"
   width="300"
   height="100"
   min_height="100"
@@ -29,7 +28,6 @@
     (empty)
   </panel.string>
    <text
-      layout="topleft"
       name="text_name"
       left="3"
       right="120"
@@ -38,7 +36,6 @@
       Experience List
    </text>
    <text
-      layout="topleft"
       name="text_count"
       left="125"
       right="-1"
@@ -61,7 +58,6 @@
       label="Name"/>
   </scroll_list>
   <button
-    layout="topleft"
     follows="top|right"
     bottom="58"
     left_delta="228"
@@ -70,14 +66,12 @@
     name="btn_add"
     label="Add..."/>
   <button
-    layout="topleft"
     follows="top|right"
     width="64"
     height="20"
     name="btn_remove"
     label="Remove"/>
   <button
-    layout="topleft"
     follows="top|right"
     width="64"
     height="20"

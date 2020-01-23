@@ -3536,7 +3536,7 @@ LLViewerMediaImpl::canCut() const
 ////////////////////////////////////////////////////////////////////////////////
 // virtual
 void
-LLViewerMediaImpl::copy()
+LLViewerMediaImpl::copy() const
 {
 	if (mMediaSource)
 		mMediaSource->copy();

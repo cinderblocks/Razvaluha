@@ -17,6 +17,14 @@ if(NOT DEFINED COMMON_CMAKE_DIR)
     set(COMMON_CMAKE_DIR "${CMAKE_SOURCE_DIR}/cmake")
 endif(NOT DEFINED COMMON_CMAKE_DIR)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# https://blog.kitware.com/upcoming-in-cmake-2-8-12-osx-rpath-support/
+set(CMAKE_MACOSX_RPATH ON)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF)
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 get_property(_isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -37,35 +45,44 @@ option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
 option(USESYSTEMLIBS "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
 option(STANDALONE "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
 if (USESYSTEMLIBS)
-    set(STANDALONE ON)
+  set(STANDALONE ON)
 elseif (STANDALONE)
-    set(USESYSTEMLIBS ON)
+  set(USESYSTEMLIBS ON)
 endif (USESYSTEMLIBS)
 
-set(USE_PRECOMPILED_HEADERS ON CACHE BOOL "Enable use of precompiled header directives where supported.")
+option(USE_PRECOMPILED_HEADERS "Enable use of precompiled header directives where supported." ON)
 option(INCREMENTAL_LINK "Use incremental linking on win32 builds (enable for faster links on some machines)" OFF)
 option(USE_PRECOMPILED_HEADERS "Enable use of precompiled header directives where supported." ON)
 option(USE_LTO "Enable global and interprocedural optimizations" OFF)
 option(FULL_DEBUG_SYMS "Enable Generation of full pdb on msvc" OFF)
-option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
 
 # Configure crash reporting
 option(USE_CRASHPAD "Build support for crashpad reporting engine" OFF)
-set(CRASHPAD_URL "" CACHE STRING "Crashpad endpoint url")
+if (DEFINED ENV{VIEWER_USE_CRASHPAD})
+  set(USE_CRASHPAD $ENV{VIEWER_USE_CRASHPAD})
+endif()
+
+if (DEFINED ENV{VIEWER_CRASHPAD_URL})
+  set(CRASHPAD_URL $ENV{VIEWER_CRASHPAD_URL} CACHE STRING "Viewer Channel Base Name")
+else()
+  set(CRASHPAD_URL "" CACHE STRING "Crashpad endpoint url")
+endif()
+
 set(VIEWER_SYMBOL_FILE "" CACHE STRING "Name of tarball into which to place symbol files")
 
 # Media Plugins
 option(ENABLE_MEDIA_PLUGINS "Turn off building media plugins if they are imported by third-party library mechanism" ON)
+option(LIBVLCPLUGIN "Turn off building support for libvlc plugin" ON)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(LIBVLCPLUGIN OFF)
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 # Mallocs
 set(DISABLE_TCMALLOC OFF CACHE BOOL "Disable linkage of TCMalloc. (64bit builds automatically disable TCMalloc)")
 set(DISABLE_FATAL_WARNINGS TRUE CACHE BOOL "Set this to FALSE to enable fatal warnings.")
 
 # Audio Engines
-option(FMODSTUDIO "Build with support for the FMOD Studio audio engine" ON)
-
-# Window implementation
-option(LLWINDOW_SDL2 "Use SDL2 for window and input handling" OFF)
+option(USE_FMODSTUDIO "Build with support for the FMOD Studio audio engine" OFF)
 
 # Proprietary Library Features
 option(USE_NVAPI "Use nvapi driver interface library" OFF)
@@ -96,7 +113,7 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/Server.cmake)
   set(INSTALL_PROPRIETARY ON CACHE BOOL "Install proprietary binaries")
 endif (EXISTS ${CMAKE_SOURCE_DIR}/Server.cmake)
 set(TEMPLATE_VERIFIER_OPTIONS "" CACHE STRING "Options for scripts/template_verifier.py")
-set(TEMPLATE_VERIFIER_MASTER_URL "https://bitbucket.org/alchemyviewer/master-message-template/raw/tip/message_template.msg" CACHE STRING "Location of the master message template")
+set(TEMPLATE_VERIFIER_MASTER_URL "https://git.alchemyviewer.org/alchemy/master-message-template/raw/master/message_template.msg" CACHE STRING "Location of the master message template")
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
@@ -226,47 +243,59 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LL_ARCH_DIR universal-darwin)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
+# Platform specific
+if (WINDOWS)
+  option(LLWINDOW_SDL2 "Use SDL2 for window and input handling. Windows only" OFF)
+endif()
+
 # Default deploy grid
 set(GRID agni CACHE STRING "Target Grid")
 
-set(VIEWER_PRODUCT_NAME "Singularity" CACHE STRING "Viewer Base Name")
-string(TOLOWER ${VIEWER_PRODUCT_NAME} VIEWER_PRODUCT_NAME_LOWER)
+if (DEFINED ENV{VIEWER_CHANNEL_BASE})
+  set(VIEWER_CHANNEL_BASE $ENV{VIEWER_CHANNEL_BASE} CACHE STRING "Viewer Channel Base Name" FORCE)
+else()
+  set(VIEWER_CHANNEL_BASE "Singularity" CACHE STRING "Viewer Channel Base Name")
+endif()
 
-set(VIEWER_CHANNEL_BASE "Test" CACHE STRING "Viewer Channel Name")
-set(VIEWER_CHANNEL "${VIEWER_PRODUCT_NAME} ${VIEWER_CHANNEL_BASE}")
-string(TOLOWER ${VIEWER_CHANNEL} VIEWER_CHANNEL_LOWER)
+if (DEFINED ENV{VIEWER_CHANNEL_TYPE})
+  set(VIEWER_CHANNEL_TYPE $ENV{VIEWER_CHANNEL_TYPE} CACHE STRING "Viewer Channel Type Name" FORCE)
+else()
+  set(VIEWER_CHANNEL_TYPE "Test" CACHE STRING "Viewer Channel Type Name")
+endif()
+
+if (DEFINED ENV{VIEWER_CHANNEL_CODENAME})
+  set(VIEWER_CHANNEL_CODENAME $ENV{VIEWER_CHANNEL_CODENAME} CACHE STRING "Viewer Channel Code Name for Project type" FORCE)
+else()
+  set(VIEWER_CHANNEL_CODENAME "Default" CACHE STRING "Viewer Channel Code Name for Project type")
+endif()
+
+if("${VIEWER_CHANNEL_TYPE}" STREQUAL "Project")
+  set(VIEWER_CHANNEL "${VIEWER_CHANNEL_BASE} ${VIEWER_CHANNEL_TYPE} ${VIEWER_CHANNEL_CODENAME}")
+else()
+  set(VIEWER_CHANNEL "${VIEWER_CHANNEL_BASE} ${VIEWER_CHANNEL_TYPE}")
+endif()
+
+string(TOLOWER "${VIEWER_CHANNEL_BASE}" VIEWER_BRANDING_ID)
+string(REPLACE " " "-" VIEWER_BRANDING_ID ${VIEWER_BRANDING_ID})
+set(VIEWER_BINARY_NAME "${VIEWER_BRANDING_ID}-bin" CACHE STRING
+    "The name of the viewer executable to create.")
+
 string(REPLACE " " "" VIEWER_CHANNEL_ONEWORD ${VIEWER_CHANNEL})
+set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_ONEWORD} CACHE STRING "Prefix used for resulting artifacts.")
 
 option(VIEWER_CHANNEL_GRK "Greek character(s) to represent the viewer channel for support purposes, override only for special branches" "")
 if (NOT VIEWER_CHANNEL_GRK)
-    if (1) # This branch has a special indicator
-        set(VIEWER_CHANNEL_GRK "\\u03BC") # "�"
-    elseif (VIEWER_CHANNEL_BASE MATCHES "Test")
-        set(VIEWER_CHANNEL_GRK "\\u03C4") # "τ"
-    elseif (VIEWER_CHANNEL_BASE MATCHES "Alpha")
-        set(VIEWER_CHANNEL_GRK "\\u03B1") # "α"
-    elseif (VIEWER_CHANNEL_BASE MATCHES "Beta")
-        set(VIEWER_CHANNEL_GRK "\\u03B2") # "β"
-    endif ()
+  if (VIEWER_CHANNEL_TYPE MATCHES "Test")
+    set(VIEWER_CHANNEL_GRK "\\u03C4") # "τ"
+  elseif (VIEWER_CHANNEL_TYPE MATCHES "Alpha")
+    set(VIEWER_CHANNEL_GRK "\\u03B1") # "α"
+  elseif (VIEWER_CHANNEL_TYPE MATCHES "Beta")
+    set(VIEWER_CHANNEL_GRK "\\u03B2") # "β"
+  endif ()
 endif (NOT VIEWER_CHANNEL_GRK)
-
-if(VIEWER_CHANNEL_LOWER MATCHES "^${VIEWER_PRODUCT_NAME_LOWER} release")
-  set(VIEWER_PACKAGE_ID "${VIEWER_PRODUCT_NAME}Release")
-  set(VIEWER_EXE_STRING "${VIEWER_PRODUCT_NAME}Viewer")
-  set(VIEWER_SHORTCUT_STRING "${VIEWER_PRODUCT_NAME} Viewer")
-else()
-  set(VIEWER_PACKAGE_ID ${VIEWER_CHANNEL_ONEWORD})
-  set(VIEWER_EXE_STRING ${VIEWER_CHANNEL_ONEWORD})
-  set(VIEWER_SHORTCUT_STRING ${VIEWER_CHANNEL})
-endif()
-
-set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_ONEWORD} CACHE STRING "Prefix used for resulting artifacts.")
-
-set(VIEWER_BRANDING_ID "singularity" CACHE STRING "Viewer branding id")
 
 option(ENABLE_SIGNING "Enable signing the viewer" OFF)
 set(SIGNING_IDENTITY "" CACHE STRING "Specifies the signing identity to use, if necessary.")
-set(VERSION_BUILD "0" CACHE STRING "Revision number passed in from the outside")
 
 source_group("CMake Rules" FILES CMakeLists.txt)
 

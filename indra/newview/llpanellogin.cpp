@@ -236,6 +236,10 @@ LLPanelLogin::LLPanelLogin(const LLRect& rect)
 
 	reshape(rect.getWidth(), rect.getHeight());
 
+#ifndef LL_FMODSTUDIO
+	getChildView("fmod_logo")->setVisible(false);
+#endif
+
 	LLComboBox* username_combo(getChild<LLComboBox>("username_combo"));
 	username_combo->setCommitCallback(boost::bind(LLPanelLogin::onSelectLoginEntry, _2));
 	username_combo->setFocusLostCallback(boost::bind(&LLPanelLogin::onLoginComboLostFocus, this, username_combo));
@@ -265,8 +269,8 @@ LLPanelLogin::LLPanelLogin(const LLRect& rect)
 	location_combo->setFocusLostCallback( boost::bind(&LLPanelLogin::onLocationSLURL, this) );
 	
 	LLComboBox* server_choice_combo = getChild<LLComboBox>("grids_combo");
-	server_choice_combo->setCommitCallback(boost::bind(&LLPanelLogin::onSelectGrid, _1));
-	server_choice_combo->setFocusLostCallback(boost::bind(&LLPanelLogin::onSelectGrid, server_choice_combo));
+	server_choice_combo->setCommitCallback(boost::bind(&LLPanelLogin::onSelectGrid, this, _1));
+	server_choice_combo->setFocusLostCallback(boost::bind(&LLPanelLogin::onSelectGrid, this, server_choice_combo));
 	
 	// Load all of the grids, sorted, and then add a bar and the current grid at the top
 	updateGridCombo();
@@ -1073,7 +1077,7 @@ void LLPanelLogin::onSelectGrid(LLUICtrl *ctrl)
 	{
 		auto handle = ctrl->getHandle();
 		LLCoros::instance().launch("HippoGridManager", [=]{
-			HippoGridInfo* info(new HippoGridInfo("")); // Start off with empty grid name, otherwise we don't know what to name
+			HippoGridInfo* info(new HippoGridInfo(LLStringUtil::null)); // Start off with empty grid name, otherwise we don't know what to name
 			info->setLoginUri(val);
 			std::string grid(val);
 			try
@@ -1108,9 +1112,7 @@ void LLPanelLogin::onSelectGrid(LLUICtrl *ctrl)
 			if (auto ctrl = handle.get())
 				ctrl->setValue(grid);
 
-			gHippoGridManager->setCurrentGrid(grid);
-			ctrl->setValue(grid);
-			sInstance->addFavoritesToStartLocation();
+			addFavoritesToStartLocation();
 
 			/*
 			 * Determine whether or not the value in the start_location_combo makes sense
@@ -1122,7 +1124,7 @@ void LLPanelLogin::onSelectGrid(LLUICtrl *ctrl)
 			 * https://grid.example.com/region/Party%20Town/20/30/5 specify a particular
 			 * grid; in those cases we want to clear the location.
 			 */
-			auto location_combo = sInstance->getChild<LLComboBox>("start_location_combo");
+			auto location_combo = getChild<LLComboBox>("start_location_combo");
 			S32 index = location_combo->getCurrentIndex();
 			switch (index)
 			{

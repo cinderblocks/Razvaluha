@@ -24,16 +24,13 @@ void onNotifyButtonPress(const LLSD& notification, const LLSD& response, std::st
 	S32 option = LLNotificationsUtil::getSelectedOption(notification, response);
 	if (option == 0) // URL
 	{
-		std::string escaped_url = LLWeb::escapeURL(url);
 		if (gViewerWindow)
 		{
-			gViewerWindow->getWindow()->spawnWebBrowser(escaped_url, true);
+			gViewerWindow->getWindow()->spawnWebBrowser(LLWeb::escapeURL(url), true);
 		}
 	}
-	if (option == 1) // Later
-	{
-	}
 }
+
 void onCompleted(const LLSD& data, bool release)
 {
 	S32 build(LLVersionInfo::getBuild());
@@ -92,7 +89,7 @@ void check_for_updates()
 		{
 			type = "release";
 		}
-		else if (channel == "Singularity Test" || channel == "Singularity Alpha")
+		else if (channel == "Singularity Test" || channel == "Singularity Alpha" || channel == "Singularity Beta")
 		{
 			type = "alpha";
 		}

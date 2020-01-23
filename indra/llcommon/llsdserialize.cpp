@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llsdserialize.cpp
  * @author Phoenix
@@ -1313,8 +1311,8 @@ S32 LLSDNotationFormatter::format_impl(const LLSD& data, std::ostream& ostr, U32
 		}
 
 		bool need_comma = false;
-		LLSD::map_const_iterator iter = data.beginMap();
-		LLSD::map_const_iterator end = data.endMap();
+        auto iter = data.beginMap();
+        auto end = data.endMap();
 		for(; iter != end; ++iter)
 		{
 			if(need_comma) ostr << ",";
@@ -1332,8 +1330,8 @@ S32 LLSDNotationFormatter::format_impl(const LLSD& data, std::ostream& ostr, U32
 	{
 		ostr << post << pre << "[";
 		bool need_comma = false;
-		LLSD::array_const_iterator iter = data.beginArray();
-		LLSD::array_const_iterator end = data.endArray();
+        auto iter = data.beginArray();
+        auto end = data.endArray();
 		for(; iter != end; ++iter)
 		{
 			if(need_comma) ostr << ",";
@@ -1407,22 +1405,22 @@ S32 LLSDNotationFormatter::format_impl(const LLSD& data, std::ostream& ostr, U32
 		// *FIX: memory inefficient.
 		const std::vector<U8>& buffer = data.asBinary();
 		ostr << "b(" << buffer.size() << ")\"";
-		if(buffer.size())
+		if(!buffer.empty())
 		{
 			if (options & LLSDFormatter::OPTIONS_PRETTY_BINARY)
 			{
 				std::ios_base::fmtflags old_flags = ostr.flags();
 				ostr.setf( std::ios::hex, std::ios::basefield );
 				ostr << "0x";
-				for (int i = 0; i < buffer.size(); i++)
+				for (unsigned char i : buffer)
 				{
-					ostr << (int) buffer[i];
+					ostr << static_cast<int>(i);
 				}
 				ostr.flags(old_flags);
 			}
 			else
 			{
-				ostr.write((const char*)&buffer[0], buffer.size());
+				ostr.write(reinterpret_cast<const char*>(&buffer[0]), buffer.size());
 			}
 		}
 		ostr << "\"";
@@ -1459,9 +1457,9 @@ S32 LLSDBinaryFormatter::format(const LLSD& data, std::ostream& ostr, U32 option
 	{
 		ostr.put('{');
 		U32 size_nbo = htonl(data.size());
-		ostr.write((const char*)(&size_nbo), sizeof(U32));
-		LLSD::map_const_iterator iter = data.beginMap();
-		LLSD::map_const_iterator end = data.endMap();
+		ostr.write(reinterpret_cast<const char*>(&size_nbo), sizeof(U32));
+        auto iter = data.beginMap();
+        auto end = data.endMap();
 		for(; iter != end; ++iter)
 		{
 			ostr.put('k');
@@ -1476,9 +1474,9 @@ S32 LLSDBinaryFormatter::format(const LLSD& data, std::ostream& ostr, U32 option
 	{
 		ostr.put('[');
 		U32 size_nbo = htonl(data.size());
-		ostr.write((const char*)(&size_nbo), sizeof(U32));
-		LLSD::array_const_iterator iter = data.beginArray();
-		LLSD::array_const_iterator end = data.endArray();
+		ostr.write(reinterpret_cast<const char*>(&size_nbo), sizeof(U32));
+        auto iter = data.beginArray();
+        auto end = data.endArray();
 		for(; iter != end; ++iter)
 		{
 			format_count += format(*iter, ostr);
@@ -1544,7 +1542,7 @@ S32 LLSDBinaryFormatter::format(const LLSD& data, std::ostream& ostr, U32 option
 		const std::vector<U8>& buffer = data.asBinary();
 		U32 size_nbo = htonl(buffer.size());
 		ostr.write((const char*)(&size_nbo), sizeof(U32));
-		if(buffer.size()) ostr.write((const char*)&buffer[0], buffer.size());
+		if(!buffer.empty()) ostr.write((const char*)&buffer[0], buffer.size());
 		break;
 	}
 
@@ -2140,15 +2138,6 @@ std::string zip_llsd(LLSD& data)
 	deflateEnd(&strm);
 	free(output);
 
-#if 0 //verify results work with unzip_llsd
-	std::istringstream test(result);
-	LLSD test_sd;
-	if (!unzip_llsd(test_sd, test, result.size()))
-	{
-		LL_ERRS() << "Invalid compression result!" << LL_ENDL;
-	}
-#endif
-
 	return result;
 }
 
@@ -2158,7 +2147,15 @@ std::string zip_llsd(LLSD& data)
 // and deserializes from that copy using LLSDSerialize
 bool unzip_llsd(LLSD& data, std::istream& is, S32 size)
 {
-	auto in = std::make_unique<U8[]>(size);
+	std::unique_ptr<U8 []> in;
+	try
+	{
+		in = std::make_unique<U8 []>(size);
+	}
+	catch (const std::bad_alloc&)
+	{
+		return false;
+	}
 	is.read((char*)in.get(), size);
 
 	return unzip_llsd(data, in.get(), size);
@@ -2251,6 +2248,11 @@ bool unzip_llsd(LLSD& data, U8* in, S32 size)
 //and trailers are different for the formats.
 U8* unzip_llsdNavMesh(bool& valid, unsigned int& outsize, std::istream& is, S32 size)
 {
+	if (size == 0)
+	{
+		LL_WARNS() << "No data to unzip." << LL_ENDL;
+		return NULL;
+	}
 	auto in = std::make_unique<U8[]>(size);
 	is.read((char*)in.get(), size);
 	return unzip_llsdNavMesh(valid, outsize, in.get(), size);
@@ -2258,6 +2260,11 @@ U8* unzip_llsdNavMesh(bool& valid, unsigned int& outsize, std::istream& is, S32 
 
 U8* unzip_llsdNavMesh( bool& valid, unsigned int& outsize, U8* in, S32 size )
 {
+	if (size == 0)
+	{
+		LL_WARNS() << "No data to unzip." << LL_ENDL;
+		return NULL;
+	}
 	U8* result = NULL;
 	U32 cur_size = 0;
 	z_stream strm;
@@ -2296,7 +2303,10 @@ U8* unzip_llsdNavMesh( bool& valid, unsigned int& outsize, U8* in, S32 size )
 		U8* new_result = (U8*) realloc(result, cur_size + have);
 		if (new_result == NULL)
 		{
-			LL_WARNS() << "Failed to unzip LLSD NavMesh block: can't reallocate memory, current size: " << cur_size << " bytes; requested " << cur_size + have << " bytes." << LL_ENDL;
+			LL_WARNS() << "Failed to unzip LLSD NavMesh block: can't reallocate memory, current size: " << cur_size
+				<< " bytes; requested " << cur_size + have
+				<< " bytes; total syze: ." << size << " bytes."
+				<< LL_ENDL;
 			inflateEnd(&strm);
 			if (result)
 			{
@@ -2305,6 +2315,7 @@ U8* unzip_llsdNavMesh( bool& valid, unsigned int& outsize, U8* in, S32 size )
 			valid = false;
 			return NULL;
 		}
+		result = new_result;
 		memcpy(result+cur_size, out, have);
 		cur_size += have;
 

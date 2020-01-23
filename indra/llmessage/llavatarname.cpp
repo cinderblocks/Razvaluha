@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llavatarname.cpp
  * @brief Represents name-related data for an avatar, such as the
@@ -142,7 +140,7 @@ void LLAvatarName::fromString(const std::string& full_name)
 		mLegacyLastName = full_name.substr(index+1);
 		if (mLegacyLastName != "Resident")
 		{
-			mUsername = mLegacyFirstName + "." + mLegacyLastName;
+			mUsername = mLegacyFirstName + '.' + mLegacyLastName;
 			mDisplayName = full_name;
 			LLStringUtil::toLower(mUsername);
 		}
@@ -189,7 +187,7 @@ std::string LLAvatarName::getCompleteName(bool linefeed, bool use_parentheses, b
 			{
 				if(use_parentheses)
 				{
-					name += (linefeed ? "\n(" : " (") + mUsername + ")";
+					name += (linefeed ? "\n(" : " (") + mUsername + ')';
 				}
 				else // Singu Note: I doubt we're going to use this, so I'm not going to add in linefeed.
 				{
@@ -250,12 +248,12 @@ std::string LLAvatarName::getUserName(bool lowercase) const
 	{
 		if(lowercase)
 		{
-		    name = mLegacyFirstName + "." + mLegacyLastName;
+		    name = mLegacyFirstName + '.' + mLegacyLastName;
 		    LLStringUtil::toLower(name);
 		}
 		else
 		{
-		    name = mLegacyFirstName + " " + mLegacyLastName;
+		    name = mLegacyFirstName + ' ' + mLegacyLastName;
 	    }
 	}
 	return name;

@@ -34,6 +34,7 @@
 #include "llpanelgroup.h"
 
 // Library includes
+#include "lfidbearer.h"
 #include "llbutton.h"
 #include "lltabcontainer.h"
 #include "lltextbox.h"
@@ -130,7 +131,7 @@ void LLPanelGroupTab::handleClickHelp()
 	}
 }
 
-void copy_profile_uri(const LLUUID& id, bool group);
+void copy_profile_uri(const LLUUID& id, const LFIDBearer::Type& type);
 
 LLPanelGroup::LLPanelGroup(const LLUUID& group_id)
 :	LLPanel("PanelGroup", LLRect(), FALSE),
@@ -164,7 +165,7 @@ LLPanelGroup::LLPanelGroup(const LLUUID& group_id)
 
 	LLGroupMgr::getInstance()->addObserver(this);
 
-	mCommitCallbackRegistrar.add("Group.CopyURI", boost::bind(copy_profile_uri, boost::ref(mID), true));
+	mCommitCallbackRegistrar.add("Group.CopyURI", boost::bind(copy_profile_uri, boost::ref(mID), LFIDBearer::GROUP));
 	// Pass on construction of this panel to the control factory.
 	LLUICtrlFactory::getInstance()->buildPanel(this, "panel_group.xml", &getFactoryMap());
 }

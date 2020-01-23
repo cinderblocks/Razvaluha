@@ -6770,6 +6770,13 @@ Cancelled Attach
 
   <notification
    icon="notifytip.tga"
+   name="CancelledFollow"
+   type="notifytip">
+Cancelled Follow
+  </notification>
+
+  <notification
+   icon="notifytip.tga"
    name="ReplacedMissingWearable"
    type="notifytip">
 Replaced missing clothing/body part with default.
@@ -7652,27 +7659,6 @@ No valid parcel could be found.
    name="ObjectGiveItem"
    type="notify">
 An object named [OBJECTFROMNAME] owned by [NAME] has given you a [OBJECTTYPE] named [OBJECTNAME].
-    <form name="form">
-      <button
-       index="0"
-       name="Keep"
-       text="Keep"/>
-      <button
-       index="1"
-       name="Discard"
-       text="Discard"/>
-      <button
-       index="2"
-       name="Mute"
-       text="Mute"/>
-    </form>
-  </notification>
-
-  <notification
-   icon="notify.tga"
-   name="ObjectGiveItemUnknownUser"
-   type="notify">
-An object named [OBJECTFROMNAME] owned by (an unknown user) has given you a [OBJECTTYPE] named [OBJECTNAME].
     <form name="form">
       <button
        index="0"
@@ -11893,7 +11879,9 @@ The object you're attempting to restore in world is no copy, if you do not have 
    name="ServerVersionChanged"
    priority="high"
    type="notifytip">
-The region you have entered is running a different simulator version. Click this message for details.
+The region you have entered is running a different simulator version.
+Current simulator: [NEW_VERSION]
+Previous simulator: [OLD_VERSION]
   </notification>
 
   <notification

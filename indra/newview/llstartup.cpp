@@ -314,7 +314,7 @@ void transition_back_to_login_panel(const std::string& emsg);
 
 void callback_cache_name(const LLUUID& id, const std::string& full_name, bool is_group)
 {
-	LLNameUI::refreshAll(id, full_name, is_group);
+	LLNameUI::refreshAll(id, full_name);
 
 	// TODO: Actually be intelligent about the refresh.
 	// For now, just brute force refresh the dialogs.
@@ -2906,17 +2906,7 @@ void pass_processObjectPropertiesFamily(LLMessageSystem *msg, void**)
 void process_script_running_reply(LLMessageSystem* msg, void** v)
 {
 	LLLiveLSLEditor::processScriptRunningReply(msg, v);
-	if (ScriptCounter::sCheckMap.size())
-	{
-		LLUUID item_id;
-		msg->getUUIDFast(_PREHASH_Script, _PREHASH_ItemID, item_id);
-		std::map<LLUUID,ScriptCounter*>::iterator it = ScriptCounter::sCheckMap.find(item_id);
-		if (it != ScriptCounter::sCheckMap.end())
-		{
-			it->second->processRunningReply(msg);
-			ScriptCounter::sCheckMap.erase(it);
-		}
-	}
+	ScriptCounter::processScriptRunningReply(msg);
 }
 
 void register_viewer_callbacks(LLMessageSystem* msg)
