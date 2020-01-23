@@ -817,6 +817,8 @@ LLMeshRepoThread::LLMeshRepoThread()
 	mMutex = new LLMutex();
 	mHeaderMutex = new LLMutex();
 	mSignal = new LLCondition();
+	mSkinInfoQMutex = new LLMutex();
+	mDecompositionQMutex = new LLMutex();
 	mHttpRequest = new LLCore::HttpRequest;
 	mHttpOptions = boost::make_shared<LLCore::HttpOptions>();
 	mHttpOptions->setTransferTimeout(SMALL_MESH_XFER_TIMEOUT);
@@ -850,6 +852,10 @@ LLMeshRepoThread::~LLMeshRepoThread()
 	mHeaderMutex = nullptr;
 	delete mSignal;
 	mSignal = nullptr;
+	delete mSkinInfoQMutex;
+	mSkinInfoQMutex = nullptr;
+	delete mDecompositionQMutex;
+	mDecompositionQMutex = nullptr;
 }
 
 void LLMeshRepoThread::run()
@@ -2732,14 +2738,14 @@ void LLMeshRepoThread::notifyLoadedMeshes()
 
 	if (!mSkinInfoQ.empty())
 	{
-		if (mMutex->try_lock())
+		if (mSkinInfoQMutex->try_lock())
 		{
 			std::queue<LLMeshSkinInfo> skin_info_q;
 			if (! mSkinInfoQ.empty())
 			{
 				skin_info_q.swap(mSkinInfoQ);
 			}
-			mMutex->unlock();
+			mSkinInfoQMutex->unlock();
 
 			// Process the elements free of the lock
 			while (!skin_info_q.empty())
@@ -2752,14 +2758,14 @@ void LLMeshRepoThread::notifyLoadedMeshes()
 
 	if (!mDecompositionQ.empty())
 	{
-		if (mMutex->try_lock())
+		if (mDecompositionQMutex->try_lock())
 		{
 			std::queue<LLModel::Decomposition*> decomp_q;
 			if (! mDecompositionQ.empty())
 			{
 				decomp_q.swap(mDecompositionQ);
 			}
-			mMutex->unlock();
+			mDecompositionQMutex->unlock();
 
 			// Process the elements free of the lock
 			while (! decomp_q.empty())
@@ -2768,13 +2774,6 @@ void LLMeshRepoThread::notifyLoadedMeshes()
 				decomp_q.pop();
 			}
 		}
-
-		mSkinInfoQMutex->lock();
-		auto req = mSkinInfoQ.front();
-		mSkinInfoQ.pop();
-		mSkinInfoQMutex->unlock();
-
-		gMeshRepo.notifySkinInfoReceived(req);
 	}
 
 	if (update_metrics)
