@@ -981,6 +981,21 @@ class DarwinManifest(ViewerManifest):
 
                 # our apps
                 executable_path = {}
+                for app_bld_dir, app in ( # plugin launcher
+                                         (os.path.join("llplugin", "slplugin"), "AlchemyPlugin.app"),
+                                         ):
+                    self.path2basename(os.path.join(os.pardir,
+                                                    app_bld_dir, self.args['configuration']),
+                                       app)
+                    executable_path[app] = \
+                        self.dst_path_of(os.path.join(app, "Contents", "MacOS"))
+
+                    # our apps dependencies on shared libs
+                    # for each app, for each dylib we collected in dylibs,
+                    # create a symlink to the real copy of the dylib.
+                    with self.prefix(dst=os.path.join(app, "Contents", "Resources")):
+                        for libfile in dylibs:
+                            self.relsymlinkf(os.path.join(libfile_parent, libfile))
 
                 # Dullahan helper apps go inside SLPlugin.app
                 with self.prefix(dst=os.path.join(
