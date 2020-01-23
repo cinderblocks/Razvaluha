@@ -870,11 +870,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>fe1a606582fb72d5d1c9ec4a2d906830</string>
+              <string>8372d3c727e9152f1d28823ae8e89653</string>
               <key>hash_algorithm</key>
               <string>md5</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-internal/fmodstudio/darwin64/fmodstudio-2.00.03.192211302-darwin64-192211302.tar.bz2</string>
+              <string>file:///Volumes/macdata/viewerlibs/fmodstudio-2.00.07.200230304-darwin64-200230304.tar.bz2</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
