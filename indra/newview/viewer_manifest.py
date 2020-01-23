@@ -1088,13 +1088,14 @@ class DarwinManifest(ViewerManifest):
                     self.path2basename("../media_plugins/libvlc/" + self.args['configuration'],
                                        "media_plugin_libvlc.dylib")
 
-                    # copy LibVLC dynamic libraries
-                    with self.prefix(src=relpkgdir, dst="lib"):
-                        self.path( "libvlc*.dylib*" )
-                        # copy LibVLC plugins folder
-                        with self.prefix(src='plugins', dst=""):
-                            self.path( "*.dylib" )
-                            self.path( "plugins.dat" )
+                    if not self.is_packaging_viewer():
+                        # copy LibVLC dynamic libraries
+                        with self.prefix(src=relpkgdir, dst="lib"):
+                            self.path( "libvlc*.dylib*" )
+                            # copy LibVLC plugins folder
+                            with self.prefix(src='plugins', dst=""):
+                                self.path( "*.dylib" )
+                                self.path( "plugins.dat" )
 
     def package_finish(self):
         global CHANNEL_VENDOR_BASE
