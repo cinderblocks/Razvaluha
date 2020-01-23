@@ -1220,9 +1220,9 @@ set_source_files_properties(
 # Replace the icons with the appropriate ones for the channel
 # ('test' is the default)
 set(ICON_PATH "default")
-if (VIEWER_CHANNEL_BASE STREQUAL "Alpha")
+if (VIEWER_CHANNEL_TYPE STREQUAL "Alpha")
   set(ICON_PATH "alpha")
-#elseif (VIEWER_CHANNEL_BASE STREQUAL "Beta")
+#elseif (VIEWER_CHANNEL_TYPE STREQUAL "Beta")
 #  set(ICON_PATH "beta")        # Not till we actually have beta icons. - RG
 endif()
 
