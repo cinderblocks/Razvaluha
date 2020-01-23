@@ -27,26 +27,9 @@
 #ifndef LL_LLPANELEXPERIENCES_H
 #define LL_LLPANELEXPERIENCES_H
 
-//#include "llaccordionctrltab.h"
-#include "llflatlistview.h"
-#include "llpanelavatar.h"
+#include "llpanel.h"
 
-class LLExperienceItem;
-class LLPanelProfile; 
-
-
-class LLPanelSearchExperiences 
-    : public LLPanel
-{
-public:
-	LLPanelSearchExperiences(){}
-	static LLPanelSearchExperiences* create(const std::string& name);
-    /*virtual*/ BOOL postBuild(void) override;
-
-	void doSearch();
-};
-
-class LLPanelExperiences
+class LLPanelExperiences final
 	: public LLPanel 
 {
 public:
@@ -55,44 +38,17 @@ public:
 	static LLPanelExperiences* create(const std::string& name);
 
 	/*virtual*/ BOOL postBuild(void) override;
-	/*virtual*/ void onClosePanel();
 
 	void setExperienceList(const LLSD& experiences);
     void getExperienceIdsList(uuid_vec_t& result);
 
-	LLExperienceItem* getSelectedExperienceItem();
 	void removeExperiences( const LLSD& ids );
 	void removeExperience( const LLUUID& id);
 	void addExperience( const LLUUID& id);
 	void setButtonAction(const std::string& label, const commit_signal_t::slot_type& cb);
 	void enableButton(bool enable);
-protected:
 
 private:
-	LLFlatListView* mExperiencesList;
-};
-
-class LLExperienceItemComparator : public LLFlatListView::ItemComparator
-{
-	LOG_CLASS(LLExperienceItemComparator);
-
-public:
-	LLExperienceItemComparator() {};
-	virtual ~LLExperienceItemComparator() {};
-	
-	bool compare(const LLPanel* item1, const LLPanel* item2) const override;
-};
-
-class LLExperienceItem 
-	: public LLPanel
-{
-public:
-	LLExperienceItem();
-	~LLExperienceItem();
-
-	void init(const LLUUID& experience_id);
-	std::string getExperienceName() const;
-protected:
-	LLUICtrl* mName;
+	class LLNameListCtrl* mExperiencesList;
 };
 #endif // LL_LLPANELEXPERIENCES_H

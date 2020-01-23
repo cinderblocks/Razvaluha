@@ -71,12 +71,12 @@
       Max Content Rating:
     </text>
     <combo_box
-      follows="left|top"
+      follows="left|top|right"
       height="20"
       label="Mature"
       name="maturity"
       bottom_delta="-6"
-      left_delta="180"
+      width="180"
       right="-1">
       <combo_box.item
         label="Adult"
@@ -98,9 +98,11 @@
       draw_heading="true"
       left="-4"
       right="-1"
-      top="-60"
-      bottom="200"
-      follows="all" 
+      top="-40"
+      bottom="70"
+      follows="all"
+      menu_num="3"
+      multi_select="true"
       name="search_results">
       <column
         halign="center"

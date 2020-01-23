@@ -30,25 +30,18 @@
 #include "llviewerprecompiledheaders.h"
 
 
-#include "llpanelprofile.h"
 #include "lluictrlfactory.h"
 #include "llexperiencecache.h"
 #include "llagent.h"
 
 #include "llfloaterexperienceprofile.h"
 #include "llpanelexperiences.h"
-#include "llslurl.h"
 #include "lllayoutstack.h"
-
-
+#include "llnamelistctrl.h"
 
 //static LLPanelInjector<LLPanelExperiences> register_experiences_panel("experiences_panel");
 
-
-//comparators
-static const LLExperienceItemComparator NAME_COMPARATOR;
-
-LLPanelExperiences::LLPanelExperiences(  )
+LLPanelExperiences::LLPanelExperiences()
 	: mExperiencesList(nullptr)
 {
 	//buildFromFile("panel_experiences.xml");
@@ -57,59 +50,59 @@ LLPanelExperiences::LLPanelExperiences(  )
 
 BOOL LLPanelExperiences::postBuild( void )
 {
-	mExperiencesList = getChild<LLFlatListView>("experiences_list");
+	mExperiencesList = getChild<LLNameListCtrl>("experiences_list");
 	if (hasString("loading_experiences"))
 	{
-		mExperiencesList->setNoItemsCommentText(getString("loading_experiences"));
+		mExperiencesList->setCommentText(getString("loading_experiences"));
 	}
 	else if (hasString("no_experiences"))
 	{
-		mExperiencesList->setNoItemsCommentText(getString("no_experiences"));
+		mExperiencesList->setCommentText(getString("no_experiences"));
 	}
-	mExperiencesList->setComparator(&NAME_COMPARATOR);
 
 	return TRUE;
 }
 
-
-
-LLExperienceItem* LLPanelExperiences::getSelectedExperienceItem()
+void addExperienceToList(const LLSD& experience, LLNameListCtrl* list)
 {
-	LLPanel* selected_item = mExperiencesList->getSelectedItem();
-	if (!selected_item) return nullptr;
+	// Don't add missing experiences, that seems wrong
+	if (experience.has(LLExperienceCache::MISSING) && experience[LLExperienceCache::MISSING].asBoolean())
+		return;
 
-	return dynamic_cast<LLExperienceItem*>(selected_item);
+	const auto& id = experience[LLExperienceCache::EXPERIENCE_ID];
+	auto item = LLNameListCtrl::NameItem()
+		.name(experience[LLExperienceCache::NAME].asString())
+		.target(LLNameListItem::EXPERIENCE);
+	item.value(id)
+		.columns.add(LLScrollListCell::Params()); // Dummy column for names
+	list->addNameItemRow(item);
 }
 
 void LLPanelExperiences::setExperienceList( const LLSD& experiences )
 {
+	mExperiencesList->setSortEnabled(false);
+
 	if (hasString("no_experiences"))
 	{
-		mExperiencesList->setNoItemsCommentText(getString("no_experiences"));
+		mExperiencesList->setCommentText(getString("no_experiences"));
 	}
 	mExperiencesList->clear();
 
+	auto& cache = LLExperienceCache::instance();
 	LLSD::array_const_iterator it = experiences.beginArray();
 	for( /**/ ; it != experiences.endArray(); ++it)
 	{
 		LLUUID public_key = it->asUUID();
-		LLExperienceItem* item = new LLExperienceItem();
-
-		item->init(public_key);
-		mExperiencesList->addItem(item, public_key);
+		if (public_key.notNull())
+			cache.get(public_key, boost::bind(addExperienceToList, _1, mExperiencesList));
 	}
 
-	mExperiencesList->sort();
+	mExperiencesList->setSortEnabled(true);
 }
 
 void LLPanelExperiences::getExperienceIdsList(uuid_vec_t& result)
 {
-    std::vector<LLSD> ids;
-    mExperiencesList->getValues(ids);
-    for (LLSD::array_const_iterator it = ids.begin(); it != ids.end(); ++it)
-    {
-        result.push_back(it->asUUID());
-    }
+	result = mExperiencesList->getAllIDs();
 }
 
 LLPanelExperiences* LLPanelExperiences::create(const std::string& name)
@@ -130,18 +123,14 @@ void LLPanelExperiences::removeExperiences( const LLSD& ids )
 
 void LLPanelExperiences::removeExperience( const LLUUID& id )
 {
-	mExperiencesList->removeItemByUUID(id);
+	mExperiencesList->removeNameItem(id);
 }
 
 void LLPanelExperiences::addExperience( const LLUUID& id )
 {
-    if(!mExperiencesList->getItemByValue(id))
+    if (!mExperiencesList->getItem(id))
     {
-	    LLExperienceItem* item = new LLExperienceItem();
-
-	    item->init(id);
-	    mExperiencesList->addItem(item, id);
-	    mExperiencesList->sort();
+		LLExperienceCache::instance().get(id, boost::bind(addExperienceToList, _1, mExperiencesList));
     }
 }
 
@@ -163,78 +152,4 @@ void LLPanelExperiences::setButtonAction(const std::string& label, const commit_
 void LLPanelExperiences::enableButton( bool enable )
 {
 	getChild<LLButton>("btn_action")->setEnabled(enable);
-}
-
-
-LLExperienceItem::LLExperienceItem()
-	: mName(nullptr)
-{
-	//buildFromFile("panel_experience_list_item.xml");
-	LLUICtrlFactory::getInstance()->buildPanel(this, "panel_experience_list_item.xml");
-}
-
-static void set_xp_name(LLUICtrl* name, const LLSD& experience)
-{
-	name->setValue(experience[LLExperienceCache::NAME]);
-}
-
-void LLExperienceItem::init( const LLUUID& id)
-{
-	mName = getChild<LLUICtrl>("experience_name");
-	//mName->setValue(LLSLURL("experience", id, "profile").getSLURLString());
-	LLExperienceCache::instance().get(id, boost::bind(set_xp_name, mName, _1));
-	mName->setCommitCallback(boost::bind(LLFloaterExperienceProfile::showInstance, id));
-}
-
-LLExperienceItem::~LLExperienceItem()
-{
-
-}
-
-std::string LLExperienceItem::getExperienceName() const
-{
-	if (mName)
-	{
-		return mName->getValue();
-	}
-	
-	return "";
-}
-
-void LLPanelSearchExperiences::doSearch()
-{
-
-}
-
-LLPanelSearchExperiences* LLPanelSearchExperiences::create( const std::string& name )
-{
-    LLPanelSearchExperiences* panel= new LLPanelSearchExperiences();
-    panel->getChild<LLPanel>("results")->addChild(LLPanelExperiences::create(name));
-    return panel;
-}
-
-BOOL LLPanelSearchExperiences::postBuild( void )
-{
-    childSetAction("search_button", boost::bind(&LLPanelSearchExperiences::doSearch, this));
-    return TRUE;
-}
-
-bool LLExperienceItemComparator::compare(const LLPanel* item1, const LLPanel* item2) const
-{
-	const LLExperienceItem* experience_item1 = dynamic_cast<const LLExperienceItem*>(item1);
-	const LLExperienceItem* experience_item2 = dynamic_cast<const LLExperienceItem*>(item2);
-	
-	if (!experience_item1 || !experience_item2)
-	{
-		LL_ERRS() << "item1 and item2 cannot be null" << LL_ENDL;
-		return true;
-	}
-
-	std::string name1 = experience_item1->getExperienceName();
-	std::string name2 = experience_item2->getExperienceName();
-
-	LLStringUtil::toUpper(name1);
-	LLStringUtil::toUpper(name2);
-
-	return name1 < name2;
 }

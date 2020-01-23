@@ -80,6 +80,7 @@
 #include "llfloaterdirectory.h"
 #include "llfloatereditui.h"
 #include "llfloaterexperienceprofile.h"
+#include "llfloaterexperiences.h"
 #include "llfloaterfonttest.h"
 #include "llfloatergodtools.h"
 #include "llfloaterhtmlcurrency.h"
@@ -111,6 +112,7 @@
 #include "llmenuoptionpathfindingrebakenavmesh.h"
 #include "llmutelist.h"
 #include "llnotify.h"
+#include "llpanelexperiences.h"
 #include "llparcel.h"
 #include "llregioninfomodel.h"
 #include "llselectmgr.h"
@@ -9400,7 +9402,48 @@ class ListAbuseReport : public view_listener_t
 {
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		LLFloaterReporter::showFromObject(LFIDBearer::getActiveSelectedID());
+		if (LFIDBearer::getActiveType() == LFIDBearer::EXPERIENCE)
+			LLFloaterReporter::showFromExperience(LFIDBearer::getActiveSelectedID());
+		else
+			LLFloaterReporter::showFromObject(LFIDBearer::getActiveSelectedID());
+		return true;
+	}
+};
+
+void set_experience_permission(const char* perm, const uuid_vec_t& ids)
+{
+	if (!gAgent.getRegion()) return;
+	auto& cache = LLExperienceCache::instance();
+	for (const auto& id : ids)
+		cache.setExperiencePermission(id, perm, boost::bind(LLFloaterExperienceProfile::experiencePermissionResults, id, _1));
+}
+
+class ListExperienceAllow : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		set_experience_permission("Allow", LFIDBearer::getActiveSelectedIDs());
+		return true;
+	}
+};
+
+class ListExperienceForget : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		if (!gAgent.getRegion()) return true;
+		auto& cache = LLExperienceCache::instance();
+		for (const auto& id : LFIDBearer::getActiveSelectedIDs())
+			cache.forgetExperiencePermission(id, boost::bind(LLFloaterExperienceProfile::experiencePermissionResults, id, _1));
+		return true;
+	}
+};
+
+class ListExperienceBlock : public view_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		set_experience_permission("Block", LFIDBearer::getActiveSelectedIDs());
 		return true;
 	}
 };
@@ -10125,6 +10168,9 @@ void initialize_menus()
 	addMenu(new ListObjectEnableTouch, "List.Object.EnableTouch");
 	addMenu(new ListObjectEdit, "List.Object.Edit");
 	addMenu(new ListObjectCanEdit, "List.Object.CanEdit");
+	addMenu(new ListExperienceAllow, "List.Experience.Allow");
+	addMenu(new ListExperienceForget, "List.Experience.Forget");
+	addMenu(new ListExperienceBlock, "List.Experience.Block");
 
 	add_radar_listeners();
 

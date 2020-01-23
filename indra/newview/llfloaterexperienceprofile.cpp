@@ -56,6 +56,7 @@
 #include "llfloatergroups.h"
 #include "llnotifications.h"
 #include "llfloaterreporter.h"
+#include "llurlaction.h"
 
 #define XML_PANEL_EXPERIENCE_PROFILE "floater_experienceprofile.xml"
 #define TF_NAME "experience_title"
@@ -193,12 +194,28 @@ BOOL LLFloaterExperienceProfile::postBuild()
 
     childSetCommitCallback(EDIT IMG_LOGO, boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this), nullptr);
 
-    getChild<LLTextEditor>(EDIT TF_DESC)->setCommitOnFocusLost(TRUE);
+	const LLColor4& link_color = gSavedSettings.getColor4("HTMLLinkColor");
+    if (auto market = getChild<LLTextBox>(TF_MRKT))
+    {
+		market->setClickedCallback([market] { LLUrlAction::clickAction(market->getValue().asStringRef(), true); });
+		market->setColor(link_color);
+		market->setFontStyle(LLFontGL::UNDERLINE);
+    }
 
-	// <singu> Callbacks for texts that show slurls
-	// Singu Note: We can now changes these to text editors to achieve the same effect
-	if (LLTextBox* text = findChild<LLTextBox>(TF_GROUP))
-		text->setClickedCallback([this] {LLGroupActions::show(mExperienceDetails[LLExperienceCache::GROUP_ID]); });
+    if (auto location = getChild<LLTextBox>(TF_SLURL))
+    {
+		location->setClickedCallback([=] { LLUrlAction::clickAction(mLocationSLURL, true); });
+		location->setColor(link_color);
+		location->setFontStyle(LLFontGL::UNDERLINE);
+    }
+
+    if (auto logo = findChild<LLTexturePicker>(IMG_LOGO))
+    {
+		void show_picture(const LLUUID& id, const std::string& name);
+        logo->setCommitCallback(boost::bind(show_picture, boost::bind(&LLTexturePicker::getImageAssetID, logo), "Experience Picture"));
+    }
+
+    getChild<LLTextEditor>(EDIT TF_DESC)->setCommitOnFocusLost(TRUE);
 
     LLEventPumps::instance().obtain("experience_permission").listen(mExperienceId.asString()+"-profile", 
         boost::bind(&LLFloaterExperienceProfile::experiencePermission, getDerivedHandle<LLFloaterExperienceProfile>(this), _1));
@@ -338,13 +355,13 @@ void LLFloaterExperienceProfile::refreshExperience( const LLSD& experience )
 
 	LLTextBox* child = getChild<LLTextBox>(TF_NAME);
 	//child->setText(experience[LLExperienceCache::NAME].asString());
-	child->setText(LLSLURL("experience", experience[LLExperienceCache::EXPERIENCE_ID].asUUID(), "profile").getSLURLString());
+	child->setValue(experience[LLExperienceCache::EXPERIENCE_ID].asUUID());
 
 	LLLineEditor* linechild = getChild<LLLineEditor>(EDIT TF_NAME);
 	linechild->setText(experience[LLExperienceCache::NAME].asString());
 
 	std::string value = experience[LLExperienceCache::DESCRIPTION].asString();
-	LLTextBox* exchild = getChild<LLTextBox>(TF_DESC);
+	LLTextEditor* exchild = getChild<LLTextEditor>(TF_DESC);
 	exchild->setText(value);
 	descriptionPanel->setVisible(value.length()>0);
 
@@ -353,9 +370,9 @@ void LLFloaterExperienceProfile::refreshExperience( const LLSD& experience )
 
 	mLocationSLURL = experience[LLExperienceCache::SLURL].asString();
 	child = getChild<LLTextBox>(TF_SLURL);
-	bool has_slurl = mLocationSLURL.length()>0;
+	bool has_slurl = !mLocationSLURL.empty() && mLocationSLURL != "last";
 	locationPanel->setVisible(has_slurl);
-	mLocationSLURL = LLSLURL(mLocationSLURL).getSLURLString();
+	if (has_slurl) mLocationSLURL = LLSLURL(mLocationSLURL).getSLURLString();
 	child->setText(mLocationSLURL);
 
 
@@ -371,29 +388,20 @@ void LLFloaterExperienceProfile::refreshExperience( const LLSD& experience )
 
 	setMaturityString((U8)(experience[LLExperienceCache::MATURITY].asInteger()), getChild<LLTextBox>(TF_MATURITY), getChild<LLComboBox>(EDIT TF_MATURITY));
 
-	LLUUID id = experience[LLExperienceCache::AGENT_ID].asUUID();
-	child = getChild<LLTextBox>(TF_OWNER);
-	value = LLSLURL("agent", id, "inspect").getSLURLString();
-	if (!LLAvatarNameCache::getNSName(id, value))
-		LLAvatarNameCache::get(id, boost::bind(&LLUICtrl::setValue, child, boost::bind(&LLAvatarName::getNSName, _2, main_name_system())));
-	child->setText(value);
+	LLUUID agent_id = experience[LLExperienceCache::AGENT_ID].asUUID();
+	getChild<LLTextBox>(TF_OWNER)->setValue(agent_id);
 
-
-	id = experience[LLExperienceCache::GROUP_ID].asUUID();
+	LLUUID id = experience[LLExperienceCache::GROUP_ID].asUUID();
 	bool id_null = id.isNull();
 	if (!id_null)
 	{
-		child = getChild<LLTextBox>(TF_GROUP);
-		value = LLSLURL("group", id, "inspect").getSLURLString();
-		if (!gCacheName->getGroupName(id, value))
-			gCacheName->get(id, true, boost::bind(&LLUICtrl::setValue, child, _2));
-		child->setText(value);
+		getChild<LLTextBox>(TF_GROUP)->setValue(id);
 	}
 	getChild<LLLayoutPanel>(PNL_GROUP)->setVisible(!id_null);
 
 	setEditGroup(id);
 
-	getChild<LLButton>(BTN_SET_GROUP)->setEnabled(experience[LLExperienceCache::AGENT_ID].asUUID() == gAgent.getID());
+	getChild<LLButton>(BTN_SET_GROUP)->setEnabled(agent_id == gAgentID);
 
 	LLCheckBoxCtrl* enable = getChild<LLCheckBoxCtrl>(EDIT BTN_ENABLE);
 	S32 properties = mExperienceDetails[LLExperienceCache::PROPERTIES].asInteger();
@@ -902,7 +910,7 @@ bool LLFloaterExperienceProfile::hasPermission(const LLSD& content, const std::s
 }
 
 /*static*/
-void LLFloaterExperienceProfile::experiencePermissionResults(LLUUID exprienceId, LLSD result)
+void LLFloaterExperienceProfile::experiencePermissionResults(const LLUUID& exprienceId, const LLSD& result)
 {
     std::string permission("Forget");
     if (hasPermission(result, "experiences", exprienceId))

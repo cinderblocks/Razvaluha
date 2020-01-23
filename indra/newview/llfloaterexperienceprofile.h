@@ -49,6 +49,7 @@ public:
         VIEW,
     };
 
+    static void experiencePermissionResults(const LLUUID& exprienceId, const LLSD& result);
 
 	static void showInstance(const LLSD& data);
     LLFloaterExperienceProfile(const LLSD& data);
@@ -105,7 +106,6 @@ protected:
     bool mPostEdit; // edit experience after opening and updating it
 private:
     static bool hasPermission(const LLSD& content, const std::string &name, const LLUUID &test);
-    static void experiencePermissionResults(LLUUID exprienceId, LLSD result);
     static void experienceIsAdmin(LLHandle<LLFloaterExperienceProfile> handle, const LLSD &result);
     static void experienceUpdateResult(LLHandle<LLFloaterExperienceProfile> handle, const LLSD &result);
 };

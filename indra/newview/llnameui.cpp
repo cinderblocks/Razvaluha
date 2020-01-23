@@ -37,6 +37,8 @@
 #include "llagentdata.h"
 #include "llavataractions.h"
 #include "llavatarnamecache.h"
+#include "llexperiencecache.h"
+#include "llfloaterexperienceprofile.h"
 #include "llgroupactions.h"
 #include "lltrans.h"
 
@@ -46,9 +48,10 @@
 // statics
 std::set<LLNameUI*> LLNameUI::sInstances;
 
-LLNameUI::LLNameUI(const std::string& loading, bool rlv_sensitive, const LLUUID& id, const Type& type, const std::string& name_system)
+LLNameUI::LLNameUI(const std::string& loading, bool rlv_sensitive, const LLUUID& id, const Type& type, const std::string& name_system, bool click_for_profile)
 : mNameID(id), mRLVSensitive(rlv_sensitive), mType(NONE), mAllowInteract(false)
 , mNameSystem(name_system.empty() ? "PhoenixNameSystem" : name_system), mInitialValue(!loading.empty() ? loading : LLTrans::getString("LoadingData"))
+, mClickForProfile(click_for_profile)
 {
 	setType(type);
 }
@@ -66,7 +69,8 @@ void LLNameUI::setType(const Type& type)
 		else
 		{
 			sInstances.erase(this);
-			mConnections[1] = gSavedSettings.getControl(mNameSystem)->getCommitSignal()->connect(boost::bind(&LLNameUI::setNameText, this));
+			if (type == AVATAR)
+				mConnections[1] = gSavedSettings.getControl(mNameSystem)->getCommitSignal()->connect(boost::bind(&LLNameUI::setNameText, this));
 		}
 		mType = type;
 	}
@@ -83,7 +87,8 @@ void LLNameUI::setNameID(const LLUUID& name_id, const Type& type)
 	}
 	else
 	{
-		setText(LLTrans::getString(mType == GROUP ? "GroupNameNone" : "AvatarNameNobody"));
+		setText(LLTrans::getString(mType == GROUP ? "GroupNameNone" :
+			mType == AVATAR ? "AvatarNameNobody" : "ExperienceNameNull"));
 		displayAsLink(false);
 	}
 }
@@ -96,6 +101,15 @@ void LLNameUI::setNameText()
 	if (mType == GROUP)
 	{
 		got_name = gCacheName->getGroupName(mNameID, name);
+	}
+	else if (mType == EXPERIENCE)
+	{
+		auto& cache = LLExperienceCache::instance();
+		const auto& exp = cache.get(mNameID);
+		if (got_name = exp.isMap())
+			name = exp.has(LLExperienceCache::MISSING) && exp[LLExperienceCache::MISSING] ? LLTrans::getString("ExperienceNameNull") : exp[LLExperienceCache::NAME];
+		else
+			cache.get(mNameID, boost::bind(&LLNameUI::setNameText, this));
 	}
 	else
 	{
@@ -148,6 +162,7 @@ void LLNameUI::showProfile()
 	{
 	case LFIDBearer::GROUP: LLGroupActions::show(mNameID); break;
 	case LFIDBearer::AVATAR: LLAvatarActions::showProfile(mNameID); break;
+	case LFIDBearer::EXPERIENCE: LLFloaterExperienceProfile::showInstance(mNameID); break;
 	default: break;
 	}
 }
