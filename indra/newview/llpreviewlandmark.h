@@ -50,7 +50,7 @@ public:
 
 	/*virtual*/ void			draw() override;
 
-	const std::string&				getName() const;
+	const std::string&				getName() const override;
 	const LLColor4&				getMarkerColor() const;
 
 	LLVector3d getPositionGlobal() const;

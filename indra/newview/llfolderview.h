@@ -88,10 +88,10 @@ public:
 
 	virtual ~LLFolderView( void );
 
-	virtual BOOL canFocusChildren() const;
+	BOOL canFocusChildren() const override;
 
-	virtual const LLFolderView*	getRoot() const { return this; }
-	virtual LLFolderView*	getRoot() { return this; }
+	const LLFolderView*	getRoot() const override { return this; }
+	LLFolderView*	getRoot() override { return this; }
 
 	LLFolderViewGroupedItemModel* getFolderViewGroupedItemModel() { return mGroupedItemModel; }
 	const LLFolderViewGroupedItemModel* getFolderViewGroupedItemModel() const { return mGroupedItemModel; }
@@ -127,27 +127,27 @@ public:
 	void closeAllFolders();
 	void openTopLevelFolders();
 
-	virtual void toggleOpen() {};
-	virtual void setOpenArrangeRecursively(BOOL openitem, ERecurseType recurse);
-	virtual BOOL addFolder( LLFolderViewFolder* folder);
+	void toggleOpen() override {};
+	void setOpenArrangeRecursively(BOOL openitem, ERecurseType recurse) override;
+	BOOL addFolder( LLFolderViewFolder* folder) override;
 
 	// Find width and height of this object and its children. Also
 	// makes sure that this view and its children are the right size.
-	virtual S32 arrange( S32* width, S32* height, S32 filter_generation );
+	S32 arrange( S32* width, S32* height, S32 filter_generation ) override;
 
 	void arrangeAll() { mArrangeGeneration++; }
 	S32 getArrangeGeneration() { return mArrangeGeneration; }
 
 	// applies filters to control visibility of items
-	virtual void filter( LLInventoryFilter& filter);
+	void filter( LLInventoryFilter& filter) override;
 
 	// Get the last selected item
 	virtual LLFolderViewItem* getCurSelectedItem( void );
 	selected_items_t& getSelectedItems( void );
 
 	// Record the selected item and pass it down the hierarchy.
-	virtual BOOL setSelection(LLFolderViewItem* selection, BOOL openitem,
-		BOOL take_keyboard_focus = TRUE);
+	BOOL setSelection(LLFolderViewItem* selection, BOOL openitem,
+		BOOL take_keyboard_focus = TRUE) override;
 
 	// Used by menu callbacks
 	void setSelectionByID(const LLUUID& obj_id, BOOL take_keyboard_focus);
@@ -157,9 +157,9 @@ public:
 
 	// This method is used to toggle the selection of an item. Walks
 	// children, and keeps track of selected objects.
-	virtual BOOL changeSelection(LLFolderViewItem* selection, BOOL selected);
+	BOOL changeSelection(LLFolderViewItem* selection, BOOL selected) override;
 
-	virtual uuid_set_t getSelectionList() const;
+	uuid_set_t getSelectionList() const override;
 
 	// Make sure if ancestor is selected, descendants are not
 	void sanitizeSelection();
@@ -186,42 +186,42 @@ public:
 	void autoOpenItem(LLFolderViewFolder* item);
 	void closeAutoOpenedFolders();
 	BOOL autoOpenTest(LLFolderViewFolder* item);
-	BOOL isOpen() const { return TRUE; } // root folder always open
+	BOOL isOpen() const override { return TRUE; } // root folder always open
 
 	// Copy & paste
-	virtual BOOL	canCopy() const;
-	virtual void	copy() const override final;
+	BOOL	canCopy() const override;
+	void	copy() const override final;
 
-	virtual BOOL	canCut() const;
-	virtual void	cut();
+	BOOL	canCut() const override;
+	void	cut() override;
 
-	virtual BOOL	canPaste() const;
-	virtual void	paste();
+	BOOL	canPaste() const override;
+	void	paste() override;
 
-	virtual BOOL	canDoDelete() const;
-	virtual void	doDelete();
+	BOOL	canDoDelete() const override;
+	void	doDelete() override;
 
 	// Public rename functionality - can only start the process
 	void startRenamingSelectedItem( void );
 
 	// LLView functionality
 	///*virtual*/ BOOL handleKey( KEY key, MASK mask, BOOL called_from_parent );
-	/*virtual*/ BOOL handleKeyHere( KEY key, MASK mask );
-	/*virtual*/ BOOL handleUnicodeCharHere(llwchar uni_char);
-	/*virtual*/ BOOL handleMouseDown( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL handleDoubleClick( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL handleRightMouseDown( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL handleHover( S32 x, S32 y, MASK mask );
+	/*virtual*/ BOOL handleKeyHere( KEY key, MASK mask ) override;
+	/*virtual*/ BOOL handleUnicodeCharHere(llwchar uni_char) override;
+	/*virtual*/ BOOL handleMouseDown( S32 x, S32 y, MASK mask ) override;
+	/*virtual*/ BOOL handleDoubleClick( S32 x, S32 y, MASK mask ) override;
+	/*virtual*/ BOOL handleRightMouseDown( S32 x, S32 y, MASK mask ) override;
+	/*virtual*/ BOOL handleScrollWheel(S32 x, S32 y, S32 clicks) override;
+	/*virtual*/ BOOL handleHover( S32 x, S32 y, MASK mask ) override;
 	/*virtual*/ BOOL handleDragAndDrop(S32 x, S32 y, MASK mask, BOOL drop,
 								   EDragAndDropType cargo_type,
 								   void* cargo_data,
 								   EAcceptance* accept,
-								   std::string& tooltip_msg);
-	/*virtual*/ void reshape(S32 width, S32 height, BOOL called_from_parent = TRUE);
-	/*virtual*/ void onMouseLeave(S32 x, S32 y, MASK mask) { setShowSelectionContext(FALSE); }
-	virtual BOOL handleScrollWheel(S32 x, S32 y, S32 clicks);
-	virtual void draw();
-	virtual void deleteAllChildren();
+								   std::string& tooltip_msg) override;
+	/*virtual*/ void reshape(S32 width, S32 height, BOOL called_from_parent = TRUE) override;
+	/*virtual*/ void onMouseLeave(S32 x, S32 y, MASK mask) override { setShowSelectionContext(FALSE); }
+	void draw() override;
+	void deleteAllChildren() override;
 
 	void scrollToShowSelection();
 	void scrollToShowItem(LLFolderViewItem* item, const LLRect& constraint_rect);
@@ -258,7 +258,7 @@ public:
 	// DEBUG only
 	void dumpSelectionInformation();
 
-	virtual S32	notify(const LLSD& info) ;
+	S32	notify(const LLSD& info) override;
 	
 	bool useLabelSuffix() { return mUseLabelSuffix; }
 	virtual void updateMenu();
@@ -289,7 +289,7 @@ protected:
 private:
 	std::unique_ptr<LLSaveFolderState> mSavedFolderState;
 protected:
-	LLHandle<LLView>					mPopupMenuHandle;
+	LLHandle<LLView>				mPopupMenuHandle;
 	
 	selected_items_t				mSelectedItems;
 	bool							mKeyboardSelection,

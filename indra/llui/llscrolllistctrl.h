@@ -83,7 +83,7 @@ public:
 public:
 	virtual ~LLScrollListCtrl();
 
-	virtual LLXMLNodePtr getXML(bool save_children = true) const override;
+	LLXMLNodePtr getXML(bool save_children = true) const override;
 	void setScrollListParameters(LLXMLNodePtr node);
 	static LLView* fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFactory *factory);
 
@@ -96,12 +96,12 @@ public:
 	void   			sortByColumnIndex(U32 column, BOOL ascending);
 	
 	// LLCtrlListInterface functions
-	virtual S32  getItemCount() const override;
+	S32  getItemCount() const override;
 	// Adds a single column descriptor: ["name" : string, "label" : string, "width" : integer, "relwidth" : integer ]
 	virtual void addColumn(const LLScrollListColumn::Params& column, EAddPosition pos = ADD_BOTTOM);
-	virtual void addColumn(const LLSD& column, EAddPosition pos = ADD_BOTTOM) override;
-	virtual void clearColumns() override;
-	virtual void setColumnLabel(const std::string& column, const std::string& label) override;
+	void addColumn(const LLSD& column, EAddPosition pos = ADD_BOTTOM) override;
+	void clearColumns() override;
+	void setColumnLabel(const std::string& column, const std::string& label) override;
 	virtual LLScrollListColumn* getColumn(S32 index);
 	virtual LLScrollListColumn* getColumn(const std::string& name);
 	virtual S32 getNumColumns() const { return mColumnsIndexed.size(); }
@@ -109,17 +109,17 @@ public:
 	// Adds a single element, from an array of:
 	// "columns" => [ "column" => column name, "value" => value, "type" => type, "font" => font, "font-style" => style ], "id" => uuid
 	// Creates missing columns automatically.
-	virtual LLScrollListItem* addElement(const LLSD& element, EAddPosition pos = ADD_BOTTOM, void* userdata = NULL) override;
+	LLScrollListItem* addElement(const LLSD& element, EAddPosition pos = ADD_BOTTOM, void* userdata = nullptr) override;
 	virtual LLScrollListItem* addRow(LLScrollListItem *new_item, const LLScrollListItem::Params& value, EAddPosition pos = ADD_BOTTOM);
 	virtual LLScrollListItem* addRow(const LLScrollListItem::Params& value, EAddPosition pos = ADD_BOTTOM);
 	// Simple add element. Takes a single array of:
 	// [ "value" => value, "font" => font, "font-style" => style ]
-	virtual void clearRows() override; // clears all elements
-	virtual void sortByColumn(const std::string& name, BOOL ascending) override;
+	void clearRows() override; // clears all elements
+	void sortByColumn(const std::string& name, BOOL ascending) override;
 
 	// These functions take and return an array of arrays of elements, as above
-	virtual void	setValue(const LLSD& value ) override;
-	virtual LLSD	getValue() const override;
+	void	setValue(const LLSD& value ) override;
+	LLSD	getValue() const override;
 
 	LLCtrlSelectionInterface*	getSelectionInterface() override	{ return (LLCtrlSelectionInterface*)this; }
 	LLCtrlListInterface*		getListInterface() override			{ return (LLCtrlListInterface*)this; }
@@ -127,7 +127,7 @@ public:
 
 	// DEPRECATED: Use setSelectedByValue() below.
 	BOOL			setCurrentByID( const LLUUID& id ) override	{ return selectByID(id); }
-	virtual LLUUID	getCurrentID() const override				{ return getStringUUIDSelectedItem(); }
+	LLUUID	getCurrentID() const override				{ return getStringUUIDSelectedItem(); }
 
 	BOOL			operateOnSelection(EOperation op) override;
 	BOOL			operateOnAll(EOperation op) override;
@@ -143,7 +143,7 @@ public:
 
 	BOOL			isSorted() const { return mSorted; }
 
-	virtual BOOL	isSelected(const LLSD& value) const override;
+	BOOL	isSelected(const LLSD& value) const override;
 
 	BOOL			handleClick(S32 x, S32 y, MASK mask);
 	BOOL			selectFirstItem() override;
@@ -173,7 +173,7 @@ public:
 	void			moveToFront(S32 index);
 
 	void			setCanSelect(BOOL can_select)		{ mCanSelect = can_select; }
-	virtual BOOL	getCanSelect() const override				{ return mCanSelect; }
+	BOOL	getCanSelect() const override				{ return mCanSelect; }
 
 	S32				getItemIndex( LLScrollListItem* item ) const;
 	S32				getItemIndex( const LLUUID& item_id ) const;
@@ -183,7 +183,7 @@ public:
 
 	// "Simple" interface: use this when you're creating a list that contains only unique strings, only
 	// one of which can be selected at a time.
-	virtual LLScrollListItem* addSimpleElement(const std::string& value, EAddPosition pos = ADD_BOTTOM, const LLSD& id = LLSD()) override;
+	LLScrollListItem* addSimpleElement(const std::string& value, EAddPosition pos = ADD_BOTTOM, const LLSD& id = LLSD()) override;
 
 	BOOL			selectItemByLabel( const std::string& item, BOOL case_sensitive = TRUE );		// FALSE if item not found
 	BOOL			selectItemByPrefix(const std::string& target, BOOL case_sensitive = TRUE);
@@ -199,7 +199,7 @@ public:
 	LLUUID				getStringUUIDSelectedItem() const override final;
 
 	LLScrollListItem*	getFirstSelected() const;
-	virtual S32			getFirstSelectedIndex() const override;
+	S32			getFirstSelectedIndex() const override;
 	std::vector<LLScrollListItem*> getAllSelected() const;
 	uuid_vec_t 	getSelectedIDs() const override final; //Helper. Much like getAllSelected, but just provides a LLUUID vec
 	S32                 getNumSelected() const;
@@ -236,8 +236,8 @@ public:
 	S32				getMaxSelectable() { return mMaxSelectable; }
 
 
-	virtual S32		getScrollPos() const override;
-	virtual void	setScrollPos( S32 pos ) override;
+	S32		getScrollPos() const override;
+	void	setScrollPos( S32 pos ) override;
 
 	// <edit>
 	S32 getPageLines() { return mPageLines; }
@@ -285,14 +285,14 @@ public:
 	/*virtual*/ void	onMouseLeave(S32 x, S32 y, MASK mask) override;
 	/*virtual*/ void	reshape(S32 width, S32 height, BOOL called_from_parent = TRUE) override;
 
-	virtual BOOL	isDirty() const override;
-	virtual void	resetDirty() override;		// Clear dirty state
+	BOOL	isDirty() const override;
+	void	resetDirty() override;		// Clear dirty state
 
 	virtual void	updateLayout();
 	void			adjustScrollbar(S32 doc_size);
 	virtual void	fitContents(S32 max_width, S32 max_height);
 
-	virtual LLRect	getRequiredRect() override;
+	LLRect	getRequiredRect() override;
 	static  BOOL    rowPreceeds(LLScrollListItem *new_row, LLScrollListItem *test_row);
 
 	LLRect			getItemListRect() { return mItemListRect; }
@@ -319,17 +319,17 @@ public:
 	void setCollapseEmptyColumns(BOOL collapse);
 
 	LLScrollListItem*	hitItem(S32 x,S32 y);
-	virtual void		scrollToShowSelected() override;
+	void		scrollToShowSelected() override;
 
 	// LLEditMenuHandler functions
-	void			copy() const override final;
-	virtual BOOL	canCopy() const;
-	virtual void	cut();
-	virtual BOOL	canCut() const;
-	virtual void	selectAll();
-	virtual BOOL	canSelectAll() const;
-	virtual void	deselect();
-	virtual BOOL	canDeselect() const;
+	void	copy() const override final;
+	BOOL	canCopy() const override;
+	void	cut() override;
+	BOOL	canCut() const override;
+	void	selectAll() override;
+	BOOL	canSelectAll() const override;
+	void	deselect() override;
+	BOOL	canDeselect() const override;
 
 	void setNumDynamicColumns(S32 num) { mNumDynamicWidthColumns = num; }
 	void updateStaticColumnWidth(LLScrollListColumn* col, S32 new_width);
