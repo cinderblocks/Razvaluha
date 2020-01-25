@@ -9,7 +9,7 @@
   title="Experience Profile"
   save_rect="true"
   rect_control="FloaterExperienceProfileRect"
-  min_width="325"
+  min_width="345"
   min_height="325"
   width="358"
   height="650">
@@ -29,23 +29,26 @@
     name="maturity_icon_adult">
     map_event_adult.tga
   </floater.string>
-  <text
+  <name_box
     follows="top|left|right"
     font="SansSerifHugeBold"
     height="26"
-    name="edit_title"
-    bottom="-32"
-    value="Experience Profile"
+    name="experience_title"
+    id_type="3"
+    bottom="-42"
+    value=""
     use_ellipses="true"
-    left="6"
+    click_for_profile="false"
+    mouse_opaque="false"
+    left="10"
     right="-3"/>
   <tab_container
     hide_tabs="true"
     follows="all"
-    height="615"
+    height="610"
     left="5"
     min_height="250"
-    bottom_delta="-618"
+    bottom_delta="-605"
     width="348"
     name="tab_container">
     <panel
@@ -59,12 +62,12 @@
       name="panel_experience_info">
       <scroll_container
         follows="all"
-        height="520"
-        left="9"
+        height="530"
+        left="0"
         name="xp_scroll"
         opaque="true"
-        bottom="-530"
-        width="330">
+        bottom="0"
+        width="348">
         <panel
           follows="top|left|right"
           height="550"
@@ -83,9 +86,9 @@
             width="315">
             <layout_panel
               follows="all"
-              height="29"
+              height="19"
               left="0"
-              bottom="-29"
+              bottom="-19"
               auto_resize="false"
               visible="false"
               width="315"
@@ -96,7 +99,7 @@
                 follows="left|top|right"
                 font="SansSerif"
                 height="19"
-                bottom_delta="-29"
+                bottom_delta="-19"
                 left="10"
                 right="-123"
                 visible="false"
@@ -131,24 +134,6 @@
                 width="290" />
             </layout_panel>
             <layout_panel
-              follows="all"
-              height="19"
-              left="0"
-              bottom="-24"
-              width="313"
-              auto_resize="false">
-              <text
-                follows="left|top|right"
-                font="SansSerifLarge"
-                height="14"
-                left="10"
-                name="experience_title"
-                bottom="-14"
-                use_ellipses="true"
-                value=""
-                width="288"/>
-            </layout_panel>
-            <layout_panel
               follows=""
               height="50"
               left="0"
@@ -160,12 +145,13 @@
               <text_editor
                 follows="left|top|right"
                 font="SansSerif"
+                enabled="false"
                 height="50"
-                left="7"
+                left="10"
                 name="experience_description"
                 bottom="-50"
                 value=""
-                width="293"
+                width="305"
 				max_length="2048"/>
             </layout_panel>
             <layout_panel
@@ -271,13 +257,13 @@
                 type="string"
                 length="1"
                 follows="left|top"
-                height="16"
+                height="18"
                 left="10"
                 name="Owner"
                 width="75">
                 Owner:
               </text>
-              <text
+              <name_box
                 type="string"
                 length="1"
                 follows="left|top|right"
@@ -288,7 +274,7 @@
                 use_ellipses="true"
                 bottom_delta="0"
                 width="188">
-              </text>
+              </name_box>
             </layout_panel>
             <layout_panel
               follows="all"
@@ -309,7 +295,7 @@
                 width="75">
                 Group:
               </text>
-              <text
+              <name_box
                 type="string"
                 length="1"
                 follows="left|top|right"
@@ -317,10 +303,11 @@
                 left_delta="77"
                 valign="center"
                 name="GroupText"
+                id_type="1"
                 use_ellipses="true"
                 bottom_delta="0"
                 width="188">
-              </text>
+              </name_box>
             </layout_panel>
             <layout_panel
               follows="all"
@@ -338,7 +325,7 @@
                 name="allow_btn"
                 width="94"
                 bottom_delta="-26"
-                left="10"
+                left="7"
                 enabled="false"/>
               <button
                 follows="bottom|left"
@@ -376,8 +363,8 @@
                 label="Report Abuse"
                 name="report_btn"
                 width="94"
-                bottom_delta="-3"
-                left="107"
+                bottom_delta="-5"
+                left="104"
                 enabled="true"/>
             </layout_panel>
           </layout_stack>
