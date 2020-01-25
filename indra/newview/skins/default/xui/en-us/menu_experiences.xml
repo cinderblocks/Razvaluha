@@ -27,11 +27,14 @@
   <menu_item_separator/>
   <menu_item_call label="Copy SLURL to clipboard" name="url_copy">
     <menu_item_call.on_click function="List.CopySLURL"/>
+    <on_visible function="List.EnableSingleSelected"/>
   </menu_item_call>
   <menu_item_call label="Copy Key to clipboard" name="key_copy">
     <menu_item_call.on_click function="List.CopyUUIDs" />
+    <on_visible function="List.EnableAnySelected"/>
   </menu_item_call>
   <menu_item_call label="Copy Name to clipboard" name="name_copy">
     <menu_item_call.on_click function="List.CopyNames" />
+    <on_visible function="List.EnableAnySelected"/>
   </menu_item_call>
 </menu>
