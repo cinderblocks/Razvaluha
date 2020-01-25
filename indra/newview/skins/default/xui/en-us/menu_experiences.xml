@@ -6,22 +6,19 @@
   </menu_item_call>
   <menu_item_call label="Allow" name="Allow">
     <on_click function="List.Experience.Allow"/>
-    <on_enable function="List.EnableAnySelected"/>
-    <on_visible function="List.Experience.NotAllowed"/>
+    <on_visible function="List.EnableAnySelected"/>
   </menu_item_call>
   <menu_item_call label="Forget" name="Forget">
     <on_click function="List.Experience.Forget"/>
-    <on_enable function="List.EnableAnySelected"/>
-    <on_visible function="List.Experience.NotForgotten"/>
+    <on_visible function="List.EnableAnySelected"/>
   </menu_item_call>
   <menu_item_call label="Block" name="Block">
     <on_click function="List.Experience.Block"/>
-    <on_enable function="List.EnableAnySelected"/>
-    <on_visible function="List.Experience.NotBlocked"/>
+    <on_visible function="List.EnableAnySelected"/>
   </menu_item_call>
   <menu_item_separator/>
   <menu_item_call label="Report" name="Report">
-    <on_click function="List.ReportAbuse"/>
+    <on_click function="List.AbuseReport"/>
     <on_enable function="List.EnableSingleSelected"/>
   </menu_item_call>
   <menu_item_separator/>

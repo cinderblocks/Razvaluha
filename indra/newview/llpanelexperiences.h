@@ -44,7 +44,6 @@ public:
 
 	void removeExperiences( const LLSD& ids );
 	void removeExperience( const LLUUID& id);
-    void addExperienceInternal(const LLSD& experience);
 	void addExperience( const LLUUID& id);
 	void setButtonAction(const std::string& label, const commit_signal_t::slot_type& cb);
 	void enableButton(bool enable);

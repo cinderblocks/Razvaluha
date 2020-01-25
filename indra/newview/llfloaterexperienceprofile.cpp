@@ -910,7 +910,7 @@ bool LLFloaterExperienceProfile::hasPermission(const LLSD& content, const std::s
 }
 
 /*static*/
-void LLFloaterExperienceProfile::experiencePermissionResults(LLUUID exprienceId, LLSD result)
+void LLFloaterExperienceProfile::experiencePermissionResults(const LLUUID& exprienceId, const LLSD& result)
 {
     std::string permission("Forget");
     if (hasPermission(result, "experiences", exprienceId))
