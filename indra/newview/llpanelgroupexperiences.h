@@ -29,8 +29,6 @@
 
 #include "llpanelgroup.h"
 
-class LLFlatListView;
-
 class LLPanelGroupExperiences : public LLPanelGroupTab
 {
 public:
@@ -49,7 +47,7 @@ public:
     void setExperienceList(const LLSD& experiences);
 
 protected:
-	LLFlatListView* mExperiencesList;
+	class LLNameListCtrl* mExperiencesList;
 
 private:
     static void groupExperiencesResults(LLHandle<LLPanelGroupExperiences>, const LLSD &);

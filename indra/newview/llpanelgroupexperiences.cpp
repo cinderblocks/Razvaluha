@@ -31,14 +31,11 @@
 #include "llpanelgroupexperiences.h"
 
 #include "lluictrlfactory.h"
-#include "roles_constants.h"
 #include "llappviewer.h"
-#include "llagent.h"
-#include "llviewerregion.h"
-#include "llflatlistview.h"
-#include "llpanelexperiences.h"
-#include "llsd.h"
 #include "llexperiencecache.h"
+#include "llnamelistctrl.h"
+
+void addExperienceToList(const LLSD& experience, LLNameListCtrl* list);
 
 //static LLPanelInjector<LLPanelGroupExperiences> t_panel_group_experiences("panel_group_experiences");
 //static
@@ -66,14 +63,14 @@ BOOL LLPanelGroupExperiences::isVisibleByAgent(LLAgent* agentp)
 
 BOOL LLPanelGroupExperiences::postBuild()
 {
-	mExperiencesList = getChild<LLFlatListView>("experiences_list");
+	mExperiencesList = getChild<LLNameListCtrl>("experiences_list");
 	if (hasString("loading_experiences"))
 	{
-		mExperiencesList->setNoItemsCommentText(getString("loading_experiences"));
+		mExperiencesList->setCommentText(getString("loading_experiences"));
 	}
 	else if (hasString("no_experiences"))
 	{
-		mExperiencesList->setNoItemsCommentText(getString("no_experiences"));
+		mExperiencesList->setCommentText(getString("no_experiences"));
 	}
 
 	return LLPanelGroupTab::postBuild();
@@ -106,18 +103,17 @@ void LLPanelGroupExperiences::setExperienceList(const LLSD& experiences)
 {
 	if (hasString("no_experiences"))
 	{
-		mExperiencesList->setNoItemsCommentText(getString("no_experiences"));
+		mExperiencesList->setCommentText(getString("no_experiences"));
 	}
     mExperiencesList->clear();
 
+    auto& cache = LLExperienceCache::instance();
     LLSD::array_const_iterator it = experiences.beginArray();
     for ( /**/ ; it != experiences.endArray(); ++it)
     {
         LLUUID public_key = it->asUUID();
-        LLExperienceItem* item = new LLExperienceItem();
-
-        item->init(public_key);
-        mExperiencesList->addItem(item, public_key);
+        if (public_key.notNull())
+            cache.get(public_key, boost::bind(addExperienceToList, _1, mExperiencesList));
     }
 }
 
@@ -134,5 +130,4 @@ void LLPanelGroupExperiences::groupExperiencesResults(LLHandle<LLPanelGroupExper
     {
         panel->setExperienceList(experiences);
     }
-
 }
