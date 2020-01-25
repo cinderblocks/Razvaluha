@@ -370,9 +370,9 @@ void LLFloaterExperienceProfile::refreshExperience( const LLSD& experience )
 
 	mLocationSLURL = experience[LLExperienceCache::SLURL].asString();
 	child = getChild<LLTextBox>(TF_SLURL);
-	bool has_slurl = mLocationSLURL.length()>0;
+	bool has_slurl = !mLocationSLURL.empty() && mLocationSLURL != "last";
 	locationPanel->setVisible(has_slurl);
-	mLocationSLURL = LLSLURL(mLocationSLURL).getSLURLString();
+	if (has_slurl) mLocationSLURL = LLSLURL(mLocationSLURL).getSLURLString();
 	child->setText(mLocationSLURL);
 
 
