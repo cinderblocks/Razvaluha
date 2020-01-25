@@ -32,7 +32,6 @@
         right="-86"
         height="250"
         follows="all"
-        menu_num="3"
         multi_select="true"
         name="experience_log_list">
         <columns
