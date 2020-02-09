@@ -22,6 +22,7 @@ include(Json)
 include(LibXML2)
 include(LLAddBuildTest)
 include(LLAppearance)
+include(LLDarwin)
 include(LLAudio)
 include(LLCA)
 include(LLCharacter)
@@ -66,6 +67,7 @@ include_directories(
     ${ZLIB_INCLUDE_DIRS}
     ${JSON_INCLUDE_DIR}
     ${GLOD_INCLUDE_DIR}
+    ${LLDARWIN_INCLUDE_DIRS}
     ${LIBXML2_INCLUDES}
     ${LLAUDIO_INCLUDE_DIRS}
     ${LLCHARACTER_INCLUDE_DIRS}
@@ -1218,22 +1220,16 @@ set_source_files_properties(
 # Replace the icons with the appropriate ones for the channel
 # ('test' is the default)
 set(ICON_PATH "default")
-if (VIEWER_CHANNEL_BASE STREQUAL "Alpha")
+if (VIEWER_CHANNEL_TYPE STREQUAL "Alpha")
   set(ICON_PATH "alpha")
-elseif (VIEWER_CHANNEL_BASE STREQUAL "Beta")
-  set(ICON_PATH "beta")
+#elseif (VIEWER_CHANNEL_TYPE STREQUAL "Beta")
+#  set(ICON_PATH "beta")        # Not till we actually have beta icons. - RG
 endif()
-set(VIEWER_MACOSX_PHASE "d")
 
 if (DARWIN)
-  LIST(APPEND viewer_SOURCE_FILES llappviewermacosx.cpp)
-  LIST(APPEND viewer_SOURCE_FILES llappviewermacosx-objc.mm)
-  LIST(APPEND viewer_HEADER_FILES llappviewermacosx-objc.h)
-  LIST(APPEND viewer_SOURCE_FILES llfilepicker_mac.mm)
-  LIST(APPEND viewer_HEADER_FILES llfilepicker_mac.h)
-
-  # This should be compiled with the viewer.
-  LIST(APPEND viewer_SOURCE_FILES llappdelegate-objc.mm)
+  LIST(APPEND viewer_SOURCE_FILES
+    llappviewermacosx.cpp
+    )
 
   find_library(AGL_LIBRARY AGL)
   find_library(APPKIT_LIBRARY AppKit)
@@ -1747,6 +1743,7 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${LLAUDIO_LIBRARIES}
     ${LLAUDIO_VORBIS_LIBRARIES}
     ${LLCHARACTER_LIBRARIES}
+    ${LLDARWIN_LIBRARIES}
     ${LLIMAGE_LIBRARIES}
     ${LLIMAGEJ2COJ_LIBRARIES}
     ${LLINVENTORY_LIBRARIES}

@@ -85,47 +85,47 @@ protected:
 public:
 	virtual ~LLLineEditor();
 
-	virtual LLXMLNodePtr getXML(bool save_children = true) const;
+	LLXMLNodePtr getXML(bool save_children = true) const override;
 	void setColorParameters(LLXMLNodePtr node);
 	static LLView* fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFactory *factory);
 	static void cleanupLineEditor();
 
 	// mousehandler overrides
-	/*virtual*/ BOOL	handleMouseDown(S32 x, S32 y, MASK mask);
-	/*virtual*/ BOOL	handleMouseUp(S32 x, S32 y, MASK mask);
-	/*virtual*/ BOOL	handleHover(S32 x, S32 y, MASK mask);
-	/*virtual*/ BOOL	handleDoubleClick(S32 x,S32 y,MASK mask);
-	/*virtual*/ BOOL	handleMiddleMouseDown(S32 x,S32 y,MASK mask);
-	/*virtual*/ BOOL	handleRightMouseDown( S32 x, S32 y, MASK mask );
-	/*virtual*/ BOOL	handleKeyHere(KEY key, MASK mask );
-	/*virtual*/ BOOL	handleUnicodeCharHere(llwchar uni_char);
-	/*virtual*/ void	onMouseCaptureLost();
+	/*virtual*/ BOOL	handleMouseDown(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ BOOL	handleMouseUp(S32 x, S32 y, MASK mask) final override;
+	/*virtual*/ BOOL	handleHover(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ BOOL	handleDoubleClick(S32 x,S32 y,MASK mask) final override;
+	/*virtual*/ BOOL	handleMiddleMouseDown(S32 x,S32 y,MASK mask) final override;
+	/*virtual*/ BOOL	handleRightMouseDown(S32 x, S32 y, MASK mask) override;
+	/*virtual*/ BOOL	handleKeyHere(KEY key, MASK mask ) final override;
+	/*virtual*/ BOOL	handleUnicodeCharHere(llwchar uni_char) final override;
+	/*virtual*/ void	onMouseCaptureLost() final override;
 
 	virtual void insert(std::string what,S32 wher);
 
 	// LLEditMenuHandler overrides
-	virtual void	cut();
-	virtual BOOL	canCut() const;
+	void	cut() override;
+	BOOL	canCut() const final override;
 
-	void			copy() const override final;
-	virtual BOOL	canCopy() const;
+	void	copy() const final override;
+	BOOL	canCopy() const final override;
 
-	virtual void	paste();
-	virtual BOOL	canPaste() const;
+	void	paste() final override;
+	BOOL	canPaste() const final override;
 
 	virtual void	updatePrimary();
 	virtual void	copyPrimary();
  	virtual void	pastePrimary();
 	virtual BOOL	canPastePrimary() const;
 
-	virtual void	doDelete();
-	virtual BOOL	canDoDelete() const;
+	void	doDelete() final override;
+	BOOL	canDoDelete() const final override;
 
-	virtual void	selectAll();
-	virtual BOOL	canSelectAll() const;
+	void	selectAll() final override;
+	BOOL	canSelectAll() const final override;
 
-	virtual void	deselect();
-	virtual BOOL	canDeselect() const;
+	void	deselect() final override;
+	BOOL	canDeselect() const final override;
 
 	static void spell_correct(void* data);
 	static void spell_show(void* data);
@@ -133,22 +133,22 @@ public:
 
     std::vector<S32> getMisspelledWordsPositions();
 	// view overrides
-	virtual void	draw();
-    void drawMisspelled(LLRect background);
-	virtual void	reshape(S32 width,S32 height,BOOL called_from_parent=TRUE);
-	virtual void	onFocusReceived();
-	virtual void	onFocusLost();
-	virtual void	setEnabled(BOOL enabled);
+	void	draw() final override;
+	void	reshape(S32 width,S32 height,BOOL called_from_parent=TRUE) final override;
+	void	onFocusReceived() final override;
+	void	onFocusLost() final override;
+	void	setEnabled(BOOL enabled) final override;
+	void	drawMisspelled(LLRect background);
 
 	// UI control overrides
-	virtual void	clear();
-	virtual void	onTabInto();
-	virtual void	setFocus( BOOL b );
-	virtual void 	setRect(const LLRect& rect);
-	virtual BOOL	acceptsTextInput() const;
-	virtual void	onCommit();
-	virtual BOOL	isDirty() const { return mText.getString() != mPrevText; }	// Returns TRUE if user changed value at all
-	virtual void	resetDirty() { mPrevText = mText.getString(); }		// Clear dirty state
+	void	clear() final override;
+	void	onTabInto() final override;
+	void	setFocus( BOOL b ) final override;
+	void 	setRect(const LLRect& rect) final override;
+	BOOL	acceptsTextInput() const final override;
+	void	onCommit() final override;
+	BOOL	isDirty() const final override { return mText.getString() != mPrevText; }	// Returns TRUE if user changed value at all
+	void	resetDirty() final override { mPrevText = mText.getString(); }		// Clear dirty state
     virtual BOOL	isSpellDirty() const { return mText.getString() != mPrevSpelledText; }	// Returns TRUE if user changed value at all
     virtual void	resetSpellDirty() { mPrevSpelledText = mText.getString(); }		// Clear dirty state
 
@@ -157,16 +157,16 @@ public:
 	void setAutoreplaceCallback(autoreplace_callback_t cb) { mAutoreplaceCallback = cb; }
 
 	// assumes UTF8 text
-	virtual void	setValue(const LLSD& value ) { setText(value.asString()); }
-	virtual LLSD	getValue() const { return LLSD(getText()); }
-	virtual BOOL	setTextArg( const std::string& key, const LLStringExplicit& text );
-	virtual BOOL	setLabelArg( const std::string& key, const LLStringExplicit& text );
+	void	setValue(const LLSD& value ) override { setText(value.asString()); }
+	LLSD	getValue() const override { return LLSD(getText()); }
+	BOOL	setTextArg( const std::string& key, const LLStringExplicit& text ) final override;
+	BOOL	setLabelArg( const std::string& key, const LLStringExplicit& text ) final override;
 
 	void			setLabel(const LLStringExplicit &new_label) { mLabel = new_label; }
 	void			setText(const LLStringExplicit &new_text);
 
 	const std::string& getText() const		{ return mText.getString(); }
-	const LLWString& getWText() const	{ return mText.getWString(); }
+	const LLWString& getWText() const override	{ return mText.getWString(); }
 	LLWString getConvertedText() const; // trimmed text with paragraphs converted to newlines
 
 	S32				getLength() const	{ return mText.length(); }
@@ -241,7 +241,7 @@ public:
 	static BOOL		prevalidateASCII(const LLWString &str);
 
 	static BOOL		postvalidateFloat(const std::string &str);
-	
+
 	BOOL			evaluateFloat();
 
 	// line history support:
@@ -275,14 +275,14 @@ private:
 	void			updateAllowingLanguageInput();
 	BOOL			hasPreeditString() const;
 	// Implementation (overrides) of LLPreeditor
-	virtual void	resetPreedit();
-	virtual void	updatePreedit(const LLWString &preedit_string,
-						const segment_lengths_t &preedit_segment_lengths, const standouts_t &preedit_standouts, S32 caret_position);
-	virtual void	markAsPreedit(S32 position, S32 length);
-	virtual void	getPreeditRange(S32 *position, S32 *length) const;
-	virtual void	getSelectionRange(S32 *position, S32 *length) const;
-	virtual BOOL	getPreeditLocation(S32 query_position, LLCoordGL *coord, LLRect *bounds, LLRect *control) const;
-	virtual S32		getPreeditFontSize() const;
+	void	resetPreedit() final override;
+	void	updatePreedit(const LLWString &preedit_string,
+						const segment_lengths_t &preedit_segment_lengths, const standouts_t &preedit_standouts, S32 caret_position) final override;
+	void	markAsPreedit(S32 position, S32 length) final override;
+	void	getPreeditRange(S32 *position, S32 *length) const final override;
+	BOOL	getPreeditLocation(S32 query_position, LLCoordGL *coord, LLRect *bounds, LLRect *control) const final override;
+	S32		getPreeditFontSize() const final override;
+	void	getSelectionRange(S32 *position, S32 *length) const override;
 
 protected:
 	LLUIString		mText;					// The string being edited.
@@ -357,7 +357,7 @@ protected:
 	LLPreeditor::standouts_t mPreeditStandouts;
 
 	LLHandle<LLView> mContextMenuHandle;
-	
+
 private:
 	// Utility on top of LLUI::getUIImage, looks up a named image in a given XML node and returns it if possible
 	// or returns a given default image if anything in the process fails.

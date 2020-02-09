@@ -24,16 +24,16 @@
  * $/LicenseInfo$
  */ 
 
-#if !defined LL_DARWIN
+#ifndef LL_DARWIN
 	#error "Use only with Mac OS X"
 #endif
 
+#import "llappviewermacosx-objc.h"
 #import <Cocoa/Cocoa.h>
 #include <iostream>
 
-#include "llappviewermacosx-objc.h"
 
-void launchApplication(const std::string* app_name, const std::vector<std::string>* args)
+void LLDarwin::launchApplication(const std::string* app_name, const std::vector<std::string>* args)
 {
 
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];

@@ -2810,7 +2810,7 @@ bool LLAppViewer::initConfiguration()
 
 #if LL_DARWIN
 	// Initialize apple menubar and various callbacks
-	init_apple_menu(LLTrans::getString("APP_NAME").c_str());
+	//init_apple_menu(LLTrans::getString("APP_NAME").c_str());
 #endif // LL_DARWIN
 
 	// Display splash screen.  Must be after above check for previous

@@ -203,9 +203,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_XCODE_ATTRIBUTE_VALID_ARCHS "x86_64")
 
   # Xcode setup
-  if (XCODE_VERSION LESS 10.2.0)
-    message( FATAL_ERROR "Xcode 10.2.0 or greater is required." )
-  endif (XCODE_VERSION LESS 10.2.0)
+  if (XCODE_VERSION LESS 10.1.0)
+    message( FATAL_ERROR "Xcode 10.1.0 or greater is required." )
+  endif (XCODE_VERSION LESS 10.1.0)
     message( "Building with " ${CMAKE_OSX_SYSROOT} )
   set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
 

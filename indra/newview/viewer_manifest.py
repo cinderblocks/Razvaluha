@@ -946,7 +946,6 @@ class DarwinManifest(ViewerManifest):
                                 "libaprutil-1.0.dylib",
                                 "libcollada14dom.dylib",
                                 "libexpat.1.dylib",
-                                "libexception_handler.dylib",
                                 "libGLOD.dylib",
                                 "libfreetype*.dylib",
                                 "libopenjpeg.dylib",
@@ -982,6 +981,21 @@ class DarwinManifest(ViewerManifest):
 
                 # our apps
                 executable_path = {}
+                for app_bld_dir, app in ( # plugin launcher
+                                         (os.path.join("llplugin", "slplugin"), "AlchemyPlugin.app"),
+                                         ):
+                    self.path2basename(os.path.join(os.pardir,
+                                                    app_bld_dir, self.args['configuration']),
+                                       app)
+                    executable_path[app] = \
+                        self.dst_path_of(os.path.join(app, "Contents", "MacOS"))
+
+                    # our apps dependencies on shared libs
+                    # for each app, for each dylib we collected in dylibs,
+                    # create a symlink to the real copy of the dylib.
+                    with self.prefix(dst=os.path.join(app, "Contents", "Resources")):
+                        for libfile in dylibs:
+                            self.relsymlinkf(os.path.join(libfile_parent, libfile))
 
                 # Dullahan helper apps go inside SLPlugin.app
                 with self.prefix(dst=os.path.join(
@@ -1074,13 +1088,14 @@ class DarwinManifest(ViewerManifest):
                     self.path2basename("../media_plugins/libvlc/" + self.args['configuration'],
                                        "media_plugin_libvlc.dylib")
 
-                    # copy LibVLC dynamic libraries
-                    with self.prefix(src=relpkgdir, dst="lib"):
-                        self.path( "libvlc*.dylib*" )
-                        # copy LibVLC plugins folder
-                        with self.prefix(src='plugins', dst=""):
-                            self.path( "*.dylib" )
-                            self.path( "plugins.dat" )
+                    if not self.is_packaging_viewer():
+                        # copy LibVLC dynamic libraries
+                        with self.prefix(src=relpkgdir, dst="lib"):
+                            self.path( "libvlc*.dylib*" )
+                            # copy LibVLC plugins folder
+                            with self.prefix(src='plugins', dst=""):
+                                self.path( "*.dylib" )
+                                self.path( "plugins.dat" )
 
     def package_finish(self):
         global CHANNEL_VENDOR_BASE
@@ -1479,6 +1494,7 @@ class Linux_x86_64_Manifest(LinuxManifest):
             self.path("libexpat.so*")
             self.path("libGLOD.so")
             self.path("libSDL-1.2.so*")
+            self.path("libopenjpeg.so*")
             self.path("libhunspell*.so*")
             self.path("libalut.so*")
             self.path("libopenal.so*")

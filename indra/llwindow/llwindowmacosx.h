@@ -41,7 +41,6 @@
 #undef verify
 #undef require
 
-
 class LLWindowMacOSX : public LLWindow
 {
 public:
