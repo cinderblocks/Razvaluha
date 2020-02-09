@@ -230,7 +230,7 @@ protected:
 };
 
 // Used to view and edit an LSL script from your inventory.
-class LLPreviewLSL : public LLScriptEdContainer
+class LLPreviewLSL final : public LLScriptEdContainer
 {
 public:
 	LLPreviewLSL(const std::string& name, const LLRect& rect, const std::string& title, const LLUUID& item_uuid );
@@ -272,7 +272,7 @@ protected:
 
 
 // Used to view and edit an LSL script that is attached to an object.
-class LLLiveLSLEditor : public LLScriptEdContainer
+class LLLiveLSLEditor final : public LLScriptEdContainer
 {
 	friend class LLLiveLSLFile;
 public: 

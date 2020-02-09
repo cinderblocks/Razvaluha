@@ -66,11 +66,6 @@
 #include "lfsimfeaturehandler.h"
 #include "hippogridmanager.h"
 
-
-// [RLVa:KB]
-#include "rlvhandler.h"
-// [/RLVa:KB]
-
 bool can_set_export(const U32& base, const U32& own, const U32& next);
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,9 +90,10 @@ public:
 	{
 		gInventory.removeObserver(this);
 	}
-	virtual void changed(U32 mask);
+
+	void changed(U32 mask) override;
 private:
-	LLFloaterProperties* mFloater;
+	LLFloaterProperties* mFloater; // Not a handle because LLFloaterProperties is managing LLPropertiesObserver
 };
 
 void LLPropertiesObserver::changed(U32 mask)
@@ -156,7 +152,7 @@ LLFloaterProperties::LLFloaterProperties(const std::string& name, const LLRect& 
 LLFloaterProperties::~LLFloaterProperties()
 {
 	delete mPropertiesObserver;
-	mPropertiesObserver = NULL;
+	mPropertiesObserver = nullptr;
 }
 
 // virtual
@@ -218,7 +214,7 @@ void LLFloaterProperties::refresh()
 		
 		mDirty = TRUE;
 
-		static constexpr std::array<const char*, 24> enableNames{{
+		static constexpr std::array<const char*, 21> enableNames{{
 			"LabelItemName",
 			"LabelItemDesc",
 			"LabelCreatorName",
@@ -420,11 +416,11 @@ void LLFloaterProperties::refreshFromItem(LLInventoryItem* item)
 	getChild<LLUICtrl>("CheckOwnerCopy")->setValue(LLSD((BOOL)(owner_mask & PERM_COPY)));
 	getChildView("CheckOwnerTransfer")->setEnabled(FALSE);
 	getChild<LLUICtrl>("CheckOwnerTransfer")->setValue(LLSD((BOOL)(owner_mask & PERM_TRANSFER)));
+	getChildView("CheckOwnerExport")->setEnabled(FALSE);
+	getChild<LLUICtrl>("CheckOwnerExport")->setValue(LLSD((BOOL)(owner_mask & PERM_EXPORT)));
 
 	bool supports_export = LFSimFeatureHandler::instance().simSupportsExport();
-	getChildView("CheckOwnerExport")->setEnabled(false);
-	getChild<LLUICtrl>("CheckOwnerExport")->setValue(LLSD((BOOL)(supports_export && owner_mask & PERM_EXPORT)));
-	if (!gHippoGridManager->getCurrentGrid()->isSecondLife())
+	if (!supports_export)
 		getChildView("CheckOwnerExport")->setVisible(false);
 
 	///////////////////////
@@ -607,10 +603,9 @@ void LLFloaterProperties::setAssociatedExperience( LLHandle<LLFloaterProperties>
 		if (id.notNull())
 		{
 			//info->getChild<LLTextBox>("LabelItemExperience")->setText(LLSLURL("experience", id, "profile").getSLURLString();
-			if (LLTextBox* tb = info->getChild<LLTextBox>("LabelItemExperience"))
+			if (LLNameBox* tb = info->getChild<LLNameBox>("LabelItemExperience"))
 			{
-				tb->setText(experience[LLExperienceCache::NAME].asString());
-				tb->setClickedCallback(boost::bind(LLFloaterExperienceProfile::showInstance, id));
+				tb->setValue(id);
 			}
 		}
 		else

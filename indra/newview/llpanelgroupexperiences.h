@@ -29,7 +29,7 @@
 
 #include "llpanelgroup.h"
 
-class LLPanelGroupExperiences : public LLPanelGroupTab
+class LLPanelGroupExperiences final : public LLPanelGroupTab
 {
 public:
 	static void* createTab(void* data);

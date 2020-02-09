@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpanelexperiences.cpp
  * @brief LLPanelExperiences class implementation
@@ -70,6 +68,7 @@ void addExperienceToList(const LLSD& experience, LLNameListCtrl* list)
 		return;
 
 	const auto& id = experience[LLExperienceCache::EXPERIENCE_ID];
+	list->removeNameItem(id); // Don't add the same item twice, this can happen
 	auto item = LLNameListCtrl::NameItem()
 		.name(experience[LLExperienceCache::NAME].asString())
 		.target(LLNameListItem::EXPERIENCE);

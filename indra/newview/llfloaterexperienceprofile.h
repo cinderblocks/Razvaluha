@@ -37,7 +37,7 @@ class LLLayoutPanel;
 class LLTextBox;
 class LLComboBox;
 
-class LLFloaterExperienceProfile : public LLFloater
+class LLFloaterExperienceProfile final : public LLFloater
 , public LLInstanceTracker<LLFloaterExperienceProfile, LLUUID>
 {
     LOG_CLASS(LLFloaterExperienceProfile);

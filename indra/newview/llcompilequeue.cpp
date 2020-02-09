@@ -75,7 +75,7 @@ namespace
     class ObjectInventoryFetcher: public LLVOInventoryListener
     {
     public:
-        typedef boost::shared_ptr<ObjectInventoryFetcher> ptr_t;
+        typedef std::shared_ptr<ObjectInventoryFetcher> ptr_t;
 
         ObjectInventoryFetcher(LLEventPump &pump, LLViewerObject* object, void* user_data) :
             LLVOInventoryListener(),
@@ -260,7 +260,7 @@ void LLFloaterScriptQueue::addStringMessage(const std::string &message)
 
 BOOL LLFloaterScriptQueue::isDone() const
 {
-	return (mCurrentObjectID.isNull() && (mObjectList.size() == 0));
+	return (mCurrentObjectID.isNull() && (mObjectList.empty()));
 }
 
 ///----------------------------------------------------------------------------
@@ -518,7 +518,7 @@ bool LLFloaterCompileQueue::processScript(LLHandle<LLFloaterCompileQueue> hfloat
         std::string buffer = std::string("Compilation of \"") + inventory->getName() + std::string("\" failed:");
         floater->addStringMessage(buffer);
         for (LLSD::array_const_iterator line = compile_errors.beginArray();
-            line < compile_errors.endArray(); line++)
+            line < compile_errors.endArray(); ++line)
         {
             std::string str = line->asString();
             str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
@@ -649,7 +649,6 @@ LLFloaterRunQueue::LLFloaterRunQueue(const std::string& name, const LLRect& rect
 LLFloaterRunQueue::~LLFloaterRunQueue()
 {
 }
-
 
 /// This is a utility function to be bound and called from objectScriptProcessingQueueCoro.
 /// Do not call directly. It may throw a LLCheckedHandle<>::Stale exception.
@@ -887,24 +886,23 @@ void LLFloaterScriptQueue::objectScriptProcessingQueueCoro(std::string action, L
             //std::string objName = (dynamic_cast<LLInventoryObject *>(obj.get()))->getName();
             LL_DEBUGS("SCRIPTQ") << "Object has " << inventory.size() << " items." << LL_ENDL;
 
-            for (LLInventoryObject::object_list_t::iterator itInv = inventory.begin();
-                itInv != inventory.end(); ++itInv)
+            for (auto& itInv : inventory)
             {
                 floater.check();
 
                 // note, we have a smart pointer to the obj above... but if we didn't we'd check that 
                 // it still exists here.
 
-                if (((*itInv)->getType() == LLAssetType::AT_LSL_TEXT))
+                if ((itInv->getType() == LLAssetType::AT_LSL_TEXT))
                 {
-                    LL_DEBUGS("SCRIPTQ") << "Inventory item " << (*itInv)->getUUID().asString() << "\"" << (*itInv)->getName() << "\"" << LL_ENDL;
+                    LL_DEBUGS("SCRIPTQ") << "Inventory item " << itInv->getUUID().asString() << "\"" << itInv->getName() << "\"" << LL_ENDL;
                     if (firstForObject)
                     {
                         //floater->addStringMessage(objName + ":");
                         firstForObject = false;
                     }
 
-                    if (!func(obj, (*itInv), maildrop))
+                    if (!func(obj, itInv, maildrop))
                     {
                         continue;
                     }

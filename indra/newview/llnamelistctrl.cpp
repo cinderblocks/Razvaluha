@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llnamelistctrl.cpp
  * @brief A list of names, automatically refreshed from name cache.
@@ -183,8 +181,9 @@ LFIDBearer::Type LLNameListCtrl::getSelectedType() const
 	{
 		switch (static_cast<LLNameListItem*>(item)->getNameType())
 		{
-			CONVERT_TO_RETTYPE(case LLNameListItem::INDIVIDUAL, AVATAR);
+			CONVERT_TO_RETTYPE(case LLNameListItem::INDIVIDUAL, AVATAR)
 			CONVERT_TO_RETTYPE(case LLNameListItem::GROUP, GROUP)
+			CONVERT_TO_RETTYPE(case LLNameListItem::EXPERIENCE, EXPERIENCE)
 			CONVERT_TO_RETTYPE(default, COUNT) // Invalid, but just use count instead
 		}
 	}

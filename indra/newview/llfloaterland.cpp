@@ -110,13 +110,13 @@ LLParcelSelectionObserver* LLFloaterLand::sObserver = NULL;
 S32 LLFloaterLand::sLastTab = 0;
 
 // Local classes
-class LLParcelSelectionObserver : public LLParcelObserver
+class LLParcelSelectionObserver final : public LLParcelObserver
 {
 public:
     void changed() override { LLFloaterLand::refreshAll(); }
 };
 
-class LLPanelLandExperiences
+class LLPanelLandExperiences final
 	:	public LLPanel
 {
 public:
@@ -375,7 +375,7 @@ void* LLFloaterLand::createPanelLandAudio(void* data)
 // static
 void* LLFloaterLand::createPanelLandExperiences(void* data)
 {
-	LLFloaterLand* self = (LLFloaterLand*)data;
+	LLFloaterLand* self = static_cast<LLFloaterLand*>(data);
 	self->mPanelExperiences = new LLPanelLandExperiences(self->mParcel);
 	self->mTabLand->addTabPanel(self->mPanelExperiences, self->mPanelExperiences->getLabel()); // <singu/> We must build this panel separately from the floater xml, so add it to the tab container manually.
 	return self->mPanelExperiences;
@@ -565,12 +565,12 @@ void LLPanelLandGeneral::refresh()
 	mCheckContributeWithDeed->set(FALSE);
 	mCheckContributeWithDeed->setEnabled(FALSE);
 
-	mTextOwner->setText(LLStringUtil::null);
+		mTextOwner->setValue(LLUUID::null);
 	mContentRating->setText(LLStringUtil::null);
 	mLandType->setText(LLStringUtil::null);
 
 	mTextClaimDate->setText(LLStringUtil::null);
-	mTextGroup->setText(LLStringUtil::null);
+		mTextGroup->setValue(LLUUID::null);
 	mTextPrice->setText(LLStringUtil::null);
 
 	mSaleInfoForSale1->setVisible(FALSE);
@@ -2228,7 +2228,7 @@ void LLPanelLandOptions::onCommitAny()
 	BOOL allow_terraform	= mCheckEditLand->get();
 	BOOL allow_damage		= !mCheckSafe->get();
 	BOOL allow_fly			= mCheckFly->get();
-	BOOL allow_landmark		= TRUE; // cannot restrict landmark creation
+	BOOL allow_landmark		= mCheckLandmark->get();
 	BOOL allow_other_scripts	= mCheckOtherScripts->get();
 	BOOL allow_group_scripts	= mCheckGroupScripts->get() || allow_other_scripts;
 	BOOL allow_publish		= FALSE;
@@ -2928,9 +2928,7 @@ LLPanelLandCovenant::~LLPanelLandCovenant()
 
 BOOL LLPanelLandCovenant::postBuild()
 {
-	mLastRegionID = LLUUID::null;
-	mNextUpdateTime = 0;
-
+	refresh();
 	return TRUE;
 }
 
@@ -3045,8 +3043,8 @@ void LLPanelLandCovenant::updateEstateOwnerID(const LLUUID& id)
 
 LLPanelLandExperiences::LLPanelLandExperiences( LLSafeHandle<LLParcelSelection>& parcelp ) 
 	: mParcel(parcelp),
-	  mAllowed(NULL),
-	  mBlocked(NULL)
+	  mAllowed(nullptr),
+	  mBlocked(nullptr)
 {
 	mFactoryMap["panel_allowed"] = LLCallbackMap(create_xp_list_editor, reinterpret_cast<void*>(&mAllowed));
 	mFactoryMap["panel_blocked"] = LLCallbackMap(create_xp_list_editor, reinterpret_cast<void*>(&mBlocked));

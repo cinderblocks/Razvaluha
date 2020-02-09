@@ -92,7 +92,7 @@ LLFloaterAuction::LLFloaterAuction()
 // Destroys the object
 LLFloaterAuction::~LLFloaterAuction()
 {
-	sInstance = NULL;
+	sInstance = nullptr;
 }
 
 // static
@@ -502,7 +502,6 @@ void LLFloaterAuction::doSellToAnyone()
 
 		body["sale_price"] = parcelp->getArea();	// Sell for L$1 per square meter
 		body["auth_buyer_id"] = LLUUID::null;		// To anyone
-
 
 		LL_INFOS() << "Sending parcel update to sell to anyone for L$1 via capability to: "
 			<< mParcelUpdateCapUrl << LL_ENDL;

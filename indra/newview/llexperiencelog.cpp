@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llexperiencelog.cpp
  * @brief llexperiencelog implementation
@@ -229,7 +227,7 @@ void LLExperienceLog::eraseExpired()
 {
     std::vector<std::string> expired;
 	std::for_each(mEvents.beginMap(), mEvents.endMap(),
-				  [&](const std::pair<std::string, LLSD>& event_pair)
+				  [&](const auto& event_pair)
 	{
 		const std::string& date = event_pair.first;
 		if (isExpired(date))

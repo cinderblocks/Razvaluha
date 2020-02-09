@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llpanelexperiencelog.cpp
  * @brief llpanelexperiencelog
@@ -116,8 +114,8 @@ void LLPanelExperienceLog::refresh()
 	bool waiting = false;
 	LLUUID waiting_id;
 
-	int itemsToSkip = mPageSize*mCurrentPage;
-	int items = 0;
+	U32 itemsToSkip = mPageSize*mCurrentPage;
+	U32 items = 0;
 	bool moreItems = false;
 	
 	if (!events.emptyMap())
@@ -132,7 +130,7 @@ void LLPanelExperienceLog::refresh()
 				continue;
 			}
 			const LLSD& dayArray = day->second;
-			int size = dayArray.size();
+			U32 size = dayArray.size();
 			if(itemsToSkip > size)
 			{
 				itemsToSkip -= size;
@@ -250,7 +248,7 @@ void LLPanelExperienceLog::logSizeChanged()
 {
 	int value = (int)(getChild<LLSpinCtrl>("logsizespinner")->get());
 	LLExperienceLog::instance().setMaxDays(value);
-		refresh();
+	refresh();
 }
 
 void LLPanelExperienceLog::onSelectionChanged()

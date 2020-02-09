@@ -32,7 +32,7 @@
 class LLScrollListCtrl;
 
 void* create_xp_log(void* data);
-class LLPanelExperienceLog
+class LLPanelExperienceLog final
 	: public LLPanel 
 {
 public:

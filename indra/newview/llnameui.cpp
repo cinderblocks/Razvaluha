@@ -107,7 +107,7 @@ void LLNameUI::setNameText()
 		auto& cache = LLExperienceCache::instance();
 		const auto& exp = cache.get(mNameID);
 		if (got_name = exp.isMap())
-			name = exp.has(LLExperienceCache::MISSING) && exp[LLExperienceCache::MISSING] ? LLTrans::getString("ExperienceNameNull") : exp[LLExperienceCache::NAME];
+			name = exp.has(LLExperienceCache::MISSING) && exp[LLExperienceCache::MISSING] ? LLTrans::getString("ExperienceNameNull") : exp[LLExperienceCache::NAME].asString();
 		else
 			cache.get(mNameID, boost::bind(&LLNameUI::setNameText, this));
 	}

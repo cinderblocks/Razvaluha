@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llviewerparcelmgr.cpp
  * @brief Viewer-side representation of owned land
@@ -874,7 +872,7 @@ LLParcel* LLViewerParcelMgr::getCollisionParcel() const
 
 void LLViewerParcelMgr::render()
 {
-	static LLCachedControl<bool> render_parcel_selection(gSavedSettings, "RenderParcelSelection");
+	static const LLCachedControl<bool> render_parcel_selection(gSavedSettings, "RenderParcelSelection");
 	if (mSelected && mRenderSelection && render_parcel_selection)
 	{
 		// Rendering is done in agent-coordinates, so need to supply
@@ -895,7 +893,7 @@ void LLViewerParcelMgr::renderParcelCollision()
 		mRenderCollision = FALSE;
 	}
 
-	static LLCachedControl<bool> render_ban_line(gSavedSettings, "ShowBanLines");
+	static const LLCachedControl<bool> render_ban_line(gSavedSettings, "ShowBanLines");
 	if (mRenderCollision && render_ban_line)
 	{
 		LLViewerRegion* regionp = gAgent.getRegion();
@@ -1313,7 +1311,7 @@ const std::string& LLViewerParcelMgr::getAgentParcelName() const
 
 void LLViewerParcelMgr::sendParcelPropertiesUpdate(LLParcel* parcel, bool use_agent_region)
 {
-	if(!parcel) 
+	if (!parcel) 
         return;
 
 	LLViewerRegion *region = use_agent_region ? gAgent.getRegion() : LLWorld::getInstance()->getRegionFromPosGlobal( mWestSouth );
@@ -1862,22 +1860,20 @@ void optionally_start_music(LLParcel* parcel)
 		// was not *explicitly* stopped by the user. (part of SL-4878)
 		if (gOverlayBar && gOverlayBar->musicPlaying())
 		{
-		LLPanelNearByMedia* nearby_media_panel = LLFloaterNearbyMedia::instanceExists() ? LLFloaterNearbyMedia::getInstance()->getMediaPanel() : nullptr;
-		if ((nearby_media_panel &&
-		     nearby_media_panel->getParcelAudioAutoStart()) ||
-		    // or they have expressed no opinion in the UI, but have autoplay on...
-		    (!nearby_media_panel &&
-		     /*gSavedSettings.getBOOL(LLViewerMedia::AUTO_PLAY_MEDIA_SETTING) &&*/
-			 gSavedSettings.getBOOL("MediaTentativeAutoPlay")))
-		{
-			LL_INFOS() << "Starting parcel music " << parcel->getMusicURL() << LL_ENDL;
-			LLViewerParcelMedia::playStreamingMusic(parcel);
+			LLPanelNearByMedia* nearby_media_panel = LLFloaterNearbyMedia::instanceExists() ? LLFloaterNearbyMedia::getInstance()->getMediaPanel() : nullptr;
+			if ((nearby_media_panel &&
+			     nearby_media_panel->getParcelAudioAutoStart()) ||
+			    // or they have expressed no opinion in the UI, but have autoplay on...
+			    (!nearby_media_panel &&
+			     /*gSavedSettings.getBOOL(LLViewerMedia::AUTO_PLAY_MEDIA_SETTING) &&*/
+				 gSavedSettings.getBOOL("MediaTentativeAutoPlay")))
+			{
+				LL_INFOS() << "Starting parcel music " << parcel->getMusicURL() << LL_ENDL;
+				LLViewerParcelMedia::playStreamingMusic(parcel);
+				return;
+			}
 		}
-		}
-		else
-		{
-			gAudiop->startInternetStream(LLStringUtil::null);
-		}
+		gAudiop->startInternetStream(LLStringUtil::null);
 	}
 }
 

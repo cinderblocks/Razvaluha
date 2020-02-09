@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llexperiencecache.cpp
  * @brief llexperiencecache and related class definitions
@@ -261,22 +259,22 @@ void LLExperienceCache::requestExperiencesCoro(LLCoreHttpUtil::HttpCoroutineAdap
 
         LLSD headers = httpResults[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS_HEADERS];
         // build dummy entries for the failed requests
-        for (RequestQueue_t::const_iterator it = requests.begin(); it != requests.end(); ++it)
+        for (auto request : requests)
         {
-            LLSD exp = get(*it);
+            LLSD exp = get(request);
             //leave the properties alone if we already have a cache entry for this xp
             if (exp.isUndefined())
             {
                 exp[PROPERTIES] = PROPERTY_INVALID;
             }
             exp[EXPIRES] = now + LLExperienceCacheImpl::getErrorRetryDeltaTime(status, headers);
-            exp[EXPERIENCE_ID] = *it;
+            exp[EXPERIENCE_ID] = request;
             exp["key_type"] = EXPERIENCE_ID;
-            exp["uuid"] = *it;
+            exp["uuid"] = request;
             exp["error"] = (LLSD::Integer)status.getType();
             exp[QUOTA] = DEFAULT_QUOTA;
 
-            processExperience(*it, exp);
+            processExperience(request, exp);
         }
         return;
     }
@@ -340,10 +338,10 @@ void LLExperienceCache::requestExperiences()
 	F64 now = LLFrameTimer::getTotalSeconds();
 
     const U32 EXP_URL_SEND_THRESHOLD = 3000;
-    const U32 PAGE_SIZE = EXP_URL_SEND_THRESHOLD / UUID_STR_LENGTH;
+    constexpr U32 EXP_PAGE_SIZE = EXP_URL_SEND_THRESHOLD / UUID_STR_LENGTH;
 
     std::ostringstream ostr;
-    ostr << urlBase << "?page_size=" << PAGE_SIZE;
+    ostr << urlBase << "?page_size=" << EXP_PAGE_SIZE;
     RequestQueue_t  requests;
 
     while (!mRequestQueue.empty())
@@ -362,7 +360,7 @@ void LLExperienceCache::requestExperiences()
                 boost::bind(&LLExperienceCache::requestExperiencesCoro, this, _1, ostr.str(), requests) );
 
             ostr.str(std::string());
-            ostr << urlBase << "?page_size=" << PAGE_SIZE;
+            ostr << urlBase << "?page_size=" << EXP_PAGE_SIZE;
             requests.clear();
         }
     }

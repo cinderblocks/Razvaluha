@@ -131,8 +131,6 @@
 //#include "llnotificationmanager.h" //
 #include "llexperiencecache.h"
 
-#include "llexperiencecache.h"
-
 #if SHY_MOD //Command handler
 # include "shcommandhandler.h"
 #endif //shy_mod
@@ -281,16 +279,6 @@ bool friendship_offer_callback(const LLSD& notification, const LLSD& response)
 		// close button probably, possibly timed out
 		break;
 	}
-
-	// TODO: this set of calls has undesirable behavior under Windows OS (CHUI-985):
-	// here appears three additional toasts instead one modified
-	// need investigation and fix
-
-	// LLNotificationFormPtr modified_form(new LLNotificationForm(*notification_ptr->getForm()));
-	// modified_form->setElementEnabled("Accept", false);
-	// modified_form->setElementEnabled("Decline", false);
-	// notification_ptr->updateForm(modified_form);
-	// notification_ptr->repost();
 
 	return false;
 }
@@ -483,28 +471,21 @@ void send_sound_trigger(const LLUUID& sound_id, F32 gain)
 
 bool join_group_response(const LLSD& notification, const LLSD& response)
 {
-	//	A bit of variable saving and restoring is used to deal with the case where your group list is full and you
-	//	receive an invitation to another group.  The data from that invitation is stored in the sSaved
-	//	variables.  If you then drop a group and click on the Join button the stored data is restored and used
-	//	to join the group.
-	LLSD notification_adjusted = notification;
-	LLSD response_adjusted = response;
-
-	S32 option = LLNotificationsUtil::getSelectedOption(notification_adjusted, response_adjusted);
+	S32 option = LLNotificationsUtil::getSelectedOption(notification, response);
 	bool accept_invite = false;
 
-	LLUUID group_id = notification_adjusted["payload"]["group_id"].asUUID();
-	LLUUID transaction_id = notification_adjusted["payload"]["transaction_id"].asUUID();
-	std::string name = notification_adjusted["payload"]["name"].asString();
-	std::string message = notification_adjusted["payload"]["message"].asString();
-	S32 fee = notification_adjusted["payload"]["fee"].asInteger();
+	LLUUID group_id = notification["payload"]["group_id"].asUUID();
+	LLUUID transaction_id = notification["payload"]["transaction_id"].asUUID();
+	std::string name = notification["payload"]["name"].asString();
+	std::string message = notification["payload"]["message"].asString();
+	S32 fee = notification["payload"]["fee"].asInteger();
 
 	if (option == 2 && !group_id.isNull())
 	{
 		LLGroupActions::show(group_id);
 		LLSD args;
 		args["MESSAGE"] = message;
-		LLNotificationsUtil::add("JoinGroup", args, notification_adjusted["payload"]);
+		LLNotificationsUtil::add("JoinGroup", args, notification["payload"]);
 		return false;
 	}
 
@@ -523,7 +504,7 @@ bool join_group_response(const LLSD& notification, const LLSD& response)
 			LLSD args;
 			args["NAME"] = name;
 			args["INVITE"] = message;
-			LLNotificationsUtil::add("JoinedTooManyGroupsMember", args, notification_adjusted["payload"]);
+			LLNotificationsUtil::add("JoinedTooManyGroupsMember", args, notification["payload"]);
 			return false;
 		}
 	}
@@ -538,7 +519,7 @@ bool join_group_response(const LLSD& notification, const LLSD& response)
 			args["COST"] = llformat("%d", fee);
 			// Set the fee for next time to 0, so that we don't keep
 			// asking about a fee.
-			LLSD next_payload = notification_adjusted["payload"];
+			LLSD next_payload = notification["payload"];
 			next_payload["fee"] = 0;
 			LLNotificationsUtil::add("JoinGroupCanAfford",
 									args,
@@ -621,7 +602,7 @@ static LLNotificationFunctorRegistration jgr_3("JoinGroupCanAfford", join_group_
 //-----------------------------------------------------------------------------
 // Instant Message
 //-----------------------------------------------------------------------------
-class LLOpenAgentOffer : public LLInventoryFetchItemsObserver
+class LLOpenAgentOffer final : public LLInventoryFetchItemsObserver
 {
 public:
 	LLOpenAgentOffer(const LLUUID& object_id,
@@ -663,7 +644,7 @@ private:
  * We can't create it each time items are moved because "drop" event is sent separately for each
  * element even while multi-dragging. We have to have the only instance of the observer. See EXT-4347.
  */
-class LLViewerInventoryMoveFromWorldObserver : public LLInventoryAddItemByAssetObserver
+class LLViewerInventoryMoveFromWorldObserver final : public LLInventoryAddItemByAssetObserver
 {
 public:
 	LLViewerInventoryMoveFromWorldObserver()
@@ -772,7 +753,7 @@ void set_dad_inventory_item(LLInventoryItem* inv_item, const LLUUID& into_folder
  * Used currently for dragging from inbox to regular inventory folders
  */
 
-class LLViewerInventoryMoveObserver : public LLInventoryObserver
+class LLViewerInventoryMoveObserver final : public LLInventoryObserver
 {
 public:
 
@@ -839,7 +820,7 @@ void set_dad_inbox_object(const LLUUID& object_id)
 //and it never dies.  We do this because we don't know the UUID of 
 //task offers until they are accepted, so we don't wouldn't 
 //know what to watch for, so instead we just watch for all additions.
-class LLOpenTaskOffer : public LLInventoryAddedObserver
+class LLOpenTaskOffer final : public LLInventoryAddedObserver
 {
 protected:
 	/*virtual*/
@@ -881,7 +862,7 @@ protected:
 	}
  };
 
-class LLOpenTaskGroupOffer : public LLInventoryAddedObserver
+class LLOpenTaskGroupOffer final : public LLInventoryAddedObserver
 {
 protected:
 	/*virtual*/
@@ -901,7 +882,7 @@ protected:
 //one global instance to bind them
 LLOpenTaskOffer* gNewInventoryObserver = nullptr;
 
-class LLNewInventoryHintObserver : public LLInventoryAddedObserver
+class LLNewInventoryHintObserver final : public LLInventoryAddedObserver
 {
 protected:
 	/*virtual*/
@@ -937,7 +918,7 @@ void start_new_inventory_observer()
 	}
 }
 
-class LLDiscardAgentOffer : public LLInventoryFetchItemsObserver
+class LLDiscardAgentOffer final : public LLInventoryFetchItemsObserver
 {
 	LOG_CLASS(LLDiscardAgentOffer);
 
@@ -1189,7 +1170,7 @@ void inventory_offer_mute_callback(const LLUUID& blocked_id,
 	}
 
 	// purge the message queue of any previously queued inventory offers from the same source.
-	class OfferMatcher : public LLNotifyBoxView::Matcher
+	class OfferMatcher final : public LLNotifyBoxView::Matcher
 	{
 	public:
 		OfferMatcher(const LLUUID& to_block) : blocked_id(to_block)
@@ -4233,7 +4214,7 @@ void process_teleport_progress(LLMessageSystem* msg, void**)
 	gAgent.setTeleportMessage(LLAgent::sTeleportProgressMessages[message]);
 }
 
-class LLFetchInWelcomeArea : public LLInventoryFetchDescendentsObserver
+class LLFetchInWelcomeArea final : public LLInventoryFetchDescendentsObserver
 {
 public:
 	LLFetchInWelcomeArea(const uuid_vec_t &ids) :
@@ -4288,7 +4269,7 @@ public:
 };
 
 
-class LLPostTeleportNotifiers : public LLEventTimer 
+class LLPostTeleportNotifiers final : public LLEventTimer 
 {
 public:
 	LLPostTeleportNotifiers();
@@ -5085,11 +5066,6 @@ void process_kill_object(LLMessageSystem *mesgsys, void **user_data)
 
 	U32 ip = mesgsys->getSenderIP();
 	U32 port = mesgsys->getSenderPort();
-	LLViewerRegion* regionp = nullptr;
-	{
-		LLHost host(ip, port);
-		regionp = LLWorld::getInstance()->getRegion(host);
-	}
 
 	bool different_region = mesgsys->getSender().getIPandPort() != agent_region->getHost().getIPandPort();
 
@@ -5637,12 +5613,11 @@ void process_avatar_animation(LLMessageSystem *mesgsys, void **user_data)
 	LLUUID	animation_id;
 	LLUUID	uuid;
 	S32		anim_sequence_id;
-	LLVOAvatar* avatarp;
 
 	mesgsys->getUUIDFast(_PREHASH_Sender, _PREHASH_ID, uuid);
 
 	//clear animation flags
-	avatarp = gObjectList.findAvatar(uuid);
+	LLVOAvatar* avatarp = gObjectList.findAvatar(uuid);
 
 	if (!avatarp)
 	{
@@ -6607,6 +6582,7 @@ void home_position_set()
 	// save the home location image to disk
 	gViewerWindow->saveSnapshot(gDirUtilp->getLindenUserDir() + gDirUtilp->getDirDelimiter() + SCREEN_HOME_FILENAME, gViewerWindow->getWindowWidthRaw(), gViewerWindow->getWindowHeightRaw(), FALSE, FALSE);
 }
+
 void update_region_restart(const LLSD& llsdBlock)
 {
 	const U32 seconds = llsdBlock.has("MINUTES")
@@ -7195,17 +7171,6 @@ void notify_cautioned_script_question(const LLSD& notification, const LLSD& resp
 
 void script_question_mute(const LLUUID& item_id, const std::string& object_name);
 
-bool unknown_script_question_cb(const LLSD& notification, const LLSD& response)
-{
-	// Only care if they muted the object here.
-	if ( response["Mute"] ) // mute
-	{
-		LLUUID task_id = notification["payload"]["task_id"].asUUID();
-		script_question_mute(task_id,notification["payload"]["object_name"].asString());
-	}
-	return false;
-}
-
 void experiencePermissionBlock(LLUUID experience, LLSD result)
 {
 	LLSD permission;
@@ -7312,7 +7277,7 @@ void script_question_mute(const LLUUID& task_id, const std::string& object_name)
 	LLMuteList::getInstance()->add(LLMute(task_id, object_name, LLMute::OBJECT));
 
 	// purge the message queue of any previously queued requests from the same source. DEV-4879
-	class OfferMatcher : public LLNotifyBoxView::Matcher
+	class OfferMatcher final : public LLNotifyBoxView::Matcher
 	{
 	public:
 		OfferMatcher(const LLUUID& to_block) : blocked_id(to_block)
@@ -7322,8 +7287,7 @@ void script_question_mute(const LLUUID& task_id, const std::string& object_name)
 		bool matches(const LLNotificationPtr notification) const override
 		{
 			if (notification->getName() == "ScriptQuestionCaution"
-				|| notification->getName() == "ScriptQuestion"
-				|| notification->getName() == "UnknownScriptQuestion")
+                || notification->getName() == "ScriptQuestion")
 			{
 			return (notification->getPayload()["task_id"].asUUID() == blocked_id);
 			}
@@ -7341,7 +7305,6 @@ void script_question_mute(const LLUUID& task_id, const std::string& object_name)
 static LLNotificationFunctorRegistration script_question_cb_reg_1("ScriptQuestion", script_question_cb);
 static LLNotificationFunctorRegistration script_question_cb_reg_2("ScriptQuestionCaution", script_question_cb);
 static LLNotificationFunctorRegistration script_question_cb_reg_3("ScriptQuestionExperience", script_question_cb);
-static LLNotificationFunctorRegistration unknown_script_question_cb_reg("UnknownScriptQuestion", unknown_script_question_cb);
 
 void process_script_experience_details(const LLSD& experience_details, LLSD args, LLSD payload)
 {
@@ -7465,14 +7428,12 @@ void process_script_question(LLMessageSystem *msg, void **user_data)
 		args["QUESTIONS"] = script_question;
 
 		if (known_questions != questions)
-		{ // This is in addition to the normal dialog.
-			LLSD payload;
-			payload["task_id"] = taskid;
-			payload["item_id"] = itemid;
-			payload["object_name"] = object_name;
-
-			args["DOWNLOADURL"] = LLTrans::getString("ViewerDownloadURL");
-			LLNotificationsUtil::add("UnknownScriptQuestion", args, payload);
+		{
+			// This is in addition to the normal dialog.
+			// Viewer got a request for not supported/implemented permission 
+			LL_WARNS("Messaging") << "Object \"" << object_name << "\" requested " << script_question
+								<< " permission. Permission is unknown and can't be granted. Item id: " << itemid
+								<< " taskid:" << taskid << LL_ENDL;
 		}
 
 		if (known_questions)
@@ -7515,11 +7476,11 @@ void process_script_question(LLMessageSystem *msg, void **user_data)
 			if ( (!caution) && (!questions) )
 			{
 				LLNotifications::instance().forceResponse(
-					LLNotification::Params("ScriptQuestion").substitutions(args).payload(payload), 0/*YES*/);
+					LLNotification::Params(notification).substitutions(args).payload(payload), 0/*YES*/);
+				return;
 			}
-			else if (caution && gSavedSettings.getBOOL("PermissionsCautionEnabled"))
 // [/RLVa:KB]
-			// if (caution && gSavedSettings.getBOOL("PermissionsCautionEnabled"))
+			if (caution && gSavedSettings.getBOOL("PermissionsCautionEnabled"))
 			{
 				args["FOOTERTEXT"] = (count > 1) ? LLTrans::getString("AdditionalPermissionsRequestHeader") + "\n\n" + script_question : "";
 				notification = "ScriptQuestionCaution";

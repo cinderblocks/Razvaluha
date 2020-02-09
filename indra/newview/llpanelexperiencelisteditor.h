@@ -37,7 +37,7 @@ class LLButton;
 class LLFloaterExperiencePicker;
 
 void* create_xp_list_editor(void* data); // <singu/>
-class LLPanelExperienceListEditor : public LLPanel
+class LLPanelExperienceListEditor final : public LLPanel
 {
 public:
 

@@ -86,7 +86,7 @@
         visible="true">
         Experience:
       </text>
-      <text
+      <name_box
         type="string"
         length="1"
         follows="left|top|right"
@@ -96,6 +96,7 @@
         name="LabelItemExperience"
         bottom_delta="0"
         width="210"
+        id_type="3"
         visible="true"
         />
 	<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"

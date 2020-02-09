@@ -95,13 +95,13 @@ class LLARScreenShotUploader : public LLResourceUploadInfo
 public:
     LLARScreenShotUploader(LLSD report, LLUUID assetId, LLAssetType::EType assetType);
 
-    virtual LLSD        prepareUpload();
-    virtual LLSD        generatePostBody();
-    virtual S32         getEconomyUploadCost();
-    virtual LLUUID      finishUpload(LLSD &result);
+    LLSD        prepareUpload() override;
+    LLSD        generatePostBody() override;
+    S32         getEconomyUploadCost() override;
+    LLUUID      finishUpload(LLSD &result) override;
 
-    virtual bool        showInventoryPanel() const { return false; }
-    virtual std::string getDisplayName() const { return "Abuse Report"; }
+    bool        showInventoryPanel() const override { return false; }
+    std::string getDisplayName() const override { return "Abuse Report"; }
 
 private:
 
@@ -188,7 +188,7 @@ BOOL LLFloaterReporter::postBuild()
 
 	// Default text to be blank
 	getChild<LLUICtrl>("object_name")->setValue(LLStringUtil::null);
-	getChild<LLUICtrl>("owner_name")->setValue(LLStringUtil::null);
+	getChild<LLUICtrl>("owner_name")->setValue(LLUUID::null);
 	mOwnerName = LLStringUtil::null;
 
 	getChild<LLUICtrl>("summary_edit")->setFocus(TRUE);
@@ -224,14 +224,32 @@ BOOL LLFloaterReporter::postBuild()
 	childSetAction("cancel_btn", onClickCancel, this);
 
 	// grab the user's name
-	std::string reporter;
-	LLAgentUI::buildFullname(reporter);
-	getChild<LLUICtrl>("reporter_field")->setValue(reporter);
+	getChild<LLUICtrl>("reporter_field")->setValue(gAgent.getID());
+
+	// request categories
+	if (gAgent.getRegion()
+		&& gAgent.getRegion()->capabilitiesReceived())
+	{
+		std::string cap_url = gAgent.getRegionCapability("AbuseCategories");
+
+		if (!cap_url.empty())
+		{
+			std::string lang = gSavedSettings.getString("Language");
+			if (lang != "default" && !lang.empty())
+			{
+				cap_url += "?lc=";
+				cap_url += lang;
+			}
+			LLCoros::instance().launch("LLFloaterReporter::requestAbuseCategoriesCoro",
+				boost::bind(LLFloaterReporter::requestAbuseCategoriesCoro, cap_url, this->getHandle()));
+		}
+	}
 
 	center();
 
 	return TRUE;
 }
+
 // virtual
 LLFloaterReporter::~LLFloaterReporter()
 {
@@ -256,16 +274,10 @@ LLFloaterReporter::~LLFloaterReporter()
 	delete mResourceDatap;
 }
 
-// virtual
-void LLFloaterReporter::draw()
-{
-	LLFloater::draw();
-}
-
 void LLFloaterReporter::enableControls(BOOL enable)
 {
 	getChildView("category_combo")->setEnabled(enable);
-	getChildView("screenshot")->setEnabled(false);
+	getChildView("screenshot")->setEnabled(FALSE);
 	getChildView("pick_btn")->setEnabled(enable);
 	getChildView("summary_edit")->setEnabled(enable);
 	getChildView("details_edit")->setEnabled(enable);
@@ -389,6 +401,7 @@ void LLFloaterReporter::callbackAvatarID(const uuid_vec_t& ids, const std::vecto
 void LLFloaterReporter::setFromAvatarID(const LLUUID& avatar_id)
 {
 	mAbuserID = mObjectID = avatar_id;
+	getChild<LLUICtrl>("owner_name")->setValue(mObjectID);
 
 	if (mAvatarNameCacheConnection.connected())
 	{
@@ -405,12 +418,81 @@ void LLFloaterReporter::onAvatarNameCache(const LLUUID& avatar_id, const LLAvata
 	{
 		mOwnerName = av_name.getNSName();
 		const std::string& name(((gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES) || gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMETAGS)) && RlvUtil::isNearbyAgent(avatar_id)) ? RlvStrings::getString(RLV_STRING_HIDDEN) : mOwnerName);
-		getChild<LLUICtrl>("owner_name")->setValue(name);
+		getChild<LLUICtrl>("owner_name")->setValue(avatar_id);
 		getChild<LLUICtrl>("object_name")->setValue(name);
 		getChild<LLUICtrl>("abuser_name_edit")->setValue(name);
 	}
 }
 
+void LLFloaterReporter::requestAbuseCategoriesCoro(std::string url, LLHandle<LLFloater> handle)
+{
+    LLCore::HttpRequest::policy_t httpPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID);
+	auto httpAdapter = new LLCoreHttpUtil::HttpCoroutineAdapter("requestAbuseCategoriesCoro", httpPolicy);
+    auto httpRequest = new LLCore::HttpRequest();
+
+    LLSD result = httpAdapter->getAndSuspend(httpRequest, url);
+
+    LLSD httpResults = result[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS];
+    LLCore::HttpStatus status = LLCoreHttpUtil::HttpCoroutineAdapter::getStatusFromLLSD(httpResults);
+
+    if (!status || !result.has("categories")) // success = httpResults["success"].asBoolean();
+    {
+        LL_WARNS() << "Error requesting Abuse Categories from capability: " << url << LL_ENDL;
+        return;
+    }
+
+    if (handle.isDead())
+    {
+        // nothing to do
+        return;
+    }
+
+    LLFloater* floater = handle.get();
+    LLComboBox* combo = floater->getChild<LLComboBox>("category_combo");
+    if (!combo)
+    {
+        LL_WARNS() << "categories category_combo not found!" << LL_ENDL;
+        return;
+    }
+
+    //get selection (in case capability took a while)
+    S32 selection = combo->getCurrentIndex();
+
+    // Combobox should have a "Select category" element;
+    // This is a bit of workaround since there is no proper and simple way to save array of
+    // localizable strings in xml along with data (value). For now combobox is initialized along
+    // with placeholders, and first element is "Select category" which we want to keep, so remove
+    // everything but first element.
+    // Todo: once sim with capability fully releases, just remove this string and all unnecessary
+    // items from combobox since they will be obsolete (or depending on situation remake this to
+    // something better, for example move "Select category" to separate string)
+    while (combo->remove(1));
+
+    LLSD contents = result["categories"];
+
+    LLSD::array_iterator i = contents.beginArray();
+    LLSD::array_iterator iEnd = contents.endArray();
+    for (; i != iEnd; ++i)
+    {
+        const LLSD &message_data(*i);
+        std::string label = message_data["description_localized"];
+        const auto& cat = message_data["category"];
+        combo->add(label, cat);
+        switch(cat.asInteger())
+        {
+            // Fraud
+            case 47: combo->add(floater->getString("Ridiculous3"), 1000); break;
+            // Harassment
+            case 51: combo->add(floater->getString("Ridiculous1"), 1000); break;
+            // Land &gt; Encroachment
+            case 63: combo->add(floater->getString("Ridiculous2"), 1000); break;
+            default: break;
+        }
+    }
+
+    //restore selection
+    combo->selectNthItem(selection);
+}
 
 // static
 void LLFloaterReporter::onClickSend(void *userdata)
@@ -497,7 +579,7 @@ void LLFloaterReporter::onClickObjPicker(void *userdata)
 	LLToolMgr::getInstance()->setTransientTool(LLToolObjPicker::getInstance());
 	self->mPicking = TRUE;
 	self->getChild<LLUICtrl>("object_name")->setValue(LLStringUtil::null);
-	self->getChild<LLUICtrl>("owner_name")->setValue(LLStringUtil::null);
+	self->getChild<LLUICtrl>("owner_name")->setValue(LLUUID::null);
 	self->mOwnerName = LLStringUtil::null;
 	LLButton* pick_btn = self->getChild<LLButton>("pick_btn");
 	if (pick_btn) pick_btn->setToggleState(TRUE);
@@ -601,7 +683,7 @@ void LLFloaterReporter::setPickedObjectProperties(const std::string& object_name
 	}
 	else
 	{
-		getChild<LLUICtrl>("owner_name")->setValue(owner_name);
+		getChild<LLUICtrl>("owner_name")->setValue(owner_id);
 		getChild<LLUICtrl>("abuser_name_edit")->setValue(owner_name);
 	}
 	mAbuserID = owner_id;
@@ -614,7 +696,7 @@ bool LLFloaterReporter::validateReport()
 	// Ensure user selected a category from the list
 	LLSD category_sd = getChild<LLUICtrl>("category_combo")->getValue();
 	U8 category = (U8)category_sd.asInteger();
-	if(category >= 100) //This is here for reasons (like shenanigans)
+	if(category == 1000) //This is here for reasons (like shenanigans)
 	{
 		LLNotificationsUtil::add("HelpReportNope");
 		return false;
@@ -705,7 +787,7 @@ LLSD LLFloaterReporter::gatherReport()
 
 	std::ostringstream details;
 
-	details << "V" << LLVersionInfo::getVersion() << std::endl;	// client version moved to body of email for abuse reports
+	details << 'V' << LLVersionInfo::getVersion() << "\n\n";	// client version moved to body of email for abuse reports
 
 	std::string object_name = getChild<LLUICtrl>("object_name")->getValue().asString();
 	if (!object_name.empty() && !mOwnerName.empty())
@@ -729,12 +811,16 @@ LLSD LLFloaterReporter::gatherReport()
 			gGLManager.mGLRenderer.c_str(),
 			gGLManager.mDriverVersionVendorString.c_str());
 
+	// only send a screenshot ID if we're asked to and the email is
+	// going to LL - Estate Owners cannot see the screenshot asset
+	LLUUID screenshot_id = getChild<LLUICtrl>("screenshot")->getValue().asUUID();
+
 	LLSD report = LLSD::emptyMap();
 	report["report-type"] = (U8) mReportType;
 	report["category"] = getChild<LLUICtrl>("category_combo")->getValue();
 	report["position"] = mPosition.getValue();
 	report["check-flags"] = (U8)0; // this is not used
-	report["screenshot-id"] = getChild<LLUICtrl>("screenshot")->getValue();
+	report["screenshot-id"] = screenshot_id;
 	report["object-id"] = mObjectID;
 	report["abuser-id"] = mAbuserID;
 	report["abuse-region-name"] = "";
@@ -842,7 +928,7 @@ void LLFloaterReporter::takeScreenshot()
 	image_in_list->createGLTexture(0, raw, nullptr, TRUE, LLViewerTexture::OTHER);
 
 	// the texture picker then uses that texture
-	LLTexturePicker* texture = getChild<LLTextureCtrl>("screenshot");
+	LLTextureCtrl* texture = getChild<LLTextureCtrl>("screenshot");
 	if (texture)
 	{
 		texture->setImageAssetID(mResourceDatap->mAssetInfo.mUuid);

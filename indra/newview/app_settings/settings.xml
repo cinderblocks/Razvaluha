@@ -7486,6 +7486,22 @@ This should be as low as possible, but too low may break functionality</string>
         <integer>0</integer>
       </array>
     </map>
+    <key>FloaterExperiencePickerRect</key>
+    <map>
+      <key>Comment</key>
+      <string>Rectangle for experience picker floater</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Rect</string>
+      <key>Value</key>
+      <array>
+        <integer>300</integer>
+        <integer>600</integer>
+        <integer>800</integer>
+        <integer>700</integer>
+      </array>
+    </map>
     <key>FloaterExperienceProfileRect</key>
     <map>
       <key>Comment</key>
@@ -7496,9 +7512,9 @@ This should be as low as possible, but too low may break functionality</string>
       <string>Rect</string>
       <key>Value</key>
       <array>
-        <integer>16</integer>
+        <integer>377</integer>
         <integer>650</integer>
-        <integer>600</integer>
+        <integer>345</integer>
         <integer>128</integer>
       </array>
     </map>
@@ -7512,10 +7528,10 @@ This should be as low as possible, but too low may break functionality</string>
       <string>Rect</string>
       <key>Value</key>
       <array>
-        <integer>16</integer>
-        <integer>650</integer>
+        <integer>300</integer>
         <integer>600</integer>
-        <integer>128</integer>
+        <integer>700</integer>
+        <integer>700</integer>
       </array>
     </map>
     <key>FloaterFindRect2</key>

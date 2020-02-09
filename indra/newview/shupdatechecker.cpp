@@ -73,7 +73,7 @@ void onCompleted(const LLSD& data, bool release)
 			LLUI::sIgnoresGroup->getWarning("UrgentUpdateModal") ? "UrgentUpdateModal" : "UrgentUpdate" :
 			"RecommendedUpdate"; //build < recommended_build
 		LLNotificationsUtil::add(notification, args, LLSD(), boost::bind(onNotifyButtonPress, _1, _2, notification, data["url"].asString()));
-	}	
+	}
 }
 
 #include "llsdutil.h"

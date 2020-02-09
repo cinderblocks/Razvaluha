@@ -33,7 +33,7 @@ class LLScrollListCtrl;
 class LLLineEditor;
 
 void* create_xp_picker(void* data);
-class LLPanelExperiencePicker : public LLPanel
+class LLPanelExperiencePicker final : public LLPanel
 {
 public:
 	friend class LLExperienceSearchResponder;

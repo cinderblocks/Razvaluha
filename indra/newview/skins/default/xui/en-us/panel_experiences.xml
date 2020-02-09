@@ -38,7 +38,7 @@
         can_resize="false"
         column_padding="0"
         draw_heading="false"
-	    draw_stripes="false"
+	draw_stripes="false"
         multi_select="true"
         search_column="0"
         sort_column="0"

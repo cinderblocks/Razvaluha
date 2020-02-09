@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfloaterexperienceprofile.cpp
  * @brief llfloaterexperienceprofile and related class definitions
@@ -97,25 +95,25 @@
 class LLExperienceHandler : public LLCommandHandler
 {
 public:
-    LLExperienceHandler() : LLCommandHandler("experience", UNTRUSTED_THROTTLE) { }
+	LLExperienceHandler() : LLCommandHandler("experience", UNTRUSTED_THROTTLE) { }
 
-    bool handle(const LLSD& params, const LLSD& query_map,
+	bool handle(const LLSD& params, const LLSD& query_map,
         LLMediaCtrl* web) override
-    {
-        if(params.size() != 2 || params[1].asString() != "profile")
-            return false;
+	{
+		if (params.size() != 2 || params[1].asString() != "profile")
+			return false;
 
         LLExperienceCache::instance().get(params[0].asUUID(), boost::bind(&LLExperienceHandler::experienceCallback, this, _1));
-        return true;
-    }
+		return true;
+	}
 
-    void experienceCallback(const LLSD& experienceDetails)
-    {
-        if(!experienceDetails.has(LLExperienceCache::MISSING))
-        {
+	void experienceCallback(const LLSD& experienceDetails)
+	{
+		if (!experienceDetails.has(LLExperienceCache::MISSING))
+		{
             LLFloaterExperienceProfile::showInstance(experienceDetails[LLExperienceCache::EXPERIENCE_ID].asUUID());
-        }
-    }
+		}
+	}
 };
 
 LLExperienceHandler gExperienceHandler;
@@ -137,15 +135,15 @@ LLFloaterExperienceProfile::LLFloaterExperienceProfile(const LLSD& data)
     , mForceClose(false)
 {
     if (data.has("experience_id"))
-    {
+{
         mExperienceId = data["experience_id"].asUUID();
         mPostEdit = data.has("edit_experience") && data["edit_experience"].asBoolean();
-    }
+}
     else
-    {
+{
         mExperienceId = data.asUUID();
         mPostEdit = false;
-    }
+	}
 	LLUICtrlFactory::getInstance()->buildFloater(this, XML_PANEL_EXPERIENCE_PROFILE, NULL, false);
 	//buildFromFile(XML_PANEL_EXPERIENCE_PROFILE);
 }
@@ -159,66 +157,53 @@ LLFloaterExperienceProfile::~LLFloaterExperienceProfile()
 BOOL LLFloaterExperienceProfile::postBuild()
 {
 
-    if (mExperienceId.notNull())
-    {
+	if (mExperienceId.notNull())
+	{
         LLExperienceCache::instance().fetch(mExperienceId, true);
         LLExperienceCache::instance().get(mExperienceId, boost::bind(&LLFloaterExperienceProfile::experienceCallback,
-            getDerivedHandle<LLFloaterExperienceProfile>(), _1)); 
-        
-        LLViewerRegion* region = gAgent.getRegion();
-        if (region)
-        {
+					getDerivedHandle<LLFloaterExperienceProfile>(), _1)); 
+
+		LLViewerRegion* region = gAgent.getRegion();
+		if (region)
+		{
             LLExperienceCache::instance().getExperienceAdmin(mExperienceId, boost::bind(
                 &LLFloaterExperienceProfile::experienceIsAdmin, getDerivedHandle<LLFloaterExperienceProfile>(), _1));
-        }
-    }
+		}
+	}
 
-    childSetAction(BTN_EDIT, boost::bind(&LLFloaterExperienceProfile::onClickEdit, this));
-    childSetAction(BTN_ALLOW, boost::bind(&LLFloaterExperienceProfile::onClickPermission, this, "Allow"));
-    childSetAction(BTN_FORGET, boost::bind(&LLFloaterExperienceProfile::onClickForget, this));
-    childSetAction(BTN_BLOCK, boost::bind(&LLFloaterExperienceProfile::onClickPermission, this, "Block"));
-    childSetAction(BTN_CANCEL, boost::bind(&LLFloaterExperienceProfile::onClickCancel, this));
+	childSetAction(BTN_EDIT, boost::bind(&LLFloaterExperienceProfile::onClickEdit, this));
+	childSetAction(BTN_ALLOW, boost::bind(&LLFloaterExperienceProfile::onClickPermission, this, "Allow"));
+	childSetAction(BTN_FORGET, boost::bind(&LLFloaterExperienceProfile::onClickForget, this));
+	childSetAction(BTN_BLOCK, boost::bind(&LLFloaterExperienceProfile::onClickPermission, this, "Block"));
+	childSetAction(BTN_CANCEL, boost::bind(&LLFloaterExperienceProfile::onClickCancel, this));
 	childSetAction(BTN_SAVE, boost::bind(&LLFloaterExperienceProfile::onClickSave, this));
 	childSetAction(BTN_SET_LOCATION, boost::bind(&LLFloaterExperienceProfile::onClickLocation, this));
 	childSetAction(BTN_CLEAR_LOCATION, boost::bind(&LLFloaterExperienceProfile::onClickClear, this));
 	childSetAction(BTN_SET_GROUP, boost::bind(&LLFloaterExperienceProfile::onPickGroup, this));
 	childSetAction(BTN_REPORT, boost::bind(&LLFloaterExperienceProfile::onReportExperience, this));
 
-    getChild<LLTextEditor>(EDIT TF_DESC)->setKeystrokeCallback(boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this));
-    getChild<LLUICtrl>(EDIT TF_MATURITY)->setCommitCallback(boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this));
+	getChild<LLTextEditor>(EDIT TF_DESC)->setKeystrokeCallback(boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this));
+	getChild<LLUICtrl>(EDIT TF_MATURITY)->setCommitCallback(boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this));
     getChild<LLLineEditor>(EDIT TF_MRKT)->setKeystrokeCallback(boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this));
     getChild<LLLineEditor>(EDIT TF_NAME)->setKeystrokeCallback(boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this));
-    
+
     childSetCommitCallback(EDIT BTN_ENABLE, boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this), nullptr);
     childSetCommitCallback(EDIT BTN_PRIVATE, boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this), nullptr);
 
     childSetCommitCallback(EDIT IMG_LOGO, boost::bind(&LLFloaterExperienceProfile::onFieldChanged, this), nullptr);
 
-	const LLColor4& link_color = gSavedSettings.getColor4("HTMLLinkColor");
-    if (auto market = getChild<LLTextBox>(TF_MRKT))
+    if (auto logo = findChild<LLTextureCtrl>(IMG_LOGO))
     {
-		market->setClickedCallback([market] { LLUrlAction::clickAction(market->getValue().asStringRef(), true); });
-		market->setColor(link_color);
-		market->setFontStyle(LLFontGL::UNDERLINE);
+        void show_picture(const LLUUID& id, const std::string& name);
+        LLTextBox* name = getChild<LLTextBox>(TF_NAME);
+        std::function<void()> cb = [logo, name]() { show_picture(logo->getImageAssetID(), "Experience Picture: " + name->getText()); };
+        logo->setMouseUpCallback(boost::bind(cb));
     }
 
-    if (auto location = getChild<LLTextBox>(TF_SLURL))
-    {
-		location->setClickedCallback([=] { LLUrlAction::clickAction(mLocationSLURL, true); });
-		location->setColor(link_color);
-		location->setFontStyle(LLFontGL::UNDERLINE);
-    }
+	getChild<LLTextEditor>(EDIT TF_DESC)->setCommitOnFocusLost(TRUE);
 
-    if (auto logo = findChild<LLTexturePicker>(IMG_LOGO))
-    {
-		void show_picture(const LLUUID& id, const std::string& name);
-        logo->setCommitCallback(boost::bind(show_picture, boost::bind(&LLTexturePicker::getImageAssetID, logo), "Experience Picture"));
-    }
-
-    getChild<LLTextEditor>(EDIT TF_DESC)->setCommitOnFocusLost(TRUE);
-
-    LLEventPumps::instance().obtain("experience_permission").listen(mExperienceId.asString()+"-profile", 
-        boost::bind(&LLFloaterExperienceProfile::experiencePermission, getDerivedHandle<LLFloaterExperienceProfile>(this), _1));
+	LLEventPumps::instance().obtain("experience_permission").listen(mExperienceId.asString()+"-profile", 
+			boost::bind(&LLFloaterExperienceProfile::experiencePermission, getDerivedHandle<LLFloaterExperienceProfile>(this), _1));
 
     if (mPostEdit && mExperienceId.notNull())
     {
@@ -226,7 +211,7 @@ BOOL LLFloaterExperienceProfile::postBuild()
         changeToEdit();
     }
 
-    return TRUE;
+	return TRUE;
 }
 
 void LLFloaterExperienceProfile::experienceCallback(LLHandle<LLFloaterExperienceProfile> handle,  const LLSD& experience )
@@ -263,14 +248,14 @@ void LLFloaterExperienceProfile::onClickCancel()
 
 void LLFloaterExperienceProfile::onClickSave()
 {
-    doSave(NOTHING);
+	doSave(NOTHING);
 }
 
 void LLFloaterExperienceProfile::onClickPermission(const char* perm)
 {
-    LLViewerRegion* region = gAgent.getRegion();
-    if (!region)
-        return;
+	LLViewerRegion* region = gAgent.getRegion();
+	if (!region)
+		return;
     LLExperienceCache::instance().setExperiencePermission(mExperienceId, perm, boost::bind(
         &LLFloaterExperienceProfile::experiencePermissionResults, mExperienceId, _1));
 }
@@ -278,9 +263,9 @@ void LLFloaterExperienceProfile::onClickPermission(const char* perm)
 
 void LLFloaterExperienceProfile::onClickForget()
 {
-    LLViewerRegion* region = gAgent.getRegion();
-    if (!region)
-        return;
+	LLViewerRegion* region = gAgent.getRegion();
+	if (!region)
+		return;
 
     LLExperienceCache::instance().forgetExperiencePermission(mExperienceId, boost::bind(
         &LLFloaterExperienceProfile::experiencePermissionResults, mExperienceId, _1));
@@ -288,48 +273,39 @@ void LLFloaterExperienceProfile::onClickForget()
 
 bool LLFloaterExperienceProfile::setMaturityString( U8 maturity, LLTextBox* child, LLComboBox* combo )
 {
-	/* Singu Note: Nope.
-    LLStyle::Params style;
-    std::string access;
-	*/
-    if (maturity <= SIM_ACCESS_PG)
-    {
-		/* Singu Note: Nope.
-        style.image(LLUI::getUIImage(getString("maturity_icon_general")));
-        access = LLTrans::getString("SIM_ACCESS_PG");
-		*/
-        combo->setCurrentByIndex(2);
-    }
-    else if(maturity <= SIM_ACCESS_MATURE)
-    {
-		/* Singu Note: Nope.
-        style.image(LLUI::getUIImage(getString("maturity_icon_moderate")));
-        access = LLTrans::getString("SIM_ACCESS_MATURE");
-		*/
-        combo->setCurrentByIndex(1);
-    }
-    else if (maturity <= SIM_ACCESS_ADULT)
-    {
-		/* Singu Note: Nope.
-        style.image(LLUI::getUIImage(getString("maturity_icon_adult")));
-        access = LLTrans::getString("SIM_ACCESS_ADULT");
-		*/
-        combo->setCurrentByIndex(0);
-    }
-    else
-    {
-        return false;
-    }
+	//LLStyle::Params style; // Singu Note: Nope.
+	std::string access;
+	if (maturity <= SIM_ACCESS_PG)
+	{
+		//style.image(LLUI::getUIImage(getString("maturity_icon_general"))); // Singu Note: Nope.
+		access = LLTrans::getString("SIM_ACCESS_PG");
+		combo->setCurrentByIndex(2);
+	}
+	else if (maturity <= SIM_ACCESS_MATURE)
+	{
+		//style.image(LLUI::getUIImage(getString("maturity_icon_moderate"))); // Singu Note: Nope.
+		access = LLTrans::getString("SIM_ACCESS_MATURE");
+		combo->setCurrentByIndex(1);
+	}
+	else if (maturity <= SIM_ACCESS_ADULT)
+	{
+		//style.image(LLUI::getUIImage(getString("maturity_icon_adult"))); // Singu Note: Nope.
+		access = LLTrans::getString("SIM_ACCESS_ADULT");
+		combo->setCurrentByIndex(0);
+	}
+	else
+	{
+		return false;
+	}
 
 	/* Singu Note: Nope.
-    child->setText(LLStringUtil::null);
+	child->setText(LLStringUtil::null);
 
-    child->appendImageSegment(style);
-
-    child->appendText(access, false);
+	child->appendImageSegment(style);
 	*/
+	child->setText(access);
 
-    return true;
+	return true;
 }
 
 
@@ -369,21 +345,21 @@ void LLFloaterExperienceProfile::refreshExperience( const LLSD& experience )
 	edit_child->setText(value);
 
 	mLocationSLURL = experience[LLExperienceCache::SLURL].asString();
-	child = getChild<LLTextBox>(TF_SLURL);
+	edit_child = getChild<LLTextEditor>(TF_SLURL);
 	bool has_slurl = !mLocationSLURL.empty() && mLocationSLURL != "last";
 	locationPanel->setVisible(has_slurl);
 	if (has_slurl) mLocationSLURL = LLSLURL(mLocationSLURL).getSLURLString();
-	child->setText(mLocationSLURL);
+	edit_child->setText(mLocationSLURL);
 
 
-	child = getChild<LLTextBox>(EDIT TF_SLURL);
+	edit_child = getChild<LLTextEditor>(EDIT TF_SLURL);
 	if (has_slurl)
 	{
-		child->setText(mLocationSLURL);
+		edit_child->setText(mLocationSLURL);
 	}
 	else
 	{
-		child->setText(getString("empty_slurl"));
+		edit_child->setText(getString("empty_slurl"));
 	}
 
 	setMaturityString((U8)(experience[LLExperienceCache::MATURITY].asInteger()), getChild<LLTextBox>(TF_MATURITY), getChild<LLComboBox>(EDIT TF_MATURITY));
@@ -459,9 +435,9 @@ void LLFloaterExperienceProfile::refreshExperience( const LLSD& experience )
 		{
 			value=data[TF_MRKT].asString();
 
-			child = getChild<LLTextBox>(TF_MRKT);
-			child->setText(value);
-			if (value.size())
+			edit_child = getChild<LLTextEditor>(TF_MRKT);
+			edit_child->setText(value);
+            if(!value.empty())
 			{
 				marketplacePanel->setVisible(TRUE);
 			}
@@ -721,7 +697,7 @@ void LLFloaterExperienceProfile::onClickLocation()
 	LLViewerRegion* region = gAgent.getRegion();
 	if (region)
 	{
-		LLTextBox* child = getChild<LLTextBox>(EDIT TF_SLURL);
+		auto child = getChild<LLTextEditor>(EDIT TF_SLURL);
 		mLocationSLURL = LLSLURL(region->getName(), gAgent.getPositionGlobal()).getSLURLString();
 		child->setText(mLocationSLURL);
 		onFieldChanged();
@@ -730,7 +706,7 @@ void LLFloaterExperienceProfile::onClickLocation()
 
 void LLFloaterExperienceProfile::onClickClear()
 {
-	LLTextBox* child = getChild<LLTextBox>(EDIT TF_SLURL);
+	auto child = getChild<LLTextEditor>(EDIT TF_SLURL);
 	mLocationSLURL.clear();
 	child->setText(getString("empty_slurl"));
 	onFieldChanged();
@@ -879,8 +855,7 @@ void LLFloaterExperienceProfile::onPickGroup()
 void LLFloaterExperienceProfile::setEditGroup( LLUUID group_id )
 {
 	LLTextBox* child = getChild<LLTextBox>(EDIT TF_GROUP);
-	std::string value = LLSLURL("group", group_id, "inspect").getSLURLString();
-	child->setText(value);
+	child->setValue(group_id);
 	mPackage[LLExperienceCache::GROUP_ID] = group_id;
 	onFieldChanged();
 }

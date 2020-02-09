@@ -391,7 +391,8 @@
 				 initial_value="75" max_val="180" value="75"
 				 left_delta="105" bottom_delta="0" width="60" height="16"/>
 			</panel>
-			<!-- PHYSYCS PANEL -->
+
+			<!-- PHYSICS PANEL -->
 			<panel name="physics_panel" label="Physics" title="Physics">
 				<view_border name="physics_tab_border" bevel_style="none" follows="top|left"
 				 left="3" bottom_delta="-270" width="619" height="270"/>

@@ -42,13 +42,13 @@ class LLParcelSelection;
 class LLParcel;
 class LLViewerRegion;
 
-class LLFloaterAuction : public LLFloater
+class LLFloaterAuction final : public LLFloater
 {
 public:
 	// LLFloater interface
-	/*virtual*/ void onOpen();
-	/*virtual*/ void onClose(bool app_quitting) { setVisible(FALSE); }
-	/*virtual*/ void draw();
+	/*virtual*/ void onOpen() override;
+	/*virtual*/ void onClose(bool app_quitting) override { setVisible(FALSE); }
+	/*virtual*/ void draw() override;
 
 	// LLFloaterAuction interface
 	static void show();
@@ -66,7 +66,7 @@ private:
 	static void onClickStartAuction(void* data);
 
 	static LLFloaterAuction* sInstance;
-	/*virtual*/ BOOL postBuild();
+	/*virtual*/ BOOL postBuild() override;
 
 	void doResetParcel();
 	void doSellToAnyone();

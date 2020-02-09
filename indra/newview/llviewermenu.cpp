@@ -603,12 +603,11 @@ void rebuild_context_menus()
 
 void set_merchant_SLM_menu()
 {
-	const bool isInSecondlife = gHippoGridManager->getCurrentGrid()->isSecondLife();
 	// DD-170 : SLM Alpha and Beta program : for the moment, we always show the SLM menu and
 	// tools so that all merchants can try out the UI, even if not migrated.
 	// *TODO : Keep SLM UI hidden for non migrated merchant in released viewer
-	gMenuHolder->getChild<LLView>("MarketplaceListings")->setVisible(isInSecondlife);
-	gToolBar->getChild<LLView>("marketplace_listings_btn")->setEnabled(isInSecondlife);
+	gMenuHolder->getChild<LLView>("MarketplaceListings")->setVisible(TRUE);
+	gToolBar->getChild<LLView>("marketplace_listings_btn")->setEnabled(true);
 }
 
 void check_merchant_status(bool force)
@@ -7132,7 +7131,7 @@ class LLAvatarSendIM : public view_listener_t
 
 namespace
 {
-	struct QueueObjects : public LLSelectedNodeFunctor
+	struct QueueObjects final : public LLSelectedNodeFunctor
 	{
 		BOOL scripted;
 		BOOL modifiable;

@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfloaterexperiences.cpp
  * @brief LLFloaterExperiences class implementation
@@ -81,10 +79,6 @@ BOOL LLFloaterExperiences::postBuild()
 	getChild<LLTabContainer>("xp_tabs")->addTabPanel(panel, panel->getLabel());
 	resizeToTabs();
 
-
-	LLEventPumps::instance().obtain("experience_permission").listen("LLFloaterExperiences", 
-		boost::bind(&LLFloaterExperiences::updatePermissions, this, _1));
-     
    	return TRUE;
 }
 
@@ -170,6 +164,10 @@ void LLFloaterExperiences::refreshContents()
 
 void LLFloaterExperiences::onOpen()
 {
+    LLEventPumps::instance().obtain("experience_permission").stopListening("LLFloaterExperiences");
+    LLEventPumps::instance().obtain("experience_permission").listen("LLFloaterExperiences",
+        boost::bind(&LLFloaterExperiences::updatePermissions, this, _1));
+
 	LLViewerRegion* region = gAgent.getRegion();
 	if(region)
 	{
@@ -399,14 +397,14 @@ void LLFloaterExperiences::retrieveExperienceListCoro(std::string url,
     LLFloaterExperiences* parent = hparent.get();
     LLTabContainer* tabs = parent->getChild<LLTabContainer>("xp_tabs");
 
-    for (NameMap_t::iterator it = tabMapping.begin(); it != tabMapping.end(); ++it)
+    for (auto& it : tabMapping)
     {
-        if (result.has(it->first))
+        if (result.has(it.first))
         {
-            LLPanelExperiences* tab = (LLPanelExperiences*)tabs->getPanelByName(it->second);
+            LLPanelExperiences* tab = (LLPanelExperiences*)tabs->getPanelByName(it.second);
             if (tab)
             {
-                const LLSD& ids = result[it->first];
+                const LLSD& ids = result[it.first];
                 tab->setExperienceList(ids);
                 if (cback != nullptr)
                 {
