@@ -1410,8 +1410,10 @@ bool LLOfferInfo::inventory_offer_callback(const LLSD& notification, const LLSD&
 		//don't spam them if they are getting flooded
 		if (check_offer_throttle(mFromName, true))
 		{
-			log_message = chatHistory_string + " " + LLTrans::getString("InvOfferGaveYou") + " " + mDesc + LLTrans::getString(".");
+			log_message = chatHistory_string + ' ' + LLTrans::getString("InvOfferGaveYou") + ' ' + mDesc + LLTrans::getString(".");
 			chat.mText = log_message;
+			chat.mURL = LLAvatarActions::getSLURL(mFromID);
+			chat.mFromName = mFromName;
 			LLFloaterChat::addChatHistory(chat);
 		}
 
@@ -2493,7 +2495,7 @@ void process_improved_im(LLMessageSystem *msg, void **user_data)
 			if (sNotifyIncomingMessage &&
 				!gIMMgr->hasSession(session_id) &&
 				((accept_im_from_only_friend && (is_friend || is_linden)) ||
-					(!(is_muted || is_do_not_disturb)))
+				 (!(is_muted || is_do_not_disturb)))
 				)
 			{
 				LLAvatarName av_name;
@@ -2839,8 +2841,8 @@ void process_improved_im(LLMessageSystem *msg, void **user_data)
 	break;
 
 	case IM_GROUP_ELECTION_DEPRECATED:
-		{
-			LL_WARNS("Messaging") << "Received IM: IM_GROUP_ELECTION_DEPRECATED" << LL_ENDL;
+	{
+		LL_WARNS("Messaging") << "Received IM: IM_GROUP_ELECTION_DEPRECATED" << LL_ENDL;
 	}
 	break;
 
@@ -5093,24 +5095,24 @@ void process_kill_object(LLMessageSystem *mesgsys, void **user_data)
 		LLViewerObject *objectp = gObjectList.findObject(id);
 		if (objectp)
 		{
-				if (gAgentAvatarp == objectp->getAvatar())
+			if (gAgentAvatarp == objectp->getAvatar())
+			{
+				if (different_region)
 				{
-					if (different_region)
-					{
-						LL_WARNS() << "Region other than our own killing our attachments!!" << LL_ENDL;
-						continue;
-					}
-					else if (gAgent.getTeleportState() != LLAgent::TELEPORT_NONE)
-					{
-						LL_WARNS() << "Region killing our attachments during teleport!!" << LL_ENDL;
-						continue;
-					}
-					else if (gAgent.isCrossingRegion())
-					{
-						LL_WARNS() << "Region killing our attachments during region cross!!" << LL_ENDL;
-						continue;
-					}
+					LL_WARNS() << "Region other than our own killing our attachments!!" << LL_ENDL;
+					continue;
 				}
+				else if (gAgent.getTeleportState() != LLAgent::TELEPORT_NONE)
+				{
+					LL_WARNS() << "Region killing our attachments during teleport!!" << LL_ENDL;
+					continue;
+				}
+				else if (gAgent.isCrossingRegion())
+				{
+					LL_WARNS() << "Region killing our attachments during region cross!!" << LL_ENDL;
+					continue;
+				}
+			}
 
 			// Display green bubble on kill
 			if ( gShowObjectUpdates )
@@ -6481,7 +6483,7 @@ bool handle_teleport_access_blocked(LLSD& llsdBlock, const std::string & notific
 		std::string regionMaturity = LLViewerRegion::accessToString(regionAccess);
 		LLStringUtil::toLower(regionMaturity);
 		llsdBlock["REGIONMATURITY"] = regionMaturity;
-	
+
 		LLNotificationPtr tp_failure_notification;
 		std::string notifySuffix;
 
@@ -7212,7 +7214,7 @@ bool script_question_cb(const LLSD& notification, const LLSD& response)
 	{
 		new_questions = 0;
 		allowed = FALSE;
-	}	
+	}
 	else if (experience.notNull())
 	{
 		LLSD permission;
@@ -7482,13 +7484,13 @@ void process_script_question(LLMessageSystem *msg, void **user_data)
 // [/RLVa:KB]
 			if (caution && gSavedSettings.getBOOL("PermissionsCautionEnabled"))
 			{
-				args["FOOTERTEXT"] = (count > 1) ? LLTrans::getString("AdditionalPermissionsRequestHeader") + "\n\n" + script_question : "";
+					args["FOOTERTEXT"] = (count > 1) ? LLTrans::getString("AdditionalPermissionsRequestHeader") + "\n\n" + script_question : "";
 				notification = "ScriptQuestionCaution";
 			}
 			else if (experienceid.notNull())
 			{
 				payload["experience"] = experienceid;
-				LLExperienceCache::instance().get(experienceid, boost::bind(process_script_experience_details, _1, args, payload));
+					LLExperienceCache::instance().get(experienceid, boost::bind(process_script_experience_details, _1, args, payload));
 				return;
 			}
 

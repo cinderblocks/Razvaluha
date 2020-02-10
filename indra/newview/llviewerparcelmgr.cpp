@@ -144,7 +144,7 @@ LLViewerParcelMgr::LLViewerParcelMgr()
 	mHoverParcel = new LLParcel();
 	mCollisionParcel = new LLParcel();
 
-	mParcelsPerEdge = S32(8192.f / PARCEL_GRID_STEP_METERS); // 8192 is the maximum region size on Aurora
+	mParcelsPerEdge = S32(8192.f / PARCEL_GRID_STEP_METERS); // 8192 is the maximum region size on WhiteCore and solves the audio problem.
 	mHighlightSegments = new U8[(mParcelsPerEdge+1)*(mParcelsPerEdge+1)];
 	resetSegments(mHighlightSegments);
 
@@ -917,7 +917,7 @@ void LLViewerParcelMgr::sendParcelAccessListRequest(U32 flags)
 	if (!region) return;
 
 	LLMessageSystem *msg = gMessageSystem;
-	
+
 
 	if (flags & AL_BAN) 
 	{
@@ -927,14 +927,14 @@ void LLViewerParcelMgr::sendParcelAccessListRequest(U32 flags)
 	{
 		mCurrentParcel->mAccessList.clear();
 	}		
-	if (flags & AL_ALLOW_EXPERIENCE) 
+	if (flags & AL_ALLOW_EXPERIENCE)
 	{
 		mCurrentParcel->clearExperienceKeysByType(EXPERIENCE_KEY_TYPE_ALLOWED);
 	}
-	if (flags & AL_BLOCK_EXPERIENCE) 
+	if (flags & AL_BLOCK_EXPERIENCE)
 	{
 		mCurrentParcel->clearExperienceKeysByType(EXPERIENCE_KEY_TYPE_BLOCKED);
-	}		
+	}
 
 	// Only the headers differ
 	msg->newMessageFast(_PREHASH_ParcelAccessListRequest);
@@ -1839,7 +1839,7 @@ void LLViewerParcelMgr::processParcelProperties(LLMessageSystem *msg, void **use
 					{
 						LL_INFOS() << "Stopping parcel music (parcel stream URL is empty)" << LL_ENDL;
 						// null value causes fade out
-                        gAudiop->startInternetStream(LLStringUtil::null);
+						gAudiop->startInternetStream(LLStringUtil::null);
 					}
 				}
 			}
@@ -1962,20 +1962,21 @@ void LLViewerParcelMgr::sendParcelAccessListUpdate(U32 which)
 	if (!parcel) return;
 
 	if (which & AL_ACCESS)
-	{	
+	{
 		sendParcelAccessListUpdate(AL_ACCESS, parcel->mAccessList, region, parcel->getLocalID());
 	}
 
 	if (which & AL_BAN)
-	{	
+	{
 		sendParcelAccessListUpdate(AL_BAN, parcel->mBanList, region, parcel->getLocalID());
 	}
 
-	if(which & AL_ALLOW_EXPERIENCE)
-	{	
+	if (which & AL_ALLOW_EXPERIENCE)
+	{
 		sendParcelAccessListUpdate(AL_ALLOW_EXPERIENCE, parcel->getExperienceKeysByType(EXPERIENCE_KEY_TYPE_ALLOWED), region, parcel->getLocalID());
 	}
-	if(which & AL_BLOCK_EXPERIENCE)
+
+	if (which & AL_BLOCK_EXPERIENCE)
 	{
 		sendParcelAccessListUpdate(AL_BLOCK_EXPERIENCE, parcel->getExperienceKeysByType(EXPERIENCE_KEY_TYPE_BLOCKED), region, parcel->getLocalID());
 	}
@@ -1989,6 +1990,7 @@ void LLViewerParcelMgr::sendParcelAccessListUpdate(U32 flags, const LLAccessEntr
 	BOOL start_message = TRUE;
 	BOOL initial = TRUE;
 
+
 	LLUUID transactionUUID;
 	transactionUUID.generate();
 
@@ -1996,10 +1998,10 @@ void LLViewerParcelMgr::sendParcelAccessListUpdate(U32 flags, const LLAccessEntr
 	LLMessageSystem* msg = gMessageSystem;
 
 	LLAccessEntry::map::const_iterator cit = entries.begin();
-	LLAccessEntry::map::const_iterator  end = entries.end();
-	while ( (cit != end) || initial ) 
+	LLAccessEntry::map::const_iterator end = entries.end();
+	while ( (cit != end) || initial )
 	{
-		if (start_message) 
+		if (start_message)
 		{
 			msg->newMessageFast(_PREHASH_ParcelAccessListUpdate);
 			msg->nextBlockFast(_PREHASH_AgentData);
@@ -2007,7 +2009,7 @@ void LLViewerParcelMgr::sendParcelAccessListUpdate(U32 flags, const LLAccessEntr
 			msg->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID() );
 			msg->nextBlockFast(_PREHASH_Data);
 			msg->addU32Fast(_PREHASH_Flags, flags);
-			msg->addS32(_PREHASH_LocalID,  parcel_local_id);
+			msg->addS32(_PREHASH_LocalID, parcel_local_id);
 			msg->addUUIDFast(_PREHASH_TransactionID, transactionUUID);
 			msg->addS32Fast(_PREHASH_SequenceID, sequence_id);
 			msg->addS32Fast(_PREHASH_Sections, num_sections);
@@ -2026,11 +2028,12 @@ void LLViewerParcelMgr::sendParcelAccessListUpdate(U32 flags, const LLAccessEntr
 			sequence_id++;
 
 		}
-		
-		while ( (cit != end) && (msg->getCurrentSendTotal() < MTUBYTES)) 
+
+		while ( (cit != end) && (msg->getCurrentSendTotal() < MTUBYTES))
 		{
+
 			const LLAccessEntry& entry = (*cit).second;
-			
+
 			msg->nextBlockFast(_PREHASH_List);
 			msg->addUUIDFast(_PREHASH_ID,  entry.mID );
 			msg->addS32Fast(_PREHASH_Time, entry.mTime );

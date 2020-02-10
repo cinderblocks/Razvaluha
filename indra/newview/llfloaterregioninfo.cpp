@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llfloaterregioninfo.cpp
  * @author Aaron Brashears
@@ -22,7 +20,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- * 
+ *
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
@@ -93,7 +91,6 @@
 #include "llwaterparammanager.h"
 #include "lltrans.h"
 #include "llagentui.h"
-#include "llmeshrepository.h"
 #include "llfloaterregionrestarting.h"
 #include "llpanelexperiencelisteditor.h"
 #include "llpanelexperiencepicker.h"
@@ -116,7 +113,7 @@ const U32 MAX_LISTED_NAMES = 100;
 /// Local class declaration
 ///----------------------------------------------------------------------------
 
-class LLDispatchEstateUpdateInfo : public LLDispatchHandler
+class LLDispatchEstateUpdateInfo final : public LLDispatchHandler
 {
 public:
 	LLDispatchEstateUpdateInfo() {}
@@ -128,7 +125,7 @@ public:
 		const sparam_t& strings) override;
 };
 
-class LLDispatchSetEstateAccess : public LLDispatchHandler
+class LLDispatchSetEstateAccess final : public LLDispatchHandler
 {
 public:
 	LLDispatchSetEstateAccess() {}
@@ -140,7 +137,7 @@ public:
 		const sparam_t& strings) override;
 };
 
-class LLDispatchSetEstateExperience : public LLDispatchHandler
+class LLDispatchSetEstateExperience final : public LLDispatchHandler
 {
 public:
 	bool operator()(
@@ -149,7 +146,7 @@ public:
 		const LLUUID& invoice,
 		const sparam_t& strings) override;
 
-	LLSD getIDs( sparam_t::const_iterator it, sparam_t::const_iterator end, S32 count );
+	LLSD getIDs(sparam_t::const_iterator it, sparam_t::const_iterator end, S32 count);
 };
 
 
@@ -291,10 +288,9 @@ BOOL LLFloaterRegionInfo::postBuild()
 	{
 		panel = new LLPanelRegionExperiences;
 		mInfoPanels.push_back(panel);
-		LLUICtrlFactory::getInstance()->buildPanel(panel, "panel_region_experiences.xml");
 		mTab->addTabPanel(panel, panel->getLabel(), FALSE);
 	}
-	
+
 	gMessageSystem->setHandlerFunc(
 		"EstateOwnerMessage", 
 		&processEstateOwnerRequest);
@@ -514,9 +510,9 @@ void LLFloaterRegionInfo::processRegionInfo(LLMessageSystem* msg)
 	panel = tab->getChild<LLPanel>("Debug");
 
 	panel->getChild<LLUICtrl>("region_text")->setValue(LLSD(sim_name) );
-	panel->getChild<LLUICtrl>("disable_scripts_check")->setValue(LLSD((BOOL)((region_flags & REGION_FLAGS_SKIP_SCRIPTS) ? TRUE : FALSE )) );
-	panel->getChild<LLUICtrl>("disable_collisions_check")->setValue(LLSD((BOOL)((region_flags & REGION_FLAGS_SKIP_COLLISIONS) ? TRUE : FALSE )) );
-	panel->getChild<LLUICtrl>("disable_physics_check")->setValue(LLSD((BOOL)((region_flags & REGION_FLAGS_SKIP_PHYSICS) ? TRUE : FALSE )) );
+	panel->getChild<LLUICtrl>("disable_scripts_check")->setValue(LLSD((BOOL)(region_flags & REGION_FLAGS_SKIP_SCRIPTS)) );
+	panel->getChild<LLUICtrl>("disable_collisions_check")->setValue(LLSD((BOOL)(region_flags & REGION_FLAGS_SKIP_COLLISIONS)) );
+	panel->getChild<LLUICtrl>("disable_physics_check")->setValue(LLSD((BOOL)(region_flags & REGION_FLAGS_SKIP_PHYSICS)) );
 	panel->setCtrlsEnabled(allow_modify);
 
 	// TERRAIN PANEL

@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llparcel.cpp
  * @brief A land parcel.
@@ -810,7 +808,7 @@ void LLParcel::unpackExperienceEntries( LLMessageSystem* msg, U32 type )
 
 		if (id.notNull())
 		{
-			mExperienceKeys[id]=type;
+			mExperienceKeys[id] = type;
 		}
 	}
 }
@@ -1337,7 +1335,7 @@ LLParcel::ECategory category_ui_string_to_category(const std::string& s)
     return LLParcel::C_ANY;
 }
 
-LLAccessEntry::map LLParcel::getExperienceKeysByType( U32 type ) const
+LLAccessEntry::map LLParcel::getExperienceKeysByType(U32 type) const
 {
 	LLAccessEntry::map access;
 	LLAccessEntry entry;
@@ -1353,7 +1351,7 @@ LLAccessEntry::map LLParcel::getExperienceKeysByType( U32 type ) const
 	return access;
 }
 
-void LLParcel::clearExperienceKeysByType( U32 type )
+void LLParcel::clearExperienceKeysByType(U32 type)
 {
 	xp_type_map_t::iterator it = mExperienceKeys.begin();
 	while(it != mExperienceKeys.end())
@@ -1369,9 +1367,9 @@ void LLParcel::clearExperienceKeysByType( U32 type )
 	}
 }
 
-void LLParcel::setExperienceKeyType( const LLUUID& experience_key, U32 type )
+void LLParcel::setExperienceKeyType(const LLUUID& experience_key, U32 type)
 {
-	if(type == EXPERIENCE_KEY_TYPE_NONE)
+	if (type == EXPERIENCE_KEY_TYPE_NONE)
 	{
 		mExperienceKeys.erase(experience_key);
 	}
@@ -1384,10 +1382,10 @@ void LLParcel::setExperienceKeyType( const LLUUID& experience_key, U32 type )
 	}
 }
 
-U32 LLParcel::countExperienceKeyType( U32 type )
+U32 LLParcel::countExperienceKeyType(U32 type)
 {
 	return std::count_if(
-		boost::begin(mExperienceKeys | boost::adaptors::map_values), 
-		boost::end(mExperienceKeys | boost::adaptors::map_values), 
+		boost::begin(mExperienceKeys | boost::adaptors::map_values),
+		boost::end(mExperienceKeys | boost::adaptors::map_values),
 		std::bind2nd(std::equal_to<U32>(), type));
 }

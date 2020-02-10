@@ -4404,6 +4404,7 @@ void LLAppViewer::idle()
 		// floating throughout the various object lists.
 		//
 		idleNameCache();
+		if (gAgent.getRegion()) LLExperienceCache::instance().idleCoro();
 
 		gFrameStats.start(LLFrameStats::IDLE_NETWORK);
 		stop_glerror();

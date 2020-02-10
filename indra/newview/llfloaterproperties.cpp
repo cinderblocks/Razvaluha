@@ -44,8 +44,8 @@
 #include "llavataractions.h"
 #include "llbutton.h"
 #include "llcheckboxctrl.h"
+#include "llcororesponder.h"
 #include "llexperiencecache.h"
-#include "llfloaterexperienceprofile.h"
 #include "llgroupactions.h"
 #include "llinventorymodel.h"
 #include "llinventoryobserver.h"
@@ -53,8 +53,8 @@
 #include "llradiogroup.h"
 #include "llresmgr.h"
 #include "roles_constants.h"
+#include "llnamebox.h"
 #include "llselectmgr.h"
-#include "lltextbox.h"
 #include "lltrans.h"
 #include "llviewerinventory.h"
 #include "llviewerobjectlist.h"
@@ -78,7 +78,7 @@ bool can_set_export(const U32& base, const U32& own, const U32& next);
 //  from the inventory observer list when destroyed, which could
 //  happen after gInventory has already been destroyed if a singleton.
 // Instead, do our own ref counting and create / destroy it as needed
-class LLPropertiesObserver : public LLInventoryObserver
+class LLPropertiesObserver final : public LLInventoryObserver
 {
 public:
 	LLPropertiesObserver(LLFloaterProperties* floater)
@@ -590,7 +590,7 @@ void LLFloaterProperties::refreshFromItem(LLInventoryItem* item)
 }
 
 
-void LLFloaterProperties::setAssociatedExperience( LLHandle<LLFloaterProperties> hInfo, const LLSD& experience )
+void LLFloaterProperties::setAssociatedExperience(LLHandle<LLFloaterProperties> hInfo, const LLSD& experience)
 {
     LLFloaterProperties* info = hInfo.get();
     if(info)
@@ -749,7 +749,7 @@ void LLFloaterProperties::onCommitPermissions()
 	}
 
 	LLCheckBoxCtrl* CheckExport = getChild<LLCheckBoxCtrl>("CheckExport");
-	if(CheckExport)
+	if(CheckExport && CheckExport->getVisible())
 	{
 		perm.setEveryoneBits(gAgent.getID(), gAgent.getGroupID(), CheckExport->get(), PERM_EXPORT);
 	}

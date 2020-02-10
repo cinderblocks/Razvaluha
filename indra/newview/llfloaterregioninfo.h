@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- * 
+ *
  * Linden Research, Inc., 945 Battery Street, San Francisco, CA  94111  USA
  * $/LicenseInfo$
  */
@@ -115,6 +115,7 @@ public:
 
 private:
 	
+protected:
 	LLFloaterRegionInfo(const LLSD& seed);
 	~LLFloaterRegionInfo();
 
@@ -150,7 +151,7 @@ public:
 	
 	virtual bool refreshFromRegion(LLViewerRegion* region);
 	virtual bool estateUpdate(LLMessageSystem* msg) { return true; }
-
+	
 	BOOL postBuild() override;
 	virtual void updateChild(LLUICtrl* child_ctrl);
 	virtual void onOpen(const LLSD& key) {}
@@ -196,7 +197,7 @@ public:
 		:	LLPanelRegionInfo(),
 			mObjBonusFactor(0.f) {}
 	~LLPanelRegionGeneralInfo() {}
-
+	
 	bool refreshFromRegion(LLViewerRegion* region) override;
 	
 	// LLPanel
@@ -204,6 +205,7 @@ public:
 	
 	void onBtnSet();
 	void setObjBonusFactor(F32 object_bonus_factor) {mObjBonusFactor = object_bonus_factor;}
+
 
 protected:
 	BOOL sendUpdate() override;
@@ -229,7 +231,7 @@ public:
 	~LLPanelRegionDebugInfo() {}
 	// LLPanel
 	BOOL postBuild() override;
-
+	
 	bool refreshFromRegion(LLViewerRegion* region) override;
 	
 protected:

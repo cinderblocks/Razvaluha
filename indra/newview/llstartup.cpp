@@ -3430,7 +3430,7 @@ void LLStartUp::initNameCache()
 
 
 void LLStartUp::initExperiences()
-{   
+{
     // Should trigger loading the cache.
     LLExperienceCache::instance().setCapabilityQuery(
         boost::bind(&LLAgent::getRegionCapability, &gAgent, _1));
@@ -4108,3 +4108,4 @@ void transition_back_to_login_panel(const std::string& emsg)
 	reset_login(); // calls LLStartUp::setStartupState( STATE_LOGIN_SHOW );
 	gSavedSettings.setBOOL("AutoLogin", FALSE);
 }
+

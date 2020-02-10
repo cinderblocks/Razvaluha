@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llsd.cpp
  * @brief LLSD flexible data system
@@ -129,9 +127,9 @@ public:
 	virtual Date	asDate() const				{ return LLDate(); }
 	virtual URI		asURI() const				{ return LLURI(); }
 	virtual const Binary&	asBinary() const	{ static const std::vector<U8> empty; return empty; }
-
-	virtual const String& asStringRef() const { static const std::string empty; return empty; } 
 	
+	virtual const String& asStringRef() const { static const std::string empty; return empty; } 
+
 	virtual bool has(const String&) const		{ return false; }
 	virtual LLSD get(const String&) const		{ return LLSD(); }
 	virtual LLSD getKeys() const				{ return LLSD::emptyArray(); }
@@ -208,7 +206,7 @@ namespace
 	{
 	public:
 		ImplBoolean(LLSD::Boolean v) : Base(v) { }
-
+		
 		LLSD::Boolean	asBoolean() const override { return mValue; }
 		LLSD::Integer	asInteger() const override { return mValue ? 1 : 0; }
 		LLSD::Real		asReal() const override { return mValue ? 1 : 0; }
@@ -229,7 +227,7 @@ namespace
 	{
 	public:
 		ImplInteger(LLSD::Integer v) : Base(v) { }
-
+		
 		LLSD::Boolean	asBoolean() const override { return mValue != 0; }
 		LLSD::Integer	asInteger() const override { return mValue; }
 		LLSD::Real		asReal() const override { return mValue; }
@@ -245,7 +243,7 @@ namespace
 	{
 	public:
 		ImplReal(LLSD::Real v) : Base(v) { }
-
+				
 		LLSD::Boolean	asBoolean() const override;
 		LLSD::Integer	asInteger() const override;
 		LLSD::Real		asReal() const override { return mValue; }
@@ -253,10 +251,10 @@ namespace
 	};
 
 	LLSD::Boolean ImplReal::asBoolean() const
-		{ return !llisnan(mValue)  &&  mValue != 0.0; }
+		{ return !std::isnan(mValue)  &&  mValue != 0.0; }
 		
 	LLSD::Integer ImplReal::asInteger() const
-		{ return !llisnan(mValue) ? (LLSD::Integer)mValue : 0; }
+		{ return !std::isnan(mValue) ? (LLSD::Integer)mValue : 0; }
 		
 	LLSD::String ImplReal::asString() const
 		{ return llformat("%lg", mValue); }
@@ -267,7 +265,7 @@ namespace
 	{
 	public:
 		ImplString(const LLSD::String& v) : Base(v) { }
-
+				
 		LLSD::Boolean	asBoolean() const override { return !mValue.empty(); }
 		LLSD::Integer	asInteger() const override;
 		LLSD::Real		asReal() const override;
@@ -311,7 +309,7 @@ namespace
 	{
 	public:
 		ImplUUID(const LLSD::UUID& v) : Base(v) { }
-
+				
 		LLSD::String	asString() const override { return mValue.asString(); }
 		LLSD::UUID		asUUID() const override { return mValue; }
 	};
@@ -324,12 +322,11 @@ namespace
 		ImplDate(const LLSD::Date& v)
 			: ImplBase<LLSD::TypeDate, LLSD::Date, const LLSD::Date&>(v)
 			{ }
-
+		
 		LLSD::Integer asInteger() const override
 		{
 			return (LLSD::Integer)(mValue.secondsSinceEpoch());
 		}
-
 		LLSD::Real asReal() const override
 		{
 			return mValue.secondsSinceEpoch();
@@ -345,7 +342,7 @@ namespace
 	{
 	public:
 		ImplURI(const LLSD::URI& v) : Base(v) { }
-
+				
 		LLSD::String	asString() const override { return mValue.asString(); }
 		LLSD::URI		asURI() const override { return mValue; }
 	};
@@ -356,7 +353,7 @@ namespace
 	{
 	public:
 		ImplBinary(const LLSD::Binary& v) : Base(v) { }
-
+				
 		const LLSD::Binary&	asBinary() const override { return mValue; }
 	};
 
@@ -373,7 +370,7 @@ namespace
 		
 	public:
 		ImplMap() { }
-
+		
 		ImplMap& makeMap(LLSD::Impl*&) override;
 
 		LLSD::Type type() const override { return LLSD::TypeMap; }
@@ -507,7 +504,7 @@ namespace
 		
 	public:
 		ImplArray() { }
-
+		
 		ImplArray& makeArray(Impl*&) override;
 
 		LLSD::Type type() const override { return LLSD::TypeArray; }
@@ -785,7 +782,7 @@ void LLSD::Impl::calcStats(S32 type_counts[], S32 share_counts[]) const
 	S32 tp = S32(type());
 	if (0 <= tp && tp < LLSD::TypeLLSDNumTypes)
 	{
-		type_counts[tp]++;	
+		type_counts[tp]++;
 		if (shared())
 		{
 			share_counts[tp]++;

@@ -89,7 +89,7 @@ void LLPanelGroupExperiences::setGroupID(const LLUUID& id)
 {
 	LLPanelGroupTab::setGroupID(id);
 
-	if(id == LLUUID::null)
+	if (id == LLUUID::null)
 	{
 		return;
 	}
@@ -127,5 +127,5 @@ void LLPanelGroupExperiences::groupExperiencesResults(LLHandle<LLPanelGroupExper
     if (panel)
     {
         panel->setExperienceList(experiences);
-    }
+	}
 }

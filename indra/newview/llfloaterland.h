@@ -63,7 +63,7 @@ class LLPanelLandCovenant;
 class LLParcel;
 class LLPanelLandExperiences;
 
-class LLFloaterLand
+class LLFloaterLand final
 :	public LLFloater
 , public LLFloaterSingleton<LLFloaterLand>
 {
@@ -132,7 +132,7 @@ public:
 };
 
 
-class LLPanelLandGeneral
+class LLPanelLandGeneral final
 :	public LLPanel
 {
 public:
@@ -230,7 +230,7 @@ protected:
 	static LLHandle<LLFloater> sBuyPassDialogHandle;
 };
 
-class LLPanelLandObjects
+class LLPanelLandObjects final
 :	public LLPanel
 {
 public:
@@ -299,7 +299,7 @@ protected:
 };
 
 
-class LLPanelLandOptions
+class LLPanelLandOptions final
 :	public LLPanel
 {
 public:
@@ -350,7 +350,7 @@ private:
 };
 
 
-class LLPanelLandAccess
+class LLPanelLandAccess final
 :	public LLPanel
 {
 public:
@@ -382,7 +382,7 @@ protected:
 	LLSafeHandle<LLParcelSelection>&	mParcel;
 };
 
-class LLPanelLandCovenant
+class LLPanelLandCovenant final
 :	public LLPanel
 {
 public:

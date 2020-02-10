@@ -129,8 +129,8 @@ set(llmessage_HEADER_FILES
     lldatapacker.h
     lldbstrings.h
     lldispatcher.h
-    lleventflags.h
     llexperiencecache.h
+    lleventflags.h
     llextendedstatus.h
     llfiltersd2xmlrpc.h
     llfollowcamparams.h

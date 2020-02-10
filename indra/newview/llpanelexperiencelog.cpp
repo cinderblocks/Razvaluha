@@ -143,7 +143,7 @@ void LLPanelExperienceLog::refresh()
 			}
 			for(int i = dayArray.size() - itemsToSkip - 1; i >= 0; i--)
 			{
-				if(items >= mPageSize)
+				if (items >= mPageSize)
 				{
 					moreItems = true;
 					break;
