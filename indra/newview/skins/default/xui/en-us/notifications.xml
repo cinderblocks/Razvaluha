@@ -8268,11 +8268,9 @@ Scripts associated with this experience will be able to do the following on regi
 
 [QUESTIONS]
 Is this OK?
-
   <unique combine="combine_with_new">
     <context>experience</context>
   </unique>
-  <tag>confirm</tag>
     <form name="form">
       <button
        index="3"
@@ -8304,13 +8302,12 @@ Warning: The object &apos;[OBJECTNAME]&apos; wants total access to your inworld 
 [FOOTERTEXT]
 
 Do not allow access if you do not fully understand why it wants access to your account.
-
   <tag>confirm</tag>
     <form name="form">
       <button
        index="0"
        name="Grant"
-       text="Allow total access"/>
+       text="Allow"/>
       <button
        default="true"
        index="1"
@@ -11547,7 +11544,7 @@ AntiSpam: Blocked [SOURCE] for spamming [TYPE]s [AMOUNT] times in [TIME] seconds
    icon="notifytip.tga"
    name="AntiSpamNewlineFlood"
    type="notifytip">
-AntiSpam: Blocked newline flood from [SOURCE] (over [AMOUNT] newlines).
+AntiSpam: Blocked newline flood from secondlife:///app/agent/[SOURCE]/about (over [AMOUNT] newlines).
   </notification>
 
   <notification
@@ -12034,7 +12031,7 @@ You have just entered a [SHORT_APP_NAME] support group chat. To help provide sup
     label="Update Available"
     name="RecommendedUpdate"
     type="notify">
-A newer version, [RECOMMENDED_VER], is available for Singularity[TYPE].
+A newer version, [RECOMMENDED_VER], is available for [SHORT_APP_NAME].
 
 Click [Visit Page] to open
 [URL]
@@ -12052,7 +12049,7 @@ for information and download links for this new version.
    name="UrgentUpdate"
    priority="high"
    type="notify">
-Your version of Singularity[TYPE] is critically out of date!
+Your version of [SHORT_APP_NAME] is critically out of date!
 
 It is STRONGLY recommended to download a newer version of this viewer due to grid compatibility and/or security concerns.
 
@@ -12073,7 +12070,7 @@ for information and download links for newer versions.
    name="UrgentUpdateModal"
    priority="high"
    type="alertmodal">
-Your version of Singularity[TYPE] is critically out of date!
+Your version of [SHORT_APP_NAME] is critically out of date!
 
 It is STRONGLY recommended to download a newer version of this viewer due to grid compatibility and/or security concerns.
 

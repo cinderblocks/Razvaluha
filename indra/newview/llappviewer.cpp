@@ -205,6 +205,7 @@
 #include "llviewerthrottle.h"
 #include "llparcel.h"
 #include "llviewerassetstats.h"
+#include "NACLantispam.h"
 
 // Include for security api initialization
 #include "llsecapi.h"
@@ -4434,6 +4435,7 @@ void LLAppViewer::idle()
 
 		gIdleCallbacks.callFunctions();
 		gInventory.idleNotifyObservers();
+		if (auto antispam = NACLAntiSpamRegistry::getIfExists()) antispam->idle();
 	}
 
 	// Metrics logging (LLViewerAssetStats, etc.)

@@ -331,7 +331,7 @@ class LLUrlEntryExperienceProfile final : public LLUrlEntryBase
 {
 public:
 	LLUrlEntryExperienceProfile();
-    /*virtual*/ std::string getLabel(const std::string &url, const LLUrlLabelCallback &cb) override;
+	/*virtual*/ std::string getLabel(const std::string &url, const LLUrlLabelCallback &cb) override;
 private:
 	void onExperienceDetails(const LLSD& experience_details);
 };

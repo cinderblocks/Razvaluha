@@ -284,7 +284,7 @@ BOOL LLFloaterRegionInfo::postBuild()
 		return TRUE;
 	}
 
-	if(!gAgent.getRegionCapability("RegionExperiences").empty())
+	if (!gAgent.getRegion()->getCapability("RegionExperiences").empty())
 	{
 		panel = new LLPanelRegionExperiences;
 		mInfoPanels.push_back(panel);
