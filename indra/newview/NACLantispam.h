@@ -23,8 +23,8 @@
 class NACLAntiSpamQueue;
 class NACLAntiSpamRegistry final : public LLSingleton<NACLAntiSpamRegistry>
 {
-	friend class LLSingleton<NACLAntiSpamRegistry>;
-	NACLAntiSpamRegistry();
+	LLSINGLETON(NACLAntiSpamRegistry);
+
 public:
 	static void startup();
 
