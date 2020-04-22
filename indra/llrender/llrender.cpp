@@ -2189,7 +2189,7 @@ void LLRender::setLineWidth(F32 line_width)
 	}
 	if (mNewContext.lineWidth != line_width || mDirty)
 	{
-		if (mMode == LLRender::LINES || LLRender::LINE_STRIP)
+		if (mMode == LLRender::LINES || mMode == LLRender::LINE_STRIP)
 		{
 			flush();
 		}
