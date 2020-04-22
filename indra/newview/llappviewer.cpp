@@ -4434,7 +4434,11 @@ void LLAppViewer::idle()
 
 		gIdleCallbacks.callFunctions();
 		gInventory.idleNotifyObservers();
-		if (auto antispam = NACLAntiSpamRegistry::getIfExists()) antispam->idle();
+			if (NACLAntiSpamRegistry::instanceExists())
+			{
+				auto& antispam = NACLAntiSpamRegistry::instance();
+				antispam.idle();
+			}
 	}
 
 	// Metrics logging (LLViewerAssetStats, etc.)

@@ -71,8 +71,11 @@ LLPrefsAscentChat::LLPrefsAscentChat()
 
 	childSetEnabled("reset_antispam", started);
 	getChild<LLUICtrl>("reset_antispam")->setCommitCallback([](LLUICtrl* ctrl, const LLSD& param) {
-		if (auto inst = NACLAntiSpamRegistry::getIfExists())
-			inst->resetQueues();
+		if (NACLAntiSpamRegistry::instanceExists())
+		{
+			auto& inst = NACLAntiSpamRegistry::instance();
+			inst.resetQueues();
+		}
 	});
 
 	getChild<LLUICtrl>("autoreplace")->setCommitCallback(boost::bind(LLFloaterAutoReplaceSettings::showInstance, LLSD()));
