@@ -1813,7 +1813,7 @@ void LLFloaterTools::updateMediaSettings()
                     if ( object->getTE(face)->getMediaData() )
                         return object->getTE(face)->getMediaData()->getAutoPlay();
             //return mMediaEntry.getAutoPlay(); set default to auto play TRUE -- angela  EXT-5172
-			return true;
+            return true;
         };
 		
 		const LLMediaEntry &mMediaEntry;
@@ -1839,8 +1839,8 @@ void LLFloaterTools::updateMediaSettings()
                 if ( object->getTE(face) )
                     if ( object->getTE(face)->getMediaData() )
                         return object->getTE(face)->getMediaData()->getAutoScale();
-           // return mMediaEntry.getAutoScale();  set default to auto scale TRUE -- angela  EXT-5172
-			return true;
+            // return mMediaEntry.getAutoScale();  set default to auto scale TRUE -- angela  EXT-5172
+            return true;
 		};
 		
 		const LLMediaEntry &mMediaEntry;

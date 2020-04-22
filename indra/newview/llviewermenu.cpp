@@ -5136,9 +5136,9 @@ BOOL sitting_on_selection()
 
 class LLToolsSaveToInventory : public view_listener_t
 {
+	bool enable_save_into_inventory(); // Moved outside the handler to avoid "vexing parse" warning. - RG
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
 	{
-		bool enable_save_into_inventory();
 		if(enable_save_into_inventory())
 		{
 			derez_objects(DRD_SAVE_INTO_AGENT_INVENTORY, LLUUID::null);

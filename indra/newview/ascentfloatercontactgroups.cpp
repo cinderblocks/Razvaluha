@@ -41,11 +41,11 @@ ASFloaterContactGroups::ASFloaterContactGroups()
 // static
 void ASFloaterContactGroups::show(const uuid_vec_t& ids)
 {
-    if (!sInstance)
-	sInstance = new ASFloaterContactGroups();
+	if (!sInstance)
+		sInstance = new ASFloaterContactGroups();
 	mSelectedUUIDs = ids;
 
-    sInstance->open();
+	sInstance->open();
 	sInstance->populateGroupList();
 	sInstance->populateFriendList();
 

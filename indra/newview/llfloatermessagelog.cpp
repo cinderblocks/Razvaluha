@@ -300,8 +300,8 @@ void LLFloaterMessageLog::refreshNetList()
 			if(regionp)
 			{
 				std::string name = regionp->getName();
-			if(name.empty())
-				name = llformat("%s (awaiting region name)", itemp->mCircuitData->getHost().getString().c_str());
+				if(name.empty())
+					name = llformat("%s (awaiting region name)", itemp->mCircuitData->getHost().getString().c_str());
 				itemp->mName = name;
 				itemp->mPreviousRegionName = name;
 				itemp->mHandle = regionp->getHandle();

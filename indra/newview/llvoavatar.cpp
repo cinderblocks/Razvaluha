@@ -760,7 +760,7 @@ const LLSD SHClientTagMgr::generateClientTag(const LLVOAvatar* pAvatar) const
 		if (!pTextureEntry)
 			return LLSD();
 
-			id = pTextureEntry->getID();
+		id = pTextureEntry->getID();
 
 		if(pAvatar->isFullyLoaded() && pTextureEntry->getGlow() > 0.0)
 		{
