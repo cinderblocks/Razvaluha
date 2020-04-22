@@ -196,12 +196,9 @@ elseif(LINUX)
     set(release_files
         libapr-1.so.0
         libaprutil-1.so.0
-        libatk-1.0.so
         libexpat.so
         libexpat.so.1
         libGLOD.so
-        libgmodule-2.0.so
-        libgobject-2.0.so
         libopenal.so
         libopenjpeg.so
        )

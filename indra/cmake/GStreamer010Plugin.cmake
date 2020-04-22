@@ -1,6 +1,7 @@
 # -*- cmake -*-
 include(Prebuilt)
 include(LibXML2)
+include(UI)
 
 if (USESYSTEMLIBS)
   include(FindPkgConfig)
@@ -13,7 +14,6 @@ elseif (LINUX)
   set(GSTREAMER010_PLUGINS_BASE_FOUND ON FORCE BOOL)
   set(GSTREAMER010_INCLUDE_DIRS
       ${LIBS_PREBUILT_DIR}/include/gstreamer-0.10
-      ${LIBS_PREBUILT_DIR}/include/glib-2.0
       ${LIBXML2_INCLUDES}
       )
   # We don't need to explicitly link against gstreamer itself, because
