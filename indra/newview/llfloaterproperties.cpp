@@ -44,7 +44,6 @@
 #include "llavataractions.h"
 #include "llbutton.h"
 #include "llcheckboxctrl.h"
-#include "llcororesponder.h"
 #include "llexperiencecache.h"
 #include "llgroupactions.h"
 #include "llinventorymodel.h"

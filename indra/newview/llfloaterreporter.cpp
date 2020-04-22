@@ -427,8 +427,9 @@ void LLFloaterReporter::onAvatarNameCache(const LLUUID& avatar_id, const LLAvata
 void LLFloaterReporter::requestAbuseCategoriesCoro(std::string url, LLHandle<LLFloater> handle)
 {
     LLCore::HttpRequest::policy_t httpPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID);
-	auto httpAdapter = new LLCoreHttpUtil::HttpCoroutineAdapter("requestAbuseCategoriesCoro", httpPolicy);
-    auto httpRequest = new LLCore::HttpRequest();
+    LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t
+        httpAdapter(new LLCoreHttpUtil::HttpCoroutineAdapter("requestAbuseCategoriesCoro", httpPolicy));
+    LLCore::HttpRequest::ptr_t httpRequest(new LLCore::HttpRequest);
 
     LLSD result = httpAdapter->getAndSuspend(httpRequest, url);
 
