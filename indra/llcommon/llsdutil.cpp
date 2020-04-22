@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llsdutil.cpp
  * @author Phoenix
@@ -147,10 +145,9 @@ LLSD ll_binary_from_string(const LLSD& sd)
 	std::vector<U8> binary_value;
 
 	std::string string_value = sd.asString();
-	for (std::string::iterator iter = string_value.begin();
-		 iter != string_value.end(); ++iter)
+	for (auto& iter : string_value)
 	{
-		binary_value.push_back(*iter);
+		binary_value.push_back(iter);
 	}
 
 	binary_value.push_back('\0');
@@ -279,12 +276,9 @@ BOOL compare_llsd_with_template(
 		//any excess is taken from the template
 		//excess is ignored in the test
 		LLSD value;
-		LLSD::map_const_iterator template_iter;
-
 		resultant_llsd = LLSD::emptyMap();
-		for (
-			template_iter = template_llsd.beginMap();
-			template_iter != template_llsd.endMap();
+		for (auto template_iter = template_llsd.beginMap(), template_end = template_llsd.endMap();
+			template_iter != template_end;
 			++template_iter)
 		{
 			if ( llsd_to_test.has(template_iter->first) )
@@ -506,18 +500,18 @@ struct Data
     const char* name;
 } typedata[] =
 {
-#define def(type) { LLSD::type, #type + 4 }
-    def(TypeUndefined),
-    def(TypeBoolean),
-    def(TypeInteger),
-    def(TypeReal),
-    def(TypeString),
-    def(TypeUUID),
-    def(TypeDate),
-    def(TypeURI),
-    def(TypeBinary),
-    def(TypeMap),
-    def(TypeArray)
+#define def(type) { LLSD::Type ## type, #type }
+    def(Undefined),
+    def(Boolean),
+    def(Integer),
+    def(Real),
+    def(String),
+    def(UUID),
+    def(Date),
+    def(URI),
+    def(Binary),
+    def(Map),
+    def(Array)
 #undef  def
 };
 
@@ -537,7 +531,7 @@ public:
 
     std::string lookup(LLSD::Type type) const
     {
-        MapType::const_iterator found = mMap.find(type);
+        auto found = mMap.find(type);
         if (found != mMap.end())
         {
             return found->second;
@@ -603,7 +597,7 @@ static std::string match_types(LLSD::Type expect, // prototype.type()
     {
         out << " (";
         const char* sep = "or ";
-        for (TypeVector::const_iterator ai(accept.begin()), aend(accept.end());
+        for (auto ai(accept.begin()), aend(accept.end());
              ai != aend; ++ai, sep = ", ")
         {
             // Don't forget to return success if we match any of those types...
@@ -669,7 +663,7 @@ std::string llsd_matches(const LLSD& prototype, const LLSD& data, const std::str
         out << colon(pfx);
         const char* init = "Map missing keys: ";
         const char* sep = init;
-        for (LLSD::map_const_iterator mi = prototype.beginMap(); mi != prototype.endMap(); ++mi)
+        for (auto mi = prototype.beginMap(), mi_end = prototype.endMap(); mi != mi_end; ++mi)
         {
             if (! data.has(mi->first))
             {
@@ -684,7 +678,7 @@ std::string llsd_matches(const LLSD& prototype, const LLSD& data, const std::str
         }
         // Good, the data block contains all the keys required by the
         // prototype. Now match the prototype entries.
-        for (LLSD::map_const_iterator mi2 = prototype.beginMap(); mi2 != prototype.endMap(); ++mi2)
+        for (auto mi2 = prototype.beginMap(), mi2_end = prototype.endMap(); mi2 != mi2_end; ++mi2)
         {
             std::string match(llsd_matches(mi2->second, data[mi2->first],
                                            STRINGIZE("['" << mi2->first << "']")));
@@ -822,13 +816,13 @@ bool llsd_equals(const LLSD& lhs, const LLSD& rhs, int bits)
     {
         // Build a set of all rhs keys.
         std::set<LLSD::String> rhskeys;
-        for (LLSD::map_const_iterator rmi(rhs.beginMap()), rmend(rhs.endMap());
+        for (auto rmi(rhs.beginMap()), rmend(rhs.endMap());
              rmi != rmend; ++rmi)
         {
             rhskeys.insert(rmi->first);
         }
         // Now walk all the lhs keys.
-        for (LLSD::map_const_iterator lmi(lhs.beginMap()), lmend(lhs.endMap());
+        for (auto lmi(lhs.beginMap()), lmend(lhs.endMap());
              lmi != lmend; ++lmi)
         {
             // Try to erase this lhs key from the set of rhs keys. If rhs has
