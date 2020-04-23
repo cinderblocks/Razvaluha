@@ -29,6 +29,7 @@
 
 #include "pipeline.h"
 
+#include "aosystem.h"			//For AOSystem
 #include "llagent.h"
 #include "llanimationstates.h"
 #include "llfloatercamera.h"
@@ -49,7 +50,6 @@
 #include "llwindow.h"
 #include "llworld.h"
 #include "llfloatertools.h"		//For gFloaterTools
-#include "floaterao.h"			//For LLFloaterAO
 #include "llfloatercustomize.h" //For gFloaterCustomize
 // [RLVa:KB] - Checked: 2010-05-10 (RLVa-1.2.0g)
 #include "rlvhandler.h"
@@ -2266,7 +2266,8 @@ void LLAgentCamera::changeCameraToMouselook(BOOL animate)
 		mMouselookTimer.reset();
 
 		gFocusMgr.setKeyboardFocus(NULL);
-		if (gSavedSettings.getBOOL("AONoStandsInMouselook"))	LLFloaterAO::stopMotion(LLFloaterAO::getCurrentStandId(), true);
+		if (AOSystem::instanceExists() && gSavedSettings.getBOOL("AONoStandsInMouselook"))
+			AOSystem::instance().stopCurrentStand();
 		
 		updateLastCamera();
 		mCameraMode = CAMERA_MODE_MOUSELOOK;
@@ -2513,13 +2514,13 @@ void LLAgentCamera::changeCameraToCustomizeAvatar()
 			gAgent.sendAnimationRequest(ANIM_AGENT_CUSTOMIZE, ANIM_REQUEST_START);
 			gAgent.setCustomAnim(TRUE);
 			gAgentAvatarp->startMotion(ANIM_AGENT_CUSTOMIZE);
-		}
-		LLMotion* turn_motion = gAgentAvatarp->findMotion(ANIM_AGENT_CUSTOMIZE);
+			LLMotion* turn_motion = gAgentAvatarp->findMotion(ANIM_AGENT_CUSTOMIZE);
 
-		if (turn_motion)
-		{
-			// delay camera animation long enough to play through turn animation
-			setAnimationDuration(turn_motion->getDuration() + CUSTOMIZE_AVATAR_CAMERA_ANIM_SLOP);
+			if (turn_motion)
+			{
+				// delay camera animation long enough to play through turn animation
+				setAnimationDuration(turn_motion->getDuration() + CUSTOMIZE_AVATAR_CAMERA_ANIM_SLOP);
+			}
 		}
 	}
 	// <edit>

@@ -39,6 +39,7 @@
 #include "raytrace.h"
 
 #include "llagent.h" //  Get state values from here
+#include "llagentbenefits.h"
 #include "llagentcamera.h"
 #include "llagentwearables.h"
 #include "llanimationstates.h"
@@ -111,8 +112,8 @@
 #include "llvoicevisualizer.h" // Ventrella
 
 #include "llsdserialize.h" //For the client definitions
+#include "aosystem.h"
 #include "llcachename.h"
-#include "floaterao.h"
 #include "llsdutil.h"
 
 #include "llskinningutil.h"
@@ -1063,7 +1064,7 @@ LLVOAvatar::LLVOAvatar(const LLUUID& id,
 	mCCSChatTextOverride(false)
 	// </edit>
 {
-	mAttachedObjectsVector.reserve(MAX_AGENT_ATTACHMENTS);
+	mAttachedObjectsVector.reserve(38);
 
 	static LLCachedControl<bool> const freeze_time("FreezeTime", false);
 	mFreezeTimeLangolier = freeze_time;
@@ -4165,7 +4166,8 @@ void LLVOAvatar::idleUpdateBelowWater()
 	BOOL old_below = mBelowWater;
 	mBelowWater =  avatar_height < water_height;
 	if (old_below != mBelowWater)
-		LLFloaterAO::toggleSwim(mBelowWater);
+		if (AOSystem::instanceExists())
+			AOSystem::instance().toggleSwim(mBelowWater);
 }
 
 void LLVOAvatar::slamPosition()
@@ -6149,7 +6151,7 @@ void LLVOAvatar::processAnimationStateChanges()
 	}
 	
 	// clear all current animations
-	const bool AOEnabled(gSavedSettings.getBOOL("AOEnabled")); // <singu/>
+	auto ao = isSelf() && AOSystem::instanceExists() ? AOSystem::getInstance() : nullptr; // AO is only for ME
 	AnimIterator anim_it;
 	for (anim_it = mPlayingAnimations.begin(); anim_it != mPlayingAnimations.end();)
 	{
@@ -6158,14 +6160,13 @@ void LLVOAvatar::processAnimationStateChanges()
 		// playing, but not signaled, so stop
 		if (found_anim == mSignaledAnimations.end())
 		{
-			if (AOEnabled && isSelf())
-				LLFloaterAO::stopMotion(anim_it->first, FALSE); // if the AO replaced this anim serverside then stop it serverside
+			if (ao) ao->stopMotion(anim_it->first); // if the AO replaced this anim serverside then stop it serverside
 
 			processSingleAnimationStateChange(anim_it->first, FALSE);
 			// <edit>
 			LLFloaterExploreAnimations::processAnim(getID(), anim_it->first, false);
 			// </edit>
-			mPlayingAnimations.erase(anim_it++);
+			anim_it = mPlayingAnimations.erase(anim_it);
 			continue;
 		}
 
@@ -6185,10 +6186,7 @@ void LLVOAvatar::processAnimationStateChanges()
 			// </edit>
 			if (processSingleAnimationStateChange(anim_it->first, TRUE))
 			{
-				if (AOEnabled && isSelf()) // AO is only for ME
-				{
-					LLFloaterAO::startMotion(anim_it->first, false); // AO overrides the anim if needed
-				}
+				if (ao) ao->startMotion(anim_it->first); // AO overrides the anim if needed
 
 				mPlayingAnimations[anim_it->first] = anim_it->second;
 				++anim_it;
@@ -7650,7 +7648,7 @@ U32 LLVOAvatar::getNumAttachments() const
 //-----------------------------------------------------------------------------
 BOOL LLVOAvatar::canAttachMoreObjects(U32 n) const
 {
-	return (getNumAttachments() + n) <= MAX_AGENT_ATTACHMENTS;
+	return (getNumAttachments() + n) <= (U32)LLAgentBenefitsMgr::current().getAttachmentLimit();
 }
 
 //-----------------------------------------------------------------------------
@@ -7673,24 +7671,9 @@ U32 LLVOAvatar::getNumAnimatedObjectAttachments() const
 //-----------------------------------------------------------------------------
 U32 LLVOAvatar::getMaxAnimatedObjectAttachments() const
 {
-    U32 max_attach = 0;
     if (gSavedSettings.getBOOL("AnimatedObjectsIgnoreLimits"))
-    {
-        max_attach = MAX_AGENT_ATTACHMENTS;
-    }
-    else
-    {
-        if (gAgent.getRegion())
-        {
-            LLSD features;
-            gAgent.getRegion()->getSimulatorFeatures(features);
-            if (features.has("AnimatedObjects"))
-            {
-                max_attach = (U32)llmax(0,features["AnimatedObjects"]["MaxAgentAnimatedObjectAttachments"].asInteger());
-            }
-        }
-    }
-    return max_attach;
+        return U32_MAX;
+    return LLAgentBenefitsMgr::current().getAnimatedObjectLimit();
 }
 
 //-----------------------------------------------------------------------------
@@ -7869,8 +7852,6 @@ void LLVOAvatar::sitDown(BOOL bSitting)
 	mIsSitting = bSitting;
 	if (isSelf())
 	{
-		LLFloaterAO::ChangeStand();	
-
 // [RLVa:KB] - Checked: 2010-08-29 (RLVa-1.2.1c) | Modified: RLVa-1.2.1c
 		if (rlv_handler_t::isEnabled())
 		{

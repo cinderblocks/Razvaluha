@@ -739,19 +739,17 @@ void LLIMSpeakerMgr::setSpeakers(const LLSD& speakers)
 	std::vector<speaker_entry_t> speakerentries;
 	if ( speakers.has("agent_info") && speakers["agent_info"].isMap() )
 	{
-		for(LLSD::map_const_iterator speaker_it = speakers["agent_info"].beginMap();
-			speaker_it != speakers["agent_info"].endMap();
-			++speaker_it)
+		for (const auto& speaker : speakers["agent_info"].map())
 		{
 			boost::optional<bool> moderator;
 			boost::optional<bool> moderator_muted;
-			if (speaker_it->second.isMap())
+			if (speaker.second.isMap())
 			{
-				moderator = speaker_it->second["is_moderator"];
-				moderator_muted = speaker_it->second["mutes"]["text"];
+				moderator = speaker.second["is_moderator"];
+				moderator_muted = speaker.second["mutes"]["text"];
 			}
 			speakerentries.emplace_back(
-				LLUUID(speaker_it->first),
+				LLUUID(speaker.first),
 				LLSpeaker::SPEAKER_AGENT,
 				LLSpeaker::STATUS_TEXT_ONLY,
 				moderator,
@@ -761,11 +759,9 @@ void LLIMSpeakerMgr::setSpeakers(const LLSD& speakers)
 	}
 	else if ( speakers.has("agents" ) && speakers["agents"].isArray() )
 	{
-		for(LLSD::array_const_iterator speaker_it = speakers["agents"].beginArray();
-			speaker_it != speakers["agents"].endArray();
-			++speaker_it)
+		for (auto const& entry : speakers["agents"].array())
 		{
-			speakerentries.emplace_back((*speaker_it).asUUID());
+			speakerentries.emplace_back(entry.asUUID());
 		}
 	}
 	LLSpeakerMgr::setSpeakers(speakerentries);
@@ -778,19 +774,16 @@ void LLIMSpeakerMgr::updateSpeakers(const LLSD& update)
 	std::vector<speaker_entry_t> speakerentries;
 	if ( update.has("agent_updates") && update["agent_updates"].isMap() )
 	{
-		for(LLSD::map_const_iterator update_it = update["agent_updates"].beginMap();
-			update_it != update["agent_updates"].endMap();
-			++update_it)
+		for (const auto& update_it : update["agent_updates"].map())
 		{
-			LLUUID agent_id(update_it->first);
+			LLUUID agent_id(update_it.first);
 			LLPointer<LLSpeaker> speakerp = findSpeaker(agent_id);
 
 			bool new_speaker = false;
 			boost::optional<bool> moderator;
 			boost::optional<bool> moderator_muted_text;
 
-			LLSD agent_data = update_it->second;
-
+			LLSD agent_data = update_it.second;
 			if (agent_data.isMap() && agent_data.has("transition"))
 			{
 				if (agent_data["transition"].asString() == "LEAVE")
@@ -837,14 +830,12 @@ void LLIMSpeakerMgr::updateSpeakers(const LLSD& update)
 	}
 	else if ( update.has("updates") && update["updates"].isMap() )
 	{
-		for (LLSD::map_const_iterator update_it = update["updates"].beginMap();
-			update_it != update["updates"].endMap();
-			++update_it)
+		for (const auto& update_it : update["updates"].map())
 		{
-			LLUUID agent_id(update_it->first);
+			LLUUID agent_id(update_it.first);
 			LLPointer<LLSpeaker> speakerp = findSpeaker(agent_id);
 
-			std::string agent_transition = update_it->second.asString();
+			std::string agent_transition = update_it.second.asString();
 			if (agent_transition == "LEAVE")
 			{
 				setSpeakerNotInChannel(speakerp);

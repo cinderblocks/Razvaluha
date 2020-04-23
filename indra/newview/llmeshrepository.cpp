@@ -38,7 +38,6 @@
 #include "lldeadmantimer.h"
 #include "llfloatermodelpreview.h"
 #include "llfloaterperms.h"
-#include "lleconomy.h"
 #include "llimagej2c.h"
 #include "llhost.h"
 #include "llmath.h"
@@ -77,6 +76,7 @@
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <utility>
 
 #ifndef LL_WINDOWS
 #include "netdb.h"
@@ -1166,7 +1166,7 @@ void LLMeshRepoThread::constructUrl(LLUUID mesh_id, std::string * url, int * leg
 								<< mesh_id << ".mesh" << LL_ENDL;
 	}
 
-	*url = res_url;
+	*url = std::move(res_url);
 	*legacy_version = res_version;
 }
 
@@ -1237,7 +1237,8 @@ bool LLMeshRepoThread::fetchMeshSkinInfo(const LLUUID& mesh_id)
 
 	mHeaderMutex->lock();
 
-	if (mMeshHeader.find(mesh_id) == mMeshHeader.end())
+	auto header_it = mMeshHeader.find(mesh_id);
+	if (header_it == mMeshHeader.end())
 	{ //we have no header info for this mesh, do nothing
 		mHeaderMutex->unlock();
 		return false;
@@ -1249,7 +1250,7 @@ bool LLMeshRepoThread::fetchMeshSkinInfo(const LLUUID& mesh_id)
 	
 	if (header_size > 0)
 	{
-		const LLSD& header = mMeshHeader[mesh_id];
+		const auto& header = header_it->second;
 		const LLSD& block = header["skin"];
 		S32 version = header["version"].asInteger();
 		S32 offset = header_size + block["offset"].asInteger();
@@ -1263,10 +1264,15 @@ bool LLMeshRepoThread::fetchMeshSkinInfo(const LLUUID& mesh_id)
 			LLVFile file(gVFS, mesh_id, LLAssetType::AT_MESH);
 			if (file.getSize() >= offset+size)
 			{
+				U8* buffer = new(std::nothrow) U8[size];
+				if (!buffer)
+				{
+					LL_WARNS_ONCE(LOG_MESH) << "Failed to allocate memory for skin info, size: " << size << LL_ENDL;
+					return false;
+				}
 				LLMeshRepository::sCacheBytesRead += size;
 				++LLMeshRepository::sCacheReads;
 				file.seek(offset);
-				U8* buffer = new U8[size];
 				file.read(buffer, size);
 
 				//make sure buffer isn't all 0's by checking the first 1KB (reserved block but not written)
@@ -1331,7 +1337,8 @@ bool LLMeshRepoThread::fetchMeshDecomposition(const LLUUID& mesh_id)
 
 	mHeaderMutex->lock();
 
-	if (mMeshHeader.find(mesh_id) == mMeshHeader.end())
+	auto header_it = mMeshHeader.find(mesh_id);
+	if (header_it == mMeshHeader.end())
 	{ //we have no header info for this mesh, do nothing
 		mHeaderMutex->unlock();
 		return false;
@@ -1343,7 +1350,7 @@ bool LLMeshRepoThread::fetchMeshDecomposition(const LLUUID& mesh_id)
 	
 	if (header_size > 0)
 	{
-		const LLSD& header = mMeshHeader[mesh_id];
+		const auto& header = header_it->second;
 		const LLSD& block = header["physics_convex"];
 		S32 version = header["version"].asInteger();
 		S32 offset = header_size + block["offset"].asInteger();
@@ -1353,15 +1360,20 @@ bool LLMeshRepoThread::fetchMeshDecomposition(const LLUUID& mesh_id)
 
 		if (version <= MAX_MESH_VERSION && offset >= 0 && size > 0)
 		{
-			//check VFS for mesh skin info
+			//check VFS for mesh decomposition info
 			LLVFile file(gVFS, mesh_id, LLAssetType::AT_MESH);
 			if (file.getSize() >= offset+size)
 			{
+				U8* buffer = new(std::nothrow) U8[size];
+				if (!buffer)
+				{
+					LL_WARNS_ONCE(LOG_MESH) << "Failed to allocate memory for mesh decomposition, size: " << size << LL_ENDL;
+					return false;
+				}
 				LLMeshRepository::sCacheBytesRead += size;
 				++LLMeshRepository::sCacheReads;
 
 				file.seek(offset);
-				U8* buffer = new U8[size];
 				file.read(buffer, size);
 
 				//make sure buffer isn't all 0's by checking the first 1KB (reserved block but not written)
@@ -1426,7 +1438,8 @@ bool LLMeshRepoThread::fetchMeshPhysicsShape(const LLUUID& mesh_id)
 
 	mHeaderMutex->lock();
 
-	if (mMeshHeader.find(mesh_id) == mMeshHeader.end())
+	auto header_it = mMeshHeader.find(mesh_id);
+	if (header_it == mMeshHeader.end())
 	{ //we have no header info for this mesh, do nothing
 		mHeaderMutex->unlock();
 		return false;
@@ -1438,7 +1451,7 @@ bool LLMeshRepoThread::fetchMeshPhysicsShape(const LLUUID& mesh_id)
 
 	if (header_size > 0)
 	{
-		const LLSD& header = mMeshHeader[mesh_id];
+		const auto& header = header_it->second;
 		const LLSD& block = header["physics_mesh"];
 		S32 version = header["version"].asInteger();
 		S32 offset = header_size + block["offset"].asInteger();
@@ -1455,7 +1468,12 @@ bool LLMeshRepoThread::fetchMeshPhysicsShape(const LLUUID& mesh_id)
 				LLMeshRepository::sCacheBytesRead += size;
 				++LLMeshRepository::sCacheReads;
 				file.seek(offset);
-				U8* buffer = new U8[size];
+				U8* buffer = new(std::nothrow) U8[size];
+				if (!buffer)
+				{
+					LL_WARNS_ONCE(LOG_MESH) << "Failed to allocate memory for physics shape, size: " << size << LL_ENDL;
+					return false;
+				}
 				file.read(buffer, size);
 
 				//make sure buffer isn't all 0's by checking the first 1KB (reserved block but not written)
@@ -1609,19 +1627,23 @@ bool LLMeshRepoThread::fetchMeshLOD(const LLVolumeParams& mesh_params, S32 lod)
 	{
 		return false;
 	}
-			
-	mHeaderMutex->lock();
 
+	const LLUUID& mesh_id = mesh_params.getSculptID();
+
+	mHeaderMutex->lock();
+	auto header_it = mMeshHeader.find(mesh_id);
+	if (header_it == mMeshHeader.end())
+	{ //we have no header info for this mesh, do nothing
+		mHeaderMutex->unlock();
+		return false;
+	}
 	++LLMeshRepository::sMeshRequestCount;
 	bool retval = true;
 
-	LLUUID mesh_id = mesh_params.getSculptID();
-	
 	U32 header_size = mMeshHeaderSize[mesh_id];
-
 	if (header_size > 0)
 	{
-		const LLSD& header = mMeshHeader[mesh_id];
+		const auto& header = header_it->second;
 		const LLSD& block = header[header_lod[lod]];
 		S32 version = header["version"].asInteger();
 		S32 offset = header_size + block["offset"].asInteger();
@@ -1635,15 +1657,17 @@ bool LLMeshRepoThread::fetchMeshLOD(const LLVolumeParams& mesh_params, S32 lod)
 			LLVFile file(gVFS, mesh_id, LLAssetType::AT_MESH);
 			if (file.getSize() >= offset+size)
 			{
-				LLMeshRepository::sCacheBytesRead += size;
-				++LLMeshRepository::sCacheReads;
-				file.seek(offset);
 				U8* buffer = new(std::nothrow) U8[size];
 				if (!buffer)
 				{
-					LL_WARNS(LOG_MESH) << "Can't allocate memory for mesh LOD" << LL_ENDL;
+					LL_WARNS_ONCE(LOG_MESH) << "Can't allocate memory for mesh " << mesh_id << " LOD " << lod << ", size: " << size << LL_ENDL;
+					// todo: for now it will result in indefinite constant retries, should result in timeout
+					// or in retry-count and disabling mesh. (but usually viewer is beyond saving at this point)
 					return false;
 				}
+				LLMeshRepository::sCacheBytesRead += size;
+				++LLMeshRepository::sCacheReads;
+				file.seek(offset);
 				file.read(buffer, size);
 
 				//make sure buffer isn't all 0's by checking the first 1KB (reserved block but not written)
@@ -1729,7 +1753,22 @@ bool LLMeshRepoThread::headerReceived(const LLVolumeParams& mesh_params, U8* dat
 			return false;
 		}
 
-		header_size += stream.tellg();
+		if (!header.isMap())
+		{
+			LL_WARNS(LOG_MESH) << "Mesh header is invalid for ID: " << mesh_id << LL_ENDL;
+			return false;
+		}
+
+		if (header.has("version") && header["version"].asInteger() > MAX_MESH_VERSION)
+		{
+			LL_INFOS(LOG_MESH) << "Wrong version in header for " << mesh_id << LL_ENDL;
+			header["404"] = 1;
+		}
+		// make sure there is at least one lod, function returns -1 and marks as 404 otherwise
+		else if (LLMeshRepository::getActualMeshLOD(header, 0) >= 0)
+		{
+			header_size += stream.tellg();
+		}
 	}
 	else
 	{
@@ -1753,9 +1792,9 @@ bool LLMeshRepoThread::headerReceived(const LLVolumeParams& mesh_params, U8* dat
 		pending_lod_map::iterator iter = mPendingLOD.find(mesh_params);
 		if (iter != mPendingLOD.end())
 		{
-			for (U32 i = 0; i < iter->second.size(); ++i)
+			for (int i : iter->second)
 			{
-				LODRequest req(mesh_params, iter->second[i]);
+				LODRequest req(mesh_params, i);
 				mLODReqQ.push_back(req);
 				LLMeshRepository::sLODProcessing++;
 			}
@@ -2804,7 +2843,7 @@ S32 LLMeshRepository::getActualMeshLOD(LLSD& header, S32 lod)
 {
 	lod = llclamp(lod, 0, 3);
 
-	S32 version = header["version"];
+	S32 version = header["version"].asInteger();
 
 	if (header.has("404") || version > MAX_MESH_VERSION)
 	{

@@ -57,7 +57,7 @@ using namespace llsd;
 #	include <VersionHelpers.h>
 #elif LL_DARWIN
 #   include "llsys-objc.h"
-#	include <errno.h>
+#	include <cerrno>
 #	include <sys/sysctl.h>
 #	include <sys/utsname.h>
 #	include <cstdint>
@@ -215,9 +215,12 @@ LLOSInfo::LLOSInfo() :
 		mOSStringSimple += "32-bit ";
 	}
 
-#if LL_WINDOWS
+#if LL_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif LL_MSVC
 #pragma warning (push)
-#pragma warning (disable : 4996) // compiler thinks might use uninitialized var, but no
+#pragma warning (disable : 4996) // Supress deprecated
 #endif
 	OSVERSIONINFOEX osvi;
 	BOOL bOsVersionInfoEx;
@@ -230,8 +233,10 @@ LLOSInfo::LLOSInfo() :
 		osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		bOsVersionInfoEx = GetVersionEx((OSVERSIONINFO *) &osvi);
 	}
-#if LL_WINDOWS
-#pragma warning (pop)
+#if LL_CLANG
+#pragma clang diagnostic pop
+#elif LL_MSVC
+#pragma warning (push)
 #endif
 	
 	std::string tmpstr;
@@ -240,14 +245,14 @@ LLOSInfo::LLOSInfo() :
 		mMajorVer = osvi.dwMajorVersion;
 		mMinorVer = osvi.dwMinorVersion;
 		mBuild = osvi.dwBuildNumber;
-		tmpstr = llformat("%s(Build %d)", service_pack.c_str(), mBuild);
+		tmpstr = fmt::format(FMT_STRING("{:s}(Build {:d})"), service_pack, mBuild);
 	}
 	else
 	{
 		mMajorVer = 0;
 		mMinorVer = 0;
 		mBuild = 0;
-		tmpstr = llformat("%s(Build %d)", service_pack.c_str(), 0);
+		tmpstr = fmt::format(FMT_STRING("{:s}(Build {:d})"), service_pack, 0);
 	}
 
 	// Display version, service pack (if any), and build number.
@@ -1125,7 +1130,7 @@ public:
         // Both MEM_INFO_WINDOW and MEM_INFO_THROTTLE are in seconds. We need
         // the number of integer MEM_INFO_THROTTLE sample slots that will fit
         // in MEM_INFO_WINDOW. Round up.
-        mSamples(int((MEM_INFO_WINDOW / MEM_INFO_THROTTLE) + 0.7)),
+        mSamples(int((MEM_INFO_WINDOW / MEM_INFO_THROTTLE) + 0.7f)),
         // Initializing to F32_MAX means that the first real frame will become
         // the slowest ever, which sounds like a good idea.
         mSlowest(F32_MAX)

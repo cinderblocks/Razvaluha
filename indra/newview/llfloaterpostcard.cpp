@@ -55,7 +55,6 @@
 #include "llviewerwindow.h"
 #include "llstatusbar.h"
 #include "llviewerregion.h"
-#include "lleconomy.h"
 #include "lltrans.h"
 
 #include "llgl.h"
@@ -105,11 +104,7 @@ void LLFloaterPostcard::init()
 	if(!gAgent.getID().isNull())
 	{
 		// we're logged in, so we can get this info.
-		gMessageSystem->newMessageFast(_PREHASH_UserInfoRequest);
-		gMessageSystem->nextBlockFast(_PREHASH_AgentData);
-		gMessageSystem->addUUIDFast(_PREHASH_AgentID, gAgent.getID());
-		gMessageSystem->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID());
-		gAgent.sendReliableMessage();
+		gAgent.sendAgentUserInfoRequest();
 	}
 
 	sInstances.insert(this);
@@ -253,7 +248,6 @@ void LLFloaterPostcard::onClickSend(void* data)
 	{
 		LLFloaterPostcard *self = (LLFloaterPostcard *)data;
 
-		std::string from(self->childGetValue("from_form").asString());
 		std::string to(self->childGetValue("to_form").asString());
 		
 		boost::regex emailFormat("[A-Za-z0-9.%+-_]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}(,[ \t]*[A-Za-z0-9.%+-_]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})*");
@@ -261,12 +255,6 @@ void LLFloaterPostcard::onClickSend(void* data)
 		if (to.empty() || !boost::regex_match(to, emailFormat))
 		{
 			LLNotificationsUtil::add("PromptRecipientEmail");
-			return;
-		}
-
-		if (from.empty() || !boost::regex_match(from, emailFormat))
-		{
-			LLNotificationsUtil::add("PromptSelfEmail");
 			return;
 		}
 
@@ -329,10 +317,8 @@ void LLFloaterPostcard::uploadCallback(const LLUUID& asset_id, void *user_data, 
 // static
 void LLFloaterPostcard::updateUserInfo(const std::string& email)
 {
-	for (instance_list_t::iterator iter = sInstances.begin();
-		 iter != sInstances.end(); ++iter)
+	for (auto& instance : sInstances)
 	{
-		LLFloaterPostcard *instance = *iter;
 		const std::string& text = instance->childGetValue("from_form").asString();
 		if (text.empty())
 		{
@@ -396,7 +382,6 @@ void LLFloaterPostcard::sendPostcard()
 		// the capability already encodes: agent ID, region ID
 		body["pos-global"] = mPosTakenGlobal.getValue();
 		body["to"] = childGetValue("to_form").asString();
-		body["from"] = childGetValue("from_form").asString();
 		body["name"] = childGetValue("name_form").asString();
 		body["subject"] = childGetValue("subject_form").asString();
 		body["msg"] = childGetValue("msg_form").asString();

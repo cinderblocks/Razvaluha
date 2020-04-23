@@ -1,6 +1,6 @@
 # -*- cmake -*-
 
-project(llinventory)
+project(llinventory LANGUAGES CXX)
 
 include(00-Common)
 include(LLCommon)
@@ -19,7 +19,6 @@ include_directories(
 
 set(llinventory_SOURCE_FILES
     llcategory.cpp
-    lleconomy.cpp
     llfoldertype.cpp
     llinventory.cpp
     llinventorydefines.cpp
@@ -42,7 +41,6 @@ set(llinventory_HEADER_FILES
     CMakeLists.txt
 
     llcategory.h
-    lleconomy.h
     llfoldertype.h
     llinventory.h
     llinventorydefines.h
@@ -72,8 +70,9 @@ list(APPEND llinventory_SOURCE_FILES ${llinventory_HEADER_FILES})
 
 add_library (llinventory ${llinventory_SOURCE_FILES})
 
-target_link_libraries(
-    llinventory
-    PUBLIC
+target_link_libraries(llinventory PUBLIC
+    fmt::fmt
+    absl::flat_hash_map
+    absl::node_hash_map
     llcommon
     )

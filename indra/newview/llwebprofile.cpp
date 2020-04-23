@@ -34,6 +34,7 @@
 #include "llimagepng.h"
 #include "llsdserialize.h"
 #include "bufferstream.h"
+//#include "llplugincookiestore.h"
 
 // newview
 #include "llpanelprofile.h" // for getProfileURL(). FIXME: move the method to LLAvatarActions

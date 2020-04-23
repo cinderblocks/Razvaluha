@@ -48,24 +48,47 @@ namespace LLViewerDisplayName
 	// Fired when there is a change in the agent's name
 	name_changed_signal_t sNameChangedSignal;
 
-	void addNameChangedCallback(const name_changed_signal_t::slot_type& cb) 
+	boost::signals2::connection addNameChangedCallback(const name_changed_signal_t::slot_type& cb) 
 	{ 
-		sNameChangedSignal.connect(cb); 
+		return sNameChangedSignal.connect(cb);
 	}
 
-	void onSetDisplayNameFailure()
-	{
-		LL_WARNS() << "SetDisplayName Failed" << LL_ENDL;
-		sSetDisplayNameSignal(false, "", LLSD());
-		sSetDisplayNameSignal.disconnect_all_slots();
-	}
 	void doNothing() { }
+}
+
+void LLViewerDisplayName::setDisplayNameCoro(const std::string url, const LLSD change_array)
+{
+    using namespace LLCoreHttpUtil;
+    
+    LLCore::HttpRequest::policy_t httpPolicy(LLCore::HttpRequest::DEFAULT_POLICY_ID);
+    auto httpAdapter = boost::make_shared<HttpCoroutineAdapter>("setDisplayNameCoro", httpPolicy);
+    auto httpRequest = boost::make_shared<LLCore::HttpRequest>();
+    auto httpOpts = boost::make_shared<LLCore::HttpOptions>();
+    auto httpHeaders = boost::make_shared<LLCore::HttpHeaders>();
+    
+    // People API can return localized error messages.  Indicate our
+    // language preference via header.
+    httpHeaders->append(HTTP_OUT_HEADER_ACCEPT_LANGUAGE, LLUI::getLanguage());
+    
+    LLSD body;
+    body["display_name"] = change_array;
+    
+    // POST the requested change.  The sim will not send a response back to
+    // this request directly, rather it will send a separate message after it
+    // communicates with the back-end, so we will only be checking for an error.
+    LLSD result = httpAdapter->postAndSuspend(httpRequest, url, body, httpOpts, httpHeaders);
+    
+    LLSD httpResults = result[HttpCoroutineAdapter::HTTP_RESULTS];
+    LLCore::HttpStatus status = HttpCoroutineAdapter::getStatusFromLLSD(httpResults);
+    if (!status)
+	{
+        LLViewerDisplayName::sSetDisplayNameSignal(false, LLStringUtil::null, LLSD());
+		LLViewerDisplayName::sSetDisplayNameSignal.disconnect_all_slots();
+	}
 }
 
 void LLViewerDisplayName::set(const std::string& display_name, const set_name_slot_t& slot)
 {
-	// TODO: simple validation here
-
 	LLViewerRegion* region = gAgent.getRegion();
 	llassert(region);
 	std::string cap_url = region->getCapability("SetDisplayName");
@@ -80,7 +103,7 @@ void LLViewerDisplayName::set(const std::string& display_name, const set_name_sl
 	// Our display name will be in cache before the viewer's UI is available
 	// to request a change, so we can use direct lookup without callback.
 	LLAvatarName av_name;
-	if (!LLAvatarNameCache::get( gAgent.getID(), &av_name))
+	if (!LLAvatarNameCache::get(gAgent.getID(), &av_name))
 	{
 		slot(false, "name unavailable", LLSD());
 		return;
@@ -91,27 +114,20 @@ void LLViewerDisplayName::set(const std::string& display_name, const set_name_sl
 	change_array.append(av_name.getDisplayName());
 	change_array.append(display_name);
 	
-	LL_INFOS() << "Set name POST to " << cap_url << LL_ENDL;
-
 	// Record our caller for when the server sends back a reply
 	sSetDisplayNameSignal.connect(slot);
 	
-	// POST the requested change.  The sim will not send a response back to
-	// this request directly, rather it will send a separate message after it
-	// communicates with the back-end.
-	LLSD body;
-	body["display_name"] = change_array;
-	LLCoreHttpUtil::HttpCoroutineAdapter::callbackHttpPost(cap_url, body, boost::bind(onSetDisplayNameFailure));
+	LLCoros::instance().launch("setDisplayNameCoro", boost::bind(&LLViewerDisplayName::setDisplayNameCoro, cap_url, change_array));
 }
 
-class LLSetDisplayNameReply : public LLHTTPNode
+class LLSetDisplayNameReply final : public LLHTTPNode
 {
 	LOG_CLASS(LLSetDisplayNameReply);
 public:
 	/*virtual*/ void post(
 		LLHTTPNode::ResponsePtr response,
 		const LLSD& context,
-		const LLSD& input) const
+		const LLSD& input) const override
 	{
 		LLSD body = input["body"];
 
@@ -144,12 +160,12 @@ public:
 };
 
 
-class LLDisplayNameUpdate : public LLHTTPNode
+class LLDisplayNameUpdate final : public LLHTTPNode
 {
 	/*virtual*/ void post(
 		LLHTTPNode::ResponsePtr response,
 		const LLSD& context,
-		const LLSD& input) const
+		const LLSD& input) const override
 	{
 		LLSD body = input["body"];
 		LLUUID agent_id = body["agent_id"];
@@ -182,7 +198,7 @@ class LLDisplayNameUpdate : public LLHTTPNode
 		{
 			LLSD args;
 			args["OLD_NAME"] = old_display_name;
-			args["SLID"] = av_name.getUserName();
+			args["SLID"] = "secondlife:///app/agent/" + agent_id.asString() + "/username";
 			args["NEW_NAME"] = av_name.getDisplayName();
 			LLNotificationsUtil::add("DisplayNameUpdate", args);
 		}

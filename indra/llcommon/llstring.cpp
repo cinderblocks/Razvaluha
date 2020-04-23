@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llstring.cpp
  * @brief String utility functions and the std::string class.
@@ -32,6 +30,7 @@
 #include "llerror.h"
 #include "llfasttimer.h"
 #include "llsd.h"
+#include <vector>
 
 #if LL_WINDOWS
 #include "llwin32headerslean.h"
@@ -386,9 +385,9 @@ S32 wchar_utf8_length(const llwchar wc)
 S32 wstring_utf8_length(const LLWString& wstr)
 {
 	S32 len = 0;
-	for (S32 i = 0; i < (S32)wstr.length(); i++)
+	for (const auto& i : wstr)
 	{
-		len += wchar_utf8_length(wstr[i]);
+		len += wchar_utf8_length(i);
 	}
 	return len;
 }
@@ -697,11 +696,11 @@ std::string mbcsstring_makeASCII(const std::string& wstr)
 {
 	// Replace non-ASCII chars with replace_char
 	std::string out_str = wstr;
-	for (S32 i = 0; i < (S32)out_str.length(); i++)
+	for (char& i : out_str)
 	{
-		if ((U8)out_str[i] > 0x7f)
+		if (static_cast<U8>(i) > 0x7f)
 		{
-			out_str[i] = LL_UNKNOWN_CHAR;
+            i = LL_UNKNOWN_CHAR;
 		}
 	}
 	return out_str;
@@ -740,7 +739,6 @@ bool LLStringOps::isHexString(const std::string& str)
 }
 
 #if LL_WINDOWS
-
 std::string ll_convert_wide_to_string(const wchar_t* in)
 {
 	return ll_convert_wide_to_string(in, CP_UTF8);
@@ -1110,24 +1108,23 @@ std::string LLStringOps::getDatetimeCode(const std::string& key)
 	}
 }
 
-
 std::string LLStringOps::getReadableNumber(F64 num)
 {
     if (fabs(num)>=1e9)
     {
-		return llformat("%.2lfB", num / 1e9);
+		return fmt::format(FMT_STRING("{:.2f}B"), num / 1e9);
     }
     else if (fabs(num)>=1e6)
     {
-		return llformat("%.2lfM", num / 1e6);
+		return fmt::format(FMT_STRING("{:.2f}M"), num / 1e6);
     }
     else if (fabs(num)>=1e3)
     {
-		return llformat("%.2lfK", num / 1e3);
+		return fmt::format(FMT_STRING("{:.2f}K"), num / 1e3);
     }
     else
     {
-		return llformat("%.2lf", num);
+		return fmt::format(FMT_STRING("{:.2f}"), num);
     }
 }
 
@@ -1267,13 +1264,13 @@ LLStringUtil::size_type LLStringUtil::getSubstitution(const std::string& instr, 
 
 // static
 template<> 
-bool LLStringUtil::simpleReplacement(std::string &replacement, std::string token, const format_map_t& substitutions)
+bool LLStringUtil::simpleReplacement(std::string &replacement, const std::string& token, const format_map_t& substitutions)
 {
 	// see if we have a replacement for the bracketed string (without the brackets)
 	// test first using has() because if we just look up with operator[] we get back an
 	// empty string even if the value is missing. We want to distinguish between 
 	// missing replacements and deliberately empty replacement strings.
-	format_map_t::const_iterator iter = substitutions.find(token);
+    auto iter = substitutions.find(token);
 	if (iter != substitutions.end())
 	{
 		replacement = iter->second;
@@ -1292,7 +1289,7 @@ bool LLStringUtil::simpleReplacement(std::string &replacement, std::string token
 
 // static
 template<> 
-bool LLStringUtil::simpleReplacement(std::string &replacement, std::string token, const LLSD& substitutions)
+bool LLStringUtil::simpleReplacement(std::string &replacement, const std::string& token, const LLSD& substitutions)
 {
 	// see if we have a replacement for the bracketed string (without the brackets)
 	// test first using has() because if we just look up with operator[] we get back an
@@ -1315,7 +1312,7 @@ bool LLStringUtil::simpleReplacement(std::string &replacement, std::string token
 
 //static
 template<>
-void LLStringUtil::setLocale(std::string inLocale)
+void LLStringUtil::setLocale(const std::string& inLocale)
 {
 	sLocale = inLocale;
 };
@@ -1329,12 +1326,13 @@ std::string LLStringUtil::getLocale(void)
 
 // static
 template<> 
-void LLStringUtil::formatNumber(std::string& numStr, std::string decimals)
+void LLStringUtil::formatNumber(std::string& numStr, const std::string& decimals)
 {
 	std::stringstream strStream;
 	S32 intDecimals = 0;
 
 	convertToS32 (decimals, intDecimals);
+#if !defined(LL_WINDOWS)
 	if (!sLocale.empty())
 	{
 		// std::locale() throws if the locale is unknown! (EXT-7926)
@@ -1346,6 +1344,7 @@ void LLStringUtil::formatNumber(std::string& numStr, std::string decimals)
 			LL_WARNS_ONCE("Locale") << "Cannot set locale to " << sLocale << LL_ENDL;
 		}
 	}
+#endif
 
 	if (!intDecimals)
 	{
@@ -1353,8 +1352,7 @@ void LLStringUtil::formatNumber(std::string& numStr, std::string decimals)
 
 		if (convertToS32(numStr, intStr))
 		{
-			strStream << intStr;
-			numStr = strStream.str();
+			numStr = fmt::to_string(intStr);
 		}
 	}
 	else
@@ -1363,16 +1361,15 @@ void LLStringUtil::formatNumber(std::string& numStr, std::string decimals)
 
 		if (convertToF32(numStr, floatStr))
 		{
-			strStream << std::fixed << std::showpoint << std::setprecision(intDecimals) << floatStr;
-			numStr = strStream.str();
+			numStr = fmt::format(FMT_STRING("{:#.{}f}"), floatStr, intDecimals);
 		}
 	}
 }
 
 // static
 template<> 
-bool LLStringUtil::formatDatetime(std::string& replacement, std::string token,
-								  std::string param, S32 secFromEpoch)
+bool LLStringUtil::formatDatetime(std::string& replacement, const std::string& token,
+								  const std::string& param, S32 secFromEpoch)
 {
 	if (param == "local")   // local
 	{
@@ -1434,14 +1431,14 @@ bool LLStringUtil::formatDatetime(std::string& replacement, std::string token,
 	{
 		struct tm * gmt = gmtime (&loc_seconds);
 		LLStringUtil::format_map_t args;
-		args["[MDAY]"] = llformat ("%d", gmt->tm_mday);
+		args["[MDAY]"] = fmt::to_string(gmt->tm_mday);
 		replacement = LLStringOps::sDayFormat;
 		LLStringUtil::format(replacement, args);
 	}
 	else if (code == "%-d")
 	{
 		struct tm * gmt = gmtime (&loc_seconds);
-		replacement = llformat ("%d", gmt->tm_mday); // day of the month without leading zero
+		replacement = fmt::to_string(gmt->tm_mday); // day of the month without leading zero
 	}
 	else if( !LLStringOps::sAM.empty() && !LLStringOps::sPM.empty() && code == "%p" )
 	{
@@ -1500,7 +1497,7 @@ S32 LLStringUtil::format(std::string& s, const format_map_t& substitutions)
 		bool found_replacement = false;
 		std::string replacement;
 
-		if (tokens.size() == 0)
+		if (tokens.empty())
 		{
 			found_replacement = false;
 		}
@@ -1521,11 +1518,11 @@ S32 LLStringUtil::format(std::string& s, const format_map_t& substitutions)
 			std::string param;
 			if (tokens.size() > 2) param = tokens[2];
 			
-			format_map_t::const_iterator iter = substitutions.find("datetime");
+            auto iter = substitutions.find("datetime");
 			if (iter != substitutions.end())
 			{
 				S32 secFromEpoch = 0;
-				BOOL r = LLStringUtil::convertToS32(iter->second, secFromEpoch);
+				BOOL r = LLStringUtil::convertToS32(iter->second.get(), secFromEpoch);
 				if (r)
 				{
 					found_replacement = formatDatetime(replacement, tokens[0], param, secFromEpoch);
@@ -1578,7 +1575,7 @@ S32 LLStringUtil::format(std::string& s, const LLSD& substitutions)
 		bool found_replacement = false;
 		std::string replacement;
 
-		if (tokens.size() == 0)
+		if (tokens.empty())
 		{
 			found_replacement = false;
 		}

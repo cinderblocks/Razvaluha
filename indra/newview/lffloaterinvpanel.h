@@ -18,18 +18,16 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA */
 
-#ifndef LFFLOATERINVPANEL_H
-#define LFFLOATERINVPANEL_H
+#pragma once
 
 #include "llfloater.h"
 #include "llinstancetracker.h"
 #include "llsdutil.h"
 
 
-class LFFloaterInvPanel : public LLFloater, public LLInstanceTracker<LFFloaterInvPanel, LLSD>
+class LFFloaterInvPanel final : public LLFloater, public LLInstanceTracker<LFFloaterInvPanel, LLSD>
 {
 	LFFloaterInvPanel(const LLSD& cat, const std::string& name = LLStringUtil::null, class LLInventoryModel* model = nullptr);
-	~LFFloaterInvPanel();
 
 public:
 	static void show(const LLSD& cat, const std::string& name = LLStringUtil::null, LLInventoryModel* model = nullptr); // Show the floater for cat (create with other params if necessary)
@@ -43,9 +41,4 @@ public:
 	static void closeAll(); // Called when not allowed to have inventory open
 
 	BOOL handleKeyHere(KEY key, MASK mask) override;
-
-private:
-	class LLInventoryPanel* mPanel;
 };
-
-#endif //LFFLOATERINVPANEL_H

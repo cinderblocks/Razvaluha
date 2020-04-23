@@ -36,13 +36,13 @@
 #include "llbvhloader.h"
 #include "lldatapacker.h"
 #include "lldir.h"
-#include "lleconomy.h"
 #include "llnotificationsutil.h"
 #include "llvfile.h"
 #include "llapr.h"
 #include "llstring.h"
 
 #include "llagent.h"
+#include "llagentbenefits.h"
 #include "llanimationstates.h"
 #include "llbbox.h"
 #include "llbutton.h"
@@ -199,7 +199,7 @@ BOOL LLFloaterBvhPreview::postBuild()
 		getChild<LLSlider>("priority")->setMaxValue(7);
 	}
 
-	childSetLabelArg("ok_btn", "[UPLOADFEE]", gHippoGridManager->getConnectedGrid()->getUploadFee());
+	childSetLabelArg("ok_btn", "[UPLOADFEE]", gHippoGridManager->getConnectedGrid()->formatFee(LLAgentBenefitsMgr::current().getAnimationUploadCost()));
 	childSetAction("ok_btn", onBtnOK, this);
 	setDefaultBtn();
 
@@ -1207,7 +1207,7 @@ void LLFloaterBvhPreview::onBtnOK(void* userdata)
 			{
 				std::string name = floaterp->getChild<LLUICtrl>("name_form")->getValue().asString();
 				std::string desc = floaterp->getChild<LLUICtrl>("description_form")->getValue().asString();
-				S32 expected_upload_cost = LLGlobalEconomy::getInstance()->getPriceUpload();
+				S32 expected_upload_cost = LLAgentBenefitsMgr::current().getAnimationUploadCost();
 
 				// <edit>
 				if(floaterp->mItem)
@@ -1229,14 +1229,16 @@ void LLFloaterBvhPreview::onBtnOK(void* userdata)
 				else
 				// </edit>
 				{
-					LLResourceUploadInfo::ptr_t assetUpdloadInfo(new LLResourceUploadInfo(
+					LLResourceUploadInfo::ptr_t assetUploadInfo(new LLResourceUploadInfo(
 						floaterp->mTransactionID, LLAssetType::AT_ANIMATION,
 						name, desc, 0,
 						LLFolderType::FT_NONE, LLInventoryType::IT_ANIMATION,
-						LLFloaterPerms::getNextOwnerPerms("Uploads"), LLFloaterPerms::getGroupPerms("Uploads"), LLFloaterPerms::getEveryonePerms("Uploads"),
+						LLFloaterPerms::getNextOwnerPerms("Uploads"),
+						LLFloaterPerms::getGroupPerms("Uploads"),
+						LLFloaterPerms::getEveryonePerms("Uploads"),
 						expected_upload_cost));
 
-					upload_new_resource(assetUpdloadInfo);
+					upload_new_resource(assetUploadInfo);
 				}
 			}
 			else

@@ -36,6 +36,7 @@
 
 #include "lffloaterinvpanel.h"
 #include "llagent.h"
+#include "llagentbenefits.h"
 #include "llagentcamera.h"
 #include "llagentwearables.h"
 #include "llappearancemgr.h"
@@ -2964,6 +2965,12 @@ void LLFolderBridge::performAction(LLInventoryModel* model, std::string action)
 		LFFloaterInvPanel::show(LLSD().with("id", mUUID), cat->getName(), model);
 		return;
 	}
+	else if ("copy_folder_uuid" == action)
+	{
+		// Single folder only
+		gViewerWindow->getWindow()->copyTextToClipboard(utf8str_to_wstring(mUUID.asString()));
+		return;
+	}
 	else if ("paste" == action)
 	{
 		pasteFromClipboard();
@@ -3882,6 +3889,9 @@ void build_context_menu_folder_options(LLInventoryModel* model, const LLUUID& mU
 	const LLInventoryCategory* category = model->getCategory(mUUID);
 	if(!category) return;
 
+	items.push_back(std::string("Open Folder In New Window"));
+	items.push_back(std::string("Copy Folder UUID"));
+
 	const LLUUID trash_id = model->findCategoryUUIDForType(LLFolderType::FT_TRASH);
 	if (trash_id == mUUID) return;
 	if (model->isObjectDescendentOf(mUUID, trash_id)) return;
@@ -3894,8 +3904,6 @@ void build_context_menu_folder_options(LLInventoryModel* model, const LLUUID& mU
 	// copied from ::isMarketplaceListingsFolder
 	const LLUUID listings_folder = gInventory.findCategoryUUIDForType(LLFolderType::FT_MARKETPLACE_LISTINGS, false);
 	if (listings_folder.notNull() && gInventory.isObjectDescendentOf(mUUID, listings_folder)) return;
-
-	items.push_back(std::string("Open Folder In New Window"));
 
 	LLFolderType::EType type = category->getPreferredType();
 	const bool is_system_folder = LLFolderType::lookupIsProtectedType(type);
@@ -6043,7 +6051,7 @@ bool confirm_attachment_rez(const LLSD& notification, const LLSD& response)
 	if (!gAgentAvatarp->canAttachMoreObjects())
 	{
 		LLSD args;
-		args["MAX_ATTACHMENTS"] = llformat("%d", MAX_AGENT_ATTACHMENTS);
+		args["MAX_ATTACHMENTS"] = llformat("%d", LLAgentBenefitsMgr::current().getAttachmentLimit());
 		LLNotificationsUtil::add("MaxAttachmentsOnOutfit", args);
 		return false;
 	}

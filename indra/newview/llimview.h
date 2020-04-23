@@ -44,7 +44,7 @@
 class LLFloaterChatterBox;
 class LLFloaterIMPanel;
 
-class LLIMMgr : public LLSingleton<LLIMMgr>
+class LLIMMgr final : public LLSingleton<LLIMMgr>
 {
 	LLSINGLETON(LLIMMgr);
 public:
@@ -123,8 +123,8 @@ public:
 	void updateFloaterSessionID(const LLUUID& old_session_id,
 								const LLUUID& new_session_id);
 
-	void processIMTypingStart(const LLIMInfo* im_info);
-	void processIMTypingStop(const LLIMInfo* im_info);
+	void processIMTypingStart(const LLUUID& from_id, const EInstantMessage im_type);
+	void processIMTypingStop(const LLUUID& from_id, const EInstantMessage im_type);
 
 	void clearNewIMNotification();
 
@@ -211,7 +211,7 @@ private:
 	void noteOfflineUsers(LLFloaterIMPanel* panel, const uuid_vec_t& ids);
 	void noteMutedUsers(LLFloaterIMPanel* panel, const uuid_vec_t& ids);
 
-	void processIMTypingCore(const LLIMInfo* im_info, BOOL typing);
+	void processIMTypingCore(const LLUUID& from_id, const EInstantMessage im_type, BOOL typing);
 
 private:
 	std::set<LLHandle<LLFloater> > mFloaters;

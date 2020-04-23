@@ -1003,7 +1003,7 @@ You do not have enough [CURRENCY] to join this group.
    icon="alertmodal.tga"
    name="CreateGroupCost"
    type="alertmodal">
-Creating this group will cost L$[COST].
+	  Creating this group will cost [COST].
 Groups need more than one member, or they are deleted forever.
 Please invite members within 48 hours.
     <tag>group</tag>
@@ -1012,7 +1012,7 @@ Please invite members within 48 hours.
      canceltext="Cancel"
      name="okcancelbuttons"
      notext="Cancel"
-     yestext="Create group for L$[COST]"/>
+     yestext="Create group for [COST]"/>
   </notification>
 
   <notification
@@ -7184,7 +7184,7 @@ Event Notification:
       <button
        index="2"
        name="Cancel"
-       text="Cancel"/>
+       text="Dismiss"/>
     </form>
   </notification>
 
@@ -7762,10 +7762,6 @@ An object named [OBJECTFROMNAME] owned by [NAME] has given you a [OBJECTTYPE] na
        index="1"
        name="Cancel"
        text="Cancel"/>
-      <button
-       index="3"
-       name="Profile"
-       text="Profile"/>
     </form>
   </notification>
 
@@ -7798,10 +7794,6 @@ Offer a teleport?
        index="1"
        name="No"
        text="No"/>
-      <button
-       index="3"
-       name="Profile"
-       text="Profile"/>
     </form>
   </notification>
 
@@ -7831,7 +7823,7 @@ Offer a teleport?
    type="notify">
     <tag>friendship</tag>
     <tag>confirm</tag>
-[NAME] is offering friendship.
+[NAME_SLURL] is offering friendship.
 
 [MESSAGE]
 
@@ -7849,7 +7841,6 @@ Offer a teleport?
        index="2"
        name="Ignore"
        text="Ignore"/>
-      <button index="3" name="Profile" text="Profile"/>
     </form>
   </notification>
 
@@ -7868,7 +7859,7 @@ Offer a teleport?
    persist="true"
    type="notify">
     <tag>friendship</tag>
-[NAME] is offering friendship.
+[NAME_SLURL] is offering friendship.
 
 (By default, you will be able to see each other&apos;s online status.)
     <form name="form">
@@ -7884,7 +7875,6 @@ Offer a teleport?
        index="2"
        name="Ignore"
        text="Ignore"/>
-      <button index="3" name="Profile" text="Profile"/>
     </form>
   </notification>
 
@@ -7892,7 +7882,7 @@ Offer a teleport?
    icon="notify.tga"
    name="FriendshipAccepted"
    log_to_im="true"   
-   type="notify">
+   type="notifytip">
     <tag>friendship</tag>
 [NAME] accepted your friendship offer.
   </notification>
@@ -7902,9 +7892,27 @@ Offer a teleport?
    name="FriendshipDeclined"
    log_to_im="true"   
    persist="true"
-   type="notify">
+   type="notifytip">
     <tag>friendship</tag>
 [NAME] declined your friendship offer.
+  </notification>
+
+  <notification
+   icon="notify.tga"
+   name="FriendshipAcceptedByMe"
+   log_to_im="true"   
+   type="notifytip">
+    <tag>friendship</tag>
+Accepted friendship offer from [NAME_SLURL]. [MESSAGE]
+  </notification>
+
+  <notification
+   icon="notify.tga"
+   name="FriendshipDeclinedByMe"
+   log_to_im="true"   
+   type="notifytip">
+    <tag>friendship</tag>
+Declined friendship offer from [NAME_SLURL]. [MESSAGE]
   </notification>
 
   <notification
@@ -8921,6 +8929,15 @@ Server Error: Media update or get failed.
          yestext="OK"/>
     </notification>
 
+    <notification
+        icon="alertmodal.tga"
+        name="FailedToGetBenefits"
+        type="alertmodal">
+      Unfortunately, we were unable to get benefits information for this session. This should not happen in a normal production environment. Please contact support. This session will not work normally and we recommend that you restart.
+      <usetemplate
+          name="okbutton"
+          yestext="OK"/>
+    </notification>
   <notification
    icon="notifytip.tga"
    name="ShareNotification"
@@ -10069,7 +10086,7 @@ You cannot copy your selection because the object '[OBJ_NAME]' is not transferra
    name="NoPermsNoRemoval"
    type="notify">
    <tag>fail</tag>
-Removal of the object '[OBJ_NAME]' from the simulator is disallowed by the permissions system.
+Removal of the object '[OBJ_NAME]' from the region is disallowed by the permissions system.
   </notification>
 
   <notification
@@ -10340,7 +10357,7 @@ Unable to add script!
    name="AssetServerTimeoutObjReturn"
    type="notify">
    <tag>fail</tag>
-Asset server didn't respond in a timely fashion.  Object returned to sim.
+Asset server didn't respond in a timely fashion.  Object returned to region.
   </notification>
 
   <notification
@@ -11608,19 +11625,7 @@ For information about this feature, click "More Info".
    type="alertmodal">
 Would you like to bulk upload the files as temporary files?
 
-WARNING: Each upload costs [UPLOADCOST] if it's not temporary
-    <usetemplate
-     name="yesnocancelbuttons"
-     notext="Permanent"
-     yestext="Temporary"
-     canceltext="Cancel"/>
-  </notification>
-
-  <notification
-   icon="alertmodal.tga"
-   name="BulkTemporaryUploadFree"
-   type="alertmodal">
-Would you like to bulk upload the files as temporary files?
+WARNING: Each upload will cost its normal price, if it's not temporary
     <usetemplate
      name="yesnocancelbuttons"
      notext="Permanent"
@@ -11881,7 +11886,7 @@ Media/audio URL blocked for [DOMAIN]
    name="RadarChatKeysRequest"
    type="alertmodal">
 An object owned by you has requested keys from your radar.
-Would you like to enable announcing keys to objects in the sim?
+Would you like to enable announcing keys to objects in the region?
     <usetemplate
      name="yesnocancelbuttons"
      yestext="Yes"

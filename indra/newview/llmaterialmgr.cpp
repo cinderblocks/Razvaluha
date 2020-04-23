@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llmaterialmgr.cpp
  * @brief Material manager
@@ -42,20 +40,22 @@
 #include "httpcommon.h"
 #include "llcorehttputil.h"
 
+#include <utility>
+
 /**
  * Materials cap parameters
  */
 
-#define MATERIALS_CAPABILITY_NAME                 "RenderMaterials"
+static const std::string MATERIALS_CAPABILITY_NAME("RenderMaterials");
 
-#define MATERIALS_CAP_ZIP_FIELD                   "Zipped"
+static const std::string MATERIALS_CAP_ZIP_FIELD("Zipped");
 
-#define MATERIALS_CAP_FULL_PER_FACE_FIELD         "FullMaterialsPerFace"
-#define MATERIALS_CAP_FACE_FIELD                  "Face"
-#define MATERIALS_CAP_MATERIAL_FIELD              "Material"
-#define MATERIALS_CAP_OBJECT_ID_FIELD             "ID"
-#define MATERIALS_CAP_MATERIAL_ID_FIELD           "MaterialID"
-#define SIM_FEATURE_MAX_MATERIALS_PER_TRANSACTION "MaxMaterialsPerTransaction"
+static const std::string MATERIALS_CAP_FULL_PER_FACE_FIELD("FullMaterialsPerFace");
+static const std::string MATERIALS_CAP_FACE_FIELD("Face");
+static const std::string MATERIALS_CAP_MATERIAL_FIELD("Material");
+static const std::string MATERIALS_CAP_OBJECT_ID_FIELD("ID");
+static const std::string MATERIALS_CAP_MATERIAL_ID_FIELD("MaterialID");
+static const std::string SIM_FEATURE_MAX_MATERIALS_PER_TRANSACTION("MaxMaterialsPerTransaction");
 
 #define MATERIALS_GET_MAX_ENTRIES                 50
 #define MATERIALS_GET_TIMEOUT                     (60.f * 20)
@@ -66,7 +66,7 @@
 
 
 
-class LLMaterialHttpHandler : public LLHttpSDHandler
+class LLMaterialHttpHandler final : public LLHttpSDHandler
 {
 public: 
 	typedef std::function<void(bool, const LLSD&)> CallbackFunction;
@@ -154,13 +154,13 @@ LLMaterialMgr::~LLMaterialMgr()
 
 bool LLMaterialMgr::isGetPending(const LLUUID& region_id, const LLMaterialID& material_id) const
 {
-	get_pending_map_t::const_iterator itPending = mGetPending.find(pending_material_t(region_id, material_id));
-	return (mGetPending.end() != itPending) && (LLFrameTimer::getTotalSeconds() < itPending->second + MATERIALS_POST_TIMEOUT);
+    auto itPending = mGetPending.find(pending_material_t(region_id, material_id));
+	return (mGetPending.end() != itPending) && (LLFrameTimer::getTotalSeconds() < itPending->second + F64(MATERIALS_POST_TIMEOUT));
 }
 
 void LLMaterialMgr::markGetPending(const LLUUID& region_id, const LLMaterialID& material_id)
 {
-	get_pending_map_t::iterator itPending = mGetPending.find(pending_material_t(region_id, material_id));
+    auto itPending = mGetPending.find(pending_material_t(region_id, material_id));
 	if (mGetPending.end() == itPending)
 	{
 		mGetPending.insert(std::pair<pending_material_t, F64>(pending_material_t(region_id, material_id), LLFrameTimer::getTotalSeconds()));
@@ -219,7 +219,7 @@ boost::signals2::connection LLMaterialMgr::get(const LLUUID& region_id, const LL
 	{
 		if (!isGetPending(region_id, material_id))
 		{
-			get_queue_t::iterator itQueue = mGetQueue.find(region_id);
+            auto itQueue = mGetQueue.find(region_id);
 			if (mGetQueue.end() == itQueue)
 			{
 				LL_DEBUGS("Materials") << "mGetQueue inserting region "<<region_id << LL_ENDL;
@@ -231,7 +231,7 @@ boost::signals2::connection LLMaterialMgr::get(const LLUUID& region_id, const LL
 			markGetPending(region_id, material_id);
 		}
 
-		get_callback_map_t::iterator itCallback = mGetCallbacks.find(material_id);
+        auto itCallback = mGetCallbacks.find(material_id);
 		if (itCallback == mGetCallbacks.end())
 		{
 			std::pair<get_callback_map_t::iterator, bool> ret = mGetCallbacks.insert(std::pair<LLMaterialID, get_callback_t*>(material_id, new get_callback_t()));
@@ -260,7 +260,7 @@ boost::signals2::connection LLMaterialMgr::getTE(const LLUUID& region_id, const 
 	{
 		if (!isGetPending(region_id, material_id))
 		{
-			get_queue_t::iterator itQueue = mGetQueue.find(region_id);
+            auto itQueue = mGetQueue.find(region_id);
 			if (mGetQueue.end() == itQueue)
 			{
 				LL_DEBUGS("Materials") << "mGetQueue inserting region "<<region_id << LL_ENDL;
@@ -276,10 +276,10 @@ boost::signals2::connection LLMaterialMgr::getTE(const LLUUID& region_id, const 
 		te_mat_pair.te = te;
 		te_mat_pair.materialID = material_id;
 
-		get_callback_te_map_t::iterator itCallback = mGetTECallbacks.find(te_mat_pair);
+        auto itCallback = mGetTECallbacks.find(te_mat_pair);
 		if (itCallback == mGetTECallbacks.end())
 		{
-			std::pair<get_callback_te_map_t::iterator, bool> ret = mGetTECallbacks.insert(std::pair<TEMaterialPair, get_callback_te_t*>(te_mat_pair, new get_callback_te_t()));
+			std::pair<get_callback_te_map_t::iterator, bool> ret = mGetTECallbacks.emplace(te_mat_pair, new get_callback_te_t());
 			itCallback = ret.first;
 		}
 		connection = itCallback->second->connect(cb);
@@ -290,8 +290,8 @@ boost::signals2::connection LLMaterialMgr::getTE(const LLUUID& region_id, const 
 
 bool LLMaterialMgr::isGetAllPending(const LLUUID& region_id) const
 {
-	getall_pending_map_t::const_iterator itPending = mGetAllPending.find(region_id);
-	return (mGetAllPending.end() != itPending) && (LLFrameTimer::getTotalSeconds() < itPending->second + MATERIALS_GET_TIMEOUT);
+    auto itPending = mGetAllPending.find(region_id);
+	return (mGetAllPending.end() != itPending) && (LLFrameTimer::getTotalSeconds() < itPending->second + F64(MATERIALS_GET_TIMEOUT));
 }
 
 void LLMaterialMgr::getAll(const LLUUID& region_id)
@@ -314,7 +314,7 @@ boost::signals2::connection LLMaterialMgr::getAll(const LLUUID& region_id, LLMat
 		mGetAllQueue.insert(region_id);
 	}
 
-	getall_callback_map_t::iterator itCallback = mGetAllCallbacks.find(region_id);
+    auto itCallback = mGetAllCallbacks.find(region_id);
 	if (mGetAllCallbacks.end() == itCallback)
 	{
 		std::pair<getall_callback_map_t::iterator, bool> ret = mGetAllCallbacks.insert(std::pair<LLUUID, getall_callback_t*>(region_id, new getall_callback_t()));
@@ -325,15 +325,15 @@ boost::signals2::connection LLMaterialMgr::getAll(const LLUUID& region_id, LLMat
 
 void LLMaterialMgr::put(const LLUUID& object_id, const U8 te, const LLMaterial& material)
 {
-	put_queue_t::iterator itQueue = mPutQueue.find(object_id);
+    auto itQueue = mPutQueue.find(object_id);
 	if (mPutQueue.end() == itQueue)
 	{
 		LL_DEBUGS("Materials") << "mPutQueue insert object " << object_id << LL_ENDL;
-		mPutQueue.insert(std::pair<LLUUID, facematerial_map_t>(object_id, facematerial_map_t()));
-		itQueue = mPutQueue.find(object_id);
+		auto ret = mPutQueue.insert(std::pair<LLUUID, facematerial_map_t>(object_id, facematerial_map_t()));
+		itQueue = ret.first;
 	}
 
-	facematerial_map_t::iterator itFace = itQueue->second.find(te);
+    auto itFace = itQueue->second.find(te);
 	if (itQueue->second.end() == itFace)
 	{
 		itQueue->second.insert(std::pair<U8, LLMaterial>(te, material));
@@ -396,7 +396,7 @@ void LLMaterialMgr::setMaterialCallbacks(const LLMaterialID& material_id, const 
 	while (i < LLTEContents::MAX_TES && !mGetTECallbacks.empty())
 	{
 		te_mat_pair.te = i++;
-		get_callback_te_map_t::iterator itCallbackTE = mGetTECallbacks.find(te_mat_pair);
+        auto itCallbackTE = mGetTECallbacks.find(te_mat_pair);
 		if (itCallbackTE != mGetTECallbacks.end())
 		{
 			(*itCallbackTE->second)(material_id, material_ptr, te_mat_pair.te);
@@ -405,7 +405,7 @@ void LLMaterialMgr::setMaterialCallbacks(const LLMaterialID& material_id, const 
 		}
 	}
 
-	get_callback_map_t::iterator itCallback = mGetCallbacks.find(material_id);
+    auto itCallback = mGetCallbacks.find(material_id);
 	if (itCallback != mGetCallbacks.end())
 	{
 		(*itCallback->second)(material_id, material_ptr);
@@ -439,9 +439,8 @@ void LLMaterialMgr::onGetResponse(bool success, const LLSD& content, const LLUUI
 
 	llassert(response_data.isArray());
 	LL_DEBUGS("Materials") << "response has "<< response_data.size() << " materials" << LL_ENDL;
-	for (LLSD::array_const_iterator itMaterial = response_data.beginArray(); itMaterial != response_data.endArray(); ++itMaterial)
+	for (auto const& material_data : response_data.array())
 	{
-		const LLSD& material_data = *itMaterial;
 		llassert(material_data.isMap());
 
 		llassert(material_data.has(MATERIALS_CAP_OBJECT_ID_FIELD));
@@ -482,9 +481,8 @@ void LLMaterialMgr::onGetAllResponse(bool success, const LLSD& content, const LL
 
 	llassert(response_data.isArray());
 	LL_DEBUGS("Materials") << "response has "<< response_data.size() << " materials" << LL_ENDL;
-	for (LLSD::array_const_iterator itMaterial = response_data.beginArray(); itMaterial != response_data.endArray(); ++itMaterial)
+	for (auto const& material_data : response_data.array())
 	{
-		const LLSD& material_data = *itMaterial;
 		llassert(material_data.isMap());
 
 		llassert(material_data.has(MATERIALS_CAP_OBJECT_ID_FIELD));
@@ -546,11 +544,9 @@ void LLMaterialMgr::onPutResponse(bool success, const LLSD& content)
 	{
 		llassert(response_data.isArray());
 		LL_DEBUGS("Materials") << "response has "<< response_data.size() << " materials" << LL_ENDL;
-		for (LLSD::array_const_iterator faceIter = response_data.beginArray(); faceIter != response_data.endArray(); ++faceIter)
+#ifdef SHOW_ASSERT
+		for (auto const& face_data : response_data.array())
 		{
-#           if defined(SHOW_ASSERT)
-			const LLSD& face_data = *faceIter; // conditional to avoid unused variable warning
-
 			llassert(face_data.isMap());
 
 			llassert(face_data.has(MATERIALS_CAP_OBJECT_ID_FIELD));
@@ -563,11 +559,11 @@ void LLMaterialMgr::onPutResponse(bool success, const LLSD& content)
 
 			llassert(face_data.has(MATERIALS_CAP_MATERIAL_ID_FIELD));
 			llassert(face_data[MATERIALS_CAP_MATERIAL_ID_FIELD].isBinary());
-#           endif
 			// LLMaterialID material_id(face_data[MATERIALS_CAP_MATERIAL_ID_FIELD].asBinary());
 
 			// *TODO: do we really still need to process this?
 		}
+#endif
 	}
 }
 
@@ -655,7 +651,7 @@ void LLMaterialMgr::processGetQueue()
 		material_queue_t& materials = itRegionQueue->second;
 		U32 max_entries = regionp->getMaxMaterialsPerTransaction();
 		material_queue_t::iterator loopMaterial = materials.begin();
-		while ( (materials.end() != loopMaterial) && (materialsData.size() < max_entries) )
+		while ( (materials.end() != loopMaterial) && ((U32)materialsData.size() < max_entries) )
 		{
 			material_queue_t::iterator itMaterial = loopMaterial++;
 			materialsData.append((*itMaterial).asLLSD());
@@ -918,28 +914,28 @@ void LLMaterialMgr::processPutQueue()
 		    }
 			else if ( regionp->capabilitiesReceived() && !regionp->materialsCapThrottled())
 			{
-		        LLSD& facesData = requests[regionp];
+		LLSD& facesData = requests[regionp];
 
-		        facematerial_map_t& face_map = itQueue->second;
-				        U32 max_entries = regionp->getMaxMaterialsPerTransaction();
-		        facematerial_map_t::iterator itFace = face_map.begin();
-				        while ( (face_map.end() != itFace) && (facesData.size() < max_entries) )
-		        {
-			        LLSD faceData = LLSD::emptyMap();
-			        faceData[MATERIALS_CAP_FACE_FIELD] = static_cast<LLSD::Integer>(itFace->first);
-			        faceData[MATERIALS_CAP_OBJECT_ID_FIELD] = static_cast<LLSD::Integer>(objectp->getLocalID());
-			        if (!itFace->second.isNull())
-			        {
-				        faceData[MATERIALS_CAP_MATERIAL_FIELD] = itFace->second.asLLSD();
-			        }
-			        facesData.append(faceData);
-			        face_map.erase(itFace++);
-		        }
-		        if (face_map.empty())
-		        {
-			        mPutQueue.erase(itQueue);
-		        }
-	        }
+		facematerial_map_t& face_map = itQueue->second;
+				U32 max_entries = regionp->getMaxMaterialsPerTransaction();
+		facematerial_map_t::iterator itFace = face_map.begin();
+				while ( (face_map.end() != itFace) && ((U32)facesData.size() < max_entries) )
+		{
+			LLSD faceData = LLSD::emptyMap();
+			faceData[MATERIALS_CAP_FACE_FIELD] = static_cast<LLSD::Integer>(itFace->first);
+			faceData[MATERIALS_CAP_OBJECT_ID_FIELD] = static_cast<LLSD::Integer>(objectp->getLocalID());
+			if (!itFace->second.isNull())
+			{
+				faceData[MATERIALS_CAP_MATERIAL_FIELD] = itFace->second.asLLSD();
+			}
+			facesData.append(faceData);
+			face_map.erase(itFace++);
+		}
+		if (face_map.empty())
+		{
+			mPutQueue.erase(itQueue);
+		}
+	}
 		}
 	}
 

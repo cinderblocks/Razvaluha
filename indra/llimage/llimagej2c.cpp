@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llimagej2c.cpp
  *
@@ -51,7 +49,7 @@ std::string LLImageJ2C::getEngineInfo()
 {
 	// All known LLImageJ2CImpl implementation subclasses are cheap to
 	// construct.
-	boost::scoped_ptr<LLImageJ2CImpl> impl(fallbackCreateLLImageJ2CImpl());
+	std::unique_ptr<LLImageJ2CImpl> impl(fallbackCreateLLImageJ2CImpl());
 	return impl->getEngineInfo();
 }
 
@@ -82,9 +80,6 @@ LLImageJ2C::LLImageJ2C() : 	LLImageFormatted(IMG_CODEC_J2C),
 		}
 	}
 }
-
-// virtual
-LLImageJ2C::~LLImageJ2C() {}
 
 // virtual
 void LLImageJ2C::resetLastError()
@@ -444,10 +439,6 @@ void LLImageJ2C::decodeFailed()
 void LLImageJ2C::updateRawDiscardLevel()
 {
 	mRawDiscardLevel = mMaxBytes ? calcDiscardLevelBytes(mMaxBytes) : mDiscardLevel;
-}
-
-LLImageJ2CImpl::~LLImageJ2CImpl()
-{
 }
 
 //----------------------------------------------------------------------------------------------

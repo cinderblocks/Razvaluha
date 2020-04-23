@@ -8,7 +8,7 @@
 # Unfortunately, the affected code is a rat's nest of #ifdefs, so it's
 # easier to play compilation tricks than to actually fix the problem.
 
-project(llwindow)
+project(llwindow LANGUAGES CXX)
 
 include(00-Common)
 include(DragDrop)
@@ -161,6 +161,7 @@ if (WINDOWS)
   list(APPEND llwindow_LINK_LIBRARIES
        comdlg32     # Common Dialogs for ChooseColor
        ole32
+       DXGI
        )
 endif (WINDOWS)
 
@@ -216,4 +217,8 @@ elseif (SDL_FOUND)
     )
 endif (LLWINDOW_SDL2)
 
-target_link_libraries (llwindow PUBLIC llcommon ${llwindow_LINK_LIBRARIES})
+  target_link_libraries (llwindow
+  ${llwindow_LINK_LIBRARIES}
+  fmt::fmt
+  absl::flat_hash_map
+  absl::node_hash_map)

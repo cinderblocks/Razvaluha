@@ -2541,12 +2541,10 @@ void LLVOVolume::updateObjectMediaData(const LLSD &media_data_array, const std::
 		mLastFetchedMediaVersion = fetched_version;
 		//LL_INFOS() << "updating:" << this->getID() << " " << ll_pretty_print_sd(media_data_array) << LL_ENDL;
 		
-		LLSD::array_const_iterator iter = media_data_array.beginArray();
-		LLSD::array_const_iterator end = media_data_array.endArray();
 		U8 texture_index = 0;
-		for (; iter != end; ++iter, ++texture_index)
+		for (auto const& entry : media_data_array.array())
 		{
-			syncMediaData(texture_index, *iter, false/*merge*/, false/*ignore_agent*/);
+			syncMediaData(texture_index++, entry, false/*merge*/, false/*ignore_agent*/);
 		}
 	}
 }
@@ -5590,8 +5588,7 @@ void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 						else
 						{
 							//Annoying exception to the rule. getPoolTypeFromTE will return POOL_ALPHA_MASK for legacy bumpmaps, but there is no POOL_ALPHA_MASK in deferred.
-								// Another exception! Rigged faces with an alpha mask need to be in the material alphamask pass.
-							if (type == LLDrawPool::POOL_MATERIALS || (type == LLDrawPool::POOL_ALPHA_MASK && mat))
+							if (type == LLDrawPool::POOL_MATERIALS || ((type == LLDrawPool::POOL_ALPHA_MASK || type == LLDrawPool::POOL_FULLBRIGHT_ALPHA_MASK) && mat))
 							{
 								pool->addRiggedFace(facep, mat->getShaderMask());
 							}
@@ -5695,7 +5692,7 @@ void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 							type = LLDrawPool::POOL_FULLBRIGHT;
 						}
 					}
-					else if (force_simple && type != LLDrawPool::POOL_FULLBRIGHT && type != LLDrawPool::POOL_ALPHA_MASK && type != LLDrawPool::POOL_FULLBRIGHT_ALPHA_MASK)
+					else if(force_simple && type != LLDrawPool::POOL_FULLBRIGHT && (!LLPipeline::sRenderDeferred && (type != LLDrawPool::POOL_ALPHA_MASK && type != LLDrawPool::POOL_FULLBRIGHT_ALPHA_MASK)))
 					{
 						type = LLDrawPool::POOL_SIMPLE;
 					}

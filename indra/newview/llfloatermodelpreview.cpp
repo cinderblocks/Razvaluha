@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file llfloatermodelpreview.cpp
  * @brief LLFloaterModelPreview class implementation
@@ -4472,15 +4470,15 @@ bool LLModelPreview::lodQueryCallback()
             preview->mLodsQuery.pop_back();
             preview->genLODs(lod);
 
-            // return false to continue cycle
-            return false;
-        }
-    }
+			// return false to continue cycle
+			return false;
+		}
 
-	for (U32 lod = 0; lod < NUM_LOD; ++lod)
-	{
-		LLIconCtrl* icon = fmp->getChild<LLIconCtrl>(lod_icon_name[lod]);
-		icon->setVisible(true);
+		for (U32 lod = 0; lod < NUM_LOD; ++lod)
+		{
+			LLIconCtrl* icon = fmp->getChild<LLIconCtrl>(lod_icon_name[lod]);
+			icon->setVisible(true);
+		}
 	}
 	
     // nothing to process

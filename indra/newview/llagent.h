@@ -93,7 +93,7 @@ struct LLGroupData
 //------------------------------------------------------------------------
 // LLAgent
 //------------------------------------------------------------------------
-class LLAgent : public LLOldEvents::LLObservable
+class LLAgent final : public LLOldEvents::LLObservable
 {
 	LOG_CLASS(LLAgent);
 
@@ -649,7 +649,7 @@ public:
 
 public:
 	static void 	parseTeleportMessages(const std::string& xml_filename);
-	const void getTeleportSourceSLURL(LLSLURL& slurl) const;
+	void getTeleportSourceSLURL(LLSLURL& slurl) const;
 public:
 	// ! TODO ! Define ERROR and PROGRESS enums here instead of exposing the mappings.
 	static std::map<std::string, std::string> sTeleportErrorMessages;
@@ -805,7 +805,7 @@ public:
 	bool 			canAccessMature() const;
 	bool 			canAccessAdult() const;
 	bool 			canAccessMaturityInRegion( U64 region_handle ) const;
-	bool 			canAccessMaturityAtGlobal( LLVector3d pos_global ) const;
+	bool 			canAccessMaturityAtGlobal( const LLVector3d& pos_global ) const;
 	bool 			prefersPG() const;
 	bool 			prefersMature() const;
 	bool 			prefersAdult() const;

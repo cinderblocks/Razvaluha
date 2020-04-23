@@ -213,6 +213,11 @@ LLViewerRegion* LLWorld::addRegion(const U64 &region_handle, const LLHost &host)
 		LL_ERRS() << "Unable to create new region!" << LL_ENDL;
 	}
 
+	if ( !seedUrl.empty() )
+	{
+		regionp->setCapability("Seed", seedUrl);
+	}
+
 	//Classic clouds
 #if ENABLE_CLASSIC_CLOUDS
 	regionp->mCloudLayer.create(regionp);
@@ -657,7 +662,7 @@ LLSurfacePatch * LLWorld::resolveLandPatchGlobal(const LLVector3d &pos_global)
 		return nullptr;
 	}
 
-	return regionp->getLand().resolvePatchGlobal(pos_global);
+	return regionp->getLand().resolvePatchGlobal(pos_global).get();
 }
 
 

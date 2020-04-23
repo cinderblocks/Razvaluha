@@ -1166,23 +1166,23 @@ void LLIMMgr::noteMutedUsers(LLFloaterIMPanel* floater,
 	}
 }
 
-void LLIMMgr::processIMTypingStart(const LLIMInfo* im_info)
+void LLIMMgr::processIMTypingStart(const LLUUID& from_id, const EInstantMessage im_type)
 {
-	processIMTypingCore(im_info, TRUE);
+	processIMTypingCore(from_id, im_type, TRUE);
 }
 
-void LLIMMgr::processIMTypingStop(const LLIMInfo* im_info)
+void LLIMMgr::processIMTypingStop(const LLUUID& from_id, const EInstantMessage im_type)
 {
-	processIMTypingCore(im_info, FALSE);
+	processIMTypingCore(from_id, im_type, FALSE);
 }
 
-void LLIMMgr::processIMTypingCore(const LLIMInfo* im_info, BOOL typing)
+void LLIMMgr::processIMTypingCore(const LLUUID& from_id, const EInstantMessage im_type, BOOL typing)
 {
-	LLUUID session_id = computeSessionID(im_info->mIMType, im_info->mFromID);
-	LLFloaterIMPanel* floater = findFloaterBySession(session_id);
-	if (floater)
+	LLUUID session_id = computeSessionID(im_type, from_id);
+	LLFloaterIMPanel* im_floater = findFloaterBySession(session_id);
+	if (im_floater)
 	{
-		floater->processIMTyping(im_info, typing);
+		im_floater->processIMTyping(from_id, typing);
 	}
 }
 
@@ -1303,10 +1303,10 @@ LLFloaterChatterBox* LLIMMgr::getFloater()
 	return LLFloaterChatterBox::getInstance(LLSD()); 
 }
 
-class LLViewerChatterBoxSessionStartReply : public LLHTTPNode
+class LLViewerChatterBoxSessionStartReply final : public LLHTTPNode
 {
 public:
-	virtual void describe(Description& desc) const
+	void describe(Description& desc) const override
 	{
 		desc.shortInfo("Used for receiving a reply to a request to initialize an ChatterBox session");
 		desc.postAPI();
@@ -1315,18 +1315,15 @@ public:
 		desc.source(__FILE__, __LINE__);
 	}
 
-	virtual void post(ResponsePtr response,
+	void post(ResponsePtr response,
 					  const LLSD& context,
-					  const LLSD& input) const
+	          const LLSD& input) const override
 	{
-		LLSD body;
-		LLUUID temp_session_id;
 		LLUUID session_id;
-		bool success;
 
-		body = input["body"];
-		success = body["success"].asBoolean();
-		temp_session_id = body["temp_session_id"].asUUID();
+		LLSD body = input["body"];
+		bool success = body["success"].asBoolean();
+		LLUUID temp_session_id = body["temp_session_id"].asUUID();
 
 		if ( success )
 		{
@@ -1364,10 +1361,10 @@ public:
 	}
 };
 
-class LLViewerChatterBoxSessionEventReply : public LLHTTPNode
+class LLViewerChatterBoxSessionEventReply final : public LLHTTPNode
 {
 public:
-	virtual void describe(Description& desc) const
+	void describe(Description& desc) const override
 	{
 		desc.shortInfo("Used for receiving a reply to a ChatterBox session event");
 		desc.postAPI();
@@ -1376,24 +1373,18 @@ public:
 		desc.source(__FILE__, __LINE__);
 	}
 
-	virtual void post(ResponsePtr response,
+	void post(ResponsePtr response,
 					  const LLSD& context,
-					  const LLSD& input) const
+	          const LLSD& input) const override
 	{
-		LLUUID session_id;
-		bool success;
-
 		LLSD body = input["body"];
-		success = body["success"].asBoolean();
-		session_id = body["session_id"].asUUID();
+		bool success = body["success"].asBoolean();
+		LLUUID session_id = body["session_id"].asUUID();
 
 		if ( !success )
 		{
 			//throw an error dialog
-			LLFloaterIMPanel* floater = 
-				gIMMgr->findFloaterBySession(session_id);
-
-			if (floater)
+			if (auto* floater =  gIMMgr->findFloaterBySession(session_id))
 			{
 				floater->showSessionEventError(
 					body["event"].asString(),
@@ -1406,46 +1397,40 @@ public:
 class LLViewerForceCloseChatterBoxSession: public LLHTTPNode
 {
 public:
-	virtual void post(ResponsePtr response,
+	void post(ResponsePtr response,
 					  const LLSD& context,
-					  const LLSD& input) const
+	          const LLSD& input) const override
 	{
-		LLUUID session_id;
-		std::string reason;
+		LLUUID session_id = input["body"]["session_id"].asUUID();
+		std::string reason = input["body"]["reason"].asString();
 
-		session_id = input["body"]["session_id"].asUUID();
-		reason = input["body"]["reason"].asString();
-
-		LLFloaterIMPanel* floater =
-			gIMMgr ->findFloaterBySession(session_id);
-
-		if ( floater )
+		if (auto* floater = gIMMgr ->findFloaterBySession(session_id))
 		{
 			floater->showSessionForceClose(reason);
 		}
 	}
 };
 
-class LLViewerChatterBoxSessionAgentListUpdates : public LLHTTPNode
+class LLViewerChatterBoxSessionAgentListUpdates final : public LLHTTPNode
 {
 public:
-	virtual void post(
+	void post(
 		ResponsePtr responder,
 		const LLSD& context,
-		const LLSD& input) const
+		const LLSD& input) const override
 	{
 		const LLUUID& session_id = input["body"]["session_id"].asUUID();
 		gIMMgr->processAgentListUpdates(session_id, input["body"]);
 	}
 };
 
-class LLViewerChatterBoxSessionUpdate : public LLHTTPNode
+class LLViewerChatterBoxSessionUpdate final : public LLHTTPNode
 {
 public:
-	virtual void post(
+	void post(
 		ResponsePtr responder,
 		const LLSD& context,
-		const LLSD& input) const
+		const LLSD& input) const override
 	{
 		LLUUID session_id = input["body"]["session_id"].asUUID();
 		LLFloaterIMPanel* im_floater = gIMMgr->findFloaterBySession(session_id);
@@ -1473,14 +1458,14 @@ void leave_group_chat(const LLUUID& from_id, const LLUUID& session_id)
 	gIMMgr->removeSession(session_id);
 }
 
-class LLViewerChatterBoxInvitation : public LLHTTPNode
+class LLViewerChatterBoxInvitation final : public LLHTTPNode
 {
 public:
 
-	virtual void post(
+	void post(
 		ResponsePtr response,
 		const LLSD& context,
-		const LLSD& input) const
+		const LLSD& input) const override
 	{
 		//for backwards compatiblity reasons...we need to still
 		//check for 'text' or 'voice' invitations...bleh
@@ -1606,10 +1591,9 @@ public:
 			LLFloaterChat::addChat(chat, TRUE, is_this_agent);
 
 			//K now we want to accept the invitation
-			std::string url = gAgent.getRegion()->getCapability(
-				"ChatSessionRequest");
+			std::string url = gAgent.getRegionCapability("ChatSessionRequest");
 
-			if ( url != "" )
+			if (!url.empty())
 			{
                 LLCoros::instance().launch("chatterBoxInvitationCoro",
                     boost::bind(&chatterBoxInvitationCoro, url,

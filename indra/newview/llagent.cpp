@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llagent.cpp
  * @brief LLAgent class implementation
@@ -33,6 +31,7 @@
 #include "pipeline.h"
 
 #include "llagentaccess.h"
+#include "llagentbenefits.h"
 #include "llagentcamera.h"
 #include "llagentwearables.h"
 #include "llagentui.h"
@@ -44,6 +43,8 @@
 #include "llfirstuse.h"
 #include "llfloatercamera.h"
 #include "llfloatertools.h"
+#include "llfloaterpostcard.h"
+#include "llfloaterpreference.h"
 #include "llgroupactions.h"
 #include "llgroupmgr.h"
 #include "llhudmanager.h"
@@ -104,7 +105,7 @@
 
 #include "lluictrlfactory.h" //For LLUICtrlFactory::getLayeredXMLNode
 
-#include "floaterao.h" // for Typing override
+#include "aosystem.h" // for Typing override
 #include "hippolimits.h" // for getMaxAgentGroups
 // [RLVa:KB] - Checked: 2011-11-04 (RLVa-1.4.4a)
 #include "rlvactions.h"
@@ -197,7 +198,7 @@ private:
 	LLUUID mLandmarkId;
 };
 
-class LLTeleportRequestViaLure : public LLTeleportRequestViaLandmark
+class LLTeleportRequestViaLure final : public LLTeleportRequestViaLandmark
 {
 public:
 	LLTeleportRequestViaLure(const LLUUID &pLureId, BOOL pIsLureGodLike);
@@ -233,7 +234,7 @@ private:
 };
 
 
-class LLTeleportRequestViaLocationLookAt : public LLTeleportRequestViaLocation
+class LLTeleportRequestViaLocationLookAt final : public LLTeleportRequestViaLocation
 {
 public:
 	LLTeleportRequestViaLocationLookAt(const LLVector3d &pPosGlobal);
@@ -259,11 +260,11 @@ const F32 LLAgent::TYPING_TIMEOUT_SECS = 5.f;
 std::map<std::string, std::string> LLAgent::sTeleportErrorMessages;
 std::map<std::string, std::string> LLAgent::sTeleportProgressMessages;
 
-class LLAgentFriendObserver : public LLFriendObserver
+class LLAgentFriendObserver final : public LLFriendObserver
 {
 public:
-	LLAgentFriendObserver() {}
-	virtual ~LLAgentFriendObserver() {}
+	LLAgentFriendObserver() = default;
+	virtual ~LLAgentFriendObserver() = default;
 	void changed(U32 mask) override;
 };
 
@@ -1793,9 +1794,10 @@ void LLAgent::autoPilot(F32 *delta_yaw)
 			if (auto object = gObjectList.findObject(mLeaderID))
 			{
 				mAutoPilotTargetGlobal = object->getPositionGlobal();
-				if (const auto& av = object->asAvatar()) // Fly if avatar target is flying
+				if (const auto& av = object->asAvatar()) // Fly/sit if avatar target is flying
 				{
-					setFlying(av->mInAir);
+					const auto& our_pos_global = getPositionGlobal();
+					setFlying(av->mInAir && (getFlying() || mAutoPilotTargetGlobal[VZ] > our_pos_global[VZ])); // If they're in air, fly if they're higher or we were already (follow) flying
 					if (av->isSitting() && (!rlv_handler_t::isEnabled() || !gRlvHandler.hasBehaviour(RLV_BHVR_SIT)))
 					{
 						if (auto seat = av->getParent())
@@ -1815,7 +1817,7 @@ void LLAgent::autoPilot(F32 *delta_yaw)
 						}
 						else // Ground sit, but only if near enough
 						{
-							if (dist_vec(av->getPositionAgent(), getPositionAgent()) <= mAutoPilotStopDistance) // We're close enough, sit.
+							if (dist_vec(mAutoPilotTargetGlobal, our_pos_global) <= mAutoPilotStopDistance) // We're close enough, sit.
 							{
 								if (!gAgentAvatarp->isSittingAvatarOnGround())
 									setControlFlags(AGENT_CONTROL_SIT_ON_GROUND);
@@ -1833,7 +1835,7 @@ void LLAgent::autoPilot(F32 *delta_yaw)
 					}
 					else
 					{
-						if (dist_vec(av->getPositionAgent(), getPositionAgent()) <= mAutoPilotStopDistance)
+						if (dist_vec(mAutoPilotTargetGlobal, our_pos_global) <= mAutoPilotStopDistance)
 						{
 							follow = 3; // We're close enough, indicate no walking
 						}
@@ -2126,7 +2128,7 @@ void LLAgent::startTyping()
 		}
 	}
 
-	LLFloaterAO::typing(true); // Singu Note: Typing anims handled by AO/settings.
+	AOSystem::typing(true); // Singu Note: Typing anims handled by AO/settings.
 	gChatBar->sendChatFromViewer("", CHAT_TYPE_START, FALSE);
 }
 
@@ -2138,7 +2140,7 @@ void LLAgent::stopTyping()
 	if (mRenderState & AGENT_STATE_TYPING)
 	{
 		clearRenderState(AGENT_STATE_TYPING);
-		LLFloaterAO::typing(false); // Singu Note: Typing anims handled by AO/settings.
+		AOSystem::typing(false); // Singu Note: Typing anims handled by AO/settings.
 		gChatBar->sendChatFromViewer("", CHAT_TYPE_STOP, FALSE);
 	}
 }
@@ -2611,15 +2613,11 @@ void LLAgent::onAnimStop(const LLUUID& id)
 	}
 	else if (id == ANIM_AGENT_AWAY)
 	{
-//		clearAFK();
 // [RLVa:KB] - Checked: 2010-05-03 (RLVa-1.2.0g) | Added: RLVa-1.1.0g
-#ifdef RLV_EXTENSION_CMD_ALLOWIDLE
 		if (!gRlvHandler.hasBehaviour(RLV_BHVR_ALLOWIDLE))
 			clearAFK();
-#else
-		clearAFK();
-#endif // RLV_EXTENSION_CMD_ALLOWIDLE
 // [/RLVa:KB]
+//		clearAFK();
 	}
 	else if (id == ANIM_AGENT_STANDUP)
 	{
@@ -2690,7 +2688,7 @@ bool LLAgent::canAccessMaturityInRegion( U64 region_handle ) const
 	return true;
 }
 
-bool LLAgent::canAccessMaturityAtGlobal( LLVector3d pos_global ) const
+bool LLAgent::canAccessMaturityAtGlobal(const LLVector3d& pos_global ) const
 {
 	U64 region_handle = to_region_handle_global( pos_global.mdV[0], pos_global.mdV[1] );
 	return canAccessMaturityInRegion( region_handle );
@@ -3155,7 +3153,7 @@ BOOL LLAgent::setUserGroupFlags(const LLUUID& group_id, BOOL accept_notices, BOO
 
 BOOL LLAgent::canJoinGroups() const
 {
-	return (S32)mGroups.size() < gHippoLimits->getMaxAgentGroups();
+	return (S32)mGroups.size() < LLAgentBenefitsMgr::current().getGroupMembershipLimit();
 }
 
 LLQuaternion LLAgent::getHeadRotation()
@@ -3199,14 +3197,14 @@ void LLAgent::sendAnimationRequests(const uuid_vec_t &anim_ids, EAnimRequest req
 	msg->addUUIDFast(_PREHASH_AgentID, getID());
 	msg->addUUIDFast(_PREHASH_SessionID, getSessionID());
 
-	for (S32 i = 0; i < anim_ids.size(); i++)
+	for (auto anim_id : anim_ids)
 	{
-		if (anim_ids[i].isNull())
+		if (anim_id.isNull())
 		{
 			continue;
 		}
 		msg->nextBlockFast(_PREHASH_AnimationList);
-		msg->addUUIDFast(_PREHASH_AnimID, (anim_ids[i]) );
+		msg->addUUIDFast(_PREHASH_AnimID, anim_id);
 		msg->addBOOLFast(_PREHASH_StartAnim, (request == ANIM_REQUEST_START) ? TRUE : FALSE);
 		num_valid_anims++;
 	}
@@ -3215,7 +3213,7 @@ void LLAgent::sendAnimationRequests(const uuid_vec_t &anim_ids, EAnimRequest req
 		msg->clearMessage();
 		return;
 	}
-	
+
 	msg->nextBlockFast(_PREHASH_PhysicalAvatarEventList);
 	msg->addBinaryDataFast(_PREHASH_TypeData, nullptr, 0);
 
@@ -3530,7 +3528,7 @@ void LLAgent::processAgentDropGroup(LLMessageSystem *msg, void **)
 	}
 }
 
-class LLAgentDropGroupViewerNode : public LLHTTPNode
+class LLAgentDropGroupViewerNode final : public LLHTTPNode
 {
 	void post(
 		LLHTTPNode::ResponsePtr response,
@@ -3665,7 +3663,7 @@ void LLAgent::processAgentGroupDataUpdate(LLMessageSystem *msg, void **)
 
 }
 
-class LLAgentGroupDataUpdateViewerNode : public LLHTTPNode
+class LLAgentGroupDataUpdateViewerNode final : public LLHTTPNode
 {
 	void post(
 		LLHTTPNode::ResponsePtr response,
@@ -4086,9 +4084,7 @@ bool LLAgent::teleportCore(bool is_local)
 	LLFloaterWorldMap::hide();
 
 	// hide land floater too - it'll be out of date
-
-	if (LLFloaterLand::findInstance())
-		LLFloaterLand::hideInstance();
+	if (LLFloaterLand::findInstance()) LLFloaterLand::hideInstance();
 
 	LLViewerParcelMgr::getInstance()->deselectLand();
 	LLViewerMediaFocus::getInstance()->clearFocus();
@@ -4909,9 +4905,7 @@ void LLAgent::sendAgentSetAppearance()
 	}
 
 	LL_INFOS() << "Avatar XML num VisualParams transmitted = " << transmitted_params << LL_ENDL;
-	if(transmitted_params < 218) {
-		LLNotificationsUtil::add("SGIncompleteAppearance");
-	}
+	if (transmitted_params < 218) LLNotificationsUtil::add("SGIncompleteAppearance");
 	sendReliableMessage();
 }
 
@@ -4984,8 +4978,8 @@ void LLAgent::requestAgentUserInfoCoro(std::string capurl)
 
     // TODO: This should probably be changed.  I'm not entirely comfortable 
     // having LLAgent interact directly with the UI in this way.
-    //LLFloaterPreference::updateUserInfo(dir_visibility, im_via_email, is_verified_email);
-    //LLFloaterSnapshot::setAgentEmail(email);
+	LLFloaterPreference::updateUserInfo(dir_visibility, im_via_email, email, is_verified_email);
+	LLFloaterPostcard::updateUserInfo(email);
 }
 
 void LLAgent::sendAgentUpdateUserInfo(bool im_via_email, const std::string& directory_visibility)
@@ -5127,11 +5121,12 @@ void LLAgent::parseTeleportMessages(const std::string& xml_filename)
 	}//end for (all message sets in xml file)
 }
 
-const void LLAgent::getTeleportSourceSLURL(LLSLURL& slurl) const
+void LLAgent::getTeleportSourceSLURL(LLSLURL& slurl) const
 {
 	slurl = *mTeleportSourceSLURL;
 }
 
+// static
 void LLAgent::dumpGroupInfo()
 {
 	LL_INFOS() << "group   " << mGroupName << LL_ENDL;

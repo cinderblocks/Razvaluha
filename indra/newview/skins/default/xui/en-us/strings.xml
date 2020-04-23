@@ -3252,7 +3252,7 @@ Where tag = tag string to match.  Removes bot's matching the tag.
     <string name="has_left">has left</string>
     <string name="has_left_flood">is now off the radar for</string>
     <!-- [RANGE] -->
-    <string name="the_sim">the sim</string>
+    <string name="the_sim">the region</string>
     <string name="draw_distance">draw distance</string>
     <string name="shout_range">shout range</string>
     <string name="chat_range">chat range</string>
@@ -3331,9 +3331,11 @@ Where tag = tag string to match.  Removes bot's matching the tag.
 	<!-- used in the construction of a Group Notice blue dialog box, buttons, tooltip etc. Seems to be no longer utilized by code in Viewer 2.0 -->
 	<string name="next">Next</string>
 	<string name="ok">OK</string>
-	<string name="GroupNotifyGroupNotice">Group Notice</string>
 	<string name="GroupNotifyGroupNotices">Group Notices</string>
-	<string name="GroupNotifySentBy">Sent by</string>
+	<string name="GroupNotifyBy">
+by [NAME]
+in [GROUP]
+	</string>
 	<string name="GroupNotifyAttached">Attached:</string>
 	<string name="GroupNotifyViewPastNotices">View past notices or opt-out of receiving these messages here.</string>
 	<string name="GroupNotifyOpenAttachment">Open Attachment</string>
@@ -3607,6 +3609,7 @@ If you continue to receive this message, please contact Second Life support for 
 	<string name="Debits">Debits</string>
 	<string name="Total">Total</string>
 	<string name="NoGroupDataFound">No group data found for group </string>
+	<string name="AlreadyInGroup">You are already in this group </string>
 
 	<!-- floater IM bonus_info: When a Linden with Admin/god status receives a new IM this displays the estate (Mainland vs. teen grid) of the source avatar.
 		This is to help Lindens when answering questions. -->
@@ -4727,6 +4730,12 @@ Abuse Report</string>
   <string name="words_separator" value=", "/>
 
   <string name="Chat">Chat</string>
+
+  <!-- SL Membership -->
+  <string name="BaseMembership">Base</string>
+  <string name="PremiumMembership">Premium</string>
+  <string name="Premium PlusMembership">Premium Plus</string>
+  <string name="InternalMembership">Internal</string> <!-- No need to translate -->
 
  <!-- External editor status codes -->
  <string name="ExternalEditorNotSet">Select an editor using the ExternalEditor setting.</string>

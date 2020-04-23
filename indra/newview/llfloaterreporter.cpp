@@ -90,14 +90,13 @@
 //-----------------------------------------------------------------------------
 // Support classes
 //-----------------------------------------------------------------------------
-class LLARScreenShotUploader : public LLResourceUploadInfo
+class LLARScreenShotUploader final : public LLResourceUploadInfo
 {
 public:
     LLARScreenShotUploader(LLSD report, LLUUID assetId, LLAssetType::EType assetType);
 
     LLSD        prepareUpload() override;
     LLSD        generatePostBody() override;
-    S32         getEconomyUploadCost() override;
     LLUUID      finishUpload(LLSD &result) override;
 
     bool        showInventoryPanel() const override { return false; }
@@ -122,11 +121,6 @@ LLSD LLARScreenShotUploader::prepareUpload()
 LLSD LLARScreenShotUploader::generatePostBody()
 {   // The report was pregenerated and passed in the constructor.
     return mReport;
-}
-
-S32 LLARScreenShotUploader::getEconomyUploadCost()
-{   // Abuse report screen shots do not cost anything to upload.
-    return 0;
 }
 
 LLUUID LLARScreenShotUploader::finishUpload(LLSD &result)

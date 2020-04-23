@@ -39,7 +39,6 @@
 
 class LLAvatarName;
 class LLIMSpeakerMgr;
-class LLIMInfo;
 class LLInventoryCategory;
 class LLInventoryItem;
 class LLLineEditor;
@@ -126,8 +125,8 @@ public:
 	void sessionInitReplyReceived(const LLUUID& im_session_id);
 
 	// Handle other participant in the session typing.
-	void processIMTyping(const LLIMInfo* im_info, bool typing);
-	static void chatFromLogFile(LLLogChat::ELogLineType type, std::string line, void* userdata);
+	void processIMTyping(const LLUUID& from_id, BOOL typing);
+	void chatFromLogFile(LLLogChat::ELogLineType type, const std::string& line);
 
 	//show error statuses to the user
 	void showSessionStartError(const std::string& error_string);
@@ -177,10 +176,10 @@ private:
 	void setTyping(bool typing);
 
 	// Add the "User is typing..." indicator.
-	void addTypingIndicator(const std::string &name);
+	void addTypingIndicator(const LLUUID& from_id);
 
 	// Remove the "User is typing..." indicator.
-	void removeTypingIndicator(const LLIMInfo* im_info);
+	void removeTypingIndicator(const LLUUID& from_id = LLUUID::null);
 
 	void sendTypingState(bool typing);
 

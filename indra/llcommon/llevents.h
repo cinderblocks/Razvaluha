@@ -53,6 +53,9 @@
 #include "llexception.h"
 #include "llhandle.h"
 
+#include "absl/container/node_hash_map.h"
+#include "absl/container/node_hash_set.h"
+
 /*==========================================================================*|
 // override this to allow binding free functions with more parameters
 #ifndef LLEVENTS_LISTENER_ARITY
@@ -182,17 +185,17 @@ public:
     LLListenerOrPumpName(const T& listener): mListener(listener) {}
 
     /// for omitted method parameter: uninitialized mListener
-    LLListenerOrPumpName() {}
+    LLListenerOrPumpName() = default;
 
     /// test for validity
     operator bool() const { return bool(mListener); }
     bool operator! () const { return ! mListener; }
 
     /// explicit accessor
-    const LLEventListener& getListener() const { return *mListener; }
+    const ::LLEventListener& getListener() const { return *mListener; }
 
     /// implicit conversion to LLEventListener
-    operator LLEventListener() const { return *mListener; }
+    operator ::LLEventListener() const { return *mListener; }
 
     /// allow calling directly
     bool operator()(const LLSD& event) const;
@@ -224,7 +227,7 @@ class LLEventPump;
 // capable of this.) In that case, instead of calling LLEventPumps::instance()
 // again -- resurrecting the deleted LLSingleton -- store an
 // LLHandle<LLEventPumps> and test it before use.
-class LL_COMMON_API LLEventPumps: public LLSingleton<LLEventPumps>,
+class LL_COMMON_API LLEventPumps final : public LLSingleton<LLEventPumps>,
                                   public LLHandleProvider<LLEventPumps>
 {
     LLSINGLETON(LLEventPumps);
@@ -280,16 +283,16 @@ testable:
     // LLEventPump subclass statically, as a class member, on the stack or on
     // the heap. In such cases, the instantiating party is responsible for its
     // lifespan.
-    typedef std::map<std::string, LLEventPump*> PumpMap;
+    typedef absl::node_hash_map<std::string, LLEventPump*> PumpMap;
     PumpMap mPumpMap;
     // Set of all LLEventPumps we instantiated. Membership in this set means
     // we claim ownership, and will delete them when this LLEventPumps is
     // destroyed.
-    typedef std::set<LLEventPump*> PumpSet;
+    typedef absl::node_hash_set<LLEventPump*> PumpSet;
     PumpSet mOurPumps;
     // LLEventPump names that should be instantiated as LLEventQueue rather
     // than as LLEventStream
-    typedef std::set<std::string> PumpNames;
+    typedef absl::node_hash_set<std::string> PumpNames;
     PumpNames mQueueNames;
 };
 
@@ -630,7 +633,7 @@ class LL_COMMON_API LLEventStream: public LLEventPump
 {
 public:
     LLEventStream(const std::string& name, bool tweak=false): LLEventPump(name, tweak) {}
-    virtual ~LLEventStream() {}
+    virtual ~LLEventStream() = default;
 
     /// Post an event to all listeners
 	bool post(const LLSD& event) override;
@@ -662,15 +665,15 @@ class LL_COMMON_API LLEventMailDrop : public LLEventStream
 {
 public:
     LLEventMailDrop(const std::string& name, bool tweak = false) : LLEventStream(name, tweak) {}
-    virtual ~LLEventMailDrop() {}
+    virtual ~LLEventMailDrop() = default;
     
     /// Post an event to all listeners
-    virtual bool post(const LLSD& event) override;
+    bool post(const LLSD& event) override;
     
     /// Remove any history stored in the mail drop.
-    virtual void flush() override { mEventHistory.clear(); LLEventStream::flush(); };
+    void flush() override { mEventHistory.clear(); LLEventStream::flush(); };
 protected:
-    virtual LLBoundListener listen_impl(const std::string& name, const LLEventListener&,
+    LLBoundListener listen_impl(const std::string& name, const LLEventListener&,
                                         const NameList& after,
                                         const NameList& before) override;
 
@@ -690,7 +693,7 @@ class LL_COMMON_API LLEventQueue: public LLEventPump
 {
 public:
     LLEventQueue(const std::string& name, bool tweak=false): LLEventPump(name, tweak) {}
-    virtual ~LLEventQueue() {}
+    virtual ~LLEventQueue() = default;
 
     /// Post an event to all listeners
 	bool post(const LLSD& event) override;
@@ -758,7 +761,7 @@ public:
         mReqid(request["reqid"])
     {}
     /// If you don't yet have the request, use setFrom() later.
-    LLReqID() {}
+    LLReqID() = default;
 
     /// Extract and store the ["reqid"] value from an incoming request.
     void setFrom(const LLSD& request)
@@ -833,7 +836,7 @@ public:
         mConnection(that.mConnection)
     {
     }
-	virtual ~LLListenerWrapperBase() {}
+    virtual ~LLListenerWrapperBase() = default;
 
     /// Ask LLEventPump::listen() for the listener name
     virtual void accept_name(const std::string& name) const
@@ -933,7 +936,7 @@ namespace LLEventDetail
          * Visitor binds a reference to LLEventListener so we can track() any
          * shared_ptrs we find in the argument list.
          */
-        Visitor(LLEventListener& listener):
+        Visitor(::LLEventListener& listener):
             mListener(listener)
         {
         }
@@ -1076,7 +1079,7 @@ namespace LLEventDetail
 |*==========================================================================*/
 
         /// Bind a reference to the LLEventListener to call its track() method.
-        LLEventListener& mListener;
+        ::LLEventListener& mListener;
     };
 
     /**
@@ -1093,7 +1096,7 @@ namespace LLEventDetail
                                       const ConnectFunc& connect_func)
     {
         // Capture the listener
-        LLEventListener listener(raw_listener);
+        ::LLEventListener listener(raw_listener);
         // Define our Visitor, binding the listener so we can call
         // listener.track() if we discover any shared_ptr<Foo>.
         LLEventDetail::Visitor visitor(listener);

@@ -507,17 +507,6 @@ class WindowsManifest(ViewerManifest):
                     if self.path('libtcmalloc_minimal.dll') == 0:
                         print "Skipping libtcmalloc_minimal.dll"
 
-            # For msvc redist
-            try:
-                    self.path('api-ms-win-c*.dll')
-                    self.path('ucrt*.dll')
-                    self.path('concrt*.dll')
-                    self.path('msvc*.dll')
-                    self.path('vcruntime*.dll')
-                    self.path('vccor*.dll')
-            except:
-                print "Skipping msvc redist files"
-
         # For crashpad
         with self.prefix(src=pkgbindir):
             self.path("crashpad_handler.exe")
@@ -1277,13 +1266,13 @@ class LinuxManifest(ViewerManifest):
 
     def is_packaging_viewer(self):
         super(LinuxManifest, self).is_packaging_viewer()
-        return True # We always want a packaged viewer even without archive.
+        return 'package' in self.args['actions']
+
 
     def do(self, *actions):
         super(LinuxManifest, self).do(*actions)
-        if not 'package' in self.actions:
-            self.package_finish() # Always finish the package.
-        else:
+        self.package_finish() # Always finish the package.
+        if 'package' in self.actions:
             # package_finish() was called by super.do() so just create the TAR.
             self.create_archive()
         return self.file_list

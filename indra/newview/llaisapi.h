@@ -28,9 +28,6 @@
 #define LL_LLAISAPI_H
 
 #include "lluuid.h"
-#include <map>
-#include <set>
-#include <string>
 #include "llhttpretrypolicy.h"
 #include "llviewerinventory.h"
 #include "llcorehttputil.h"

@@ -105,7 +105,7 @@ public:
 	BOOL mParticle;
 	F32 mPartSize;
 	F32 mVSize;
-	LLSpatialGroup* mGroup;
+	LLPointer<LLSpatialGroup> mGroup;
 	LL_ALIGN_16(LLFace* mFace); //associated face
 	F32 mDistance;
 	U32 mDrawMode;
@@ -305,14 +305,14 @@ public:
 
 	void drawObjectBox(LLColor4 col);
 
-	LLSpatialPartition* getSpatialPartition() {return (LLSpatialPartition*)mSpatialPartition;}
+	LLSpatialPartition* getSpatialPartition() const {return mSpatialPartition;}
 
 	 //LISTENER FUNCTIONS
-	void handleInsertion(const TreeNode* node, LLViewerOctreeEntry* face) override;
-	void handleRemoval(const TreeNode* node, LLViewerOctreeEntry* face) override;
-	void handleDestruction(const TreeNode* node) override;
-	void handleChildAddition(const OctreeNode* parent, OctreeNode* child) override;
-
+	void handleInsertion(const TreeNode* node, LLViewerOctreeEntry* face) final override;
+	void handleRemoval(const TreeNode* node, LLViewerOctreeEntry* face) final override;
+	void handleDestruction(const TreeNode* node) final override;
+	void handleChildAddition(const OctreeNode* parent, OctreeNode* child) final override;
+	
 public:
 	LL_ALIGN_16(LLVector4a mViewAngle);
 	LL_ALIGN_16(LLVector4a mLastUpdateViewAngle);
@@ -468,7 +468,7 @@ class LLCullResult
 public:
 	LLCullResult() {}
 
-	typedef std::vector<LLSpatialGroup*> sg_list_t;
+	typedef std::vector<LLPointer<LLSpatialGroup> > sg_list_t;
 	typedef std::vector<LLDrawable*> drawable_list_t;
 	typedef std::vector<LLSpatialBridge*> bridge_list_t;
 	typedef std::vector<LLDrawInfo*> drawinfo_list_t;

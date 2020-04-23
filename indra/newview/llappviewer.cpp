@@ -48,6 +48,7 @@
 #include "llagent.h"
 #include "llagentcamera.h"
 #include "llagentwearables.h"
+#include "llimprocessing.h"
 #include "llwindow.h"
 #include "llviewerstats.h"
 #include "llmarketplacefunctions.h"
@@ -173,6 +174,7 @@
 
 // Included so that constants/settings might be initialized
 // in save_settings_to_globals()
+#include "aosystem.h"
 #include "llbutton.h"
 #include "llcombobox.h"
 #include "floaterlocalassetbrowse.h"
@@ -240,13 +242,49 @@
 #include <client/crashpad_client.h>
 #include <client/prune_crash_reports.h>
 #include <client/settings.h>
+#include <client/annotation.h>
 
 #include <fmt/format.h>
 
 #include "llnotificationsutil.h"
 #include "llversioninfo.h"
+
+
+template <size_t SIZE, crashpad::Annotation::Type T = crashpad::Annotation::Type::kString>
+struct crashpad_annotation : public crashpad::Annotation {
+	std::array<char, SIZE> buffer;
+	crashpad_annotation(const char* name) : crashpad::Annotation(T, name, buffer.data())
+	{}
+	void set(const std::string& src) {
+		//LL_INFOS() << name() << ": " << src.c_str() << LL_ENDL;
+		const size_t min_size = llmin(SIZE, src.size());
+		memcpy(buffer.data(), src.data(), min_size);
+		buffer.data()[SIZE - 1] = '\0';
+		SetSize(min_size);
+	}
+};
+#define DEFINE_CRASHPAD_ANNOTATION(name, len) \
+static crashpad_annotation<len> g_crashpad_annotation_##name##_buffer("sentry[tags]["#name"]");
+#define DEFINE_CRASHPAD_ANNOTATION_EXTRA(name, len) \
+static crashpad_annotation<len> g_crashpad_annotation_##name##_buffer("sentry[extra]["#name"]");
+#define SET_CRASHPAD_ANNOTATION_VALUE(name, value) \
+g_crashpad_annotation_##name##_buffer.set(value);
+#else
+#define SET_CRASHPAD_ANNOTATION_VALUE(name, value)
+#define DEFINE_CRASHPAD_ANNOTATION_EXTRA(name, len)
+#define DEFINE_CRASHPAD_ANNOTATION(name, len)
 #endif
 
+DEFINE_CRASHPAD_ANNOTATION_EXTRA(fatal_message, 512);
+DEFINE_CRASHPAD_ANNOTATION(grid_name, 64);
+DEFINE_CRASHPAD_ANNOTATION(region_name, 64);
+DEFINE_CRASHPAD_ANNOTATION_EXTRA(cpu_string, 128);
+DEFINE_CRASHPAD_ANNOTATION_EXTRA(gpu_string, 128);
+DEFINE_CRASHPAD_ANNOTATION_EXTRA(gl_version, 128);
+DEFINE_CRASHPAD_ANNOTATION_EXTRA(session_duration, 32);
+DEFINE_CRASHPAD_ANNOTATION_EXTRA(startup_state, 32);
+DEFINE_CRASHPAD_ANNOTATION_EXTRA(memory_sys, 32);
+DEFINE_CRASHPAD_ANNOTATION_EXTRA(memory_alloc, 32);
 
 ////// Windows-specific includes to the bottom - nasty defines in these pollute the preprocessor
 //
@@ -450,27 +488,6 @@ static void ui_audio_callback(const LLUUID& uuid)
 	if (gAudiop)
 	{
 		gAudiop->triggerSound(uuid, gAgent.getID(), 1.0f, LLAudioEngine::AUDIO_TYPE_UI);
-	}
-}
-
-void request_initial_instant_messages()
-{
-	static BOOL requested = FALSE;
-	if (!requested
-		&& gMessageSystem
-		&& LLMuteList::getInstance()->isLoaded()
-		&& isAgentAvatarValid())
-	{
-		// Auto-accepted inventory items may require the avatar object
-		// to build a correct name.  Likewise, inventory offers from
-		// muted avatars require the mute list to properly mute.
-		LLMessageSystem* msg = gMessageSystem;
-		msg->newMessageFast(_PREHASH_RetrieveInstantMessages);
-		msg->nextBlockFast(_PREHASH_AgentData);
-		msg->addUUIDFast(_PREHASH_AgentID, gAgent.getID());
-		msg->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID());
-		gAgent.sendReliableMessage();
-		requested = TRUE;
 	}
 }
 
@@ -876,7 +893,17 @@ bool LLAppViewer::init()
 	initCrashReporting();
 #endif
 
+	writeDebugInfo();
+
 	setupErrorHandling();
+
+	{
+		auto fn = boost::bind<bool>([](const LLSD& stateInfo) -> bool {
+			SET_CRASHPAD_ANNOTATION_VALUE(startup_state, stateInfo["str"].asString());
+			return false;
+			}, _1);
+		LLStartUp::getStateEventPump().listen<::LLEventListener>("LLAppViewer", fn);
+	}
 
 	//
 	// Start of the application
@@ -1126,6 +1153,8 @@ bool LLAppViewer::init()
 	gGLManager.getGLInfo(gDebugInfo);
 	gGLManager.printGLInfoString();
 
+	writeDebugInfo();
+
 	// Load Default bindings
 	load_default_bindings(gSavedSettings.getBOOL("LiruUseZQSDKeys"));
 
@@ -1211,6 +1240,8 @@ bool LLAppViewer::init()
 	// save the graphics card
 	gDebugInfo["GraphicsCard"] = LLFeatureManager::getInstance()->getGPUString();
 
+	writeDebugInfo();
+
 	// Save the current version to the prefs file
 	gSavedSettings.setString("LastRunVersion",
 							 LLVersionInfo::getChannelAndVersion());
@@ -1282,6 +1313,8 @@ bool LLAppViewer::init()
 	LLVoiceClient::getInstance()->init(gServicePump);
 	//LLVoiceChannel::setCurrentVoiceChannelChangedCallback(boost::bind(&LLFloaterIMContainer::onCurrentChannelChanged, _1), true);
 
+
+	writeDebugInfo();
 	return true;
 }
 
@@ -1429,6 +1462,12 @@ bool LLAppViewer::frame()
 
 			//clear call stack records
 			LL_CLEAR_CALLSTACKS();
+
+#ifdef USE_CRASHPAD
+			// Not event based. Update per frame
+			SET_CRASHPAD_ANNOTATION_VALUE(session_duration, std::to_string(LLFrameTimer::getElapsedSeconds()));
+			SET_CRASHPAD_ANNOTATION_VALUE(memory_alloc, std::to_string((LLMemory::getCurrentRSS() >> 10)/1000.f));
+#endif
 
 			//check memory availability information
 			checkMemory() ;
@@ -1847,6 +1886,8 @@ bool LLAppViewer::cleanup()
 	}
 
 	LLCalc::cleanUp();
+
+	AOSystem::deleteSingleton();
 
 	LL_INFOS() << "Global stuff deleted" << LL_ENDL;
 
@@ -2982,6 +3023,16 @@ void LLAppViewer::writeDebugInfo(bool isStatic)
 	
 	isStatic ?  LLSDSerialize::toPrettyXML(gDebugInfo, out_file)
 			 :  LLSDSerialize::toPrettyXML(gDebugInfo["Dynamic"], out_file);
+#else
+	SET_CRASHPAD_ANNOTATION_VALUE(fatal_message, gDebugInfo["FatalMessage"].asString());
+	SET_CRASHPAD_ANNOTATION_VALUE(grid_name, gDebugInfo["GridName"].asString());
+	SET_CRASHPAD_ANNOTATION_VALUE(region_name, gDebugInfo["CurrentRegion"].asString());
+	SET_CRASHPAD_ANNOTATION_VALUE(cpu_string, gDebugInfo["CPUInfo"]["CPUString"].asString());
+	SET_CRASHPAD_ANNOTATION_VALUE(gpu_string, gDebugInfo["GraphicsCard"].asString());
+	SET_CRASHPAD_ANNOTATION_VALUE(gl_version, gDebugInfo["GLInfo"]["GLVersion"].asString());
+	SET_CRASHPAD_ANNOTATION_VALUE(session_duration, std::to_string(LLFrameTimer::getElapsedSeconds()));
+	SET_CRASHPAD_ANNOTATION_VALUE(memory_alloc, std::to_string((LLMemory::getCurrentRSS() >> 10) / 1000.f));
+	SET_CRASHPAD_ANNOTATION_VALUE(memory_sys, std::to_string(gDebugInfo["RAMInfo"]["Physical"].asInteger() * 0.001f));
 #endif
 }
 
@@ -3161,8 +3212,15 @@ void LLAppViewer::handleViewerCrash()
 		gDebugInfo["Dynamic"]["ParcelMediaURL"] = parcel->getMediaURL();
 	}
 
+	gDebugInfo["SettingsFilename"] = gSavedSettings.getString("ClientSettingsFile");
+	gDebugInfo["CAFilename"] = gDirUtilp->getCAFile();
+	gDebugInfo["ViewerExePath"] = gDirUtilp->getExecutablePathAndName();
+	gDebugInfo["CurrentPath"] = gDirUtilp->getCurPath();
 	gDebugInfo["Dynamic"]["SessionLength"] = F32(LLFrameTimer::getElapsedSeconds());
-	gDebugInfo["Dynamic"]["RAMInfo"]["Allocated"] = LLSD::Integer(LLMemory::getCurrentRSS()) >> 10;
+	gDebugInfo["Dynamic"]["RAMInfo"]["Allocated"] = (LLSD::Integer) LLMemory::getCurrentRSS() >> 10;
+	gDebugInfo["StartupState"] = LLStartUp::getStartupStateString();
+	gDebugInfo["FirstLogin"] = (LLSD::Boolean) gAgent.isFirstLogin();
+	gDebugInfo["FirstRunThisInstall"] = gSavedSettings.getBOOL("FirstRunThisInstall");
 
 	if(gLogoutInProgress)
 	{
@@ -4274,7 +4332,7 @@ void LLAppViewer::idle()
 	// here.
 	{
 		LAZY_FT("request_initial_instant_messages");
-		request_initial_instant_messages();
+		LLIMProcessing::requestOfflineMessages();
 	}
 
 	///////////////////////////////////
@@ -5018,9 +5076,43 @@ void LLAppViewer::disconnectViewer()
 	gSavedSettings.setBOOL("FlyingAtExit", gAgent.getFlying() );
 
 	// Un-minimize all windows so they don't get saved minimized
-	if (gFloaterView)
+	if (!gNoRender)
 	{
-		gFloaterView->restoreAll();
+		if (gFloaterView)
+		{
+			gFloaterView->restoreAll();
+
+			std::list<LLFloater*> floaters_to_close;
+			for (LLView::child_list_const_iter_t it = gFloaterView->getChildList()->begin();
+				it != gFloaterView->getChildList()->end();
+				++it)
+			{
+				// The following names are defined in the 
+				// floater_image_preview.xml
+				// floater_sound_preview.xml
+				// floater_animation_preview.xml
+				// files.
+
+				// A more generic mechanism would be nice..
+				LLFloater* fl = static_cast<LLFloater*>(*it);
+				if (fl
+					&& (fl->getName() == "Image Preview"
+						|| fl->getName() == "Sound Preview"
+						|| fl->getName() == "Animation Preview"
+						|| fl->getName() == "perm prefs"
+						))
+				{
+					floaters_to_close.push_back(fl);
+				}
+			}
+
+			while (!floaters_to_close.empty())
+			{
+				LLFloater* fl = floaters_to_close.front();
+				floaters_to_close.pop_front();
+				fl->close();
+			}
+		}
 	}
 
 	if (LLSelectMgr::getInstance())
@@ -5028,14 +5120,17 @@ void LLAppViewer::disconnectViewer()
 		LLSelectMgr::getInstance()->deselectAll();
 	}
 
-	// save inventory if appropriate
-	gInventory.cache(gInventory.getRootFolderID(), gAgent.getID());
-	if (gInventory.getLibraryRootFolderID().notNull()
-		&& gInventory.getLibraryOwnerID().notNull())
+	if (!gNoRender)
 	{
-		gInventory.cache(
-			gInventory.getLibraryRootFolderID(),
-			gInventory.getLibraryOwnerID());
+		// save inventory if appropriate
+		gInventory.cache(gInventory.getRootFolderID(), gAgent.getID());
+		if (gInventory.getLibraryRootFolderID().notNull()
+			&& gInventory.getLibraryOwnerID().notNull())
+		{
+			gInventory.cache(
+				gInventory.getLibraryRootFolderID(),
+				gInventory.getLibraryOwnerID());
+		}
 	}
 
 	saveNameCache();

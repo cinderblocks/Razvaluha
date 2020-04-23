@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llmarketplacefunctions.cpp
  * @brief Implementation of assorted functions related to the marketplace
@@ -150,11 +148,11 @@ namespace {
                 LLSD content = result[LLCoreHttpUtil::HttpCoroutineAdapter::HTTP_RESULTS_CONTENT];
                 if (content.isArray())
                 {
-                    for (LLSD::array_iterator it = content.beginArray(); it != content.endArray(); ++it)
+                    for (const auto& line : content.array())
                     {
                         if (!description.empty())
-                            description += "\n";
-                        description += (*it).asString();
+                            description += '\n';
+                        description += line.asString();
                     }
                 }
                 else
@@ -179,7 +177,6 @@ namespace {
             subs["[ERROR_DESCRIPTION]"] = description;
             LLNotificationsUtil::add("MerchantTransactionFailed", subs);
         }
-
     }
 
     void log_SLM_infos(const std::string& request, U32 status, const std::string& body)
@@ -902,17 +899,15 @@ void LLMarketplaceData::getSLMListingsCoro(LLUUID folderId)
     log_SLM_infos("Get /listings", static_cast<U32>(status.getType()), result);
 
     // Extract the info from the results
-    for (LLSD::array_iterator it = result["listings"].beginArray();
-            it != result["listings"].endArray(); ++it)
-    { 
-        LLSD listing = *it;
-
+    for (const auto& listing : result["listings"].array())
+    {
         int listingId = listing["id"].asInteger();
         bool isListed = listing["is_listed"].asBoolean();
         std::string editUrl = listing["edit_url"].asString();
-        LLUUID folderUuid = listing["inventory_info"]["listing_folder_id"].asUUID();
-        LLUUID versionUuid = listing["inventory_info"]["version_folder_id"].asUUID();
-        int count = listing["inventory_info"]["count_on_hand"].asInteger();
+        const LLSD& listing_inv_info = listing["inventory_info"];
+        LLUUID folderUuid = listing_inv_info["listing_folder_id"].asUUID();
+        LLUUID versionUuid = listing_inv_info["version_folder_id"].asUUID();
+        int count = listing_inv_info["count_on_hand"].asInteger();
 
         if (folderUuid.notNull())
         {
@@ -976,11 +971,8 @@ void LLMarketplaceData::getSingleListingCoro(S32 listingId, LLUUID folderId)
 
 
     // Extract the info from the results
-    for (LLSD::array_iterator it = result["listings"].beginArray();
-        it != result["listings"].endArray(); ++it)
+    for (const auto& listing : result["listings"].array())
     {
-        LLSD listing = *it;
-
         int resListingId = listing["id"].asInteger();
         bool isListed = listing["is_listed"].asBoolean();
         std::string editUrl = listing["edit_url"].asString();
@@ -1048,11 +1040,8 @@ void LLMarketplaceData::createSLMListingCoro(LLUUID folderId, LLUUID versionId, 
     log_SLM_infos("Post /listings", status.getType(), result);
 
     // Extract the info from the results
-    for (LLSD::array_iterator it = result["listings"].beginArray();
-        it != result["listings"].endArray(); ++it)
+    for (const auto& listing : result["listings"].array())
     {
-        LLSD listing = *it;
-
         int listingId = listing["id"].asInteger();
         bool isListed = listing["is_listed"].asBoolean();
         std::string editUrl = listing["edit_url"].asString();
@@ -1115,11 +1104,8 @@ void LLMarketplaceData::updateSLMListingCoro(LLUUID folderId, S32 listingId, LLU
     log_SLM_infos("Put /listing", status.getType(), result);
 
     // Extract the info from the Json string
-    for (LLSD::array_iterator it = result["listings"].beginArray();
-        it != result["listings"].endArray(); ++it)
+    for (const auto& listing : result["listings"].array())
     {
-        LLSD listing = *it;
-
         int listing_id = listing["id"].asInteger();
         bool is_listed = listing["is_listed"].asBoolean();
         std::string edit_url = listing["edit_url"].asString();
@@ -1198,11 +1184,8 @@ void LLMarketplaceData::associateSLMListingCoro(LLUUID folderId, S32 listingId, 
 
     log_SLM_infos("Put /associate_inventory", status.getType(), result);
 
-    for (LLSD::array_iterator it = result["listings"].beginArray();
-            it != result["listings"].endArray(); ++it)
+    for (const auto& listing : result["listings"].array())
     {
-        LLSD listing = *it;
-
         int listing_id = listing["id"].asInteger();
         bool is_listed = listing["is_listed"].asBoolean();
         std::string edit_url = listing["edit_url"].asString();
@@ -1270,11 +1253,8 @@ void LLMarketplaceData::deleteSLMListingCoro(S32 listingId)
 
     log_SLM_infos("Delete /listing", status.getType(), result);
 
-    for (LLSD::array_iterator it = result["listings"].beginArray(); 
-            it != result["listings"].endArray(); ++it)
+    for (const auto& listing : result["listings"].array())
     {
-        LLSD listing = *it;
-
         int listing_id = listing["id"].asInteger();
         LLUUID folder_id = LLMarketplaceData::instance().getListingFolder(listing_id);
         deleteListing(folder_id);

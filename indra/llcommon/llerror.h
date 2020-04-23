@@ -140,11 +140,22 @@ inline const std::string liru_assert_strip(const std::string& file) { return fil
 	
 	will result in messages like:
 	
-		WARN: LLFoo::doSomething: called with a big value for i: 283
+		WARN #FooBarTag# llcommon/llfoo(100) LLFoo::doSomething : called with a big value for i: 283
+	
+    the syntax is:
+        <timestamp> SPACE <level> SPACE <tags> SPACE <location> SPACE <function> SPACE COLON SPACE <message>
+
+    where each SPACE is a single space character; note that if a field is empty (such as when no
+    tags are specified), all the SPACEs are still present.
+
+    The tags must be a single word (may not contain a space); if more than one tag is specified,
+    they are all surrounded by '#' ( #FooTag#BarTag# ).
 	
 	Which messages are logged and which are suppressed can be controlled at run
-	time from the live file logcontrol.xml based on function, class and/or 
-	source file.  See etc/logcontrol-dev.xml for details.
+	time from the configuration file. The default configuration is in newview/app_settings/logcontrol.xml
+    A copy of that file named logcontrol-dev.xml can be made in the users personal settings
+    directory; that will override the installed default file.  See the logcontrol.xml
+    file or http://wiki.secondlife.com/wiki/Logging_System_Overview for configuration details.
 	
 	Lastly, logging is now very efficient in both compiled code and execution
 	when skipped.  There is no need to wrap messages, even debugging ones, in
@@ -272,6 +283,7 @@ namespace LLError
 }
 
 //this is cheaper than llcallstacks if no need to output other variables to call stacks. 
+#if ENABLE_DEBUG
 #define LL_PUSH_CALLSTACKS() LLError::LLCallStacks::push(__FUNCTION__, __LINE__)
 
 #define llcallstacks                                                                      \
@@ -283,6 +295,20 @@ namespace LLError
 		LLError::End();                    \
 		LLError::LLCallStacks::end(_out) ; \
 	}
+#else
+#define LL_PUSH_CALLSTACKS()
+
+#define llcallstacks                                                                      \
+	if (false)																			  \
+	{                                                                                     \
+       std::ostringstream* _out = LLError::LLCallStacks::insert(__FUNCTION__, __LINE__) ; \
+       (*_out)
+
+#define llcallstacksendl                   \
+		LLError::End();                    \
+		LLError::LLCallStacks::end(_out) ; \
+	}
+#endif
 
 #define LL_CLEAR_CALLSTACKS() LLError::LLCallStacks::clear()
 #define LL_PRINT_CALLSTACKS() LLError::LLCallStacks::print() 
@@ -329,6 +355,30 @@ typedef LLError::NoClassInfo _LL_CLASS_TO_LOG;
 			std::ostringstream* _out = LLError::Log::out(); \
 			(*_out)
 
+#ifdef ENABLE_DEBUG
+
+#define lllog_debug(level, once, ...)                                         \
+	do {                                                                \
+		const char* tags[] = {"", ##__VA_ARGS__};                       \
+		static LLError::CallSite _site(lllog_site_args_(level, once, tags)); \
+		lllog_test_debug_()
+
+#define lllog_test_debug_()                                       \
+		if (LL_UNLIKELY(_site.shouldLog()))                 \
+		{                                                   \
+			std::ostringstream* _out = LLError::Log::out(); \
+			(*_out)
+#else
+#define lllog_debug(level, once, ...)                                         \
+	do {                                                                \
+		if (false)                 \
+		{                                                   \
+			const char* tags[] = {"", ##__VA_ARGS__};                       \
+			LLError::CallSite _site(lllog_site_args_(level, once, tags)); \
+			std::ostringstream* _out = LLError::Log::out(); \
+			(*_out)
+#endif
+
 #define lllog_site_args_(level, once, tags)                 \
 	level, __FILE__, __LINE__, typeid(_LL_CLASS_TO_LOG),    \
 	__FUNCTION__, once, &tags[1], LL_ARRAY_SIZE(tags)-1
@@ -359,7 +409,7 @@ typedef LLError::NoClassInfo _LL_CLASS_TO_LOG;
 // NEW Macros for debugging, allow the passing of a string tag
 
 // Pass comma separated list of tags (currently only supports up to 0, 1, or 2)
-#define LL_DEBUGS(...)	lllog(LLError::LEVEL_DEBUG, false, ##__VA_ARGS__)
+#define LL_DEBUGS(...)	lllog_debug(LLError::LEVEL_DEBUG, false, ##__VA_ARGS__)
 #define LL_INFOS(...)	lllog(LLError::LEVEL_INFO, false, ##__VA_ARGS__)
 #define LL_WARNS(...)	lllog(LLError::LEVEL_WARN, false, ##__VA_ARGS__)
 #define LL_ERRS(...)	lllog(LLError::LEVEL_ERROR, false, ##__VA_ARGS__)
@@ -369,7 +419,7 @@ typedef LLError::NoClassInfo _LL_CLASS_TO_LOG;
 
 // Only print the log message once (good for warnings or infos that would otherwise
 // spam the log file over and over, such as tighter loops).
-#define LL_DEBUGS_ONCE(...)	lllog(LLError::LEVEL_DEBUG, true, ##__VA_ARGS__)
+#define LL_DEBUGS_ONCE(...)	lllog_debug(LLError::LEVEL_DEBUG, true, ##__VA_ARGS__)
 #define LL_INFOS_ONCE(...)	lllog(LLError::LEVEL_INFO, true, ##__VA_ARGS__)
 #define LL_WARNS_ONCE(...)	lllog(LLError::LEVEL_WARN, true, ##__VA_ARGS__)
 

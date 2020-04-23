@@ -42,6 +42,7 @@
 #endif
 
 extern U32 gOctreeMaxCapacity;
+extern float gOctreeMinSize;
 extern U32 gOctreeReserveCapacity;
 extern float gOctreeMinSize;
 
@@ -432,7 +433,7 @@ public:
 	}
 
 	void accept(oct_traveler* visitor)				{ visitor->visit(this); }
-	virtual bool isLeaf() const						{ return mChildCount == 0; }
+	bool isLeaf() const								{ return mChildCount == 0; }
 	
 	U32 getElementCount() const						{ return mData.size(); }
 	bool isEmpty() const							{ return mData.size() == 0; }
@@ -544,7 +545,7 @@ public:
 					OctreeStats::getInstance()->realloc(old_cap,mData.capacity());
 #endif
 
-				BaseType::insert(data);
+				LLOctreeNode<T>::notifyAddition(data);
 				return true;
 			}
 			else
@@ -601,7 +602,7 @@ public:
 						OctreeStats::getInstance()->realloc(old_cap,mData.capacity());
 #endif
 					
-					BaseType::insert(data);
+					LLOctreeNode<T>::notifyAddition(data);
 					return true;
 				}
 
@@ -631,6 +632,28 @@ public:
 								
 				child->insert(data);
 			}
+		}
+		else if (parent)
+		{
+			//it's not in here, give it to the root
+			OCT_ERRS << "Octree insertion failed, starting over from root!" << LL_ENDL;
+
+			oct_node* node = this;
+
+			while (parent)
+			{
+				node = parent;
+				parent = node->getOctParent();
+			}
+
+			node->insert(data);
+		}
+		else
+		{
+			// It's not in here, and we are root.
+			// LLOctreeRoot::insert() should have expanded
+			// root by now, something is wrong
+			OCT_ERRS << "Octree insertion failed! Root expansion failed." << LL_ENDL;
 		}
 
 		return false;
@@ -691,11 +714,11 @@ public:
 #endif
 		}
 
-		BaseType::notifyRemoval(data);
+		this->notifyRemoval(data);
 		checkAlive();
 	}
 
-	bool remove(T* data) override
+	bool remove(T* data) final override
 	{
 		OctreeGuard::checkGuarded(this);
 		S32 i = data->getBinIndex();
@@ -836,10 +859,9 @@ public:
 
 		if (!silent)
 		{
-			for (U32 i = 0; i < this->getListenerCount(); ++i)
+			for (auto& entry : this->mListeners)
 			{
-				oct_listener* listener = getOctListener(i);
-				listener->handleChildAddition(this, child);
+				((oct_listener*)entry.get())->handleChildAddition(this, child);
 			}
 		}
 	}
@@ -848,16 +870,17 @@ public:
 	{
 		OctreeGuard::checkGuarded(this);
 
-		for (U32 i = 0; i < this->getListenerCount(); ++i)
+		oct_node* child = getChild(index);
+
+		for (auto& entry : this->mListeners)
 		{
-			oct_listener* listener = getOctListener(i);
-			listener->handleChildRemoval(this, getChild(index));
+			((oct_listener*)entry.get())->handleChildRemoval(this, child);
 		}
 		
 		if (destroy)
 		{
-			mChild[index]->destroy();
-			delete mChild[index];
+			child->destroy();
+			delete child;
 		}
 
 		--mChildCount;
@@ -945,7 +968,7 @@ public:
 	{
 	}
 
-#if LL_OCTREE_POOLS 
+#ifdef LL_OCTREE_POOLS
 	void* operator new(size_t size)
 	{
 		return LLOctreeNode<T>::getPool(size).malloc();
@@ -999,7 +1022,7 @@ public:
 	}
 
 	// LLOctreeRoot::insert
-	bool insert(T* data) override
+	bool insert(T* data) final override
 	{
 		if (data == nullptr) 
 		{
@@ -1037,9 +1060,14 @@ public:
 			{
 				LLOctreeNode<T>::insert(data);
 			}
-			else
+			else if (node->isInside(data->getPositionGroup()))
 			{
 				node->insert(data);
+			}
+			else
+			{
+				// calling node->insert(data) will return us to root
+				OCT_ERRS << "Failed to insert data at child node" << LL_ENDL;
 			}
 		}
 		else if (this->getChildCount() == 0)

@@ -440,6 +440,7 @@ static bool handleRepartition(const LLSD&)
 	{
 		gOctreeMaxCapacity = gSavedSettings.getU32("OctreeMaxNodeCapacity");
 		gOctreeMinSize = gSavedSettings.getF32("OctreeMinimumNodeSize");
+		gOctreeReserveCapacity = llmin(gSavedSettings.getU32("OctreeReserveNodeCapacity"),U32(512));
 		gObjectList.repartitionObjects();
 	}
 	return true;

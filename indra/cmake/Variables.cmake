@@ -17,7 +17,7 @@ if(NOT DEFINED COMMON_CMAKE_DIR)
     set(COMMON_CMAKE_DIR "${CMAKE_SOURCE_DIR}/cmake")
 endif(NOT DEFINED COMMON_CMAKE_DIR)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # https://blog.kitware.com/upcoming-in-cmake-2-8-12-osx-rpath-support/
@@ -291,6 +291,8 @@ if (NOT VIEWER_CHANNEL_GRK)
     set(VIEWER_CHANNEL_GRK "\\u03B1") # "α"
   elseif (VIEWER_CHANNEL_TYPE MATCHES "Beta")
     set(VIEWER_CHANNEL_GRK "\\u03B2") # "β"
+  else()
+    set(VIEWER_CHANNEL_GRK "")
   endif ()
 endif (NOT VIEWER_CHANNEL_GRK)
 

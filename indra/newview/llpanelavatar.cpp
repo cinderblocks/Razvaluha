@@ -44,6 +44,7 @@
 #include "llwindow.h"
 
 #include "llagent.h"
+#include "llagentbenefits.h"
 #include "llavataractions.h"
 #include "llavatarpropertiesprocessor.h"
 #include "llcallingcard.h"
@@ -197,8 +198,8 @@ void LLPanelAvatarSecondLife::processProperties(void* data, EAvatarProcessorType
 				{
 					date birthday(year, month, day), today(day_clock::local_day());
 					std::ostringstream born_on;
-					const std::locale fmt(std::locale::classic(), new date_facet(gSavedSettings.getString("ShortDateFormat").data()));
-					born_on.imbue(fmt);
+					const std::locale locale_fmt(std::locale::classic(), new date_facet(gSavedSettings.getString("ShortDateFormat").data()));
+					born_on.imbue(locale_fmt);
 					born_on << birthday << " (" << today - birthday << ')';
 					childSetValue("born", born_on.str());
 				}
@@ -338,7 +339,7 @@ static std::string profile_picture_title(const std::string& str) { return "Profi
 static void show_partner_help() { LLNotificationsUtil::add("ClickPartnerHelpAvatar", LLSD(), LLSD(), boost::bind(LLPanelAvatarSecondLife::onClickPartnerHelpLoadURL, _1, _2)); }
 void show_log_browser(const LLUUID& id, const LFIDBearer::Type& type)
 {
-	void show_log_browser(const std::string& name, const std::string& id);
+	void show_log_browser(const std::string& name, const LLUUID& id);
 	std::string name;
 	if (type == LFIDBearer::AVATAR)
 	{
@@ -350,7 +351,7 @@ void show_log_browser(const LLUUID& id, const LFIDBearer::Type& type)
 	{
 		gCacheName->getGroupName(id, name);
 	}
-	show_log_browser(name, id.asString());
+	show_log_browser(name, id);
 }
 BOOL LLPanelAvatarSecondLife::postBuild()
 {
@@ -987,23 +988,24 @@ void LLPanelAvatarPicks::processProperties(void* data, EAvatarProcessorType type
 			// are no tabs in the container.
 			tabs->selectFirstTab();
 			bool edit(getPanelAvatar()->isEditable());
-			S32 tab_count = tabs->getTabCount();
+			auto count = tabs->getTabCount();
+			bool can_add = self && count < LLAgentBenefitsMgr::current().getPicksLimit();
 			LLView* view = getChildView("New...");
-			view->setEnabled(self && tab_count < MAX_AVATAR_PICKS
+			view->setEnabled(can_add
 // [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a)
 				&& !gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC));
 // [/RLVa:KB]
 			view->setVisible(self && edit);
 			view = getChildView("Delete...");
-			view->setEnabled(self && tab_count);
+			view->setEnabled(count);
 			view->setVisible(self && edit);
 
 			//For pick import/export - RK
 			view = getChildView("Import...");
 			view->setVisible(self && edit);
-			view->setEnabled(tab_count < MAX_AVATAR_PICKS);
+			view->setEnabled(can_add);
 			view = getChildView("Export...");
-			view->setEnabled(self && tab_count);
+			view->setEnabled(count);
 			view->setVisible(self);
 
 			childSetVisible("loading_text", false);
@@ -1025,13 +1027,13 @@ void LLPanelAvatarPicks::onClickNew()
 	panel_pick->initNewPick();
 	tabs->addTabPanel(panel_pick, panel_pick->getPickName());
 	tabs->selectLastTab();
-	S32 tab_count = tabs->getTabCount();
-	getChildView("New...")->setEnabled(tab_count < MAX_AVATAR_PICKS
+	bool can_add = tabs->getTabCount() < LLAgentBenefitsMgr::current().getPicksLimit();
+	getChildView("New...")->setEnabled(can_add
 // [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a)
 		&& !gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC));
 // [/RLVa:KB]
 	getChildView("Delete...")->setEnabled(true);
-	getChildView("Import...")->setEnabled(tab_count < MAX_AVATAR_PICKS);
+	getChildView("Import...")->setEnabled(can_add);
 }
 
 //Pick import and export - RK
@@ -1042,17 +1044,17 @@ void LLPanelAvatarPicks::onClickImport()
 }
 
 // static
-void LLPanelAvatarPicks::onClickImport_continued(void* data, bool import)
+void LLPanelAvatarPicks::onClickImport_continued(void* data, bool importt)
 {
 	LLPanelAvatarPicks* self = (LLPanelAvatarPicks*)data;
 	LLTabContainer* tabs = self->getChild<LLTabContainer>("picks tab");
-	if (import && self->mPanelPick)
+	if (importt && self->mPanelPick)
 	{
 		tabs->addTabPanel(self->mPanelPick, self->mPanelPick->getPickName());
 		tabs->selectLastTab();
 		self->childSetEnabled("New...", !gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC));
 		self->childSetEnabled("Delete...", false);
-		self->childSetEnabled("Import...", tabs->getTabCount() < MAX_AVATAR_PICKS);
+		self->childSetEnabled("Import...", tabs->getTabCount() < LLAgentBenefitsMgr::current().getPicksLimit());
 	}
 }
 
@@ -1339,8 +1341,6 @@ void LLPanelAvatar::setAvatarID(const LLUUID &avatar_id)
 	view->setVisible(!own_avatar);
 	view->setEnabled(false);
 	getChildView("Log")->setVisible(!own_avatar);
-
-	getChild<LLNameEditor>("avatar_key")->setText(avatar_id.asString());
 
 	bool is_god = gAgent.isGodlike();
 	view = getChildView("Kick");

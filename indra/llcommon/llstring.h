@@ -28,13 +28,20 @@
 #define LL_LLSTRING_H
 
 #include "llwin32headerslean.h"
-
+#if defined(LL_CLANG)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+#endif
 #include <boost/optional/optional.hpp>
+#if defined(LL_CLANG)
+#pragma clang diagnostic pop
+#endif
 #include <string>
 #include <cstdio>
 //#include <locale>
 #include <iomanip>
 #include <algorithm>
+#include <utility>
 #include <vector>
 #include <map>
 #include "llformat.h"
@@ -43,12 +50,15 @@
 // [/RLVa:KB]
 
 #if LL_LINUX || LL_SOLARIS
-#include <wctype.h>
-#include <wchar.h>
+#include <cwctype>
+#include <cwchar>
 #endif
 
-#include <string.h>
-#include <boost/scoped_ptr.hpp>
+#include <cstring>
+
+#if LL_WINDOWS
+#include <charconv>
+#endif
 
 #if LL_SOLARIS
 // stricmp and strnicmp do not exist on Solaris:
@@ -237,13 +247,13 @@ LL_COMMON_API std::string ll_safe_string(const char* in, S32 maxlen);
 class LLFormatMapString
 {
 public:
-	LLFormatMapString() {};
+	LLFormatMapString() = default;
 	LLFormatMapString(const char* s) : mString(ll_safe_string(s)) {};
 	LLFormatMapString(const std::string& s) : mString(s) {};
 	operator std::string() const { return mString; }
 	bool operator<(const LLFormatMapString& rhs) const { return mString < rhs.mString; }
 	std::size_t length() const { return mString.length(); }
-	
+	const std::string& get() const { return mString; }
 private:
 	std::string mString;
 };
@@ -256,6 +266,7 @@ private:
 
 public:
 	typedef std::basic_string<T> string_type;
+	typedef std::basic_string_view<T> string_view_type;
 	typedef typename string_type::size_type size_type;
 	
 public:
@@ -297,18 +308,18 @@ public:
 											  const string_type& quotes,
 											  const string_type& escapes);
 
-	LL_COMMON_API static void formatNumber(string_type& numStr, string_type decimals);
-	LL_COMMON_API static bool formatDatetime(string_type& replacement, string_type token, string_type param, S32 secFromEpoch);
+	LL_COMMON_API static void formatNumber(string_type& numStr, const string_type& decimals);
+	LL_COMMON_API static bool formatDatetime(string_type& replacement, const string_type& token, const string_type& param, S32 secFromEpoch);
 	LL_COMMON_API static S32 format(string_type& s, const format_map_t& substitutions);
 	LL_COMMON_API static S32 format(string_type& s, const LLSD& substitutions);
-	LL_COMMON_API static bool simpleReplacement(string_type& replacement, string_type token, const format_map_t& substitutions);
-	LL_COMMON_API static bool simpleReplacement(string_type& replacement, string_type token, const LLSD& substitutions);
-	LL_COMMON_API static void setLocale (std::string inLocale);
+	LL_COMMON_API static bool simpleReplacement(string_type& replacement, const string_type& token, const format_map_t& substitutions);
+	LL_COMMON_API static bool simpleReplacement(string_type& replacement, const string_type& token, const LLSD& substitutions);
+	LL_COMMON_API static void setLocale (const std::string& inLocale);
 	LL_COMMON_API static std::string getLocale (void);
 	
 	static bool isValidIndex(const string_type& string, size_type i)
 	{
-		return !string.empty() && (0 <= i) && (i <= string.size());
+		return !string.empty() && (i <= string.size());
 	}
 
 	static bool contains(const string_type& string, T c, size_type i=0)
@@ -366,7 +377,7 @@ public:
 	static void	replaceTabsWithSpaces( string_type& string, size_type spaces_per_tab );
 	static void	replaceNonstandardASCII( string_type& string, T replacement );
 	static void	replaceChar( string_type& string, T target, T replacement );
-	static void replaceString( string_type& string, string_type target, string_type replacement );
+	static void replaceString( string_type& string, const string_type& target, const string_type& replacement );
 	
 	static BOOL	containsNonprintable(const string_type& string);
 	static void	stripNonprintable(string_type& string);
@@ -395,7 +406,77 @@ public:
 	static bool _isASCII(std::basic_string<T> const& string);
 
 	// Conversion to other data types
-	static BOOL	convertToBOOL(const string_type& string, BOOL& value);
+#if defined(LL_WINDOWS)
+	template<typename U = int>
+	inline static bool convertToCore(const string_view_type str, U& value)
+	{
+		if (str.empty())
+		{
+			return false;
+		}
+
+		static const std::string WHITESPACE = " \n\r\t\f\v";
+		const auto fl = str.find_last_not_of(WHITESPACE);	// Find end of data excluding trailing spaces
+
+		if (fl == std::string_view::npos)	// If end of data not found, return no value
+			return false;
+
+		const auto end = str.data() + fl + 1;	// End of data to be converted
+		U num = 0;
+
+		const std::from_chars_result& ret = std::from_chars(str.data() + str.find_first_not_of(WHITESPACE), end, num);
+		if (ret.ec == std::errc::invalid_argument || ret.ec == std::errc::result_out_of_range)
+		{
+			LL_WARNS() << fmt::format(FMT_STRING("Failed to parse typeid<{:s}> from string \"{:s}\" with ec: {:d}"), typeid(U).name(), str, ret.ec) << LL_ENDL;
+			return false;
+		}
+		else
+		{
+			value = num;
+			return true;
+		}
+	}
+
+	inline static bool convertToU8(const string_view_type string, U8& value)
+	{
+		return convertToCore<U8>(string, value);
+	}
+
+	inline static bool convertToS8(const string_view_type string, S8& value)
+	{
+		return convertToCore<S8>(string, value);
+	}
+
+	inline static bool convertToS16(const string_view_type string, S16& value)
+	{
+		return convertToCore<S16>(string, value);
+	}
+
+	inline static bool convertToU16(const string_view_type string, U16& value)
+	{
+		return convertToCore<U16>(string, value);
+	}
+
+	inline static bool convertToU32(const string_view_type string, U32& value)
+	{
+		return convertToCore<U32>(string, value);
+	}
+
+	inline static bool convertToS32(const string_view_type string, S32& value)
+	{
+		return convertToCore<S32>(string, value);
+	}
+
+	inline static bool convertToF32(const string_view_type string, F32& value)
+	{
+		return convertToCore<F32>(string, value);
+	}
+
+	inline static bool convertToF64(const string_view_type string, F64& value)
+	{
+		return convertToCore<F64>(string, value);
+	}
+#else
 	static BOOL	convertToU8(const string_type& string, U8& value);
 	static BOOL	convertToS8(const string_type& string, S8& value);
 	static BOOL	convertToS16(const string_type& string, S16& value);
@@ -404,6 +485,8 @@ public:
 	static BOOL	convertToS32(const string_type& string, S32& value);
 	static BOOL	convertToF32(const string_type& string, F32& value);
 	static BOOL	convertToF64(const string_type& string, F64& value);
+#endif
+	static BOOL	convertToBOOL(const string_type& string, BOOL& value);
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// Utility functions for working with char*'s and strings
@@ -922,7 +1005,7 @@ struct InString
 		mIter(b),
 		mEnd(e)
 	{}
-	virtual ~InString() {}
+	virtual ~InString() = default;
 
 	bool done() const { return mIter == mEnd; }
 	/// Is the current character (*mIter) escaped? This implementation can
@@ -1174,7 +1257,7 @@ void LLStringUtilBase<T>::getTokens(const string_type& string, std::vector<strin
 {
 	// This overload must deal with escapes. Delegate that to InEscString
 	// (unless there ARE no escapes).
-	boost::scoped_ptr< LLStringUtilBaseImpl::InString<T> > instrp;
+	std::unique_ptr< LLStringUtilBaseImpl::InString<T> > instrp;
 	if (escapes.empty())
 		instrp.reset(new LLStringUtilBaseImpl::InString<T>(string.begin(), string.end()));
 	else
@@ -1339,7 +1422,7 @@ S32 LLStringUtilBase<T>::compareDictInsensitive(const string_type& astr, const s
 template<class T> 
 BOOL LLStringUtilBase<T>::precedesDict( const string_type& a, const string_type& b )
 {
-	if( a.size() && b.size() )
+	if(!a.empty() && !b.empty())
 	{
 		return (LLStringUtilBase<T>::compareDict(a, b) < 0);
 	}
@@ -1386,7 +1469,7 @@ void LLStringUtilBase<T>::trimHead(string_type& string)
 		size_type i = 0;
 		while( i < string.length() && LLStringOps::isSpace( string[i] ) )
 		{
-			i++;
+			++i;
 		}
 		string.erase(0, i);
 	}
@@ -1402,7 +1485,7 @@ void LLStringUtilBase<T>::trimTail(string_type& string)
 		size_type i = len;
 		while( i > 0 && LLStringOps::isSpace( string[i-1] ) )
 		{
-			i--;
+			--i;
 		}
 
 		string.erase( i, len - i );
@@ -1418,7 +1501,7 @@ void LLStringUtilBase<T>::trimTail(string_type& string, const string_type& token
 		size_type i = len;
 		while( i > 0 && (tokens.find_first_of(string[i-1]) != string_type::npos) )
 		{
-			i--;
+			--i;
 		}
 
 		string.erase( i, len - i );
@@ -1441,11 +1524,11 @@ void LLStringUtilBase<T>::addCRLF(string_type& string)
 	size_type count = 0;
 	size_type len = string.size();
 	size_type i;
-	for( i = 0; i < len; i++ )
+	for( i = 0; i < len; ++i )
 	{
 		if( string[i] == LF )
 		{
-			count++;
+			++count;
 		}
 	}
 
@@ -1484,11 +1567,11 @@ void LLStringUtilBase<T>::removeCRLF(string_type& string)
 	size_type cr_count = 0;
 	size_type len = string.size();
 	size_type i;
-	for( i = 0; i < len - cr_count; i++ )
+	for( i = 0; i < len - cr_count; ++i )
 	{
 		if( string[i+cr_count] == CR )
 		{
-			cr_count++;
+			++cr_count;
 		}
 
 		string[i] = string[i+cr_count];
@@ -1510,11 +1593,11 @@ void LLStringUtilBase<T>::removeWindowsCR(string_type& string)
     size_type cr_count = 0;
     size_type len = string.size();
     size_type i;
-    for( i = 0; i < len - cr_count - 1; i++ )
+    for( i = 0; i < len - cr_count - 1; ++i )
     {
         if( string[i+cr_count] == CR && string[i+cr_count+1] == LF)
         {
-            cr_count++;
+            ++cr_count;
         }
 
         string[i] = string[i+cr_count];
@@ -1530,13 +1613,13 @@ void LLStringUtilBase<T>::replaceChar( string_type& string, T target, T replacem
 	while( (found_pos = string.find(target, found_pos)) != string_type::npos ) 
 	{
 		string[found_pos] = replacement;
-		found_pos++; // avoid infinite defeat if target == replacement
+		++found_pos; // avoid infinite defeat if target == replacement
 	}
 }
 
 //static
 template<class T> 
-void LLStringUtilBase<T>::replaceString( string_type& string, string_type target, string_type replacement )
+void LLStringUtilBase<T>::replaceString( string_type& string, const string_type& target, const string_type& replacement )
 {
 	size_type found_pos = 0;
 	while( (found_pos = string.find(target, found_pos)) != string_type::npos )
@@ -1555,7 +1638,7 @@ void LLStringUtilBase<T>::replaceNonstandardASCII( string_type& string, T replac
 //	const S8 MAX = 127;
 
 	size_type len = string.size();
-	for( size_type i = 0; i < len; i++ )
+	for( size_type i = 0; i < len; ++i )
 	{
 		// No need to test MAX < mText[i] because we treat mText[i] as a signed char,
 		// which has a max value of 127.
@@ -1575,11 +1658,11 @@ void LLStringUtilBase<T>::replaceTabsWithSpaces( string_type& str, size_type spa
 
 	string_type out_str;
 	// Replace tabs with spaces
-	for (size_type i = 0; i < str.length(); i++)
+	for (size_type i = 0; i < str.length(); ++i)
 	{
 		if (str[i] == TAB)
 		{
-			for (size_type j = 0; j < spaces_per_tab; j++)
+			for (size_type j = 0; j < spaces_per_tab; ++j)
 				out_str += SPACE;
 		}
 		else
@@ -1596,7 +1679,7 @@ BOOL LLStringUtilBase<T>::containsNonprintable(const string_type& string)
 {
 	const char MIN = 32;
 	BOOL rv = FALSE;
-	for (size_type i = 0; i < string.size(); i++)
+	for (size_type i = 0; i < string.size(); ++i)
 	{
 		if(string[i] < MIN)
 		{
@@ -1622,7 +1705,7 @@ void LLStringUtilBase<T>::stripNonprintable(string_type& string)
 	auto c_string = std::make_unique<char[]>(src_size + 1);
 
 	copy(c_string.get(), string.c_str(), src_size+1);
-	for (size_type i = 0; i < src_size; i++)
+	for (size_type i = 0; i < src_size; ++i)
 	{
 		if(string[i] >= MIN)
 		{
@@ -1676,7 +1759,7 @@ template<class T>
 void LLStringUtilBase<T>::_makeASCII(string_type& string)
 {
 	// Replace non-ASCII chars with LL_UNKNOWN_CHAR
-	for (size_type i = 0; i < string.length(); i++)
+	for (size_type i = 0; i < string.length(); ++i)
 	{
 		if (string[i] > 0x7f)
 		{
@@ -1757,7 +1840,8 @@ bool LLStringUtilBase<T>::startsWith(
 	const string_type& substr)
 {
 	if(string.empty() || (substr.empty())) return false;
-	if(0 == string.find(substr)) return true;
+	if (substr.length() > string.length()) return false;
+	if (0 == string.compare(0, substr.length(), substr)) return true;
 	return false;
 }
 
@@ -1768,9 +1852,11 @@ bool LLStringUtilBase<T>::endsWith(
 	const string_type& substr)
 {
 	if(string.empty() || (substr.empty())) return false;
-	std::string::size_type idx = string.rfind(substr);
-	if(std::string::npos == idx) return false;
-	return (idx == (string.size() - substr.size()));
+	size_t sub_len = substr.length();
+	size_t str_len = string.length();
+	if (sub_len > str_len) return false;
+	if (0 == string.compare(str_len - sub_len, sub_len, substr)) return true;
+	return false;
 }
 
 // static
@@ -1842,6 +1928,7 @@ BOOL LLStringUtilBase<T>::convertToBOOL(const string_type& string, BOOL& value)
 	return FALSE;
 }
 
+#if !defined(LL_WINDOWS)
 template<class T> 
 BOOL LLStringUtilBase<T>::convertToU8(const string_type& string, U8& value) 
 {
@@ -1980,6 +2067,7 @@ BOOL LLStringUtilBase<T>::convertToF64(const string_type& string, F64& value)
 	}
 	return FALSE;
 }
+#endif
 
 template<class T> 
 void LLStringUtilBase<T>::truncate(string_type& string, size_type count)

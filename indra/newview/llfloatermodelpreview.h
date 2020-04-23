@@ -57,7 +57,7 @@ class domController;
 class domSkin;
 class domMesh;
 
-class LLFloaterModelPreview : public LLFloaterModelUploadBase, public LLSingleton<LLFloaterModelPreview>
+class LLFloaterModelPreview final : public LLFloaterModelUploadBase, public LLSingleton<LLFloaterModelPreview>
 {
 	LLSINGLETON(LLFloaterModelPreview);
 	virtual ~LLFloaterModelPreview();

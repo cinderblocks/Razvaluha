@@ -35,6 +35,7 @@
 
 // project includes
 #include "llagent.h"
+#include "llagentbenefits.h"
 #include "llagentcamera.h"
 #include "llfilepicker.h"
 #include "llfloaterbvhpreview.h"
@@ -68,7 +69,6 @@
 // </edit>
 
 // linden libraries
-#include "lleconomy.h"
 #include "llmemberlistener.h"
 #include "llnotificationsutil.h"
 #include "llsdserialize.h"
@@ -114,17 +114,6 @@ class LLFileEnableSaveAs : public view_listener_t
 			}
 		}
 		gMenuHolder->findControl(userdata["control"].asString())->setValue(frontmost && frontmost->canSaveAs());
-		return true;
-	}
-};
-
-class LLFileEnableUpload : public view_listener_t
-{
-	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
-	{
-		bool new_value = gStatusBar && LLGlobalEconomy::getInstance() &&
-						 gStatusBar->getBalance() >= LLGlobalEconomy::getInstance()->getPriceUpload();
-		gMenuHolder->findControl(userdata["control"].asString())->setValue(new_value);
 		return true;
 	}
 };
@@ -462,7 +451,6 @@ const void upload_bulk(const std::vector<std::string>& filenames, LLFilePicker::
 	//
 	// Also fix single upload to charge first, then refund
 
-	S32 expected_upload_cost = LLGlobalEconomy::getInstance()->getPriceUpload();
 	for (std::vector<std::string>::const_iterator in_iter = filenames.begin(); in_iter != filenames.end(); ++in_iter)
 	{
 		std::string filename = (*in_iter);
@@ -475,17 +463,27 @@ const void upload_bulk(const std::vector<std::string>& filenames, LLFilePicker::
 		LLStringUtil::stripNonprintable(asset_name);
 		LLStringUtil::trim(asset_name);
 
-        LLResourceUploadInfo::ptr_t uploadInfo(new LLNewFileResourceUploadInfo(
-			filename,
-			asset_name,
-			asset_name, 0,
-			LLFolderType::FT_NONE, LLInventoryType::IT_NONE,
-			LLFloaterPerms::getNextOwnerPerms("Uploads"),
-			LLFloaterPerms::getGroupPerms("Uploads"),
-			LLFloaterPerms::getEveryonePerms("Uploads"),
-			expected_upload_cost));
+		std::string ext = gDirUtilp->getExtension(filename);
+		LLAssetType::EType asset_type;
+		U32 codec;
+		S32 expected_upload_cost;
+		if (LLResourceUploadInfo::findAssetTypeAndCodecOfExtension(ext, asset_type, codec))
+			LLAgentBenefitsMgr::current().findUploadCost(asset_type, expected_upload_cost);
+		else expected_upload_cost = 0;
 
-			upload_new_resource(uploadInfo, NULL, NULL);
+		{
+	        LLResourceUploadInfo::ptr_t uploadInfo(new LLNewFileResourceUploadInfo(
+				filename,
+				asset_name,
+				asset_name, 0,
+				LLFolderType::FT_NONE, LLInventoryType::IT_NONE,
+				LLFloaterPerms::getNextOwnerPerms("Uploads"),
+				LLFloaterPerms::getGroupPerms("Uploads"),
+				LLFloaterPerms::getEveryonePerms("Uploads"),
+				expected_upload_cost));
+
+				upload_new_resource(uploadInfo, NULL, NULL);
+		}
 	}
 
 	if (!filenames.empty()) gSavedSettings.setBOOL("TemporaryUpload", false); // <edit/>
@@ -556,9 +554,7 @@ class LLFileUploadBulk : public view_listener_t
 		}
 		else
 		{
-			S32 expected_upload_cost = LLGlobalEconomy::getInstance()->getPriceUpload();
-			const char* notification_type = expected_upload_cost ? "BulkTemporaryUpload" : "BulkTemporaryUploadFree";
-			LLNotificationsUtil::add(notification_type, LLSD().with("UPLOADCOST", grid->getUploadFee()), LLSD(), onConfirmBulkUploadTemp);
+			LLNotificationsUtil::add("BulkTemporaryUpload", LLSD(), LLSD(), onConfirmBulkUploadTemp);
 		}
 		return true;
 	}
@@ -669,6 +665,7 @@ class LLFileTakeSnapshotToDisk : public view_listener_t
 	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata) override
 	{
 		LLPointer<LLImageRaw> raw = new LLImageRaw;
+		raw->enableOverSize();
 
 		S32 width = gViewerWindow->getWindowDisplayWidth();
 		S32 height = gViewerWindow->getWindowDisplayHeight();
@@ -1013,6 +1010,9 @@ void upload_new_resource(
 		error = TRUE;;
 	}
 
+	// Now that we've determined the type, figure out the cost
+	if (!error) LLAgentBenefitsMgr::current().findUploadCost(asset_type, expected_upload_cost);
+
 	// gen a new transaction ID for this asset
 	tid.generate();
 
@@ -1052,10 +1052,10 @@ void upload_new_resource(
 		// <edit> hack to create scripts and gestures
 		if(exten == "lsl" || exten == "gesture" || exten == "notecard") // added notecard Oct 15 2009
 		{
-			LLInventoryType::EType inv_type = LLInventoryType::IT_GESTURE;
-			if (exten == "lsl") inv_type = LLInventoryType::IT_LSL;
-			else if(exten == "gesture") inv_type = LLInventoryType::IT_GESTURE;
-			else if(exten == "notecard") inv_type = LLInventoryType::IT_NOTECARD;
+			LLInventoryType::EType inv_type = LLInventoryType::EType::IT_GESTURE;
+			if (exten == "lsl") inv_type = LLInventoryType::EType::IT_LSL;
+			else if(exten == "gesture") inv_type = LLInventoryType::EType::IT_GESTURE;
+			else if(exten == "notecard") inv_type = LLInventoryType::EType::IT_NOTECARD;
 			create_inventory_item(	gAgent.getID(),
 									gAgent.getSessionID(),
 									gInventory.findCategoryUUIDForType(LLFolderType::assetTypeToFolderType(asset_type)),
@@ -1394,7 +1394,6 @@ void init_menu_file()
 	(new LLFileSavePreview())->registerListener(gMenuHolder, "File.SavePreview");
 	(new LLFileTakeSnapshotToDisk())->registerListener(gMenuHolder, "File.TakeSnapshotToDisk");
 	(new LLFileQuit())->registerListener(gMenuHolder, "File.Quit");
-	(new LLFileEnableUpload())->registerListener(gMenuHolder, "File.EnableUpload");
 	(new LLFileEnableUploadModel())->registerListener(gMenuHolder, "File.EnableUploadModel");
 
 	(new LLFileEnableSaveAs())->registerListener(gMenuHolder, "File.EnableSaveAs");
@@ -1489,20 +1488,10 @@ void NewResourceItemCallback::fire(const LLUUID& new_item_id)
 	std::string /*agent_url,*/ type("Uploads");
 	switch(new_item->getInventoryType())
 	{
-		case LLInventoryType::IT_LSL:
-			/*agent_url = gAgent.getRegionCapability("UpdateScriptAgent");
-			body["target"] = "lsl2";*/
-			type = "Scripts";
-		break;
-		case LLInventoryType::IT_GESTURE:
-			//agent_url = gAgent.getRegionCapability("UpdateGestureAgentInventory");
-			type = "Gestures";
-		break;
-		case LLInventoryType::IT_NOTECARD:
-			//agent_url = gAgent.getRegionCapability("UpdateNotecardAgentInventory");
-			type = "Notecard";
-		break;
-		default: return;
+		case LLInventoryType::EType::IT_LSL:      type = "Scripts"; break;
+		case LLInventoryType::EType::IT_GESTURE:  type = "Gestures"; break;
+		case LLInventoryType::EType::IT_NOTECARD: type = "Notecard"; break;
+		default: break;
 	}
 
 	LLPermissions perms = new_item->getPermissions();

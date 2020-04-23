@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /** 
  * @file llaisapi.cpp
  * @brief classes and functions for interfacing with the v3+ ais inventory service. 
@@ -816,11 +814,9 @@ void AISUpdate::parseUUIDArray(const LLSD& content, const std::string& name, uui
 {
 	if (content.has(name))
 	{
-		for(LLSD::array_const_iterator it = content[name].beginArray(),
-				end = content[name].endArray();
-				it != end; ++it)
+		for (auto& id : content[name].array())
 		{
-			ids.insert((*it).asUUID());
+			ids.insert(id.asUUID());
 		}
 	}
 }

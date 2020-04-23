@@ -64,6 +64,7 @@
 #include "llcorehttputil.h"
 
 #include "llhttpretrypolicy.h"
+#include "hippogridmanager.h"
 
 bool LLTextureFetchDebugger::sDebuggerEnabled = false ;
 //LLTrace::EventStatHandle<LLUnit<F32, LLUnits::Percent> > LLTextureFetch::sCacheHitRate("texture_cache_hits");
@@ -638,6 +639,73 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 
+class SGHostBlackList{
+	static const int MAX_ERRORCOUNT = 20;
+	struct BlackListEntry {
+		std::string host;
+		U64 timeUntil;
+		U32 reason;
+		int errorCount;
+	};
+
+	typedef std::vector<BlackListEntry> blacklist_t;
+	//Why is it a vector? because using std::map for just 1-2 values is insane-ish.
+	typedef blacklist_t::iterator iter;
+	static blacklist_t blacklist;
+
+	static bool is_obsolete(BlackListEntry entry) {
+			U64 now = LLTimer::getTotalTime();
+			return (now > entry.timeUntil);
+	} //should make a functor. if i cared.
+
+	static void cleanup() {
+		(void)std::remove_if(blacklist.begin(), blacklist.end(), is_obsolete);
+	}
+
+	static iter find(std::string host) {
+		cleanup();
+		for(blacklist_t::iterator i = blacklist.begin(); i != blacklist.end(); ++i) {
+			if (i->host.find(host) == 0) return i;
+		}
+		return blacklist.end();
+	}
+
+public:
+	static bool isBlacklisted(std::string url) {
+		iter found = find(url);
+		bool r = (found != blacklist.end()) && (found->errorCount > MAX_ERRORCOUNT);
+		return r;
+	}
+
+	static void add(std::string url, float timeout, U32 reason) {
+		LL_WARNS() << "Requested adding to blacklist: " << url << LL_ENDL;
+		BlackListEntry entry;
+		entry.host = url.substr(0, url.rfind("/"));
+		if (entry.host.empty()) return;
+		entry.timeUntil = LLTimer::getTotalTime() + timeout*1000;
+		entry.reason = reason;
+		entry.errorCount = 0;
+		iter found = find(entry.host);
+		if(found != blacklist.end()) {
+			entry.errorCount = found->errorCount + 1;
+			*found = entry;
+			if (entry.errorCount > MAX_ERRORCOUNT) {
+				std::string s;
+				microsecondsToTimecodeString(entry.timeUntil, s);
+				LL_WARNS() << "Blacklisting address " << entry.host
+					<< "is blacklisted for " << timeout 
+					<< " seconds because of error " << reason
+					<< LL_ENDL;
+			}
+		}
+		else blacklist.push_back(entry);
+	}
+};
+
+SGHostBlackList::blacklist_t SGHostBlackList::blacklist;
+
+//////////////////////////////////////////////////////////////////////////////
+
 // Cross-thread messaging for asset metrics.
 
 /**
@@ -945,7 +1013,7 @@ LLTextureFetchWorker::LLTextureFetchWorker(LLTextureFetch* fetcher,
 	  mResourceWaitCount(0U),
 	  mFetchRetryPolicy(10.0,3600.0,2.0,10)
 {
-	mCanUseNET = mUrl.empty() ;
+	mCanUseNET = mUrl.empty(); // Necessary for precached UUID textures, regardless of grid.
 
 	calcWorkPriority();
 	mType = host.isOk() ? LLImageBase::TYPE_AVATAR_BAKE : LLImageBase::TYPE_NORMAL;
@@ -1330,25 +1398,11 @@ bool LLTextureFetchWorker::doWork(S32 param)
 
 	if (mState == LOAD_FROM_NETWORK)
 	{
-		// Check for retries to previous server failures.
-		F32 wait_seconds;
-		if (mFetchRetryPolicy.shouldRetry(wait_seconds))
-		{
-			if (wait_seconds <= 0.0)
-			{
-				LL_INFOS(LOG_TXT) << mID << " retrying now" << LL_ENDL;
-			}
-			else
-			{
-				//LL_INFOS(LOG_TXT) << mID << " waiting to retry for " << wait_seconds << " seconds" << LL_ENDL;
-				return false;
-			}
-		}
+		static LLCachedControl<bool> use_http(gSavedSettings,"ImagePipelineUseHTTP");
+		bool is_sl = gHippoGridManager->getConnectedGrid()->isSecondLife();
 
-		static LLCachedControl<bool> use_http(gSavedSettings, "ImagePipelineUseHTTP", true);
-
-// 		if (mHost.isInvalid()) get_url = false;
-		if ( use_http && mCanUseHTTP && mUrl.empty())//get http url.
+// 		if (mHost != LLHost::invalid) use_http = false;
+		if ((is_sl || use_http) && mCanUseHTTP && mUrl.empty())	// get http url.
 		{
 			LLViewerRegion* region = NULL;
 			if (mHost.isInvalid())
@@ -1388,7 +1442,10 @@ bool LLTextureFetchWorker::doWork(S32 param)
 		{
 			mWriteToCacheState = CAN_WRITE;
 		}
-
+		if (!mUrl.empty() && SGHostBlackList::isBlacklisted(mUrl)){
+			LL_DEBUGS("Texture") << mID << "Blacklisted" << LL_ENDL;
+			mCanUseHTTP = false;
+		}
 		if (mCanUseHTTP && !mUrl.empty())
 		{
 			setState(WAIT_HTTP_RESOURCE);
@@ -1399,7 +1456,12 @@ bool LLTextureFetchWorker::doWork(S32 param)
 			}
 			// don't return, fall through to next state
 		}
-		else if (mSentRequest == UNSENT && mCanUseNET)
+		else if (!mCanUseNET)
+		{
+			LL_WARNS(LOG_TXT) << mID << "Unable to retrieve texture via HTTP and UDP unavailable (probable 404): " << mUrl << LL_ENDL;
+			return true;
+		}
+		else if (mSentRequest == UNSENT)
 		{
 			// Add this to the network queue and sit here.
 			// LLTextureFetch::update() will send off a request which will change our state
@@ -1672,6 +1734,20 @@ bool LLTextureFetchWorker::doWork(S32 param)
 					// Allowed, we'll accept whatever data we have as complete.
 					mHaveAllData = TRUE;
 				}
+#if 0 // Singu TODO: Evaluate if this works as expected
+				else if (!mGetStatus.isHttpStatus() || mGetStatus.getStatus() == HTTP_GATEWAY_TIME_OUT)
+				{
+					if (!mGetStatus.isHttpStatus())
+					{
+						LL_WARNS() << "No response from server (Curl Code: " << mGetStatus.getType() << "): " << mUrl << LL_ENDL;
+					}
+					else
+					{
+						LL_WARNS() << "Slow response from server (HTTP_GATEWAY_TIME_OUT): " << mUrl << LL_ENDL;
+					}
+					SGHostBlackList::add(mUrl, 60.0, mGetStatus.getStatus());
+				}
+#endif
 				else
 				{
 					LL_INFOS(LOG_TXT) << "HTTP GET failed for: " << mUrl
@@ -1867,6 +1943,7 @@ bool LLTextureFetchWorker::doWork(S32 param)
 		S32 discard = mHaveAllData ? 0 : mLoadedDiscard;
 		U32 image_priority = LLWorkerThread::PRIORITY_NORMAL | mWorkPriority;
 		mDecoded  = FALSE;
+		setPriority(LLWorkerThread::PRIORITY_LOW | mWorkPriority);
 		setState(DECODE_IMAGE_UPDATE);
 		LL_DEBUGS(LOG_TXT) << mID << ": Decoding. Bytes: " << mFormattedImage->getDataSize() << " Discard: " << discard
 				<< " All Data: " << mHaveAllData << LL_ENDL;
@@ -2590,7 +2667,7 @@ LLTextureFetch::~LLTextureFetch()
 	while (! mCommands.empty())
 	{
 		TFRequest * req(mCommands.front());
-		mCommands.erase(mCommands.begin());
+		mCommands.pop_front();
 		delete req;
 	}
 	
@@ -3901,7 +3978,7 @@ LLTextureFetch::TFRequest * LLTextureFetch::cmdDequeue()
 	if (! mCommands.empty())
 	{
 		ret = mCommands.front();
-		mCommands.erase(mCommands.begin());
+		mCommands.pop_front();
 	}
 	unlockQueue();														// -Mfq
 

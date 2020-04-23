@@ -114,15 +114,12 @@ public:
 
 	 //LISTENER FUNCTIONS
 	void handleChildAddition(const LLOctreeNode<LLVolumeTriangle>* parent, 
-		LLOctreeNode<LLVolumeTriangle>* child) override;
-	void handleStateChange(const LLTreeNode<LLVolumeTriangle>* node) override { }
-
+		LLOctreeNode<LLVolumeTriangle>* child) final override;
 	void handleChildRemoval(const LLOctreeNode<LLVolumeTriangle>* parent, 
-			const LLOctreeNode<LLVolumeTriangle>* child) override {	}
-
-	void handleInsertion(const LLTreeNode<LLVolumeTriangle>* node, LLVolumeTriangle* tri) override { }
-	void handleRemoval(const LLTreeNode<LLVolumeTriangle>* node, LLVolumeTriangle* tri) override { }
-	void handleDestruction(const LLTreeNode<LLVolumeTriangle>* node) override { }
+			const LLOctreeNode<LLVolumeTriangle>* child) final override { }
+	void handleInsertion(const LLTreeNode<LLVolumeTriangle>* node, LLVolumeTriangle* tri) final override { }
+	void handleRemoval(const LLTreeNode<LLVolumeTriangle>* node, LLVolumeTriangle* tri) final override { }
+	void handleDestruction(const LLTreeNode<LLVolumeTriangle>* node) final override { }
 	
 
 public:

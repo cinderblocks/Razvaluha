@@ -1149,6 +1149,7 @@ LLSpatialPartition* LLDrawable::getSpatialPartition()
 		//must be an active volume
 		if (!mSpatialBridge)
 		{
+			// Spatial bridge ctors self-register...
 			if (mVObjp->isHUDAttachment())
 			{
 				setSpatialBridge(new LLHUDBridge(this, getRegion()));
@@ -1595,11 +1596,7 @@ void LLSpatialBridge::cleanupReferences()
 	LLDrawable::cleanupReferences();
 	if (mDrawable)
 	{
-		/*
-		
-		DON'T DO THIS -- this should happen through octree destruction
-
-		mDrawable->setSpatialGroup(NULL);
+		mDrawable->setGroup(NULL);
 		if (mDrawable->getVObj())
 		{
 			LLViewerObject::const_child_list_t& child_list = mDrawable->getVObj()->getChildren();
@@ -1607,17 +1604,18 @@ void LLSpatialBridge::cleanupReferences()
 				 iter != child_list.end(); iter++)
 			{
 				LLViewerObject* child = *iter;
-				LLDrawable* drawable = child->mDrawable;					
+				LLDrawable* drawable = child->mDrawable;
 				if (drawable)
 				{
-					drawable->setSpatialGroup(NULL);
+					drawable->setGroup(NULL);
 				}
 			}
-		}*/
+		}
 
-		LLDrawable* drawablep = mDrawable;
-		mDrawable = NULL;
-		drawablep->setSpatialBridge(NULL);
+		LLPointer<LLSpatialBridge> bridgep = mDrawable->getSpatialBridge();
+		mDrawable->setSpatialBridge(nullptr);
+		mDrawable = nullptr;
+		bridgep = nullptr;
 	}
 }
 

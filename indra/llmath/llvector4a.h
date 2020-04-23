@@ -346,6 +346,8 @@ inline std::ostream& operator<<(std::ostream& s, const LLVector4a& v)
 	return s;
 }
 
+#if !defined(LL_DEBUG)
 static_assert(std::is_trivial<LLVector4a>{}, "LLVector4a must be a trivial type");
 static_assert(std::is_standard_layout<LLVector4a>{}, "LLVector4a must be a standard layout type");
+#endif
 #endif

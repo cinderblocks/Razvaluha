@@ -1,6 +1,6 @@
 # -*- cmake -*-
 
-project(llimagej2coj)
+project(llimagej2coj LANGUAGES CXX)
 
 include(00-Common)
 include(LLCommon)
@@ -43,8 +43,8 @@ add_library (llimagej2coj ${llimagej2coj_SOURCE_FILES})
 
 target_link_libraries(
     llimagej2coj
-    PUBLIC
     llcommon
     ${OPENJPEG_LIBRARIES}
+    fmt::fmt
     )
 

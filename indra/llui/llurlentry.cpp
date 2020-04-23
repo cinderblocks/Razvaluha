@@ -589,7 +589,7 @@ void LLUrlEntryAgent::onAvatarNameCache(const LLUUID& id,
 	}
 	mAvatarNameCacheConnections.erase(range.first, range.second);
 
-	std::string label = av_name.getCompleteName();
+	std::string label = av_name.getNSName();
 
 	// received the agent name from the server - tell our observers
 	callObservers(id.asString(), label, mIcon);
@@ -667,7 +667,7 @@ std::string LLUrlEntryAgent::getLabel(const std::string &url, const LLUrlLabelCa
 	LLAvatarName av_name;
 	if (LLAvatarNameCache::get(agent_id, &av_name))
 	{
-		std::string label = av_name.getCompleteName();
+		std::string label = av_name.getNSName();
 
 		// handle suffixes like /mute or /offerteleport
 		label = localize_slapp_label(url, label);
@@ -1576,7 +1576,7 @@ std::string LLUrlEntryJira::getUrl(const std::string &url) const
 		(url.find("SV") != std::string::npos) ?
 			"https://singularityviewer.atlassian.net/browse/%1%" :
 		(url.find("FIRE") != std::string::npos) ?
-			"http://jira.phoenixviewer.com/browse/%1%" :
+			"https://jira.firestormviewer.com/browse/%1%" :
 		"http://jira.secondlife.com/browse/%1%"
 	) % url).str();
 }

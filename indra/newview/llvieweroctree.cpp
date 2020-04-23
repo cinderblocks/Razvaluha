@@ -278,11 +278,10 @@ void LLViewerOctreeEntry::removeData(LLViewerOctreeEntryData* data)
 
 	mData[data->getDataType()] = NULL;
 	
-	if(mGroup != NULL && !mData[LLDRAWABLE])
+	if(!mGroup.isNull() && !mData[LLDRAWABLE])
 	{
-		LLViewerOctreeGroup* group = mGroup;
+		mGroup->removeFromGroup(data);
 		mGroup = NULL;
-		group->removeFromGroup(data);
 
 		llassert(mBinIndex == -1);				
 	}
@@ -396,7 +395,7 @@ void LLViewerOctreeEntryData::shift(const LLVector4a &shift_vector)
 
 LLViewerOctreeGroup* LLViewerOctreeEntryData::getGroup()const        
 {
-	return mEntry.notNull() ? mEntry->mGroup : NULL;
+	return mEntry.notNull() ? mEntry->mGroup : LLPointer<LLViewerOctreeGroup>();
 }
 
 const LLVector4a& LLViewerOctreeEntryData::getPositionGroup() const  
@@ -474,6 +473,11 @@ LLViewerOctreeGroup::LLViewerOctreeGroup(OctreeNode* node)
 	mBounds[1] = node->getSize();
 
 	mOctreeNode->addListener(this);
+
+	for (U32 i = 0; i < sizeof(mVisible) / sizeof(mVisible[0]); i++)
+	{
+		mVisible[i] = 0;
+	}
 }
 
 bool LLViewerOctreeGroup::hasElement(LLViewerOctreeEntryData* data) 
@@ -637,17 +641,6 @@ void LLViewerOctreeGroup::handleDestruction(const TreeNode* node)
 		}
 	}
 	mOctreeNode = NULL;
-}
-	
-//virtual 
-void LLViewerOctreeGroup::handleStateChange(const TreeNode* node)
-{
-	//drop bounding box upon state change
-	if (mOctreeNode != node)
-	{
-		mOctreeNode = (OctreeNode*) node;
-	}
-	unbound();
 }
 	
 //virtual 
@@ -818,7 +811,7 @@ U32 LLOcclusionCullingGroup::getNewOcclusionQueryObjectName()
 	return sQueryPool.allocate();
 }
 
-void LLOcclusionCullingGroup::releaseOcclusionQueryObjectName(GLuint name)
+void LLOcclusionCullingGroup::releaseOcclusionQueryObjectName(U32 name)
 {
 	sQueryPool.release(name);
 }
@@ -858,10 +851,12 @@ public:
 };
 
 
-LLOcclusionCullingGroup::LLOcclusionCullingGroup(OctreeNode* node, LLViewerOctreePartition* part) : 
+LLOcclusionCullingGroup::LLOcclusionCullingGroup(OctreeNode* node, LLSpatialPartition* part) :
 	LLViewerOctreeGroup(node),
 	mSpatialPartition(part)
 {
+	llassert(part);
+	mSpatialPartition->mGroups.push_back(this);
 	part->mLODSeed = (part->mLODSeed+1)%part->mLODPeriod;
 	mLODHash = part->mLODSeed;
 
@@ -879,12 +874,21 @@ LLOcclusionCullingGroup::LLOcclusionCullingGroup(OctreeNode* node, LLViewerOctre
 
 LLOcclusionCullingGroup::~LLOcclusionCullingGroup()
 {
+	if (mSpatialPartition)
+	{
+		auto it = std::find_if(mSpatialPartition->mGroups.begin(), mSpatialPartition->mGroups.end(), [this](LLOcclusionCullingGroup* rhs) {return rhs == this; });
+		llassert_always(it != mSpatialPartition->mGroups.end());
+		if (it != mSpatialPartition->mGroups.end())
+		{
+			mSpatialPartition->mGroups.erase(it);
+		}
+	}
 	releaseOcclusionQueryObjectNames();
 }
 
 BOOL LLOcclusionCullingGroup::needsUpdate()
 {
-	return (LLDrawable::getCurrentFrame() % mSpatialPartition->mLODPeriod == mLODHash) ? TRUE : FALSE;
+	return mSpatialPartition && (LLDrawable::getCurrentFrame() % mSpatialPartition->mLODPeriod == mLODHash) ? TRUE : FALSE;
 }
 
 BOOL LLOcclusionCullingGroup::isRecentlyVisible() const
@@ -1044,7 +1048,7 @@ BOOL LLOcclusionCullingGroup::earlyFail(LLCamera* camera, const LLVector4a* boun
 	LLVector4a fudge(vel*2.f);
 
 	const LLVector4a& c = bounds[0];
-	static LLVector4a r;
+	LLVector4a r;
 	r.setAdd(bounds[1], fudge);
 
 	/*if (r.magVecSquared() > 1024.0*1024.0)
@@ -1083,6 +1087,10 @@ U32 LLOcclusionCullingGroup::getLastOcclusionIssuedTime()
 void LLOcclusionCullingGroup::checkOcclusion()
 {
 #ifndef LL_GL_CORE
+	if (mSpatialPartition == nullptr)
+	{
+		return;
+	}
 	if (LLPipeline::sUseOcclusion > 1)
 	{
 		LL_RECORD_BLOCK_TIME(FTM_OCCLUSION_READBACK);
@@ -1184,6 +1192,10 @@ static LLTrace::BlockTimerStatHandle FTM_OCCLUSION_DRAW("Draw");
 
 void LLOcclusionCullingGroup::doOcclusion(LLCamera* camera, const LLVector4a* shift)
 {
+	if (mSpatialPartition == nullptr)
+	{
+		return;
+	}
 	LLGLDisable<GL_STENCIL_TEST> stencil;
 	if (mSpatialPartition->isOcclusionEnabled() && LLPipeline::sUseOcclusion > 1)
 	{
@@ -1251,6 +1263,11 @@ void LLOcclusionCullingGroup::doOcclusion(LLCamera* camera, const LLVector4a* sh
 						//static LLVector4a fudge(SG_OCCLUSION_FUDGE);
 						static LLCachedControl<F32> vel("SHOcclusionFudge",SG_OCCLUSION_FUDGE);
 						LLVector4a fudge(SG_OCCLUSION_FUDGE);
+						if (LLDrawPool::POOL_WATER == mSpatialPartition->mDrawableType)
+						{
+							fudge.getF32ptr()[2] = 1.f;
+						}
+
 						static LLVector4a fudged_bounds;
 						fudged_bounds.setAdd(fudge, bounds[1]);
 						shader->uniform3fv(LLShaderMgr::BOX_SIZE, 1, fudged_bounds.getF32ptr());
@@ -1324,6 +1341,11 @@ LLViewerOctreePartition::LLViewerOctreePartition() :
 	
 LLViewerOctreePartition::~LLViewerOctreePartition()
 {
+	llassert(mGroups.empty());
+	for (auto& entry : mGroups)
+	{
+		entry->mSpatialPartition = nullptr;
+	}
 	delete mOctree;
 	mOctree = NULL;
 }

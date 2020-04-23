@@ -111,13 +111,25 @@ typedef std::map<std::string, std::string> CapabilityMap;
 
 static void log_capabilities(const CapabilityMap &capmap);
 
+namespace
+{
+
+void newRegionEntry(LLViewerRegion& region)
+{
+    LL_INFOS("LLViewerRegion") << "Entering region [" << region.getName() << "]" << LL_ENDL;
+    gDebugInfo["CurrentRegion"] = region.getName();
+    LLAppViewer::instance()->writeDebugInfo();
+}
+
+} // anonymous namespace
+
 // support for secondlife:///app/region/{REGION} SLapps
 // N.B. this is defined to work exactly like the classic secondlife://{REGION}
 // However, the later syntax cannot support spaces in the region name because
 // spaces (and %20 chars) are illegal in the hostname of an http URL. Some
 // browsers let you get away with this, but some do not (such as Qt's Webkit).
 // Hence we introduced the newer secondlife:///app/region alternative.
-class LLRegionHandler : public LLCommandHandler
+class LLRegionHandler final : public LLCommandHandler
 {
 public:
 	// requests will be throttled from a non-trusted browser
@@ -155,6 +167,7 @@ class LLViewerRegionImpl
 {
 public:
 	LLViewerRegionImpl(LLViewerRegion * region, LLHost const & host) :
+        mLandp(nullptr),
 		mHost(host),
 		mCompositionp(nullptr),
 		mEventPoll(nullptr),
@@ -301,7 +314,7 @@ void LLViewerRegionImpl::requestBaseCapabilitiesCoro(U64 regionHandle)
         // remove the http_result from the llsd
         result.erase("http_result");
 
-	    for (LLSD::map_const_iterator iter = result.beginMap(); iter != result.endMap(); ++iter)
+	    for (LLSD::map_const_iterator iter = result.beginMap(), end = result.endMap(); iter != end; ++iter)
         {
             regionp->setCapability(iter->first, iter->second);
 
@@ -387,7 +400,7 @@ void LLViewerRegionImpl::requestBaseCapabilitiesCompleteCoro(U64 regionHandle)
         // remove the http_result from the llsd
         result.erase("http_result");
 
-	    for (LLSD::map_const_iterator iter = result.beginMap(); iter != result.endMap(); ++iter)
+	    for (LLSD::map_const_iterator iter = result.beginMap(), end = result.endMap(); iter != end; ++iter)
 		{
 			regionp->setCapabilityDebug(iter->first, iter->second);	
 			//LL_INFOS()<<"BaseCapabilitiesCompleteTracker New Caps "<<iter->first<<" "<< iter->second<<LL_ENDL;
@@ -1010,7 +1023,7 @@ std::string LLViewerRegion::getAccessIcon(U8 sim_access)
 
 	case SIM_ACCESS_MIN:
 	default:
-		return "";
+		return LLStringUtil::null;
 	}
 }
 
@@ -1123,6 +1136,7 @@ void LLViewerRegion::forceUpdate()
 void LLViewerRegion::connectNeighbor(LLViewerRegion *neighborp, U32 direction)
 {
 	mImpl->mLandp->connectNeighbor(neighborp->mImpl->mLandp, direction);
+	neighborp->mImpl->mLandp->connectNeighbor(mImpl->mLandp, gDirOpposite[direction]);
 #if ENABLE_CLASSIC_CLOUDS
 	mCloudLayer.connectNeighbor(&(neighborp->mCloudLayer), direction);
 #endif
@@ -1144,8 +1158,6 @@ LLVLComposition * LLViewerRegion::getComposition() const
 
 F32 LLViewerRegion::getCompositionXY(const S32 x, const S32 y) const
 {
-// Singu Note: The Aurora Sim patches here were too many to read the code itself, mWidth and getWidth() (-1) replace 256 (255) in this function, only the first and last tags remain
-// <FS:CR> Aurora Sim
 	if (x >= mWidth)
 	{
 		if (y >= mWidth)
@@ -1216,7 +1228,6 @@ F32 LLViewerRegion::getCompositionXY(const S32 x, const S32 y) const
 			// the delta.
 			F32 our_comp = getComposition()->getValueScaled((F32)x, mWidth-1.f);
 			F32 adj_comp = regionp->getComposition()->getValueScaled((F32)x, y - regionp->getWidth());
-// <FS:CR> Aurora Sim
 			while (llabs(our_comp - adj_comp) >= 1.f)
 			{
 				if (our_comp > adj_comp)
@@ -1656,7 +1667,6 @@ LLViewerRegion::eCacheUpdateResult LLViewerRegion::cacheFullUpdate(LLViewerObjec
 	}
 
 	// we haven't seen this object before
-
 	// Create new entry and add to map
 	eCacheUpdateResult result = CACHE_UPDATE_ADDED;
 	if (mImpl->mCacheMap.size() > MAX_OBJECT_CACHE_ENTRIES)
@@ -1813,10 +1823,9 @@ void LLViewerRegion::dumpCache()
 		change_bin[i] = 0;
 	}
 
-	LLVOCacheEntry *entry;
-	for(LLVOCacheEntry::vocache_entry_map_t::iterator iter = mImpl->mCacheMap.begin(); iter != mImpl->mCacheMap.end(); ++iter)
+	for (auto& iter : mImpl->mCacheMap)
 	{
-		entry = iter->second;
+		LLVOCacheEntry *entry = iter.second;
 
 		S32 hits = entry->getHitCount();
 		S32 changes = entry->getCRCChangeCount();
@@ -2025,6 +2034,8 @@ void LLViewerRegion::unpackRegionHandshake()
 void LLViewerRegionImpl::buildCapabilityNames(LLSD& capabilityNames)
 {
 	capabilityNames.append("AbuseCategories");
+	capabilityNames.append("AcceptFriendship");
+	capabilityNames.append("AcceptGroupInvite"); // ReadOfflineMsgs recieved messages only!!!
 	capabilityNames.append("AgentPreferences");
 	capabilityNames.append("AgentState");
 	capabilityNames.append("AttachmentResources");
@@ -2035,6 +2046,8 @@ void LLViewerRegionImpl::buildCapabilityNames(LLSD& capabilityNames)
 	capabilityNames.append("CopyInventoryFromNotecard");
 	capabilityNames.append("CreateInventoryCategory");
 	capabilityNames.append("CustomMenuAction");
+	capabilityNames.append("DeclineFriendship");
+	capabilityNames.append("DeclineGroupInvite"); // ReadOfflineMsgs recieved messages only!!!
 	capabilityNames.append("DispatchRegionInfo");
 	capabilityNames.append("DirectDelivery");
 	capabilityNames.append("EnvironmentSettings");
@@ -2121,6 +2134,7 @@ void LLViewerRegionImpl::buildCapabilityNames(LLSD& capabilityNames)
 	capabilityNames.append("UploadBakedTexture");
     capabilityNames.append("UserInfo");
 	capabilityNames.append("ViewerAsset"); 
+	capabilityNames.append("ViewerBenefits");
 	capabilityNames.append("ViewerMetrics");
 	capabilityNames.append("ViewerStartAuction");
 	capabilityNames.append("ViewerStats");
@@ -2137,6 +2151,9 @@ void LLViewerRegion::setSeedCapability(const std::string& url)
 		setCapabilityDebug("Seed", url);
 		LL_WARNS("CrossingCaps") <<  "Received duplicate seed capability, posting to seed " <<
 				url	<< LL_ENDL;
+
+		// record that we just entered a new region
+		newRegionEntry(*this);
 
 		//Instead of just returning we build up a second set of seed caps and compare them 
 		//to the "original" seed cap received and determine why there is problem!
@@ -2329,9 +2346,9 @@ bool LLViewerRegion::isCapURLMapped(const std::string &cap_url)
 std::set<std::string> LLViewerRegion::getAllCaps()
 {
 	std::set<std::string> url_capnames;
-	for(CapabilityMap::iterator iter=mImpl->mCapabilities.begin(); iter!=mImpl->mCapabilities.end(); ++iter)
+	for (auto& capability : mImpl->mCapabilities)
 	{
-		url_capnames.insert(iter->first);
+		url_capnames.insert(capability.first);
 	}
 	return url_capnames;
 }

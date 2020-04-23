@@ -18,8 +18,6 @@ include(FMODSTUDIO)
 include(GeneratePrecompiledHeader)
 include(GLOD)
 include(Hunspell)
-include(Json)
-include(LibXML2)
 include(LLAddBuildTest)
 include(LLAppearance)
 include(LLDarwin)
@@ -65,7 +63,6 @@ endif(USE_CRASHPAD)
 include_directories(
     ${DBUSGLIB_INCLUDE_DIRS}
     ${ZLIB_INCLUDE_DIRS}
-    ${JSON_INCLUDE_DIR}
     ${GLOD_INCLUDE_DIR}
     ${LLDARWIN_INCLUDE_DIRS}
     ${LIBXML2_INCLUDES}
@@ -106,6 +103,7 @@ set(viewer_SOURCE_FILES
     aixmllindengenepool.cpp
     alfloaterregiontracker.cpp
     aoremotectrl.cpp
+    aosystem.cpp
     ascentfloatercontactgroups.cpp
     ascentkeyword.cpp
     ascentprefschat.cpp
@@ -132,6 +130,7 @@ set(viewer_SOURCE_FILES
     llaccountingcostmanager.cpp
     llagent.cpp
     llagentaccess.cpp
+    llagentbenefits.cpp
     llagentcamera.cpp
     llagentdata.cpp
     llagentlanguage.cpp
@@ -340,6 +339,7 @@ set(viewer_SOURCE_FILES
     llhudtext.cpp
     llhudview.cpp
     llimpanel.cpp
+    llimprocessing.cpp
     llimview.cpp
     llinventoryactions.cpp
     llinventorybridge.cpp
@@ -652,6 +652,8 @@ set(viewer_HEADER_FILES
     aixmllindengenepool.h
     alfloaterregiontracker.h
     aoremotectrl.h
+    aostate.h
+    aosystem.h
     ascentfloatercontactgroups.h
     ascentkeyword.h
     ascentprefschat.h
@@ -678,6 +680,7 @@ set(viewer_HEADER_FILES
     llaccountingcostmanager.h
     llagent.h
     llagentaccess.h
+    llagentbenefits.h
     llagentcamera.h
     llagentdata.h
     llagentlanguage.h
@@ -886,6 +889,7 @@ set(viewer_HEADER_FILES
     llhudtext.h
     llhudview.h
     llimpanel.h
+    llimprocessing.h
     llimview.h
     llinventorybridge.h
     llinventoryclipboard.h
@@ -1788,7 +1792,7 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${LLAPPEARANCE_LIBRARIES}
     absl::flat_hash_map
     absl::node_hash_map
-    ${FMT_LIBRARY}
+    nlohmann_json::nlohmann_json
     )
 
 if (LINUX)
@@ -1916,7 +1920,7 @@ if (DARWIN)
       ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
     )
 
-    add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin media_plugin_libvlc media_plugin_cef)
+  add_dependencies(${VIEWER_BINARY_NAME} AlchemyPlugin media_plugin_libvlc media_plugin_cef)
 
   if (ENABLE_SIGNING)
       set(SIGNING_SETTING "--signature=${SIGNING_IDENTITY}")

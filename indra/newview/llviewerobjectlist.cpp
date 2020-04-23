@@ -958,9 +958,9 @@ void LLViewerObjectList::fetchObjectCosts()
 void LLViewerObjectList::reportObjectCostFailure(LLSD &objectList)
 {
     // TODO*: No more hard coding
-    for (LLSD::array_iterator it = objectList.beginArray(); it != objectList.endArray(); ++it)
+    for (auto const& id : objectList.array())
     {
-        gObjectList.onObjectCostFetchFailure(it->asUUID());
+        gObjectList.onObjectCostFetchFailure(id.asUUID());
     }
 }
 
@@ -1094,9 +1094,9 @@ bool LLViewerObjectList::gotObjectPhysicsFlags(LLViewerObject* objectp)
 void LLViewerObjectList::reportPhysicsFlagFailure(LLSD &objectList)
 {
     // TODO*: No more hard coding
-    for (LLSD::array_iterator it = objectList.beginArray(); it != objectList.endArray(); ++it)
+    for (auto const& id : objectList.array())
     {
-        gObjectList.onPhysicsFlagsFetchFailure(it->asUUID());
+        gObjectList.onPhysicsFlagsFetchFailure(id.asUUID());
     }
 }
 

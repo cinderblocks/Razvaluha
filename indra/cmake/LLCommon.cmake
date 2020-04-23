@@ -31,6 +31,7 @@ set(LLCOMMON_LIBRARIES llcommon
     ${BOOST_SYSTEM_LIBRARY}
     absl::flat_hash_map
     absl::node_hash_map
+    fmt::fmt
     ${RT_LIBRARY}
     )
 

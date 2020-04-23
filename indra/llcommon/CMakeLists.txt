@@ -1,7 +1,7 @@
 
 # -*- cmake -*-
 
-project(llcommon)
+project(llcommon LANGUAGES CXX)
 
 include(00-Common)
 include(CXXFeatureDetection)
@@ -12,7 +12,6 @@ include(Linking)
 include(Boost)
 include(OpenSSL)
 include(LLSharedLibs)
-include(Json)
 include(Copy3rdPartyLibs)
 include(ZLIB)
 include(URIPARSER)
@@ -22,7 +21,6 @@ include_directories(
     ${LLCOMMON_INCLUDE_DIRS}
     ${LLDARWIN_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIRS}
-    ${JSON_INCLUDE_DIR}
     ${ZLIB_INCLUDE_DIRS}
     ${BREAKPAD_INCLUDE_DIRECTORIES}
     ${URIPARSER_INCLUDE_DIRS}
@@ -317,6 +315,10 @@ target_link_libraries(
     ${BOOST_SYSTEM_LIBRARY}
 
     ${URIPARSER_LIBRARY}
+    absl::flat_hash_map
+    absl::node_hash_map
+    fmt::fmt
+    nlohmann_json::nlohmann_json
     ${RT_LIBRARY}
     )
 

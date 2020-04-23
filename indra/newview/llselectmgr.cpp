@@ -37,7 +37,6 @@
 #include "llcachename.h"
 #include "llavatarnamecache.h"
 #include "lldbstrings.h"
-#include "lleconomy.h"
 #include "llgl.h"
 #include "llmediaentry.h"
 #include "llrender.h"
@@ -5473,6 +5472,7 @@ void LLSelectMgr::processObjectProperties(LLMessageSystem* msg, void** user_data
 			node->mInventorySerial = inv_serial;
 			node->mSitName.assign(sit_name);
 			node->mTouchName.assign(touch_name);
+			if (auto obj = node->getObject()) obj->mOwnerID = owner_id; // Singu Note: Try to get Owner whenever possible
 		}
 	}
 

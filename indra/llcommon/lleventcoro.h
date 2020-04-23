@@ -241,7 +241,7 @@ public:
         LLException(what),
         mData(data)
     {}
-    virtual ~LLErrorEvent() throw() {}
+    virtual ~LLErrorEvent() noexcept {}
 
     LLSD getData() const { return mData; }
 

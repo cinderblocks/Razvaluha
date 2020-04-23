@@ -963,6 +963,7 @@ void LLPipeline::refreshCachedSettings()
 	LLVOAvatar::sMaxVisible = (U32)gSavedSettings.getS32("RenderAvatarMaxVisible");
 	//LLPipeline::sDelayVBUpdate = gSavedSettings.getBOOL("RenderDelayVBUpdate");
 	gOctreeMaxCapacity = gSavedSettings.getU32("OctreeMaxNodeCapacity");
+	gOctreeMinSize = gSavedSettings.getF32("OctreeMinimumNodeSize");
 	gOctreeReserveCapacity = llmin(gSavedSettings.getU32("OctreeReserveNodeCapacity"), U32(512));
 	LLPipeline::sDynamicLOD = gSavedSettings.getBOOL("RenderDynamicLOD");
 	LLPipeline::sRenderBump = gSavedSettings.getBOOL("RenderObjectBump");
@@ -1156,7 +1157,7 @@ void LLPipeline::createGLBuffers()
 	{
 		if (!mNoiseMap)
 		{
-			LLVector3 noise[NOISE_MAP_RES*NOISE_MAP_RES];
+			std::array<LLVector3, NOISE_MAP_RES * NOISE_MAP_RES> noise;
 
 			F32 scaler = gSavedSettings.getF32("RenderDeferredNoise")/100.f;
 			for (auto& val : noise)
@@ -1169,7 +1170,7 @@ void LLPipeline::createGLBuffers()
 			mNoiseMap = LLImageGL::createTextureName();
 			
 			gGL.getTexUnit(0)->bindManual(LLTexUnit::TT_TEXTURE, mNoiseMap->getTexName());
-			LLImageGL::setManualImage(LLTexUnit::getInternalType(LLTexUnit::TT_TEXTURE), 0, GL_RGB16F, NOISE_MAP_RES, NOISE_MAP_RES, GL_RGB, GL_FLOAT, noise);
+			LLImageGL::setManualImage(LLTexUnit::getInternalType(LLTexUnit::TT_TEXTURE), 0, GL_RGB16F, NOISE_MAP_RES, NOISE_MAP_RES, GL_RGB, GL_FLOAT, noise.data());
 			gGL.getTexUnit(0)->setTextureFilteringOption(LLTexUnit::TFO_POINT);
 		}
 
@@ -2266,8 +2267,7 @@ void LLPipeline::updateCull(LLCamera& camera, LLCullResult& result, S32 water_cl
 	BOOL to_texture =	LLPipeline::sUseOcclusion > 1 &&
 						!hasRenderType(LLPipeline::RENDER_TYPE_HUD) && 
 						LLViewerCamera::sCurCameraID == LLViewerCamera::CAMERA_WORLD &&
-						LLGLSLShader::sNoFixedFunction &&
-						sRenderGlow;
+						LLGLSLShader::sNoFixedFunction;
 
 	if (to_texture)
 	{
@@ -2661,6 +2661,9 @@ void LLPipeline::clearRebuildGroups()
 		 iter != mGroupQ2.end(); ++iter)
 	{
 		LLSpatialGroup* group = *iter;
+		if (group == nullptr) {
+			LL_WARNS() << "Null spatial group in Pipeline::mGroupQ2." << LL_ENDL;
+		}
 
 		// If the group contains HUD objects, save the group
 		if (group->isHUDGroup())
@@ -3447,8 +3450,9 @@ void forAllDrawables(LLCullResult::sg_iterator begin,
 {
 	for (LLCullResult::sg_iterator i = begin; i != end; ++i)
 	{
-		OctreeGuard guard((*i)->getOctreeNode());
-		for (LLSpatialGroup::element_iter j = (*i)->getDataBegin(); j != (*i)->getDataEnd(); ++j)
+		LLSpatialGroup* group = (*i).get();
+		OctreeGuard guard(group->getOctreeNode());
+		for (LLSpatialGroup::element_iter j = group->getDataBegin(); j != group->getDataEnd(); ++j)
 		{
 			if((*j)->hasDrawable())
 			{

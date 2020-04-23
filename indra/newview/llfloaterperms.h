@@ -43,19 +43,19 @@ class LLViewerRegion;
 namespace LLFloaterPerms
 {
 	// Convenience methods to get current permission preference bitfields from saved settings:
-	U32 getEveryonePerms(std::string prefix=""); // prefix + "EveryoneCopy"
-	U32 getGroupPerms(std::string prefix=""); // prefix + "ShareWithGroup"
-	U32 getNextOwnerPerms(std::string prefix=""); // bitfield for prefix + "NextOwner" + "Copy", "Modify", and "Transfer"
-	U32 getNextOwnerPermsInverted(std::string prefix="");
+	U32 getEveryonePerms(const std::string& prefix = LLStringUtil::null); // prefix + "EveryoneCopy"
+	U32 getGroupPerms(const std::string& prefix = LLStringUtil::null); // prefix + "ShareWithGroup"
+	U32 getNextOwnerPerms(const std::string& prefix = LLStringUtil::null); // bitfield for prefix + "NextOwner" + "Copy", "Modify", and "Transfer"
+	U32 getNextOwnerPermsInverted(const std::string& prefix = LLStringUtil::null);
 }
 
-class LLFloaterPermsDefault : public LLFloater, public LLFloaterSingleton<LLFloaterPermsDefault>
+class LLFloaterPermsDefault final : public LLFloater, public LLFloaterSingleton<LLFloaterPermsDefault>
 {
 	friend class LLUISingleton<LLFloaterPermsDefault, VisibilityPolicy<LLFloater> >;
 	
 public:
-	/*virtual*/ void onClose(bool app_quitting = false);
-	/*virtual*/ BOOL postBuild();
+	/*virtual*/ void onClose(bool app_quitting = false) override;
+	BOOL postBuild() override;
 	void initCheckboxes(bool export_support, const std::string& type);
 	void ok();
 	void cancel();
@@ -67,7 +67,7 @@ public:
 
 private:
 	LLFloaterPermsDefault(const LLSD& seed);
-	void refresh();
+	void reload();
 
 	static const std::array<std::string, 6> sCategoryNames;
     static void updateCapCoro(std::string url);

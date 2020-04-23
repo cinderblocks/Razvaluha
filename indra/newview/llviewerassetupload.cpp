@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
 * @file llviewerassetupload.cpp
 * @author optional
@@ -39,7 +37,6 @@
 #include "llagent.h"
 #include "llappviewer.h"
 #include "llbvhloader.h"
-#include "lleconomy.h"
 //#include "llfloaterreg.h"
 #include "llfloaterbuycurrency.h"
 #include "llfloatersnapshot.h"
@@ -175,22 +172,6 @@ void LLResourceUploadInfo::logPreparedUpload()
         "Folder: " << mFolderId << std::endl <<
         "Asset Type: " << LLAssetType::lookup(mAssetType) << LL_ENDL;
 }
-
-S32 LLResourceUploadInfo::getEconomyUploadCost()
-{
-    // Update L$ and ownership credit information
-    // since it probably changed on the server
-    if (getAssetType() == LLAssetType::AT_TEXTURE ||
-        getAssetType() == LLAssetType::AT_SOUND ||
-        getAssetType() == LLAssetType::AT_ANIMATION ||
-        getAssetType() == LLAssetType::AT_MESH)
-    {
-        return LLGlobalEconomy::instance().getPriceUpload();
-    }
-
-    return 0;
-}
-
 
 LLUUID LLResourceUploadInfo::finishUpload(LLSD &result)
 {
@@ -342,6 +323,37 @@ std::string LLResourceUploadInfo::getDisplayName() const
 {
     return (mName.empty()) ? mAssetId.asString() : mName;
 };
+
+bool LLResourceUploadInfo::findAssetTypeOfExtension(const std::string& exten, LLAssetType::EType& asset_type)
+{
+	U32 codec;
+	return findAssetTypeAndCodecOfExtension(exten, asset_type, codec, false);
+}
+
+// static
+bool LLResourceUploadInfo::findAssetTypeAndCodecOfExtension(const std::string& exten, LLAssetType::EType& asset_type, U32& codec, bool bulk_upload)
+{
+	bool succ = false;
+
+    codec = LLImageBase::getCodecFromExtension(exten);
+	if (codec != IMG_CODEC_INVALID)
+	{
+		asset_type = LLAssetType::AT_TEXTURE; 
+		succ = true;
+	}
+	else if (exten == "wav" || exten == "ogg")
+	{
+		asset_type = LLAssetType::AT_SOUND; 
+		succ = true;
+	}
+	else if (exten == "anim" || exten == "bvh" || exten == "animatn")
+	{
+		asset_type = LLAssetType::AT_ANIMATION; 
+		succ = true;
+	}
+
+	return succ;
+}
 
 //=========================================================================
 LLNewFileResourceUploadInfo::LLNewFileResourceUploadInfo(
@@ -830,7 +842,7 @@ void LLViewerAssetUpload::AssetInventoryUploadCoproc(LLCoreHttpUtil::HttpCorouti
             return;
         }
 
-        S32 uploadPrice = result["upload_price"].asInteger();//uploadInfo->getEconomyUploadCost();
+        S32 uploadPrice = result["upload_price"].asInteger();
 
         if (uploadPrice > 0)
         {
@@ -925,15 +937,6 @@ void LLViewerAssetUpload::HandleUploadError(LLCore::HttpStatus status, LLSD &res
             reason = LLTrans::getString("AssetUploadRequestInvalid");
         }
     }
-
-    // deal with L$ errors
-    if (reason == "insufficient funds")
-    {
-	    S32 price = LLGlobalEconomy::getInstance()->getPriceUpload();
-	    LLFloaterBuyCurrency::buyCurrency("Uploading costs", price);
-	    return;
-    }
-
 
     LLSD args;
     if(label == "ErrorMessage")
