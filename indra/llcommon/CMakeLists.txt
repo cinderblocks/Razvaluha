@@ -319,6 +319,7 @@ target_link_libraries(
     absl::node_hash_map
     fmt::fmt
     nlohmann_json::nlohmann_json
+    absl::strings
     ${RT_LIBRARY}
     )
 

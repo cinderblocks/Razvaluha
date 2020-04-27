@@ -7360,7 +7360,7 @@ void onCovenantLoadComplete(LLVFS* vfs,
 		file.read((U8*)&buffer[0], file_length);
 		// put a EOS at the end
 		buffer[file_length] = '\0';
-		
+
 		if ((file_length > 19) && !strncmp(&buffer[0], "Linden text version", 19))
 		{
 			LLViewerTextEditor * editor = new LLViewerTextEditor(std::string("temp"), LLRect(0,0,0,0), file_length+1);

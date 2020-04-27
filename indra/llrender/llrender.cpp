@@ -2535,7 +2535,8 @@ void LLRender::vertexBatchPreTransformed(LLVector4a* verts, S32 vert_count)
 		mColorsp[mCount] = mColorsp[mCount-1];
 	}
 
-	mVerticesp[mCount] = mVerticesp[mCount-1];
+	if (mCount > 0) // ND: Guard against crashes if mCount is zero, yes it can happen
+		mVerticesp[mCount] = mVerticesp[mCount-1];
 
 	mPrimitiveReset = false;
 }
@@ -2571,9 +2572,12 @@ void LLRender::vertexBatchPreTransformed(LLVector4a* verts, LLVector2* uvs, S32 
 		mCount++;
 		mColorsp[mCount] = mColorsp[mCount-1];
 	}
-	
-	mVerticesp[mCount] = mVerticesp[mCount-1];
-	mTexcoordsp[mCount] = mTexcoordsp[mCount-1];
+
+	if (mCount > 0)
+	{
+		mVerticesp[mCount] = mVerticesp[mCount - 1];
+		mTexcoordsp[mCount] = mTexcoordsp[mCount - 1];
+	}
 
 	mPrimitiveReset = false;
 }
@@ -2607,9 +2611,12 @@ void LLRender::vertexBatchPreTransformed(LLVector4a* verts, LLVector2* uvs, LLCo
 	mColorsp.copyArray(mCount, colors, vert_count);
 	mCount += vert_count;
 
-	mVerticesp[mCount] = mVerticesp[mCount-1];
-	mTexcoordsp[mCount] = mTexcoordsp[mCount-1];
-	mColorsp[mCount] = mColorsp[mCount-1];
+	if (mCount > 0)
+	{
+		mVerticesp[mCount] = mVerticesp[mCount - 1];
+		mTexcoordsp[mCount] = mTexcoordsp[mCount - 1];
+		mColorsp[mCount] = mColorsp[mCount - 1];
+	}
 
 	mPrimitiveReset = false;
 }

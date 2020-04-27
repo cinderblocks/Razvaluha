@@ -37,6 +37,16 @@
 #pragma clang diagnostic pop
 #endif
 #include <string>
+
+#if __cplusplus < 201606
+#include <absl/strings/string_view.h>
+namespace std {
+    typedef absl::string_view string_view;
+}
+#else
+    #include <string_view>
+#endif
+
 #include <cstdio>
 //#include <locale>
 #include <iomanip>
