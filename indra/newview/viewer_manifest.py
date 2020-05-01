@@ -1014,6 +1014,9 @@ class DarwinManifest(ViewerManifest):
 
                     # copy DullahanHelper.app
                     self.path2basename(relpkgdir, 'DullahanHelper.app')
+                    self.path2basename(relpkgdir, 'DullahanHelper (GPU).app')
+                    self.path2basename(relpkgdir, 'DullahanHelper (Plugin).app')
+                    self.path2basename(relpkgdir, 'DullahanHelper (Renderer).app')
 
                     # and fix that up with a Frameworks/CEF symlink too
                     with self.prefix(dst=os.path.join(
@@ -1025,6 +1028,24 @@ class DarwinManifest(ViewerManifest):
                         # symlink, don't let relsymlinkf() resolve --
                         # explicitly call relpath(symlink=True) and
                         # create that symlink here.
+                        DullahanHelper_framework = \
+                            self.symlinkf(self.relpath(SLPlugin_framework, symlink=True),
+                                          catch=False)
+
+                    with self.prefix(dst=os.path.join(
+                        'DullahanHelper (GPU).app', 'Contents', 'Frameworks')):
+                        DullahanHelper_framework = \
+                            self.symlinkf(self.relpath(SLPlugin_framework, symlink=True),
+                                          catch=False)
+
+                    with self.prefix(dst=os.path.join(
+                        'DullahanHelper (Plugin).app', 'Contents', 'Frameworks')):
+                        DullahanHelper_framework = \
+                            self.symlinkf(self.relpath(SLPlugin_framework, symlink=True),
+                                          catch=False)
+
+                    with self.prefix(dst=os.path.join(
+                        'DullahanHelper (Renderer).app', 'Contents', 'Frameworks')):
                         DullahanHelper_framework = \
                             self.symlinkf(self.relpath(SLPlugin_framework, symlink=True),
                                           catch=False)
@@ -1052,6 +1073,36 @@ class DarwinManifest(ViewerManifest):
                         self.run_command(
                             change_command +
                             [newpath, self.dst_path_of('DullahanHelper')])
+
+                    with self.prefix(dst=os.path.join(
+                        'DullahanHelper (GPU).app', 'Contents', 'MacOS')):
+                        newpath = os.path.join(
+                            '@executable_path',
+                            self.relpath(DullahanHelper_framework, symlink=True),
+                            frameworkname)
+                        self.run_command(
+                            change_command +
+                            [newpath, self.dst_path_of('DullahanHelper (GPU)')])
+
+                    with self.prefix(dst=os.path.join(
+                        'DullahanHelper (Plugin).app', 'Contents', 'MacOS')):
+                        newpath = os.path.join(
+                            '@executable_path',
+                            self.relpath(DullahanHelper_framework, symlink=True),
+                            frameworkname)
+                        self.run_command(
+                            change_command +
+                            [newpath, self.dst_path_of('DullahanHelper (Plugin)')])
+
+                    with self.prefix(dst=os.path.join(
+                        'DullahanHelper (Renderer).app', 'Contents', 'MacOS')):
+                        newpath = os.path.join(
+                            '@executable_path',
+                            self.relpath(DullahanHelper_framework, symlink=True),
+                            frameworkname)
+                        self.run_command(
+                            change_command +
+                            [newpath, self.dst_path_of('DullahanHelper (Renderer)')])
 
                 # SLPlugin plugins
                 with self.prefix(dst="llplugin"):
