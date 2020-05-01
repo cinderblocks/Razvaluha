@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file   llcoros.cpp
  * @author Nat Goodspeed
@@ -36,6 +34,7 @@
 // std headers
 // external library headers
 // other Linden headers
+#include "lltimer.h"
 #include "llevents.h"
 #include "llerror.h"
 #include "stringize.h"
@@ -156,7 +155,7 @@ LLCoros::LLCoros():
     // Previously we used
     // boost::context::guarded_stack_allocator::default_stacksize();
     // empirically this is 64KB on Windows and Linux. Try quadrupling.
-#if defined(LL_DARWIN) || defined(_WIN64) || defined(__amd64__) || defined(__x86_64__)
+#if ADDRESS_SIZE == 64
     mStackSize(512*1024)
 #else
     mStackSize(256*1024)
@@ -172,7 +171,7 @@ bool LLCoros::cleanup(const LLSD&)
     static std::string previousName;
     static int previousCount = 0;
     // Walk the mCoros map, checking and removing completed coroutines.
-    for (CoroMap::iterator mi(mCoros.begin()), mend(mCoros.end()); mi != mend; )
+    for (auto mi(mCoros.begin()), mend(mCoros.end()); mi != mend; )
     {
         // Has this coroutine exited (normal return, exception, exit() call)
         // since last tick?
@@ -228,7 +227,7 @@ std::string LLCoros::generateDistinctName(const std::string& prefix) const
     // Find the lowest numeric suffix that doesn't collide with an existing
     // entry. Start with 2 just to make it more intuitive for any interested
     // parties: e.g. "joe", "joe2", "joe3"...
-    for (int i = 2; ; name = STRINGIZE(prefix << i++))
+    for (auto i = 2; ; name = STRINGIZE(prefix << i++))
     {
         if (mCoros.find(name) == mCoros.end())
         {
@@ -258,12 +257,12 @@ std::string LLCoros::generateDistinctName(const std::string& prefix) const
 
 bool LLCoros::kill(const std::string& name)
 {
-    CoroMap::iterator found = mCoros.find(name);
+    auto found = mCoros.find(name);
     if (found == mCoros.end())
     {
         return false;
     }
-    // Because this is a boost::ptr_map, erasing the map entry also destroys
+    // Because this is a unique_ptr, erasing the map entry also destroys
     // the referenced heap object, in this case the boost::coroutine object,
     // which will terminate the coroutine.
     mCoros.erase(found);
@@ -279,6 +278,23 @@ void LLCoros::setStackSize(S32 stacksize)
 {
     LL_DEBUGS("LLCoros") << "Setting coroutine stack size to " << stacksize << LL_ENDL;
     mStackSize = stacksize;
+}
+
+void LLCoros::printActiveCoroutines()
+{
+    LL_INFOS("LLCoros") << "Number of active coroutines: " << (S32)mCoros.size() << LL_ENDL;
+    if (!mCoros.empty())
+    {
+        LL_INFOS("LLCoros") << "-------------- List of active coroutines ------------";
+        F64 time = LLTimer::getTotalSeconds();
+        for (auto& coro : mCoros)
+        {
+            F64 life_time = time - coro.second->mCreationTime;
+            LL_CONT << LL_NEWLINE << "Name: " << coro.first << " life: " << life_time;
+        }
+        LL_CONT << LL_ENDL;
+        LL_INFOS("LLCoros") << "-----------------------------------------------------" << LL_ENDL;
+    }
 }
 
 #if LL_WINDOWS
@@ -311,7 +327,7 @@ void LLCoros::winlevel(const callable_t& callable)
         // Note: it might be better to use _se_set_translator
         // if you want exception to inherit full callstack
         char integer_string[32];
-        sprintf(integer_string, "SEH, code: %lu\n", GetExceptionCode());
+        snprintf(integer_string, sizeof(integer_string), "SEH, code: %lu\n", GetExceptionCode());
         throw std::exception(integer_string);
     }
 }
@@ -328,7 +344,7 @@ void LLCoros::toplevel(coro::self& self, CoroData* data, const callable_t& calla
     // run the code the caller actually wants in the coroutine
     try
     {
-#if LL_WINDOWS
+#if LL_WINDOWS && LL_RELEASE_FOR_DOWNLOAD
         winlevel(callable);
 #else
         callable();
@@ -360,12 +376,12 @@ void LLCoros::toplevel(coro::self& self, CoroData* data, const callable_t& calla
 // does for warning suppression, and we really don't want to force
 // optimization ON for other code even in Debug or RelWithDebInfo builds.
 
-#if LL_MSVC
-// work around broken optimizations
-#pragma warning(disable: 4748)
-#pragma warning(disable: 4355) // 'this' used in initializer list: yes, intentionally
-#pragma optimize("", off)
-#endif // LL_MSVC
+//#if LL_MSVC
+//// work around broken optimizations
+//#pragma warning(disable: 4748)
+//#pragma warning(disable: 4355) // 'this' used in initializer list: yes, intentionally
+//#pragma optimize("", off)
+//#endif // LL_MSVC
 
 LLCoros::CoroData::CoroData(CoroData* prev, const std::string& name,
                             const callable_t& callable, S32 stacksize):
@@ -376,7 +392,8 @@ LLCoros::CoroData::CoroData(CoroData* prev, const std::string& name,
     mCoro(boost::bind(toplevel, _1, this, callable), stacksize),
     // don't consume events unless specifically directed
     mConsuming(false),
-    mSelf(nullptr)
+    mSelf(nullptr),
+    mCreationTime(LLTimer::getTotalSeconds())
 {
 }
 
@@ -385,17 +402,28 @@ std::string LLCoros::launch(const std::string& prefix, const callable_t& callabl
     std::string name(generateDistinctName(prefix));
     Current current;
     // pass the current value of Current as previous context
-    CoroData* newCoro = new CoroData(current, name, callable, mStackSize);
+    CoroData* newCoro = nullptr;
+	try
+	{
+		newCoro = new CoroData(current, name, callable, mStackSize);
+	}
+    catch(const std::bad_alloc&)
+    {
+        // Out of memory?
+        printActiveCoroutines();
+        LL_ERRS("LLCoros") << "Failed to start coroutine: " << name << " Stacksize: " << mStackSize << " Total coroutines: " << mCoros.size() << LL_ENDL;
+    }
     // Store it in our pointer map
-    mCoros.insert(name, newCoro);
+    auto coro_ptr = mCoros.emplace(name, newCoro).first->second.get();
+
     // also set it as current
-    current.reset(newCoro);
+    current.reset(coro_ptr);
     /* Run the coroutine until its first wait, then return here */
-    (newCoro->mCoro)(std::nothrow);
+    (coro_ptr->mCoro)(std::nothrow);
     return name;
 }
 
-#if LL_MSVC
-// reenable optimizations
-#pragma optimize("", on)
-#endif // LL_MSVC
+//#if LL_MSVC
+//// reenable optimizations
+//#pragma optimize("", on)
+//#endif // LL_MSVC

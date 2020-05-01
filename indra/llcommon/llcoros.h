@@ -34,7 +34,7 @@
 #include <boost/dcoroutine/coroutine.hpp>
 #include <boost/dcoroutine/future.hpp>
 #include "llsingleton.h"
-#include <boost/ptr_container/ptr_map.hpp>
+#include <absl/container/flat_hash_map.h>
 #include <boost/function.hpp>
 #include <boost/thread/tss.hpp>
 #include <string>
@@ -84,7 +84,7 @@ class Suspending;
  * Finally, the next frame ("mainloop" event) after the coroutine terminates,
  * LLCoros will notice its demise and destroy it.
  */
-class LL_COMMON_API LLCoros: public LLSingleton<LLCoros>
+class LL_COMMON_API LLCoros final : public LLSingleton<LLCoros>
 {
     LLSINGLETON(LLCoros);
 public:
@@ -151,6 +151,9 @@ public:
 
     /// for delayed initialization
     void setStackSize(S32 stacksize);
+
+    /// for delayed initialization
+    void printActiveCoroutines();
 
     /// get the current coro::self& for those who really really care
     static coro::self& get_self();
@@ -224,8 +227,9 @@ private:
         // function signature down to that point -- and of course through every
         // other caller of every such function.
         LLCoros::coro::self* mSelf;
+        F64 mCreationTime; // since epoch
     };
-    typedef boost::ptr_map<std::string, CoroData> CoroMap;
+    typedef absl::flat_hash_map<std::string, std::unique_ptr<CoroData> > CoroMap;
     CoroMap mCoros;
 
     // Identify the current coroutine's CoroData. Use a little helper class so
@@ -257,7 +261,6 @@ public:
     Suspending();
     ~Suspending();
 
-protected:
     Suspending(const Suspending&) = delete;
     Suspending& operator=(const Suspending&) = delete;
 

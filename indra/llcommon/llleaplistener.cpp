@@ -1,5 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**
  * @file   llleaplistener.cpp
  * @author Nat Goodspeed
@@ -15,6 +13,7 @@
 #include "linden_common.h"
 // associated header
 #include "llleaplistener.h"
+
 // other Linden headers
 #include "lluuid.h"
 #include "llsdutil.h"
@@ -140,11 +139,11 @@ void LLLeapListener::newpump(const LLSD& request)
 
     name = new_pump->getName();
 
-    mEventPumps.insert(name, new_pump);
+	auto pump_ptr = mEventPumps.emplace(name, new_pump).first->second.get();
 
     // Now listen on this new pump with our plugin listener
     std::string myname("llleap");
-    saveListener(name, myname, mConnect(*new_pump, myname));
+    saveListener(name, myname, mConnect(*pump_ptr, myname));
 
     reply["name"] = name;
 }
@@ -204,8 +203,7 @@ void LLLeapListener::stoplistening(const LLSD& request)
     std::string source_name = request["source"];
     std::string listener_name = request["listener"];
 
-    ListenersMap::iterator finder =
-        mListeners.find(ListenersMap::key_type(source_name, listener_name));
+    auto finder = mListeners.find(ListenersMap::key_type(source_name, listener_name));
 
     reply["status"] = false;
     if(finder != mListeners.end())
