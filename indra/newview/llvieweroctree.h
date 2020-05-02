@@ -320,7 +320,7 @@ public:
 	void handleChildAddition(const OctreeNode* parent, OctreeNode* child) override;
 
 	//virtual
-	BOOL isRecentlyVisible() const;
+	BOOL isRecentlyVisible() const override;
 	//LLViewerOctreePartition* getSpatialPartition()const {return mSpatialPartition;}
 	BOOL isAnyRecentlyVisible() const;
 
