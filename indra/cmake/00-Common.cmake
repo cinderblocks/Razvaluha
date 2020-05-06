@@ -288,6 +288,10 @@ if (DARWIN)
   add_compile_definitions(LL_GL_CORE=3.2)
   add_compile_definitions(TARGET_OS_IPHONE_SIMULATOR=0)
 
+  # Re-enable removed C++17 function Boost depends on
+  # https://github.com/TRIQS/triqs/issues/523 , https://libcxx.llvm.org/docs/UsingLibcxx.html#c-17-specific-configuration-macros
+  add_definitions(-D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR)
+
   set(CMAKE_CXX_LINK_FLAGS "-Wl,-headerpad_max_install_names,-search_paths_first")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_CXX_LINK_FLAGS}")
   set(DARWIN_extra_cstar_flags "-g")
