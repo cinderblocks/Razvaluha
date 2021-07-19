@@ -33,7 +33,6 @@
 
 #include "llnamevalue.h"
 
-#include "u64.h"
 #include "llstring.h"
 #include "llstringtable.h"
 
@@ -921,7 +920,7 @@ std::string LLNameValue::printData() const
 		break;
 	case NVT_U64:
 		{
-			buffer = std::to_string(*mNameValueReference.u64);
+			buffer = fmt::to_string(*mNameValueReference.u64);
 		}
 		break;
 	case NVT_VEC3:

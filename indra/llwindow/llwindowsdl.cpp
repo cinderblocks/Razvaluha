@@ -51,7 +51,7 @@ extern "C" {
 #include <gdk/gdkx.h>
 #endif
 }
-#include <locale.h>
+#include <clocale>
 #endif // LL_GTK
 
 extern "C" {
@@ -1534,7 +1534,7 @@ BOOL LLWindowSDL::SDLReallyCaptureInput(BOOL capture)
 				
 				XUngrabPointer(mSDL_Display, CurrentTime);
 				// Make sure the ungrab happens RIGHT NOW.
-				XSync(mSDL_Display, False);
+				XSync(mSDL_Display, FALSE);
 			} else
 			{
 				newmode = SDL_GRAB_QUERY; // neutral
@@ -2462,7 +2462,7 @@ void LLWindowSDL::spawnWebBrowser(const std::string& escaped_url, bool async)
 	if (mSDL_Display)
 	{
 		// Just in case - before forking.
-		XSync(mSDL_Display, False);
+		XSync(mSDL_Display, FALSE);
 	}
 # endif // LL_X11
 #endif // LL_LINUX || LL_SOLARIS
@@ -2513,7 +2513,7 @@ void LLWindowSDL::bringToFront()
 	if (mSDL_Display && !mFullscreen)
 	{
 		XRaiseWindow(mSDL_Display, mSDL_XWindowID);
-		XSync(mSDL_Display, False);
+		XSync(mSDL_Display, FALSE);
 	}
 #endif // LL_X11
 }

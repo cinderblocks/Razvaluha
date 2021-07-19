@@ -1312,7 +1312,7 @@ bool upload_new_resource(
 					LLStringUtil::format_map_t args;
 					args["[NAME]"] = uploadInfo->getName();
 					args["[CURRENCY]"] = gHippoGridManager->getConnectedGrid()->getCurrencySymbol();
-					args["[AMOUNT]"] = llformat("%d", uploadInfo->getExpectedUploadCost());
+					args["[AMOUNT]"] = fmt::to_string(uploadInfo->getExpectedUploadCost());
 					LLFloaterBuyCurrency::buyCurrency(LLTrans::getString("UploadingCosts", args), uploadInfo->getExpectedUploadCost());
 					return false;
 				}

@@ -1465,8 +1465,8 @@ bool LLAppViewer::frame()
 
 #ifdef USE_CRASHPAD
 			// Not event based. Update per frame
-			SET_CRASHPAD_ANNOTATION_VALUE(session_duration, std::to_string(LLFrameTimer::getElapsedSeconds()));
-			SET_CRASHPAD_ANNOTATION_VALUE(memory_alloc, std::to_string((LLMemory::getCurrentRSS() >> 10)/1000.f));
+			SET_CRASHPAD_ANNOTATION_VALUE(session_duration, fmt::to_string(LLFrameTimer::getElapsedSeconds()));
+			SET_CRASHPAD_ANNOTATION_VALUE(memory_alloc, fmt::to_string((LLMemory::getCurrentRSS() >> 10)/1000.f));
 #endif
 
 			//check memory availability information
@@ -3030,9 +3030,9 @@ void LLAppViewer::writeDebugInfo(bool isStatic)
 	SET_CRASHPAD_ANNOTATION_VALUE(cpu_string, gDebugInfo["CPUInfo"]["CPUString"].asString());
 	SET_CRASHPAD_ANNOTATION_VALUE(gpu_string, gDebugInfo["GraphicsCard"].asString());
 	SET_CRASHPAD_ANNOTATION_VALUE(gl_version, gDebugInfo["GLInfo"]["GLVersion"].asString());
-	SET_CRASHPAD_ANNOTATION_VALUE(session_duration, std::to_string(LLFrameTimer::getElapsedSeconds()));
-	SET_CRASHPAD_ANNOTATION_VALUE(memory_alloc, std::to_string((LLMemory::getCurrentRSS() >> 10) / 1000.f));
-	SET_CRASHPAD_ANNOTATION_VALUE(memory_sys, std::to_string(gDebugInfo["RAMInfo"]["Physical"].asInteger() * 0.001f));
+	SET_CRASHPAD_ANNOTATION_VALUE(session_duration, fmt::to_string(LLFrameTimer::getElapsedSeconds()));
+	SET_CRASHPAD_ANNOTATION_VALUE(memory_alloc, fmt::to_string((LLMemory::getCurrentRSS() >> 10) / 1000.f));
+	SET_CRASHPAD_ANNOTATION_VALUE(memory_sys, fmt::to_string(gDebugInfo["RAMInfo"]["Physical"].asInteger() * 0.001f));
 #endif
 }
 
@@ -5316,6 +5316,10 @@ void LLAppViewer::handleLoginComplete()
 	}
 
 	mOnLoginCompleted();
+	
+	// Singu Note: This would usually be registered via mOnLoginCompleted, but that would require code in newview regardless so.. just call directly here.
+	LLNotifications::instance().onLoginCompleted();
+
 	// Singu Note: Due to MAINT-4001, we must do this here, it lives in LLSidepanelInventory::updateInbox upstream.
 	// Consolidate Received items
 	// We shouldn't have to do that but with a client/server system relying on a "well known folder" convention,

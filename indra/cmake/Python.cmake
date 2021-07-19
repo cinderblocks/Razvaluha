@@ -29,16 +29,8 @@ if (WINDOWS)
       [HKEY_CURRENT_USER\\SOFTWARE\\Python\\PythonCore\\2.3\\InstallPath]
       )
   endif()
-elseif (EXISTS /etc/debian_version)
-  # On Debian and Ubuntu, avoid Python 2.4 if possible.
-
-  find_program(PYTHON_EXECUTABLE python PATHS /usr/bin)
-
-  if (PYTHON_EXECUTABLE)
-    set(PYTHONINTERP_FOUND ON)
-  endif (PYTHON_EXECUTABLE)
-elseif (EXISTS /etc/arch-release)
-  # On Arch python 2.7 is python2
+elseif (EXISTS /usr/bin/python2)
+  # if this is there, use it
 
   find_program(PYTHON_EXECUTABLE python2 PATHS /usr/bin)
 

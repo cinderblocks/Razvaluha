@@ -355,7 +355,7 @@ S32 LLPanelGroupLandMoney::impl::getStoredContribution()
 // Fills in the text field with the contribution, contrib
 void LLPanelGroupLandMoney::impl::setYourContributionTextField(S32 contrib)
 {
-	std::string buffer = std::to_string(contrib);
+	std::string buffer = fmt::to_string(contrib);
 
 	if ( mYourContributionEditorp )
 	{
@@ -365,7 +365,7 @@ void LLPanelGroupLandMoney::impl::setYourContributionTextField(S32 contrib)
 
 void LLPanelGroupLandMoney::impl::setYourMaxContributionTextBox(S32 max)
 {
-	mPanel.getChild<LLUICtrl>("your_contribution_max_value")->setTextArg("[AMOUNT]", std::to_string(max));
+	mPanel.getChild<LLUICtrl>("your_contribution_max_value")->setTextArg("[AMOUNT]", fmt::to_string(max));
 }
 
 //static

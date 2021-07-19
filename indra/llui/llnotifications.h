@@ -836,6 +836,7 @@ class LLNotifications :
 
 public:
 	void createDefaultChannels();
+	void onLoginCompleted();
 
     // Needed to clear up RefCounted things prior to actual destruction
     // as the singleton nature of the class makes them do "bad things"

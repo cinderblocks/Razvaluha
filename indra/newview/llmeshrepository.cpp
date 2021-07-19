@@ -76,6 +76,7 @@
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <mutex>
 #include <utility>
 
 #ifndef LL_WINDOWS
@@ -408,7 +409,7 @@ namespace {
 static S32 dump_num = 0;
 std::string make_dump_name(std::string prefix, S32 num)
 {
-	return prefix + std::to_string(num) + std::string(".xml");
+	return prefix + fmt::to_string(num) + std::string(".xml");
 }
 void dump_llsd_to_file(const LLSD& content, std::string filename);
 LLSD llsd_from_file(std::string filename);

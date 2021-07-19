@@ -69,8 +69,9 @@ private:
 	bool historyHandler(const LLSD& payload)
 	{
 		// we ignore "load" messages, but rewrite the persistence file on any other
+		// onDelete handes "delete" message, so skip that too.
 		std::string sigtype = payload["sigtype"];
-		if (sigtype != "load")
+		if (sigtype != "load" && sigtype !=  "delete")
 		{
 			savePersistentNotifications();
 		}
@@ -80,11 +81,15 @@ private:
 	// The history channel gets all notifications except those that have been cancelled
 	static bool historyFilter(LLNotificationPtr pNotification)
 	{
-		return !pNotification->isCancelled();
+		return pNotification->isPersistent() && !pNotification->isCancelled() && !pNotification->isRespondedTo() && !pNotification->isExpired();
 	}
 
 	void savePersistentNotifications()
 	{
+		if (mLoading)
+		{
+			return;
+		}
 		LL_INFOS() << "Saving open notifications to " << mFileName << LL_ENDL;
 
 		llofstream notify_file(mFileName.c_str());
@@ -98,54 +103,91 @@ private:
 		output["version"] = NOTIFICATION_PERSIST_VERSION;
 		LLSD& data = output["data"];
 
+		AILOCK_mItems;
+
+		static LLCachedControl<S32> maxPersistentNotificaitons("MaxPersistentNotifications");
+
 		for (LLNotificationSet::iterator it = mItems.begin(); it != mItems.end(); ++it)
 		{
-			auto notification = (*it);
+			if (!LLNotificationTemplates::instance().templateExists((*it)->getName())) continue;
+
 			// only store notifications flagged as persisting
-			if (notification->isPersistent())
-				data.append(notification->asLLSD());
+			LLNotificationTemplatePtr templatep = LLNotificationTemplates::instance().getTemplate((*it)->getName());
+			if (!templatep->mPersist) continue;
+			if ((*it)->isCancelled() || (*it)->isExpired() || (*it)->isRespondedTo()) continue;
+
+			if (data.size() >= maxPersistentNotificaitons)
+			{
+				LL_WARNS() << "Too many persistent notifications."
+					<< " Saved " << maxPersistentNotificaitons << " of " << mItems.size()
+					<< " persistent notifications." << LL_ENDL;
+				break;
+			}
+			data.append((*it)->asLLSD());
 		}
 
 		LLPointer<LLSDFormatter> formatter = new LLSDXMLFormatter();
-		formatter->format(output, notify_file, LLSDFormatter::OPTIONS_PRETTY);*/
+		formatter->format(output, notify_file, LLSDFormatter::OPTIONS_PRETTY);
+		*/
 	}
 
 	void loadPersistentNotifications()
 	{
+		if (mLoading)
+		{
+			return;
+		}
+		mLoading = true;
 		LL_INFOS() << "Loading open notifications from " << mFileName << LL_ENDL;
 
-		llifstream notify_file(mFileName.c_str());
-		if (!notify_file.is_open()) 
+		while (true)
 		{
-			LL_WARNS() << "Failed to open " << mFileName << LL_ENDL;
-			return;
-		}
+			llifstream notify_file(mFileName.c_str());
+			if (!notify_file.is_open())
+			{
+				LL_WARNS() << "Failed to open " << mFileName << LL_ENDL;
+				break;
+			}
 
-		LLSD input;
-		LLPointer<LLSDParser> parser = new LLSDXMLParser();
-		if (parser->parse(notify_file, input, LLSDSerialize::SIZE_UNLIMITED) < 0)
-		{
-			LL_WARNS() << "Failed to parse open notifications" << LL_ENDL;
-			return;
-		}
+			LLSD input;
+			LLPointer<LLSDParser> parser = new LLSDXMLParser();
+			if (parser->parse(notify_file, input, LLSDSerialize::SIZE_UNLIMITED) < 0)
+			{
+				LL_WARNS() << "Failed to parse open notifications" << LL_ENDL;
+				break;
+			}
 
-		if (input.isUndefined()) return;
-		std::string version = input["version"];
-		if (version != NOTIFICATION_PERSIST_VERSION)
-		{
-			LL_WARNS() << "Bad open notifications version: " << version << LL_ENDL;
-			return;
-		}
-		LLSD& data = input["data"];
-		if (data.isUndefined()) return;
+			if (input.isUndefined()) return;
+			std::string version = input["version"];
+			if (version != NOTIFICATION_PERSIST_VERSION)
+			{
+				LL_WARNS() << "Bad open notifications version: " << version << LL_ENDL;
+				break;
+			}
+			LLSD& data = input["data"];
+			if (data.isUndefined()) break;
 
-		LLNotifications& instance = LLNotifications::instance();
-		for (LLSD::array_const_iterator notification_it = data.beginArray();
-			notification_it != data.endArray();
-			++notification_it)
-		{
-			instance.add(LLNotificationPtr(new LLNotification(*notification_it)));
+			S32 processed_notifications = 0;
+			static LLCachedControl<S32> maxPersistentNotificaitons("MaxPersistentNotifications");
+
+			LLNotifications& instance = LLNotifications::instance();
+			for (LLSD::array_const_iterator notification_it = data.beginArray();
+				notification_it != data.endArray();
+				++notification_it)
+			{
+				if (processed_notifications++ >= maxPersistentNotificaitons)
+				{
+					LL_WARNS() << "Too many persistent notifications."
+						<< " Processed " << maxPersistentNotificaitons << " of " << data.size() << " persistent notifications." << LL_ENDL;
+					break;
+				}
+				instance.add(LLNotificationPtr(new LLNotification(*notification_it)));
+				
+			}
+			break;
 		}
+		mLoading = false;
+		savePersistentNotifications();
 	}
 
 	//virtual
@@ -153,11 +195,12 @@ private:
 	{
 		// we want to keep deleted notifications in our log
 		mItems.insert(pNotification);
-		
-		return;
+	
+		savePersistentNotifications();
 	}
 	
 private:
+	bool mLoading = false;
 	std::string mFileName;
 };
 
@@ -267,6 +310,7 @@ LLNotificationForm::LLNotificationForm(const std::string& name, const LLXMLNodeP
 }
 
 LLNotificationForm::LLNotificationForm(const LLSD& sd)
+	: mIgnore(IGNORE_NO)
 {
 	if (sd.isArray())
 	{
@@ -1124,18 +1168,19 @@ void LLNotifications::createDefaultChannels()
 	LLNotificationChannel::buildChannel("Visible", "Ignore",
 		&LLNotificationFilters::includeEverything);
 
-	// create special history channel
-	//std::string notifications_log_file = gDirUtilp->getExpandedFilename ( LL_PATH_PER_SL_ACCOUNT, "open_notifications.xml" );
-	// use ^^^ when done debugging notifications serialization
-	std::string notifications_log_file = gDirUtilp->getExpandedFilename ( LL_PATH_USER_SETTINGS, "open_notifications.xml" );
-	// this isn't a leak, don't worry about the empty "new"
-	new LLNotificationHistoryChannel(notifications_log_file);
-
 	// connect action methods to these channels
 	getChannel("Expiration")->connectChanged(boost::bind(&LLNotifications::expirationHandler, this, _1));
 	getChannel("Unique")->connectChanged(boost::bind(&LLNotifications::uniqueHandler, this, _1));
 	getChannel("Unique")->connectFailedFilter(boost::bind(&LLNotifications::failedUniquenessTest, this, _1));
 	getChannel("Ignore")->connectFailedFilter(&handleIgnoredNotification);
+}
+
+void LLNotifications::onLoginCompleted()
+{
+	// create special history channel
+	std::string notifications_log_file = gDirUtilp->getExpandedFilename ( LL_PATH_PER_SL_ACCOUNT, "singu_open_notifications_" + gHippoGridManager->getCurrentGrid()->getGridName() + ".xml");
+	// this isn't a leak, don't worry about the empty "new"
+	new LLNotificationHistoryChannel(notifications_log_file );
 }
 
 static std::string sStringSkipNextTime("Skip this dialog next time");

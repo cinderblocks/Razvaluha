@@ -286,11 +286,17 @@ void LLViewerTextureList::shutdown()
 		 iter != mImageList.end(); ++iter)
 	{
 		LLViewerFetchedTexture* image = *iter;
+		if (!(image->getType() == LLViewerTexture::FETCHED_TEXTURE || image->getType() == LLViewerTexture::LOD_TEXTURE) ||
+			image->getFTType() != FTT_DEFAULT ||
+			image->getID() == IMG_DEFAULT)
+		{
+			continue;
+		}
 		if (!image->hasGLTexture() ||
 			!image->getUseDiscard() ||
-			image->needsAux() ||
-			!image->getTargetHost().isInvalid() ||
-			!image->getUrl().empty()
+			image->needsAux() // ||
+			//!image->getTargetHost().isInvalid() ||
+			//!image->getUrl().empty()
 			)
 		{
 			continue; // avoid UI, baked, and other special images
@@ -325,7 +331,7 @@ void LLViewerTextureList::shutdown()
 	
 	if (count > 0 && !gDirUtilp->getLindenUserDir(true).empty())
 	{
-		std::string filename = gDirUtilp->getExpandedFilename(LL_PATH_PER_SL_ACCOUNT, get_texture_list_name());
+		std::string filename = get_texture_list_name();
 		llofstream file;
 		file.open(filename);
         LL_DEBUGS() << "saving " << imagelist.size() << " image list entries" << LL_ENDL;

@@ -159,7 +159,6 @@
 #include "llviewerobjectbackup.h"
 #include "llagentui.h"
 #include "llpathfindingmanager.h"
-#include <boost/lexical_cast.hpp>
 
 #include "lltexturecache.h"
 #include "llvovolume.h"
@@ -691,9 +690,9 @@ void init_menus()
 
 	std::string symbol = gHippoGridManager->getConnectedGrid()->getCurrencySymbol();
 	auto& benefits = LLAgentBenefitsMgr::current();
-	const std::string texture_upload_cost_str = symbol + std::to_string(benefits.getTextureUploadCost());
-	const std::string sound_upload_cost_str = symbol + std::to_string(benefits.getSoundUploadCost());
-	const std::string animation_upload_cost_str = symbol + std::to_string(benefits.getAnimationUploadCost());
+	const std::string texture_upload_cost_str = symbol + fmt::to_string(benefits.getTextureUploadCost());
+	const std::string sound_upload_cost_str = symbol + fmt::to_string(benefits.getSoundUploadCost());
+	const std::string animation_upload_cost_str = symbol + fmt::to_string(benefits.getAnimationUploadCost());
 	gMenuHolder->childSetLabelArg("Upload Image", "[UPLOADFEE]", texture_upload_cost_str);
 	gMenuHolder->childSetLabelArg("Upload Sound", "[UPLOADFEE]", sound_upload_cost_str);
 	gMenuHolder->childSetLabelArg("Upload Animation", "[UPLOADFEE]", animation_upload_cost_str);
@@ -1759,6 +1758,9 @@ void cleanup_menus()
 
 	delete gMenuBarView;
 	gMenuBarView = nullptr;
+
+	delete gLoginMenuBarView;
+	gLoginMenuBarView = nullptr;
 
 	delete gMenuHolder;
 	gMenuHolder = nullptr;
@@ -2830,7 +2832,7 @@ class LLObjectMeasure final : public view_listener_t
 			LLFloaterChat::addChat(chat);
 
 			LLStringUtil::format_map_t args;
-			args["[DIST]"] = boost::lexical_cast<std::string>(dist_vec(startMeasurePoint, position));
+			args["[DIST]"] = fmt::to_string(dist_vec(startMeasurePoint, position));
 
 			chat.mText = LLTrans::getString("MeasuredDistance", args);
 			startpoint_set = false;
