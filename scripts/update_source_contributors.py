@@ -36,7 +36,7 @@ $/LicenseInfo$
 import sys
 import os.path
 import string
-import getopt, os, re, commands
+import getopt, os, re
 
 
 lang_sep={"es":", ",
@@ -73,7 +73,7 @@ def add_indra_lib_path():
                 sys.path.insert(0, dir)
             return root
     else:
-        print >>sys.stderr, "This script is not inside a valid installation."
+        print("This script is not inside a valid installation.", file=sys.stderr)
         sys.exit(1)
 
 src_root = add_indra_lib_path()
@@ -82,8 +82,8 @@ from indra.util import llversion
 
 
 def usage():
-    print "Usage:"
-    print sys.argv[0] + """ [options]
+    print("Usage:")
+    print( sys.argv[0] + """ [options]
 
 Options:
   --version
@@ -99,7 +99,7 @@ Options:
   --help
    Print this message and exit.
 
-"""
+""")
 def _getstatusoutput(cmd):
     """Return Win32 (status, output) of executing cmd
 in a shell."""
@@ -126,7 +126,7 @@ def get_contributors(filename):
             credits[thisres]=[]
             contributors.append(thisres)
         m = re.search('^\s+(\S+\-\d+)\s*$', line)
-        if(m and thisres != ''):
+        if m and thisres != '':
             credits[thisres].append(m.group(1))
     return contributors
 
@@ -171,11 +171,10 @@ def main():
             return 0
 
     if verbose:
-        print "Source Path:", src_root
+        print("Source Path:", src_root)
         if viewer_channel != None:
-            print "Current viewer channel/version: '%(viewer_channel)s' / '%(viewer_version)s'" % locals()
-        print
-
+            print("Current viewer channel/version: '%(viewer_channel)s' / '%(viewer_version)s'" % locals())
+        print()
     # Iterate through all of the files in the map, and apply the
     # substitution filters
     for filename in re_map.keys():
@@ -187,7 +186,7 @@ def main():
             file.close()
 
             if verbose:
-                print "Processing file:",filename
+                print("Processing file:", filename)
             for rule in re_map[filename]:
                 repl = rule[1]
                 file_str = re.sub(rule[0], repl, file_str)
@@ -196,7 +195,7 @@ def main():
             file.write(file_str)
             file.close()
         except IOError:
-            print "File %(filename)s not present, skipping..." % locals()
+            print("File %(filename)s not present, skipping..." % locals())
     return 0
 
 main()

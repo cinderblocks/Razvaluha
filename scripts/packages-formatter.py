@@ -31,14 +31,16 @@ import re
 import subprocess
 import argparse
 
-parser = argparse.ArgumentParser(description='Format dependency version and copyright information for the viewer About box content')
+parser = argparse.ArgumentParser(
+    description='Format dependency version and copyright information for the viewer About box content')
 parser.add_argument('channel', help='viewer channel name')
 parser.add_argument('version', help='viewer version number')
 args = parser.parse_args()
 
-_autobuild=os.getenv('AUTOBUILD', 'autobuild')
+_autobuild = os.getenv('AUTOBUILD', 'autobuild')
 
-pkg_line=re.compile('^([\w-]+):\s+(.*)$')
+pkg_line = re.compile('^([\w-]+):\s+(.*)$')
+
 
 def autobuild(*args):
     """
@@ -62,10 +64,10 @@ def autobuild(*args):
     # no exceptions yet, let caller read stdout
     return child.stdout
 
-version={}
 
+version = {}
 
-versions=autobuild('install', '--versions')
+versions = autobuild('install', '--versions')
 for line in versions:
     pkg_info = pkg_line.match(line)
     if pkg_info:
@@ -77,9 +79,9 @@ for line in versions:
     else:
         sys.exit("Unrecognized --versions output: %s" % line)
 
-copyright={}
-copyrights=autobuild('install', '--copyrights')
-viewer_copyright = copyrights.readline() # first line is the copyright for the viewer itself
+copyright = {}
+copyrights = autobuild('install', '--copyrights')
+viewer_copyright = copyrights.readline()  # first line is the copyright for the viewer itself
 for line in copyrights:
     pkg_info = pkg_line.match(line)
     if pkg_info:
@@ -91,10 +93,10 @@ for line in copyrights:
     else:
         sys.exit("Unrecognized --copyrights output: %s" % line)
 
-print viewer_copyright
+print(viewer_copyright)
 for pkg in sorted(version):
-    print ': '.join([pkg, version[pkg]])
+    print(': '.join([pkg, version[pkg]]))
     if pkg in copyright:
-        print copyright[pkg]
+        print(copyright[pkg])
     else:
         sys.exit("No copyright for %s" % pkg)

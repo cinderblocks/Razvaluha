@@ -47,11 +47,11 @@ $/LicenseInfo$
 import os
 import sys
 import errno
-import HTMLParser
 import re
 import signal
 import subprocess
 import logging
+from html.parser import HTMLParser
 
 def main(command, arguments=[], libpath=[], vars={}):
     """Pass:
@@ -109,7 +109,7 @@ def main(command, arguments=[], libpath=[], vars={}):
     # Now handle arbitrary environment variables. The tricky part is ensuring
     # that all the keys and values we try to pass are actually strings.
     if vars:
-         log.info("Setting: %s" % ("\n".join(["%s=%s" % (key, value) for key, value in vars.iteritems()])))
+        log.info("Setting: %s" % ("\n".join(["%s=%s" % (key, value) for key, value in vars.iteritems()])))
     os.environ.update(dict([(str(key), str(value)) for key, value in vars.iteritems()]))
     # Run the child process.
     command_list = [command]
@@ -135,6 +135,7 @@ def main(command, arguments=[], libpath=[], vars={}):
         # 9009.
         return 9009
 
+
 # swiped from vita, sigh, seems like a Bad Idea to introduce dependency
 def translate_rc(rc):
     """
@@ -148,7 +149,7 @@ def translate_rc(rc):
     """
     if rc is None:
         return "still running"
-    
+
     if rc >= 0:
         return "terminated with rc %s" % rc
 
@@ -173,7 +174,7 @@ def translate_rc(rc):
         try:
             table = get_windows_table()
             symbol, desc = table[hexrc]
-        except Exception, err:
+        except Exception as err:
             log.error("(%s -- carrying on)" % err)
             log.error("terminated with rc %s (%s)" % (rc, hexrc))
         else:
@@ -189,6 +190,7 @@ def translate_rc(rc):
         else:
             strc = str(rc)
         return "terminated by signal %s" % strc
+
 
 class TableParser(HTMLParser.HTMLParser):
     """
@@ -263,8 +265,10 @@ class TableParser(HTMLParser.HTMLParser):
             # Append it to the list designated by the top of the dest stack.
             self.dest[-1].append(data)
 
+
 # cache for get_windows_table()
 _windows_table = None
+
 
 def get_windows_table():
     global _windows_table
@@ -305,11 +309,13 @@ def get_windows_table():
 
     return _windows_table
 
-log=logging.getLogger(__name__)
+
+log = logging.getLogger(__name__)
 logging.basicConfig()
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", dest="loglevel", action="store_const",
                         const=logging.DEBUG, default=logging.INFO)
