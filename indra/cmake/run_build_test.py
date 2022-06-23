@@ -53,6 +53,7 @@ import subprocess
 import logging
 from html.parser import HTMLParser
 
+
 def main(command, arguments=[], libpath=[], vars={}):
     """Pass:
     command is the command to be executed
@@ -105,16 +106,21 @@ def main(command, arguments=[], libpath=[], vars={}):
         # Now rebuild the path string. This way we use a minimum of separators
         # -- and we avoid adding a pointless separator when libpath is empty.
         os.environ[var] = os.pathsep.join(clean_dirs)
-        log.info("%s = %r" % (var, os.environ[var]))
+        # This output format is intended to make it straightforward to copy
+        # the variable settings and the command itself from the build output
+        # and paste the whole thing at a command prompt to rerun it manually.
+        log.info("%s='%s' \\" % (var, os.environ[var]))
     # Now handle arbitrary environment variables. The tricky part is ensuring
     # that all the keys and values we try to pass are actually strings.
     if vars:
-        log.info("Setting: %s" % ("\n".join(["%s=%s" % (key, value) for key, value in vars.iteritems()])))
-    os.environ.update(dict([(str(key), str(value)) for key, value in vars.iteritems()]))
+        for key, value in list(vars.items()):
+            # As noted a few lines above, facilitate copy-paste rerunning.
+            log.info("%s='%s' \\" % (key, value))
+    os.environ.update(dict([(str(key), str(value)) for key, value in vars.items()]))
     # Run the child process.
     command_list = [command]
     command_list.extend(arguments)
-    log.info("Running: %s" % " ".join(command_list))
+    log.info(" ".join((("'%s'" % w) if ' ' in w else w) for w in command_list))
     # Make sure we see all relevant output *before* child-process output.
     sys.stdout.flush()
     try:
