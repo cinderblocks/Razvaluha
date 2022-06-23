@@ -3,7 +3,7 @@
 # - Find XMLRPC-EPI
 # Find the XMLRPC-EPI includes and library
 # This module defines
-#  XMLRPCEPI_INCLUDE_DIR, where to find jpeglib.h, etc.
+#  XMLRPCEPI_INCLUDE_DIR, where to find xmlrpc.h, etc.
 #  XMLRPCEPI_LIBRARIES, the libraries needed to use XMLRPC-EPI.
 #  XMLRPCEPI_FOUND, If false, do not try to use XMLRPC-EPI.
 # also defined, but not for general use are
