@@ -490,7 +490,7 @@ class WindowsManifest(ViewerManifest):
                 print("Skipping GLOD library (assumming linked statically)")
 
             # Get fmodstudio dll, continue if missing
-            if config is "debug":
+            if config == "debug":
                 if self.path("fmodL.dll") == 0:
                     print("Skipping fmodstudio audio library(assuming other audio engine)")
             else:
