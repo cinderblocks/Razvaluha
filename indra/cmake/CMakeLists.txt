@@ -32,6 +32,7 @@ set(cmake_SOURCE_FILES
     FindAutobuild.cmake
     FindCARes.cmake
     FindColladadom.cmake
+    FindFMODSTUDIO.cmake
     FindGLOD.cmake
     FindGooglePerfTools.cmake
     FindHunSpell.cmake

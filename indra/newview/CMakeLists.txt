@@ -1455,6 +1455,7 @@ if (OPENAL)
 endif (OPENAL)
 
 if (USE_FMODSTUDIO)
+  set(FMODWRAPPER_LIBRARY ${FMODSTUDIO_LIBRARY})
   list(APPEND LLSTARTUP_COMPILE_DEFINITIONS "LL_FMODSTUDIO=1")
   set_source_files_properties(llpanellogin.cpp PROPERTIES COMPILE_DEFINITIONS "LL_FMODSTUDIO=1")
 endif (USE_FMODSTUDIO)
@@ -1556,18 +1557,25 @@ if (WINDOWS)
     endif (ADDRESS_SIZE EQUAL 64)
 
     if (USE_FMODSTUDIO)
-      if (ADDRESS_SIZE EQUAL 64)
+      if (USE_SYSTEM_FMODSTUDIO)
         list(APPEND COPY_INPUT_DEPENDENCIES
-             ${SHARED_LIB_STAGING_DIR}/Release/fmod64.dll
-             ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod64.dll
-             ${SHARED_LIB_STAGING_DIR}/Debug/fmodL64.dll
-            )
-      else (ADDRESS_SIZE EQUAL 64)
-        list(APPEND COPY_INPUT_DEPENDENCIES
-             ${SHARED_LIB_STAGING_DIR}/Release/fmod.dll
-             ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod.dll
-            )
-      endif (ADDRESS_SIZE EQUAL 64)
+             ${FMODSTUDIO_DLL}
+             )
+      else(USE_SYSTEM_FMODSTUDIO)
+        if (ADDRESS_SIZE EQUAL 64)
+          list(APPEND COPY_INPUT_DEPENDENCIES
+               ${SHARED_LIB_STAGING_DIR}/Release/fmod64.dll
+               ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod64.dll
+               ${SHARED_LIB_STAGING_DIR}/Debug/fmodL64.dll
+              )
+        else (ADDRESS_SIZE EQUAL 64)
+          list(APPEND COPY_INPUT_DEPENDENCIES
+               ${SHARED_LIB_STAGING_DIR}/Release/fmod.dll
+               ${SHARED_LIB_STAGING_DIR}/RelWithDebInfo/fmod.dll
+               ${SHARED_LIB_STAGING_DIR}/Debug/fmodL.dll
+              )
+        endif (ADDRESS_SIZE EQUAL 64)
+      endif(USE_SYSTEM_FMODSTUDIO)
     endif (USE_FMODSTUDIO)
 
     if(MSVC_IDE)
@@ -1691,7 +1699,7 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${Boost_DATE_TIME_LIBRARY}
     ${DBUSGLIB_LIBRARIES}
     ${OPENGL_LIBRARIES}
-    ${FMOD_LIBRARY} # must come after LLAudio
+    ${FMODSTUDIO_LIBRARY} # must come after LLAudio
     ${GLOD_LIBRARIES}
     ${APRUTIL_LIBRARIES}
     ${OPENGL_LIBRARIES}
