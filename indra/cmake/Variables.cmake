@@ -17,8 +17,10 @@ if(NOT DEFINED COMMON_CMAKE_DIR)
     set(COMMON_CMAKE_DIR "${CMAKE_SOURCE_DIR}/cmake")
 endif(NOT DEFINED COMMON_CMAKE_DIR)
 
+set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # https://blog.kitware.com/upcoming-in-cmake-2-8-12-osx-rpath-support/
 set(CMAKE_MACOSX_RPATH ON)
@@ -210,10 +212,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # Apple Clang - Custom Compiler Flags
   set(CMAKE_XCODE_ATTRIBUTE_WARNING_CFLAGS "-Wall -Wextra -Wno-reorder -Wno-sign-compare -Wno-ignored-qualifiers -Wno-unused-local-typedef -Wno-unused-parameter")
-
-  # Apple Clang - Language - C++
-  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD c++14)
-  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 
   # Apple Clang - Warning Policies
   set(CMAKE_XCODE_ATTRIBUTE_GCC_TREAT_WARNINGS_AS_ERRORS YES)
