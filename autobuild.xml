@@ -1908,7 +1908,9 @@
       <key>nvapi</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 2007- 2019 NVIDIA Corporation. All rights reserved. </string>
+        <string>Copyright (c) 2007- 2020 NVIDIA Corporation. All rights reserved. </string>
+        <key>description</key>
+        <string>NVAPI provides an interface to NVIDIA devices.</string>
         <key>license</key>
         <string>nvapi</string>
         <key>license_file</key>
@@ -1917,37 +1919,23 @@
         <string>nvapi</string>
         <key>platforms</key>
         <map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>408eff309f6f3031d74da5491c1852a9</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-internal/nvapi/windows/nvapi-R430.192211828-windows-192211828.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
-          </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>76a547f558b8499dc85135b8718eb18a</string>
+              <string>b098bab37d4f4967bec96b5eb2867262965a1ccaa48f595600fea9f98a7f5d8a01ae85272db51cc368528973793c2f006c822d130d78e65592072ff598afc9d7</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-internal/nvapi/windows64/nvapi-R430.192211828-windows64-192211828.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/114/packages/generic/nvapi/470.0.0.1182/nvapi-470.0.0-windows64-1182.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>R430.192211828</string>
+        <string>470.0.0</string>
       </map>
       <key>ogg_vorbis</key>
       <map>
