@@ -374,9 +374,9 @@ const std::string  LLDir::getCacheDir(bool get_default) const
 }
 
 #if (defined(_WIN64) || defined(__amd64__) || defined(__x86_64__))
-#define OS_CACHE_DIR "SingularityViewer64"
+#define OS_CACHE_DIR "Viewer64"
 #else
-#define OS_CACHE_DIR "SingularityViewer"
+#define OS_CACHE_DIR "Viewer"
 #endif
 
 // Return the default cache directory
@@ -391,7 +391,7 @@ std::string LLDir::buildSLOSCacheDir() const
 		}
 		else
 		{
-			res = add(getOSUserAppDir(), "cache_sg1");
+			res = add(getOSUserAppDir(), "cache_vwr");
 		}
 	}
 	else

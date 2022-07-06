@@ -5,8 +5,7 @@
 # with the version specified
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-set(ROOT_PROJECT_NAME "Singularity" CACHE STRING
-    "The root project/makefile/solution name. Defaults to Singularity.")
+set(ROOT_PROJECT_NAME "Singularity" CACHE STRING "The root project name. Defaults to Singularity.")
 project(${ROOT_PROJECT_NAME})
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")

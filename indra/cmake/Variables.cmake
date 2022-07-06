@@ -225,37 +225,18 @@ if (WINDOWS)
   option(LLWINDOW_SDL2 "Use SDL2 for window and input handling. Windows only" OFF)
 endif()
 
+
+
 # Default deploy grid
 set(GRID agni CACHE STRING "Target Grid")
+set(VIEWER_CHANNEL_BASE ${ROOT_PROJECT_NAME} CACHE STRING "Viewer Channel Base Name")
+set(VIEWER_CHANNEL_TYPE Test CACHE STRING "Viewer Channel Type Name")
 
-if (DEFINED ENV{VIEWER_CHANNEL_BASE})
-  set(VIEWER_CHANNEL_BASE $ENV{VIEWER_CHANNEL_BASE} CACHE STRING "Viewer Channel Base Name" FORCE)
-else()
-  set(VIEWER_CHANNEL_BASE "Singularity" CACHE STRING "Viewer Channel Base Name")
-endif()
-
-if (DEFINED ENV{VIEWER_CHANNEL_TYPE})
-  set(VIEWER_CHANNEL_TYPE $ENV{VIEWER_CHANNEL_TYPE} CACHE STRING "Viewer Channel Type Name" FORCE)
-else()
-  set(VIEWER_CHANNEL_TYPE "Test" CACHE STRING "Viewer Channel Type Name")
-endif()
-
-if (DEFINED ENV{VIEWER_CHANNEL_CODENAME})
-  set(VIEWER_CHANNEL_CODENAME $ENV{VIEWER_CHANNEL_CODENAME} CACHE STRING "Viewer Channel Code Name for Project type" FORCE)
-else()
-  set(VIEWER_CHANNEL_CODENAME "Default" CACHE STRING "Viewer Channel Code Name for Project type")
-endif()
-
-if("${VIEWER_CHANNEL_TYPE}" STREQUAL "Project")
-  set(VIEWER_CHANNEL "${VIEWER_CHANNEL_BASE} ${VIEWER_CHANNEL_TYPE} ${VIEWER_CHANNEL_CODENAME}")
-else()
-  set(VIEWER_CHANNEL "${VIEWER_CHANNEL_BASE} ${VIEWER_CHANNEL_TYPE}")
-endif()
+set(VIEWER_CHANNEL "${VIEWER_CHANNEL_BASE} ${VIEWER_CHANNEL_TYPE}")
 
 string(TOLOWER "${VIEWER_CHANNEL_BASE}" VIEWER_BRANDING_ID)
 string(REPLACE " " "-" VIEWER_BRANDING_ID ${VIEWER_BRANDING_ID})
-set(VIEWER_BINARY_NAME "${VIEWER_BRANDING_ID}-bin" CACHE STRING
-    "The name of the viewer executable to create.")
+set(VIEWER_BINARY_NAME "${VIEWER_BRANDING_ID}-bin" CACHE STRING "The name of the viewer executable to create.")
 
 string(REPLACE " " "" VIEWER_CHANNEL_ONEWORD ${VIEWER_CHANNEL})
 set(VIEWER_CHANNEL_NOSPACE ${VIEWER_CHANNEL_ONEWORD} CACHE STRING "Prefix used for resulting artifacts.")

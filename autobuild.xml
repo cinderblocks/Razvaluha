@@ -2673,15 +2673,15 @@
     <key>package_description</key>
     <map>
       <key>copyright</key>
-      <string>Copyright (c) 2010-2016, Singularity Viewer Team</string>
+      <string>Copyright (c) 2010-2016, Singularity Viewer Team, 2022 Sjofn LLC</string>
       <key>description</key>
-      <string>Singularity Viewer</string>
+      <string>Singularity Hydra</string>
       <key>license</key>
-      <string>LGPL</string>
+      <string>GPL</string>
       <key>license_file</key>
       <string>docs/LICENSE-source.txt</string>
       <key>name</key>
-      <string>Singularity Viewer</string>
+      <string>Singularity Hydra</string>
       <key>platforms</key>
       <map>
         <key>common</key>
@@ -2725,6 +2725,7 @@
                   <string>-DCMAKE_BUILD_TYPE:STRING=Release</string>
                   <string>-DADDRESS_SIZE:STRING=$AUTOBUILD_ADDRSIZE</string>
                   <string>-DROOT_PROJECT_NAME:STRING=Singularity</string>
+				  <string>-DICON_PATH:STRING=default</string>
                   <string>-DINSTALL_PROPRIETARY:BOOL=OFF</string>
 				  <string>-DUSE_FMODSTUDIO:BOOL=ON</string>
 				  <string>-DUSE_LTO:BOOL=ON</string>
@@ -2732,6 +2733,31 @@
               </map>
               <key>name</key>
               <string>Release</string>
+            </map>
+			<key>AvatarLife</key>
+            <map>
+              <key>configure</key>
+              <map>
+                <key>arguments</key>
+                <array>
+                  <string>../indra</string>
+                </array>
+                <key>command</key>
+                <string>cmake</string>
+                <key>options</key>
+                <array>
+                  <string>-DCMAKE_BUILD_TYPE:STRING=Release</string>
+                  <string>-DADDRESS_SIZE:STRING=$AUTOBUILD_ADDRSIZE</string>
+                  <string>-DROOT_PROJECT_NAME:STRING=AvatarLife</string>
+				  <string>-DVIEWER_CHANNEL_TYPE:STRING=Release</string>
+				  <string>-DICON_PATH:STRING=avatarlife</string>
+                  <string>-DINSTALL_PROPRIETARY:BOOL=OFF</string>
+				  <string>-DUSE_FMODSTUDIO:BOOL=ON</string>
+				  <string>-DUSE_LTO:BOOL=ON</string>
+                </array>
+              </map>
+              <key>name</key>
+              <string>AvatarLife</string>
             </map>
           </map>
           <key>name</key>
@@ -2793,6 +2819,31 @@
               <key>name</key>
               <string>Release</string>
             </map>
+			<key>AvatarLife</key>
+            <map>
+              <key>build</key>
+              <map>
+                <key>command</key>
+                <string>xcodebuild</string>
+                <key>options</key>
+                <array>
+                  <string>-configuration Release</string>
+                  <string>-project AvatarLife.xcodeproj</string>
+                  <string>-DENABLE_SIGNING:BOOL=OFF</string>
+                  <string>-DSIGNING_IDENTITY:STRING="Developer ID Application: Linden Research, Inc."</string>
+                </array>
+              </map>
+              <key>configure</key>
+              <map>
+                <key>options</key>
+                <array>
+                  <string>-G</string>
+                  <string>'Xcode'</string>
+                </array>
+              </map>
+              <key>name</key>
+              <string>AvatarLife</string>
+            </map>
           </map>
           <key>name</key>
           <string>darwin64</string>
@@ -2850,6 +2901,29 @@
               </map>
               <key>name</key>
               <string>Release</string>
+            </map>
+			<key>AvatarLife</key>
+            <map>
+              <key>build</key>
+              <map>
+                <key>command</key>
+                <string>ninja</string>
+                <key>options</key>
+                <array>
+                  <string>-v</string>
+                </array>
+              </map>
+              <key>configure</key>
+              <map>
+                <key>options</key>
+                <array>
+                  <string>-G</string>
+                  <string>Ninja</string>
+                  <string>-DADDRESS_SIZE:STRING=64</string>
+                </array>
+              </map>
+              <key>name</key>
+              <string>AvatarLife</string>
             </map>
           </map>
           <key>name</key>
@@ -2943,6 +3017,47 @@
               </map>
               <key>name</key>
               <string>Release</string>
+            </map>
+			<key>AvatarLife</key>
+            <map>
+              <key>build</key>
+              <map>
+                <key>arguments</key>
+                <array>
+                  <string>AvatarLife.sln</string>
+                </array>
+                <key>command</key>
+                <string>msbuild.exe</string>
+                <key>options</key>
+                <array>
+                  <string>/p:Configuration=Release</string>
+                  <string>/p:Platform=${AUTOBUILD_WIN_VSPLATFORM|NOTWIN}</string>
+                  <string>/t:Build</string>
+                  <string>/p:PreferredToolArchitecture=x64</string>
+                  <string>/p:useenv=true</string>
+                  <string>/verbosity:normal</string>
+                  <string>/m</string>
+                </array>
+              </map>
+              <key>configure</key>
+              <map>
+                <key>arguments</key>
+                <array>
+                  <string>..\indra</string>
+                </array>
+                <key>options</key>
+                <array>
+                  <string>-G</string>
+                  <string>${AUTOBUILD_WIN_CMAKE_GEN|NOTWIN}</string>
+                  <string>-A</string>
+                  <string>${AUTOBUILD_WIN_VSPLATFORM|NOTWIN}</string>
+                  <string>-T</string>
+                  <string>host=${AUTOBUILD_WIN_VSHOST|NOTWIN}</string>
+				  <string>-DUSE_NVAPI:BOOL=ON</string>
+                </array>
+              </map>
+              <key>name</key>
+              <string>AvatarLife</string>
             </map>
           </map>
           <key>name</key>

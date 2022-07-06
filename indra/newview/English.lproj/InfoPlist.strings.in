@@ -3,4 +3,4 @@
 CFBundleName = "${VIEWER_CHANNEL_NOSPACE}";
 
 CFBundleShortVersionString = "${VIEWER_CHANNEL} Viewer ${vMAJOR}.${vMINOR}.${vPATCH}.${vBUILD}";
-CFBundleGetInfoString = "${VIEWER_CHANNEL} Viewer ${vMAJOR}.${vMINOR}.${vPATCH}.${vBUILD}, Copyright 2012 Siana Gearz";
+CFBundleGetInfoString = "${VIEWER_CHANNEL} Viewer ${vMAJOR}.${vMINOR}.${vPATCH}.${vBUILD}, Copyright 2012 Siana Gearz, Copyright 2022 Sjofn LLC";

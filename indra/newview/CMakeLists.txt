@@ -1268,7 +1268,7 @@ if (WINDOWS)
 
     # Replace the icons with the appropriate ones for the channel
     # ('test' is the default)
-    set(ICON_PATH "default")
+    set(ICON_PATH default CACHE STRING "Path to icon files")
     set(VIEWER_MACOSX_PHASE "d")
     message("Copying icons for ${ICON_PATH}")
     execute_process(
@@ -1592,6 +1592,7 @@ if (WINDOWS)
         --arch=${ARCH}
         --artwork=${ARTWORK_DIR}
         --branding_id=${VIEWER_BRANDING_ID}
+        --icon_path=${ICON_PATH}
         --build=${CMAKE_CURRENT_BINARY_DIR}
         --buildtype=${CMAKE_BUILD_TYPE}
         --configuration=${VIEWER_BUILD_DEST_DIR}
@@ -1634,6 +1635,7 @@ if (WINDOWS)
           --arch=${ARCH}
           --artwork=${ARTWORK_DIR}
           --branding_id=${VIEWER_BRANDING_ID}
+          --icon_path=${ICON_PATH}
           --build=${CMAKE_CURRENT_BINARY_DIR}
           --buildtype=${CMAKE_BUILD_TYPE}
           --channel=${VIEWER_CHANNEL}
@@ -1740,6 +1742,7 @@ if (LINUX)
         --arch=${ARCH}
         --artwork=${ARTWORK_DIR}
         --branding_id=${VIEWER_BRANDING_ID}
+        --icon_path=${ICON_PATH}
         --build=${CMAKE_CURRENT_BINARY_DIR}
         --buildtype=${CMAKE_BUILD_TYPE}
         --channel=${VIEWER_CHANNEL}
@@ -1764,6 +1767,7 @@ if (LINUX)
         --actions=copy
         --artwork=${ARTWORK_DIR}
         --branding_id=${VIEWER_BRANDING_ID}
+        --icon_path=${ICON_PATH}
         --build=${CMAKE_CURRENT_BINARY_DIR}
         --buildtype=${CMAKE_BUILD_TYPE}
         --configuration=${CMAKE_CFG_INTDIR}
@@ -1789,15 +1793,15 @@ if (LINUX)
 endif (LINUX)
 
 if (DARWIN)
-  set(product ${VIEWER_BRANDING_NAME})
-  set(MACOSX_BUNDLE_INFO_STRING "A stable third-party Second Life viewer.")
+  set(product ${VIEWER_BRANDING_ID})
+  set(MACOSX_BUNDLE_INFO_STRING "A metaverse viewer.")
   set(MACOSX_BUNDLE_ICON_FILE "viewer.icns")
-  set(MACOSX_BUNDLE_GUI_IDENTIFIER "${VIEWER_BRANDING_NAME}")
+  set(MACOSX_BUNDLE_GUI_IDENTIFIER "${VIEWER_BRANDING_ID}")
   set(MACOSX_BUNDLE_LONG_VERSION_STRING "${VIEWER_CHANNEL} ${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}")
-  set(MACOSX_BUNDLE_BUNDLE_NAME "${VIEWER_BRANDING_NAME}")
+  set(MACOSX_BUNDLE_BUNDLE_NAME "${VIEWER_BRANDING_ID}")
   set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VIEWER_SHORT_VERSION}")
   set(MACOSX_BUNDLE_BUNDLE_VERSION "${${ROOT_PROJECT_NAME}_VERSION}")
-  set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2010-2016 Siana Gearz")
+  set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2010-2016 Siana Gearz, 2022 Sjofn LLC")
 
   set_target_properties(
     ${VIEWER_BINARY_NAME}
@@ -1822,6 +1826,7 @@ if (DARWIN)
       --actions=copy
       --artwork=${ARTWORK_DIR}
       --branding_id=${VIEWER_BRANDING_ID}
+      --icon_path=${ICON_PATH}
       --build=${CMAKE_CURRENT_BINARY_DIR}
       --buildtype=${CMAKE_BUILD_TYPE}
       --configuration=${CMAKE_CFG_INTDIR}

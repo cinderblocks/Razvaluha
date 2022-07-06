@@ -50,9 +50,7 @@ viewer_dir = os.path.dirname(__file__)
 # Put it FIRST because some of our build hosts have an ancient install of
 # indra.util.llmanifest under their system Python!
 sys.path.insert(0, os.path.join(viewer_dir, os.pardir, "lib", "python"))
-from indra.util.llmanifest import LLManifest, main, proper_windows_path, path_ancestors, CHANNEL_VENDOR_BASE, \
-    RELEASE_CHANNEL, ManifestError
-from llbase import llsd
+from indra.util.llmanifest import LLManifest, main, proper_windows_path, path_ancestors, ManifestError
 
 
 class ViewerManifest(LLManifest):
@@ -144,11 +142,10 @@ class ViewerManifest(LLManifest):
             # build_data.json.  Standard with exception handling is fine.  If we can't open a new file for writing, we have worse problems
             # platform is computed above with other arg parsing
             build_data_dict = {"Type": "viewer", "Version": '.'.join(self.args['version']),
-                               "Channel Base": CHANNEL_VENDOR_BASE,
+                               "Channel Base": self.channel_variant_app_suffix(),
                                "Channel": self.channel_with_pkg_suffix(),
                                "Platform": self.build_data_json_platform,
                                "Address Size": self.address_size,
-                               "Update Service": "https://app.alchemyviewer.org/update",
                                }
             build_data_dict = self.finish_build_data_dict(build_data_dict)
             with open(os.path.join(os.pardir, 'build_data.json'), 'w') as build_data_handle:
@@ -182,8 +179,7 @@ class ViewerManifest(LLManifest):
         return fullchannel
 
     def channel_variant(self):
-        global CHANNEL_VENDOR_BASE
-        return self.channel().replace(CHANNEL_VENDOR_BASE, "").strip()
+        return self.channel().strip()
 
     def channel_type(self):  # returns 'release', 'beta', 'project', or 'test'
         channel_qualifier = self.channel_variant().lower()
@@ -198,16 +194,15 @@ class ViewerManifest(LLManifest):
         else:
             channel_type = 'test'
         return channel_type
-
+     
     def channel_variant_app_suffix(self):
-        # get any part of the channel name after the CHANNEL_VENDOR_BASE
         suffix = self.channel_variant()
         # by ancient convention, we don't use Release in the app name
         if self.channel_type() == 'release':
             suffix = suffix.replace('Release', '').strip()
         # for the base release viewer, suffix will now be null - for any other, append what remains
         if suffix:
-            suffix = "_".join([''] + suffix.split())
+            suffix = "_".join(suffix.split())
         # the additional_packages mechanism adds more to the installer name (but not to the app name itself)
         # ''.split() produces empty list, so suffix only changes if
         # channel_suffix is non-empty
@@ -215,30 +210,22 @@ class ViewerManifest(LLManifest):
         return suffix
 
     def installer_base_name(self):
-        global CHANNEL_VENDOR_BASE
         # a standard map of strings for replacing in the templates
         substitution_strings = {
-            'channel_vendor_base': '_'.join(CHANNEL_VENDOR_BASE.split()),
             'channel_variant_underscores': self.channel_variant_app_suffix(),
             'version_underscores': '_'.join(self.args['version']),
             'arch': self.args['arch']
         }
-        return "%(channel_vendor_base)s%(channel_variant_underscores)s_%(version_underscores)s_%(arch)s" % substitution_strings
+        return "%(channel_variant_underscores)s_%(version_underscores)s_%(arch)s" % substitution_strings
 
     def app_name(self):
-        global CHANNEL_VENDOR_BASE
-        channel_type = self.channel_type()
-        if channel_type == 'release':
-            app_suffix = ''
-        else:
-            app_suffix = self.channel_variant()
-        return CHANNEL_VENDOR_BASE + ' ' + app_suffix
+        return self.channel_variant()
 
     def app_name_oneword(self):
         return ''.join(self.app_name().split())
 
     def icon_path(self):
-        return "icons/" + ("default", "alpha")[self.channel_type() == "alpha"]
+        return "icons/" + self.args['icon_path']
 
     def extract_names(self, src):
         try:
@@ -751,10 +738,7 @@ class WindowsManifest(ViewerManifest):
         !define VERSION_DASHES "%(version_dashes)s"
         """ % substitution_strings
 
-        if self.channel_type() == 'release':
-            substitution_strings['caption'] = CHANNEL_VENDOR_BASE
-        else:
-            substitution_strings['caption'] = self.app_name() + ' ${VERSION}'
+        substitution_strings['caption'] = self.app_name() + ' ${VERSION}'
 
         inst_vars_template = """
             !define INSTEXE  "%(final_exe)s"
@@ -763,7 +747,7 @@ class WindowsManifest(ViewerManifest):
             !define APPNAMEONEWORD   "%(app_name_oneword)s"
             !define URLNAME   "secondlife"
             !define CAPTIONSTR "%(caption)s"
-            !define VENDORSTR "Singularity Viewer Project"
+            !define VENDORSTR "%(app_name)s"
             !define VERSION "%(version_short)s"
             !define VERSION_LONG "%(version)s"
             !define VERSION_DASHES "%(version_dashes)s"

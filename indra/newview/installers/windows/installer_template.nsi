@@ -194,8 +194,8 @@
 ;Version Information
 
   VIProductVersion "${VERSION_LONG}"
-  VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "Singularity Viewer Installer"
-  VIAddVersionKey /LANG=${LANG_ENGLISH} "Comments" "A viewer for the meta-verse!"
+  VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "${APPNAME} Installer"
+  VIAddVersionKey /LANG=${LANG_ENGLISH} "Comments" "A viewer for the metaverse!"
   VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "${VENDORSTR}"
   VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "Copyright © 2010-2020, ${VENDORSTR}"
   VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "${APPNAME} Installer"
@@ -468,9 +468,6 @@ Section "Viewer"
     CreateShortCut	"$SMPROGRAMS\$STARTMENUFOLDER\$INSTSHORTCUT.lnk" "$\"$INSTDIR\$INSTEXE$\"" "$SHORTCUT_LANG_PARAM"
     CreateShortCut	"$SMPROGRAMS\$STARTMENUFOLDER\Uninstall $INSTSHORTCUT.lnk" "$\"$INSTDIR\uninst.exe$\"" ""
 !endif
-    WriteINIStr		"$SMPROGRAMS\$STARTMENUFOLDER\SL Create Account.url" "InternetShortcut" "URL" "https://join.secondlife.com/"
-    WriteINIStr		"$SMPROGRAMS\$STARTMENUFOLDER\SL Your Account.url"	"InternetShortcut" "URL" "https://www.secondlife.com/account/"
-    WriteINIStr		"$SMPROGRAMS\$STARTMENUFOLDER\SL Scripting Language Help.url" "InternetShortcut" "URL" "https://wiki.secondlife.com/wiki/LSL_Portal"
 
   !insertmacro MUI_STARTMENU_WRITE_END
 

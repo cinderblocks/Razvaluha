@@ -97,8 +97,6 @@ def get_default_platform(dummy):
 
 
 DEFAULT_SRCTREE = os.path.dirname(sys.argv[0])
-CHANNEL_VENDOR_BASE = 'Singularity'
-RELEASE_CHANNEL = CHANNEL_VENDOR_BASE + ' Release'
 
 BASE_ARGUMENTS = [
     dict(name='actions',
@@ -136,6 +134,7 @@ BASE_ARGUMENTS = [
     dict(name='grid',
          description="""Which grid the client will try to connect to.""",
          default=None),
+    dict(name='icon_path', description='Directory to source icons', default="default"),
     dict(name='installer_name',
          description=""" The name of the file that the installer should be
         packaged up into. Only used on Linux at the moment.""",
@@ -348,9 +347,6 @@ class LLManifest(object, metaclass=LLManifestRegistry):
         self.created_paths = []
         self.package_name = "Unknown"
         self.missing = []
-
-    def default_channel(self):
-        return self.args.get('channel', None) == RELEASE_CHANNEL
 
     def construct(self):
         """ Meant to be overriden by LLManifest implementors with code that

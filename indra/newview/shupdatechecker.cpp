@@ -104,6 +104,7 @@ private:
 
 void check_for_updates()
 {
+	return;
 	// Hard-code the update url for now.
 	std::string url = "http://singularity-viewer.github.io/pages/api/get_update_info.json";//gSavedSettings.getString("SHUpdateCheckURL");
 	if (!url.empty())
