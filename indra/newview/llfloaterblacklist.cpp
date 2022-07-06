@@ -223,7 +223,7 @@ void LLFloaterBlacklist::onClickRemove(void* user_data)
 // static
 void LLFloaterBlacklist::loadFromSave()
 {
-	std::string file_name = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "blacklist_sg1.xml");
+	std::string file_name = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "blacklist_avatarlife.xml");
 	llifstream xml_file(file_name);
 	if(!xml_file.is_open()) return;
 	LLSD data;
@@ -273,7 +273,7 @@ void LLFloaterBlacklist::updateBlacklists()
 //static
 void LLFloaterBlacklist::saveToDisk()
 {
-	std::string file_name = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "blacklist_sg1.xml");
+	std::string file_name = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "blacklist_avatarlife.xml");
 	llofstream export_file(file_name);
 	LLSD data;
 	for(auto iter = blacklist_entries.begin(); iter != blacklist_entries.end(); ++iter)

@@ -702,7 +702,7 @@ bool SHClientTagMgr::getIsEnabled() const
 
 bool SHClientTagMgr::fetchDefinitions() const
 {
-	std::string client_list_filename = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "client_tags_sg1.xml");
+	std::string client_list_filename = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "client_tags_avatarlife.xml");
 	std::string client_list_url = gSavedSettings.getString("ClientDefinitionsURL");
 	LLSD response = LLHTTPClient::blockingGet(client_list_url);
 	if(response.has("body"))
@@ -722,11 +722,11 @@ bool SHClientTagMgr::fetchDefinitions() const
 }
 bool SHClientTagMgr::parseDefinitions()
 {
-	std::string client_list_filename = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "client_tags_sg1.xml");
+	std::string client_list_filename = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "client_tags_avatarlife.xml");
 
 	if(!LLFile::isfile(client_list_filename))
 	{
-		client_list_filename = gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "client_tags_sg1.xml");
+		client_list_filename = gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "client_tags_avatarlife.xml");
 	}
 
 	if(LLFile::isfile(client_list_filename))

@@ -591,7 +591,7 @@ LLAppViewer::LLAppViewer() :
 			else newview_path.clear();
 		}
 
-		gDirUtilp->initAppDirs("SecondLife", newview_path);
+		gDirUtilp->initAppDirs("AvatarLife", newview_path);
 	}
 	//
 	// IMPORTANT! Do NOT put anything that will write

@@ -338,7 +338,7 @@ const std::string &LLDir::getDumpDir() const
 					+ "dump-" + uid.asString();
 		*/
 
-		sDumpDir = getExpandedFilename(LL_PATH_LOGS, "") + "singularity-debug";
+		sDumpDir = getExpandedFilename(LL_PATH_LOGS, "") + "avatarlife-debug";
 		dir_exists_or_crash(sDumpDir);
 	}
 
@@ -373,11 +373,7 @@ const std::string  LLDir::getCacheDir(bool get_default) const
 	}
 }
 
-#if (defined(_WIN64) || defined(__amd64__) || defined(__x86_64__))
-#define OS_CACHE_DIR "Viewer64"
-#else
-#define OS_CACHE_DIR "Viewer"
-#endif
+#define OS_CACHE_DIR "AvatarLife"
 
 // Return the default cache directory
 std::string LLDir::buildSLOSCacheDir() const
@@ -391,7 +387,7 @@ std::string LLDir::buildSLOSCacheDir() const
 		}
 		else
 		{
-			res = add(getOSUserAppDir(), "cache_vwr");
+			res = add(getOSUserAppDir(), "cache_avatarlife");
 		}
 	}
 	else
@@ -1027,7 +1023,7 @@ void LLDir::setSkinFolder(const std::string &skin_folder, const std::string& lan
 	// user modifications to skins, current and default
 	// e.g. c:\documents and settings\users\username\application data\second life\skins\dazzle
 	mUserSkinDir = getOSUserAppDir();
-	append(mUserSkinDir, "skins_sg1");
+	append(mUserSkinDir, "skins_avatarlife");
 	mUserDefaultSkinDir = mUserSkinDir;
 	append(mUserDefaultSkinDir, "default");
 	append(mUserSkinDir, skin_folder);

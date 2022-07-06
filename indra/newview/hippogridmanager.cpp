@@ -753,7 +753,7 @@ void HippoGridManager::loadFromFile()
 {
 	mDefaultGridsVersion = 0;
 	// load user grid info
-	parseFile(gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "grids_sg1.xml"), false);
+	parseFile(gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "grids_avatarlife.xml"), false);
 	// merge default grid info, if newer. Force load, if list of grids is empty.
 	parseFile(gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "default_grids.xml"), !mGridInfo.empty());
 
@@ -931,7 +931,7 @@ void HippoGridManager::saveFile()
 	}
 
 	// write client grid info file
-	std::string fileName = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "grids_sg1.xml");
+	std::string fileName = gDirUtilp->getExpandedFilename(LL_PATH_USER_SETTINGS, "grids_avatarlife.xml");
 	llofstream file;
 	file.open(fileName.c_str());
 	if (file.is_open()) 

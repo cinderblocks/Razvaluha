@@ -24,16 +24,16 @@ Make sure you entered the correct Login URI. An example of a Login URI is: \"htt
 	<string name="GridInfoParseError">XML Parse Error: [XML_ERROR]</string>
 
 	<!-- Default Args - these arguments will be replaced in all strings -->
-	<string name="SECOND_LIFE">Second Life</string>
-	<string name="APP_NAME">Singularity Viewer</string>
-	<string name="CAPITALIZED_APP_NAME">SINGULARITY VIEWER</string>
-	<string name="SHORT_APP_NAME">Singularity</string>
-	<string name="APP_SITE">http://www.singularityviewer.org</string>
-	<string name="SECOND_LIFE_GRID">Second Life Grid</string>
-	<string name="SUPPORT_SITE">Second Life Support Portal</string>
+	<string name="SECOND_LIFE">AvatarLife</string>
+	<string name="APP_NAME">AvatarLife</string>
+	<string name="CAPITALIZED_APP_NAME">AVATARLIFE</string>
+	<string name="SHORT_APP_NAME">AvatarLife</string>
+	<string name="APP_SITE">https://avatarlife.com/</string>
+	<string name="SECOND_LIFE_GRID">AvatarLife Grid</string>
+	<string name="SUPPORT_SITE">AvatarLife Support Portal</string>
 
-	<string name="CURRENCY">L$</string>
-	<string name="GRID_OWNER">Linden Lab</string>
+	<string name="CURRENCY">$</string>
+	<string name="GRID_OWNER">AvatarLife</string>
 
 	<!-- starting up -->
 	<string name="StartupDetectingHardware">Detecting hardware...</string>
@@ -60,7 +60,7 @@ Make sure you entered the correct Login URI. An example of a Login URI is: \"htt
 	<string name="LoginPrecaching">Loading world...</string>
 	<string name="LoginInitializingBrowser">Initializing embedded web browser...</string>
 	<string name="LoginInitializingMultimedia">Initializing multimedia...</string>
-  <string name="LoginInitializingFonts">Loading fonts...</string>
+	<string name="LoginInitializingFonts">Loading fonts...</string>
 	<string name="LoginVerifyingCache">Verifying cache files (can take 60-90 seconds)...</string>
 	<string name="LoginProcessingResponse">Processing Response...</string>
 	<string name="LoginInitializingWorld">Initializing World...</string>
@@ -76,16 +76,10 @@ Make sure you entered the correct Login URI. An example of a Login URI is: \"htt
 
 	<string name="LoginFailed">Login failed.</string>
 	<string name="Quit">Quit</string>
-	<string name="LoginFailedViewerNotPermitted">
-The viewer you are using can no longer access Second Life. Please visit the following page to download a new viewer:
-http://secondlife.com/download
-
-For more information, see our FAQ below:
-http://secondlife.com/viewer-access-faq</string>
+	<string name="LoginFailedViewerNotPermitted">The viewer you are using can no longer access [SECOND_LIFE_GRID].</string>
 	<string name="LoginIntermediateOptionalUpdateAvailable">Optional viewer update available: [VERSION]</string>
 	<string name="LoginFailedRequiredUpdate">Required viewer update: [VERSION]</string>
-	<string name="LoginFailedAlreadyLoggedIn">This agent is already logged in.
-</string>
+	<string name="LoginFailedAlreadyLoggedIn">This agent is already logged in.</string>
 	<string name="LoginFailedAuthenticationFailed">Sorry! We couldn't log you in.
 Please check to make sure you entered the right
     * Username (like bobsmith12 or steller.sunshine)
@@ -99,20 +93,16 @@ We are very sorry for the inconvenience.</string>
 Please go to your account page at http://secondlife.com/password
 and answer the security question to reset your password.
 We are very sorry for the inconvenience.</string>
-	<string name="LoginFailedEmployeesOnly">Second Life is temporarily closed for maintenance.
+	<string name="LoginFailedEmployeesOnly">[SECOND_LIFE_GRID] is temporarily closed for maintenance.
 Logins are currently restricted to employees only.
 Check www.secondlife.com/status for updates.</string>
-	<string name="LoginFailedPremiumOnly">Second Life logins are temporarily restricted in order to make sure that those in-world have the best possible experience.
+	<string name="LoginFailedPremiumOnly">[SECOND_LIFE_GRID] logins are temporarily restricted in order to make sure that those in-world have the best possible experience.
 
-People with free accounts will not be able to access Second Life during this time, to make room for those who have paid for Second Life.</string>
-	<string name="LoginFailedComputerProhibited">Second Life cannot be accessed from this computer.
-If you feel this is an error, please contact
-support@secondlife.com.</string>
+		People with free accounts will not be able to access [SECOND_LIFE_GRID] during this time, to make room for those who have paid for [SECOND_LIFE_GRID].</string>
+	<string name="LoginFailedComputerProhibited">[SECOND_LIFE_GRID] cannot be accessed from this computer.</string>
 	<string name="LoginFailedAcountSuspended">Your account is not accessible until
 [TIME] Pacific Time.</string>
-	<string name="LoginFailedAccountDisabled">We are unable to complete your request at this time.
-Please contact Second Life support for assistance at http://secondlife.com/support.
-If you are unable to change your password, please call (866) 476-9763.</string>
+	<string name="LoginFailedAccountDisabled">We are unable to complete your request at this time.</string>
 	<string name="LoginFailedTransformError">Data inconsistency found during login.
 Please contact support@secondlife.com.</string>
 	<string name="LoginFailedAccountMaintenance">Your account is undergoing minor maintenance.
@@ -125,16 +115,13 @@ Your Account will not be available until
 [TIME] Pacific Time.</string>
 	<string name="LoginFailedUnableToCreateSession">Unable to create valid session.</string>
 	<string name="LoginFailedUnableToConnectToSimulator">Unable to connect to a simulator.</string>
-	<string name="LoginFailedRestrictedHours">Your account can only access Second Life
-between [START] and [END] Pacific Time.
-Please come back during those hours.
-If you feel this is an error, please contact support@secondlife.com.</string>
-	<string name="LoginFailedIncorrectParameters">Incorrect parameters.
-If you feel this is an error, please contact support@secondlife.com.</string>
-	<string name="LoginFailedFirstNameNotAlphanumeric">First name parameter must be alphanumeric.
-If you feel this is an error, please contact support@secondlife.com.</string>
-	<string name="LoginFailedLastNameNotAlphanumeric">Last name parameter must be alphanumeric.
-If you feel this is an error, please contact support@secondlife.com.</string>
+	<string name="LoginFailedRestrictedHours">Your account can only access [SECOND_LIFE_GRID]
+		between [START] and [END] Pacific Time.
+		Please come back during those hours.
+		If you feel this is an error, please contact support@secondlife.com.</string>
+	<string name="LoginFailedIncorrectParameters">Incorrect parameters.</string>
+	<string name="LoginFailedFirstNameNotAlphanumeric">First name parameter must be alphanumeric.</string>
+	<string name="LoginFailedLastNameNotAlphanumeric">Last name parameter must be alphanumeric.</string>
 	<string name="LogoutFailedRegionGoingOffline">Region is going offline.
 Please try logging in again in a minute.</string>
 	<string name="LogoutFailedAgentNotInRegion">Agent not in region.
@@ -3384,7 +3371,6 @@ The [[MARKETPLACE_CREATE_STORE_URL] Marketplace store] is returning errors.
 	</string>
 	<string name="InventoryMarketplaceError">
 An error occurred while opening Marketplace Listings.
-If you continue to receive this message, please contact Second Life support for assistance at http://support.secondlife.com
 	</string>
 	<string name="InventoryMarketplaceListingsNoItemsTitle">Your Marketplace Listings folder is empty.</string>
 	<string name="InventoryMarketplaceListingsNoItemsTooltip"></string>
