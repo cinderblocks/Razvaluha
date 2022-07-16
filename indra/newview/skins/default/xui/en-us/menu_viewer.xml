@@ -595,16 +595,6 @@
 		<menu_item_call name="insert_agent"/>
 		<menu_item_separator bottom="-232" enabled="true" height="8" label="-----------" left="0"
 		     mouse_opaque="true" name="separator4" width="185" />
-		<menu_item_call bottom="-232" enabled="true" height="19" label="Account History..." left="0"
-		     mouse_opaque="true" name="Account History..." width="185">
-			<on_click function="PromptShowURL" name="AccountHistory_url"
-			     userdata="WebLaunchAccountHistory,https://accounts.secondlife.com/transaction_history/" />
-		</menu_item_call>
-		<menu_item_call bottom="-267" enabled="true" height="19" label="Manage My Account..." left="0"
-		     mouse_opaque="true" name="Manage My Account..." width="166">
-			<on_click function="PromptShowURL" name="ManageMyAccount_url"
-			     userdata="WebLaunchJoinNow,https://secondlife.com/my/account/index.php" />
-		</menu_item_call>
         <menu_item_call label="Marketplace" name="Marketplace">
             <on_click function="ShowWebFloater" userdata="marketplace"/>
         </menu_item_call>
@@ -964,34 +954,12 @@
 	<menu bottom="219" create_jump_keys="true" drop_shadow="true" enabled="true"
 	     height="317" label="Help" left="227" mouse_opaque="false" name="Help"
 	     opaque="true" tear_off="true" width="166">
-		<!--menu_item_call bottom="-29" enabled="true" height="19" label="[SECOND_LIFE] Help" left="0"
-		     mouse_opaque="true" name="Second Life Help" shortcut="F1" width="166">
-			<on_click function="ShowFloater" userdata="help f1" />
-		</menu_item_call-->
 		<menu_item_call bottom="-48" enabled="true" height="19" label="Tutorial" left="0"
 		     mouse_opaque="true" name="Tutorial" width="166">
 			<on_click function="ShowFloater" userdata="help tutorial" />
 		</menu_item_call>
 		<menu_item_separator bottom="-75" enabled="true" height="8" label="-----------" left="0"
 		     mouse_opaque="true" name="separator" width="166" />
-		<menu_item_call bottom="-94" enabled="true" height="19" label="Official Linden Blog..."
-		     left="0" mouse_opaque="true" name="Official Linden Blog..." width="166">
-			<on_click function="PromptShowURL" name="OfficialLindenBlog_url"
-			     userdata="WebLaunchSupportWiki,http://blog.secondlife.com/" />
-			<on_visible function="VisibleSecondLife"/>
-		</menu_item_call>
-		<menu_item_call label="Grid Status..." name="Grid Status...">
-			<on_click function="PromptShowURL" userdata="WebLaunchGridStatus,http://status.secondlifegrid.net/"/>
-			<on_visible function="VisibleSecondLife"/>
-		</menu_item_call>
-		<menu_item_separator bottom="-102" enabled="true" height="8" label="-----------" left="0"
-		     mouse_opaque="true" name="separator2" width="166" />
-		<menu_item_call bottom="-140" enabled="true" height="19" label="Scripting Portal..." left="0"
-		     mouse_opaque="true" name="Scripting Portal..." width="166">
-			<on_click function="PromptShowURL" name="ScriptingPortal_url"
-			     userdata="WebLaunchLSLWiki,http://wiki.secondlife.com/wiki/LSL_Portal" />
-		</menu_item_call>
-		<menu_item_separator name="separator3"/>
 		<menu_item_call bottom="-194" enabled="true" height="19" label="Report Abuse..." left="0"
 		     mouse_opaque="true" name="Report Abuse..." width="166">
 			<on_click function="ShowFloater" userdata="complaint reporter" />

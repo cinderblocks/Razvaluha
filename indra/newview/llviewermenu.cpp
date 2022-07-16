@@ -1661,7 +1661,7 @@ void init_server_menu(LLMenuGL* menu)
 		sub->addChild(new LLMenuItemCallGL("Owner To Me",
 										 &handle_force_parcel_owner_to_me,
 										 &is_god_customer_service, nullptr));
-		sub->addChild(new LLMenuItemCallGL("Set to Linden Content",
+		sub->addChild(new LLMenuItemCallGL("Set to Grid Content",
 										 &handle_force_parcel_to_content,
 										 &is_god_customer_service, nullptr));
 		sub->addSeparator();
