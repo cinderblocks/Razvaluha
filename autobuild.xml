@@ -2315,38 +2315,6 @@
         <key>version</key>
         <string>4.9.0002.27586.511884</string>
       </map>
-      <key>tut</key>
-      <map>
-        <key>copyright</key>
-        <string>Copyright 2002-2006 Vladimir Dyuzhev, Copyright 2007 Denis Kononenko, Copyright 2008-2009 Michal Rzechonek</string>
-        <key>description</key>
-        <string>TUT is a small and portable unit test framework for C++.</string>
-        <key>license</key>
-        <string>bsd</string>
-        <key>license_file</key>
-        <string>LICENSES/tut.txt</string>
-        <key>name</key>
-        <string>tut</string>
-        <key>platforms</key>
-        <map>
-          <key>common</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>56601f1217ccd206829e8834e5a1253b</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/common/lib/tut-2008.11.30-common-201504282317.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>common</string>
-          </map>
-        </map>
-        <key>version</key>
-        <string>2008.11.30</string>
-      </map>
       <key>uriparser</key>
       <map>
         <key>copyright</key>
