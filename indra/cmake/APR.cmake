@@ -12,11 +12,7 @@ if (STANDALONE)
 else (STANDALONE)
   use_prebuilt_binary(apr_suite)
   if (WINDOWS)
-    if (LLCOMMON_LINK_SHARED)
-      set(APR_selector "lib")
-    else (LLCOMMON_LINK_SHARED)
-      set(APR_selector "")
-    endif (LLCOMMON_LINK_SHARED)
+    set(APR_selector "lib")
     set(APR_LIBRARIES 
       debug ${ARCH_PREBUILT_DIRS_DEBUG}/${APR_selector}apr-1.lib
       optimized ${ARCH_PREBUILT_DIRS_RELEASE}/${APR_selector}apr-1.lib
@@ -29,9 +25,6 @@ else (STANDALONE)
       debug ${ARCH_PREBUILT_DIRS_DEBUG}/${APR_selector}aprutil-1.lib ${APRICONV_LIBRARIES}
       optimized ${ARCH_PREBUILT_DIRS_RELEASE}/${APR_selector}aprutil-1.lib ${APRICONV_LIBRARIES}
       )
-    if(NOT LLCOMMON_LINK_SHARED)
-      list(APPEND APR_LIBRARIES Rpcrt4)
-    endif(NOT LLCOMMON_LINK_SHARED)
   elseif (DARWIN)
     if (LLCOMMON_LINK_SHARED)
       set(APR_selector     "0.dylib")
@@ -49,4 +42,8 @@ else (STANDALONE)
     set(APRICONV_LIBRARIES iconv)
   endif (WINDOWS)
   set(APR_INCLUDE_DIR ${LIBS_PREBUILT_DIR}/include/apr-1)
+
+  if (LINUX)
+    list(APPEND APRUTIL_LIBRARIES rt)
+  endif (LINUX)
 endif (STANDALONE)

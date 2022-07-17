@@ -469,9 +469,10 @@ class WindowsManifest(ViewerManifest):
             if self.path('llcommon.dll') == 0:
                 print("Skipping llcommon.dll (assuming llcommon was linked statically)")
 
-            self.path('libapr-1.dll')
-            self.path('libaprutil-1.dll')
-            self.path('libapriconv-1.dll')
+            # APR Libraries
+            self.path("libapr-1.dll")
+            self.path("libapriconv-1.dll")
+            self.path("libaprutil-1.dll")
 
             # Mesh 3rd party libs needed for auto LOD and collada reading
             if self.path("glod.dll") == 0:
@@ -484,6 +485,26 @@ class WindowsManifest(ViewerManifest):
             else:
                 if self.path("fmod.dll") == 0:
                     print("Skipping fmodstudio audio library(assuming other audio engine)")
+
+            # HTTP and Network
+            if self.args['configuration'].lower() == 'debug':
+                self.path("xmlrpc-epid.dll")
+            else:
+                self.path("xmlrpc-epi.dll")
+
+            # Hunspell
+            self.path("libhunspell.dll")
+
+            # Audio
+            self.path("libogg.dll")
+            self.path("libvorbis.dll")
+            self.path("libvorbisfile.dll")
+
+            # Misc
+            if self.args['configuration'].lower() == 'debug':
+                self.path("libexpatd.dll")
+            else:
+                self.path("libexpat.dll")
 
             # Get OpenAL dlls, continue if missing
             if self.path("alut.dll", "OpenAL32.dll") == 0:
