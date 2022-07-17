@@ -44,8 +44,13 @@ if(WINDOWS)
         libapr-1.dll
         libaprutil-1.dll
         libapriconv-1.dll
-        glod.dll    
+        glod.dll
+        libexpatd.dll
         libhunspell.dll
+        libogg.dll
+        libvorbis.dll
+        libvorbisfile.dll
+        xmlrpc-epid.dll
         )
 
     set(release_src_dir "${ARCH_PREBUILT_DIRS_RELEASE}")
@@ -54,7 +59,12 @@ if(WINDOWS)
         libaprutil-1.dll
         libapriconv-1.dll
         glod.dll
+        libexpat.dll
         libhunspell.dll
+        libogg.dll
+        libvorbis.dll
+        libvorbisfile.dll
+        xmlrpc-epi.dll
         )
 
     if(ADDRESS_SIZE EQUAL 64)
@@ -120,7 +130,7 @@ elseif(DARWIN)
         libexpat.1.5.2.dylib
         libexpat.dylib
         libGLOD.dylib
-        libhunspell-1.3.0.dylib
+        libhunspell-1.7.0.dylib
         libndofdev.dylib
        )
 
