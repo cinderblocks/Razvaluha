@@ -3,6 +3,7 @@
 project(llaudio)
 
 include(00-Common)
+include(LLAudio)
 include(FMODSTUDIO)
 include(OPENAL)
 include(LLCommon)
@@ -20,25 +21,24 @@ include_directories(
     ${VORBISENC_INCLUDE_DIRS}
     ${VORBISFILE_INCLUDE_DIRS}
     ${VORBIS_INCLUDE_DIRS}
-    ${OPENAL_LIB_INCLUDE_DIRS}
-    ${FREEAULT_LIB_INCLUDE_DIRS}
+    ${OPENAL_INCLUDE_DIRS}
+    ${FREEAULT_INCLUDE_DIRS}
     )
 
 set(llaudio_SOURCE_FILES
-    llaudiodecodemgr.cpp
     llaudioengine.cpp
     lllistener.cpp
-    llvorbisdecode.cpp
+    llaudiodecodemgr.cpp
     llvorbisencode.cpp
     )
 
 set(llaudio_HEADER_FILES
     CMakeLists.txt
 
-    llaudiodecodemgr.h
     llaudioengine.h
     lllistener.h
-    llvorbisdecode.h
+    llaudiodecodemgr.h
+    llstreamingaudio.h
     llvorbisencode.h
     llwindgen.h
     )
@@ -61,6 +61,11 @@ if (USE_FMODSTUDIO)
 endif (USE_FMODSTUDIO)
 
 if (OPENAL)
+  include_directories(
+    ${OPENAL_LIBRARIES}
+    ${FREEALUT_LIBRARIES}
+    )
+
   list(APPEND llaudio_SOURCE_FILES
     llaudioengine_openal.cpp
     lllistener_openal.cpp
@@ -81,6 +86,12 @@ add_library (llaudio ${llaudio_SOURCE_FILES})
 
 target_link_libraries(
     llaudio
-    PUBLIC
-    llcommon
+    ${LLCOMMON_LIBRARIES}
+    ${LLMATH_LIBRARIES}
+    ${LLMESSAGE_LIBRARIES}
+    ${LLFILESYSTEM_LIBRARIES}
+    ${VORBISENC_LIBRARIES}
+    ${VORBISFILE_LIBRARIES}
+    ${VORBIS_LIBRARIES}
+    ${OGG_LIBRARIES}
     )
