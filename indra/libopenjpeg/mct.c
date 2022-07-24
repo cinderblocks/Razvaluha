@@ -33,7 +33,11 @@
 #include "opj_includes.h"
 
 #ifdef __SSE__
-#include <xmmintrin.h>
+#  include <xmmintrin.h>
+#endif
+
+#ifdef __SSE4_1__
+#  include <smmintrin.h>
 #endif
 
 #if defined(__GNUC__)
