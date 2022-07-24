@@ -36,7 +36,7 @@
 // std headers
 #include <atomic>
 // external library headers
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/fiber/fiber.hpp>
 #ifndef BOOST_DISABLE_ASSERTS
 #define UNDO_BOOST_DISABLE_ASSERTS
@@ -59,6 +59,7 @@
 #if LL_WINDOWS
 #include <excpt.h>
 #endif
+using namespace boost::placeholders;
 
 // static
 LLCoros::CoroData& LLCoros::get_CoroData(const std::string& caller)

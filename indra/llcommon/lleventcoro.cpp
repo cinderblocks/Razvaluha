@@ -31,116 +31,304 @@
 // associated header
 #include "lleventcoro.h"
 // STL headers
-#include <map>
+#include <chrono>
+#include <exception>
 // std headers
 // external library headers
+#include <boost/fiber/operations.hpp>
 // other Linden headers
 #include "llsdserialize.h"
+#include "llsdutil.h"
 #include "llerror.h"
 #include "llcoros.h"
+#include "stringize.h"
 
-std::string LLEventDetail::listenerNameForCoroImpl(const void* self_id)
+namespace
 {
-    // First, if this coroutine was launched by LLCoros::launch(), find that name.
-    /*std::string name(LLCoros::instance().getNameByID(self_id));
+
+/**
+ * suspendUntilEventOn() permits a coroutine to temporarily listen on an
+ * LLEventPump any number of times. We don't really want to have to ask
+ * the caller to label each such call with a distinct string; the whole
+ * point of suspendUntilEventOn() is to present a nice sequential interface to
+ * the underlying LLEventPump-with-named-listeners machinery. So we'll use
+ * LLEventPump::inventName() to generate a distinct name for each
+ * temporary listener. On the other hand, because a given coroutine might
+ * call suspendUntilEventOn() any number of times, we don't really want to
+ * consume an arbitrary number of generated inventName()s: that namespace,
+ * though large, is nonetheless finite. So we memoize an invented name for
+ * each distinct coroutine instance.
+ */
+std::string listenerNameForCoro()
+{
+    // If this coroutine was launched by LLCoros::launch(), find that name.
+    std::string name(LLCoros::getName());
     if (! name.empty())
     {
         return name;
-    }*/
-    // Apparently this coroutine wasn't launched by LLCoros::launch(). Check
-    // whether we have a memo for this self_id.
-    typedef std::map<const void*, std::string> MapType;
-    static MapType memo;
-    MapType::const_iterator found = memo.find(self_id);
-    if (found != memo.end())
-    {
-        // this coroutine instance has called us before, reuse same name
-        return found->second;
     }
     // this is the first time we've been called for this coroutine instance
-    std::string name = LLEventPump::inventName("coro");
-    memo[self_id] = name;
-    LL_INFOS("LLEventCoro") << "listenerNameForCoroImpl(" << self_id << "): inventing coro name '"
+    name = LLEventPump::inventName("coro");
+    LL_INFOS("LLEventCoro") << "listenerNameForCoro(): inventing coro name '"
                             << name << "'" << LL_ENDL;
     return name;
 }
 
-void LLEventDetail::storeToLLSDPath(LLSD& dest, const LLSD& rawPath, const LLSD& value)
+/**
+ * Implement behavior described for postAndSuspend()'s @a replyPumpNamePath
+ * parameter:
+ *
+ * * If <tt>path.isUndefined()</tt>, do nothing.
+ * * If <tt>path.isString()</tt>, @a dest is an LLSD map: store @a value
+ *   into <tt>dest[path.asString()]</tt>.
+ * * If <tt>path.isInteger()</tt>, @a dest is an LLSD array: store @a
+ *   value into <tt>dest[path.asInteger()]</tt>.
+ * * If <tt>path.isArray()</tt>, iteratively apply the rules above to step
+ *   down through the structure of @a dest. The last array entry in @a
+ *   path specifies the entry in the lowest-level structure in @a dest
+ *   into which to store @a value.
+ *
+ * @note
+ * In the degenerate case in which @a path is an empty array, @a dest will
+ * @em become @a value rather than @em containing it.
+ */
+void storeToLLSDPath(LLSD& dest, const LLSD& path, const LLSD& value)
 {
-    if (rawPath.isUndefined())
+    if (path.isUndefined())
     {
         // no-op case
         return;
     }
 
-    // Arrange to treat rawPath uniformly as an array. If it's not already an
-    // array, store it as the only entry in one.
-    LLSD path;
-    if (rawPath.isArray())
+    // Drill down to where we should store 'value'.
+    llsd::drill_ref(dest, path) = value;
+}
+
+} // anonymous
+
+void llcoro::suspend()
+{
+    LLCoros::checkStop();
+    LLCoros::TempStatus st("waiting one tick");
+    boost::this_fiber::yield();
+}
+
+void llcoro::suspendUntilTimeout(float seconds)
+{
+    LLCoros::checkStop();
+    // We used to call boost::this_fiber::sleep_for(). But some coroutines
+    // (e.g. LLExperienceCache::idleCoro()) sit in a suspendUntilTimeout()
+    // loop, in which case a sleep_for() call risks sleeping through shutdown.
+    // So instead, listen for "LLApp" state-changing events -- which
+    // fortunately is handled for us by suspendUntilEventOnWithTimeout().
+    // Wait for an event on a bogus LLEventPump on which nobody ever posts
+    // events. Don't make it static because that would force instantiation of
+    // the LLEventPumps LLSingleton registry at static initialization time.
+    // DO allow tweaking the name for uniqueness, this definitely gets
+    // re-entered on multiple coroutines!
+    // We could use an LLUUID if it were important to actively prohibit anyone
+    // from ever posting on this LLEventPump.
+    LLEventStream bogus("xyzzy", true);
+    // Timeout is the NORMAL case for this call!
+    static LLSD timedout;
+    // Deliver, but ignore, timedout when (as usual) we did not receive any
+    // "LLApp" event. The point is that suspendUntilEventOnWithTimeout() will
+    // itself throw Stopping when "LLApp" starts broadcasting shutdown events.
+    suspendUntilEventOnWithTimeout(bogus, seconds, timedout);
+}
+
+namespace
+{
+
+// returns a listener on replyPumpP, also on "mainloop" -- both should be
+// stored in LLTempBoundListeners on the caller's stack frame
+std::pair<LLBoundListener, LLBoundListener>
+postAndSuspendSetup(const std::string& callerName,
+                    const std::string& listenerName,
+                    LLCoros::Promise<LLSD>& promise,
+                    const LLSD& event,
+                    const LLEventPumpOrPumpName& requestPumpP,
+                    const LLEventPumpOrPumpName& replyPumpP,
+                    const LLSD& replyPumpNamePath)
+{
+    // Before we get any farther -- should we be stopping instead of
+    // suspending?
+    LLCoros::checkStop();
+    // Get the consuming attribute for THIS coroutine, the one that's about to
+    // suspend. Don't call get_consuming() in the lambda body: that would
+    // return the consuming attribute for some other coroutine, most likely
+    // the main routine.
+    bool consuming(LLCoros::get_consuming());
+    // listen on the specified LLEventPump with a lambda that will assign a
+    // value to the promise, thus fulfilling its future
+    llassert_always_msg(replyPumpP, ("replyPump required for " + callerName));
+    LLEventPump& replyPump(replyPumpP.getPump());
+    // The relative order of the two listen() calls below would only matter if
+    // "LLApp" were an LLEventMailDrop. But if we ever go there, we'd want to
+    // notice the pending LLApp status first.
+    LLBoundListener stopper(
+        LLEventPumps::instance().obtain("LLApp").listen(
+            listenerName,
+            [&promise, listenerName](const LLSD& status)
+            {
+                // anything except "running" should wake up the waiting
+                // coroutine
+                auto& statsd = status["status"];
+                if (statsd.asString() != "running")
+                {
+#ifdef SHOW_DEBUG
+                    LL_DEBUGS("lleventcoro") << listenerName
+                                             << " spotted status " << statsd
+                                             << ", throwing Stopping" << LL_ENDL;
+#endif
+                    try
+                    {
+                        promise.set_exception(
+                            std::make_exception_ptr(
+                                LLCoros::Stopping("status " + statsd.asString())));
+                    }
+                    catch (const boost::fibers::promise_already_satisfied&)
+                    {
+                        LL_WARNS("lleventcoro") << listenerName
+                                                << " couldn't throw Stopping "
+                                                   "because promise already set" << LL_ENDL;
+                    }
+                }
+                // do not consume -- every listener must see status
+                return false;
+            }));
+    LLBoundListener connection(
+        replyPump.listen(
+            listenerName,
+            [&promise, consuming, listenerName](const LLSD& result)
+            {
+                try
+                {
+                    promise.set_value(result);
+                    // We did manage to propagate the result value to the
+                    // (real) listener. If we're supposed to indicate that
+                    // we've consumed it, do so.
+                    return consuming;
+                }
+                catch(const boost::fibers::promise_already_satisfied & ex)
+                {
+                    (void)ex;
+#ifdef SHOW_DEBUG
+                    LL_DEBUGS("lleventcoro") << "promise already satisfied in '"
+                        << listenerName << "': "  << ex.what() << LL_ENDL;
+#else
+                    (void)ex;
+#endif
+                    // We could not propagate the result value to the
+                    // listener.
+                    return false;
+                }
+            }));
+
+    // skip the "post" part if requestPump is default-constructed
+    if (requestPumpP)
     {
-        path = rawPath;
+        LLEventPump& requestPump(requestPumpP.getPump());
+        // If replyPumpNamePath is non-empty, store the replyPump name in the
+        // request event.
+        LLSD modevent(event);
+        storeToLLSDPath(modevent, replyPumpNamePath, replyPump.getName());
+#ifdef SHOW_DEBUG
+        LL_DEBUGS("lleventcoro") << callerName << ": coroutine " << listenerName
+                                 << " posting to " << requestPump.getName()
+                                 << LL_ENDL;
+#endif
+
+        // *NOTE:Mani - Removed because modevent could contain user's hashed passwd.
+        //                         << ": " << modevent << LL_ENDL;
+        requestPump.post(modevent);
+    }
+#ifdef SHOW_DEBUG
+    LL_DEBUGS("lleventcoro") << callerName << ": coroutine " << listenerName
+                             << " about to wait on LLEventPump " << replyPump.getName()
+                             << LL_ENDL;
+#endif
+    return { connection, stopper };
+}
+
+} // anonymous
+
+LLSD llcoro::postAndSuspend(const LLSD& event, const LLEventPumpOrPumpName& requestPump,
+                 const LLEventPumpOrPumpName& replyPump, const LLSD& replyPumpNamePath)
+{
+    LLCoros::Promise<LLSD> promise;
+    std::string listenerName(listenerNameForCoro());
+
+    // Store both connections into LLTempBoundListeners so we implicitly
+    // disconnect on return from this function.
+    auto connections =
+        postAndSuspendSetup("postAndSuspend()", listenerName, promise,
+                            event, requestPump, replyPump, replyPumpNamePath);
+    LLTempBoundListener connection(connections.first), stopper(connections.second);
+
+    // declare the future
+    LLCoros::Future<LLSD> future = LLCoros::getFuture(promise);
+    // calling get() on the future makes us wait for it
+    LLCoros::TempStatus st(STRINGIZE("waiting for " << replyPump.getPump().getName()));
+    LLSD value(future.get());
+#ifdef SHOW_DEBUG
+    LL_DEBUGS("lleventcoro") << "postAndSuspend(): coroutine " << listenerName
+                             << " resuming with " << value << LL_ENDL;
+#endif
+    // returning should disconnect the connection
+    return value;
+}
+
+LLSD llcoro::postAndSuspendWithTimeout(const LLSD& event,
+                                       const LLEventPumpOrPumpName& requestPump,
+                                       const LLEventPumpOrPumpName& replyPump,
+                                       const LLSD& replyPumpNamePath,
+                                       F32 timeout, const LLSD& timeoutResult)
+{
+    LLCoros::Promise<LLSD> promise;
+    std::string listenerName(listenerNameForCoro());
+
+    // Store both connections into LLTempBoundListeners so we implicitly
+    // disconnect on return from this function.
+    auto connections =
+        postAndSuspendSetup("postAndSuspendWithTimeout()", listenerName, promise,
+                            event, requestPump, replyPump, replyPumpNamePath);
+    LLTempBoundListener connection(connections.first), stopper(connections.second);
+
+    // declare the future
+    LLCoros::Future<LLSD> future = LLCoros::getFuture(promise);
+    // wait for specified timeout
+    boost::fibers::future_status status;
+    {
+        LLCoros::TempStatus st(STRINGIZE("waiting for " << replyPump.getPump().getName()
+                                         << " for " << timeout << "s"));
+        // The fact that we accept non-integer seconds means we should probably
+        // use granularity finer than one second. However, given the overhead of
+        // the rest of our processing, it seems silly to use granularity finer
+        // than a millisecond.
+        status = future.wait_for(std::chrono::milliseconds(long(timeout * 1000)));
+    }
+    // if the future is NOT yet ready, return timeoutResult instead
+    if (status == boost::fibers::future_status::timeout)
+    {
+#ifdef SHOW_DEBUG
+        LL_DEBUGS("lleventcoro") << "postAndSuspendWithTimeout(): coroutine " << listenerName
+                                 << " timed out after " << timeout << " seconds,"
+                                 << " resuming with " << timeoutResult << LL_ENDL;
+#endif
+        return timeoutResult;
     }
     else
     {
-        path.append(rawPath);
+        llassert_always(status == boost::fibers::future_status::ready);
+
+        // future is now ready, no more waiting
+        LLSD value(future.get());
+#ifdef SHOW_DEBUG
+        LL_DEBUGS("lleventcoro") << "postAndSuspendWithTimeout(): coroutine " << listenerName
+                                 << " resuming with " << value << LL_ENDL;
+#endif
+        // returning should disconnect the connection
+        return value;
     }
-
-    // Need to indicate a current destination -- but that current destination
-    // needs to change as we step through the path array. Where normally we'd
-    // use an LLSD& to capture a subscripted LLSD lvalue, this time we must
-    // instead use a pointer -- since it must be reassigned.
-    LLSD* pdest = &dest;
-
-    // Now loop through that array
-    for (LLSD::Integer i = 0; i < path.size(); ++i)
-    {
-        if (path[i].isString())
-        {
-            // *pdest is an LLSD map
-            pdest = &((*pdest)[path[i].asString()]);
-        }
-        else if (path[i].isInteger())
-        {
-            // *pdest is an LLSD array
-            pdest = &((*pdest)[path[i].asInteger()]);
-        }
-        else
-        {
-            // What do we do with Real or Array or Map or ...?
-            // As it's a coder error -- not a user error -- rub the coder's
-            // face in it so it gets fixed.
-            LL_ERRS("lleventcoro") << "storeToLLSDPath(" << dest << ", " << rawPath << ", " << value
-                                   << "): path[" << i << "] bad type " << path[i].type() << LL_ENDL;
-        }
-    }
-
-    // Here *pdest is where we should store value.
-    *pdest = value;
-}
-
-LLSD errorException(const LLEventWithID& result, const std::string& desc)
-{
-    // If the result arrived on the error pump (pump 1), instead of
-    // returning it, deliver it via exception.
-    if (result.second)
-    {
-        throw LLErrorEvent(desc, result.first);
-    }
-    // That way, our caller knows a simple return must be from the reply
-    // pump (pump 0).
-    return result.first;
-}
-
-LLSD errorLog(const LLEventWithID& result, const std::string& desc)
-{
-    // If the result arrived on the error pump (pump 1), log it as a fatal
-    // error.
-    if (result.second)
-    {
-        LL_ERRS("errorLog") << desc << ":" << std::endl;
-        LLSDSerialize::toPrettyXML(result.first, LL_CONT);
-        LL_CONT << LL_ENDL;
-    }
-    // A simple return must therefore be from the reply pump (pump 0).
-    return result.first;
 }
