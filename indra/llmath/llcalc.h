@@ -34,7 +34,7 @@ class LLCalc
 {
 public:
 	LLCalc();
-	~LLCalc();
+	~LLCalc() = default;
 
 	// Variable name constants
 	static const char* X_POS;
@@ -86,7 +86,6 @@ public:
 private:
 	std::string::size_type	mLastErrorPos;
 	
-	calc_map_t	mConstants;
 	calc_map_t	mVariables;
 
 	// "There shall be only one"
