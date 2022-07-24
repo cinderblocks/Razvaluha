@@ -7,7 +7,7 @@ else (STANDALONE)
   use_prebuilt_binary(libhunspell)
 
   if (LINUX OR DARWIN)
-    set(HUNSPELL_LIBRARY hunspell-1.3)
+    set(HUNSPELL_LIBRARY hunspell-1.7)
   else (LINUX OR DARWIN)
     set(HUNSPELL_LIBRARY libhunspell)
   endif (LINUX OR DARWIN)
