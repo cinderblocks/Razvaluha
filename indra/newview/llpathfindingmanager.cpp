@@ -33,7 +33,7 @@
 #include <string>
 #include <map>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #ifndef BOOST_FUNCTION_HPP_INCLUDED
 #include <boost/function.hpp>
 #define BOOST_FUNCTION_HPP_INCLUDED
@@ -58,6 +58,8 @@
 #include "lluuid.h"
 #include "llviewerregion.h"
 #include "llweb.h"
+
+using namespace boost::placeholders;
 
 #define CAP_SERVICE_RETRIEVE_NAVMESH        "RetrieveNavMeshSrc"
 

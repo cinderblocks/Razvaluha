@@ -6,9 +6,9 @@ version 2.0
 // numbers. Each message must be numbered relative to the
 // other messages of that type. The current highest number 
 // for each type is listed below:
-// Low: 423
+// Low: 430
 // Medium: 18
-// High: 29
+// High: 30
 // PLEASE UPDATE THIS WHEN YOU ADD A NEW MESSAGE!
 
 
@@ -460,7 +460,7 @@ version 2.0
 // that a given simulator is present and valid for a set amount of
 // time
 {
-	SetSimPresenceInDatabase Low 23 Trusted Unencoded
+	SetSimPresenceInDatabase Low 23 Trusted Unencoded UDPDeprecated
 	{
 		SimData Single
 		{   RegionID 	LLUUID	}
@@ -2064,11 +2064,10 @@ version 2.0
     {
 		ExtraPhysics        Variable
 		{   PhysicsShapeType U8     }
-        {   Density          F32    }
-        {   Friction         F32    }
-        {   Restitution      F32    }
-        {   GravityMultiplier    F32    }
-
+		{	Density			 F32	}
+		{	Friction		 F32	}
+		{	Restitution 	 F32	}
+		{	GravityMultiplier	 F32	}
 	}
 }
 
@@ -2847,6 +2846,10 @@ version 2.0
 		{	Message			Variable	1	}
 		{	ExtraParams		Variable	1	}
 	}
+    {
+        AgentInfo           Variable
+        {   AgentID         LLUUID  }
+    }
 }
 
 // Send an AlertMessage to the named agent.
@@ -2998,6 +3001,16 @@ version 2.0
 	{
 		RegionInfo3		Variable
 		{	RegionFlagsExtended	U64			}
+	}
+	{
+		RegionInfo5     Variable
+		{	ChatWhisperRange	F32 		}
+		{	ChatNormalRange		F32 		}
+		{	ChatShoutRange		F32 		}
+		{	ChatWhisperOffset	F32 		}
+		{	ChatNormalOffset	F32 		}
+		{	ChatShoutOffset		F32 		}
+		{	ChatFlags			U32			}
 	}
 }
 
@@ -3571,7 +3584,6 @@ version 2.0
 	}
 
 }
-
 // AvatarAppearance - Update visual params
 {
 	AvatarAppearance Low 158 Trusted Zerocoded
@@ -4246,7 +4258,7 @@ version 2.0
 		{	Questions		S32	}
 	}
 	{
-		Experience	Single
+	Experience	Single
 		{	ExperienceID	LLUUID	}
 	}
 }
@@ -4440,7 +4452,7 @@ version 2.0
 // WARNING: This packet is potentially large.  With max length name,
 // description, music URL and media URL, it is 1526 + sizeof ( LLUUID ) bytes.
 {
-	ParcelProperties High 23 Trusted Zerocoded
+	ParcelProperties High 23 Trusted Zerocoded UDPDeprecated
 	{
 		ParcelData			Single
 		{	RequestResult	S32				}
@@ -4494,14 +4506,20 @@ version 2.0
 		{	RegionDenyAnonymous	BOOL		}
 		{	RegionDenyIdentified	BOOL		}
 		{	RegionDenyTransacted	BOOL		}
+		// in llsd message, SeeAVs, GroupAVSounds and AnyAVSounds BOOLs are also sent
 	}
 	{
 		AgeVerificationBlock Single
 		{   RegionDenyAgeUnverified BOOL    }
 	}
+	{
+		RegionAllowAccessBlock Single
+		{   RegionAllowAccessOverride BOOL    }
+	}
     {
-        RegionAllowAccessBlock Single
-        {   RegionAllowAccessOverride BOOL  }  
+        ParcelEnvironmentBlock Single
+        {   ParcelEnvironmentVersion        S32  }
+        {   RegionAllowEnvironmentOverride  BOOL }
     }
 }
 
@@ -5266,6 +5284,10 @@ version 2.0
 		{	CanAcceptAgents		BOOL	}
 		{	CanAcceptTasks		BOOL	}
 	}
+	{
+		SimFlags				Single
+		{	Flags				U64 }
+	}
 }
 
 // Child Agent Update - agents send child agents to neighboring simulators.
@@ -5343,6 +5365,10 @@ version 2.0
 	{
 		AgentInfo				Variable
 		{	Flags					U32	}
+	}
+	{
+		AgentInventoryHost		Variable
+		{	InventoryHost		Variable	1	} //String
 	}
 }
 
@@ -5645,10 +5671,15 @@ version 2.0
 		{	Message			Variable	2	}
 		{	BinaryBucket	Variable	2	}
 	}
+	{
+		EstateBlock			Single
+		{	EstateID		U32	}
+	}
 }
 
 // RetrieveInstantMessages - used to get instant messages that
 // were persisted out to the database while the user was offline
+// Sent from viewer->simulator.   Also see RetrieveIMsExtended (back-end only)
 {
 	RetrieveInstantMessages Low 255 NotTrusted Unencoded
 	{
@@ -5774,6 +5805,28 @@ version 2.0
 		ParamList		Variable
 		{	Parameter	Variable 1 }
 	}
+}
+
+// LargeGenericMessage
+// Similar to the above messages, but can handle larger payloads and serialized 
+// LLSD.  Uses HTTP transport 
+{
+    LargeGenericMessage Low 430 NotTrusted Unencoded UDPDeprecated
+    {
+		AgentData 		Single
+		{   AgentID     LLUUID  	}
+		{	SessionID	LLUUID		}
+		{	TransactionID	LLUUID	}
+    }
+    {
+        MethodData Single
+		{	Method		Variable 1 }
+		{	Invoice		LLUUID	}
+    }
+    {
+		ParamList		Variable
+		{	Parameter	Variable 2 }
+    }
 }
 
 // ***************************************************************************
@@ -6540,6 +6593,11 @@ version 2.0
 		{	InventoryID		LLUUID	}
 		{	Type			S8	}
 	}
+	{
+		ValidationBlock		Single
+		{	NeedsValidation	BOOL	}
+		{	EstateID		U32	}
+	}
 }
 
 // dataserver -> sim
@@ -6885,7 +6943,7 @@ version 2.0
 // dataserver -> simulator -> spaceserver -> simulator -> viewer
 // reliable
 {
-	RoutedMoneyBalanceReply Low 315 Trusted Zerocoded
+	RoutedMoneyBalanceReply Low 315 Trusted Zerocoded UDPDeprecated
 	{
 		TargetBlock			Single
 		{	TargetIP		IPADDR	}	// U32 encoded IP
@@ -7619,9 +7677,13 @@ version 2.0
 		InviteData	Single
 		{	AgentID		LLUUID	}
 		{	InviteeID	LLUUID	}
-		{	GroupID			LLUUID	}
+		{	GroupID		LLUUID	}
 		{	RoleID		LLUUID	}
 		{	MembershipFee S32	}
+	}
+	{
+		GroupData	Single
+		{	GroupLimit    S32	}		// Extra block for the agent's group limit
 	}
 }
 
@@ -8742,7 +8804,7 @@ version 2.0
 		{	Agents		U8				}
 		{	MapImageID	LLUUID			}
 	}
-	{	
+	{
 		Size			Variable
 		{	SizeX		U16				}
 		{	SizeY		U16				}
@@ -9077,4 +9139,3 @@ version 2.0
 
 	}
 }
-

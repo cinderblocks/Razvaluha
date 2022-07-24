@@ -64,8 +64,8 @@ add_library (llvfs ${llvfs_SOURCE_FILES})
 target_link_libraries(llvfs
     PUBLIC
     llcommon
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
+    ${BOOST_FILESYSTEM_LIBRARY}
+    ${BOOST_SYSTEM_LIBRARY}
     )
 
 if (DARWIN)

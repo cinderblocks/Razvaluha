@@ -36,9 +36,11 @@
 #endif
 
 #include <boost/algorithm/string/split.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/range/iterator_range.hpp>
+
+using namespace boost::placeholders;
 
 static const std::string HEAP_PROFILE_MAGIC_STR("heap profile:");
 

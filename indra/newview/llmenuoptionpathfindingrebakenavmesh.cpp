@@ -30,7 +30,7 @@
 
 #include "llmenuoptionpathfindingrebakenavmesh.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/signals2.hpp>
 
 #include "llagent.h"
@@ -40,6 +40,8 @@
 #include "llpathfindingnavmesh.h"
 #include "llpathfindingnavmeshstatus.h"
 #include "llviewerregion.h"
+
+using namespace boost::placeholders;
 
 LLMenuOptionPathfindingRebakeNavmesh::LLMenuOptionPathfindingRebakeNavmesh() 
 	: LLSingleton<LLMenuOptionPathfindingRebakeNavmesh>(),

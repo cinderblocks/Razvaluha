@@ -34,11 +34,13 @@
 #include <map>
 // std headers
 // external library headers
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 // other Linden headers
 #include "stringize.h"
 #include "llcapabilityprovider.h"
 #include "message.h"
+
+using namespace boost::placeholders;
 
 class LLCapabilityListener::CapabilityMappers: public LLSingleton<LLCapabilityListener::CapabilityMappers>
 {

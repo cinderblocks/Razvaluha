@@ -43,7 +43,9 @@
 #include <boost/function.hpp>
 #define BOOST_FUNCTION_HPP_INCLUDED
 #endif
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+
+using namespace boost::placeholders;
 
 /*****************************************************************************
 *   Utilities

@@ -29,8 +29,7 @@
 #if ! defined(LL_LLEVENTCORO_H)
 #define LL_LLEVENTCORO_H
 
-#include <boost/dcoroutine/coroutine.hpp>
-#include <boost/dcoroutine/future.hpp>
+
 #include <boost/optional.hpp>
 #include <string>
 #include <stdexcept>

@@ -42,11 +42,11 @@
 std::string LLEventDetail::listenerNameForCoroImpl(const void* self_id)
 {
     // First, if this coroutine was launched by LLCoros::launch(), find that name.
-    std::string name(LLCoros::instance().getNameByID(self_id));
+    /*std::string name(LLCoros::instance().getNameByID(self_id));
     if (! name.empty())
     {
         return name;
-    }
+    }*/
     // Apparently this coroutine wasn't launched by LLCoros::launch(). Check
     // whether we have a memo for this self_id.
     typedef std::map<const void*, std::string> MapType;
@@ -58,7 +58,7 @@ std::string LLEventDetail::listenerNameForCoroImpl(const void* self_id)
         return found->second;
     }
     // this is the first time we've been called for this coroutine instance
-    name = LLEventPump::inventName("coro");
+    std::string name = LLEventPump::inventName("coro");
     memo[self_id] = name;
     LL_INFOS("LLEventCoro") << "listenerNameForCoroImpl(" << self_id << "): inventing coro name '"
                             << name << "'" << LL_ENDL;

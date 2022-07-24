@@ -48,7 +48,7 @@
 	#pragma warning (pop)
 #endif
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/utility.hpp>        // noncopyable
@@ -65,6 +65,8 @@
 #include "llsingleton.h"
 #include "lldependencies.h"
 #include "llstl.h"
+
+using namespace boost::placeholders;
 
 /*==========================================================================*|
 // override this to allow binding free functions with more parameters

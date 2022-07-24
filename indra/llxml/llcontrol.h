@@ -51,7 +51,7 @@
 # endif
 #endif
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 #if LL_WINDOWS
 	#pragma warning (push)
@@ -72,6 +72,8 @@
 #if LL_RELEASE_WITH_DEBUG_INFO
 #define PROF_CTRL_CALLS
 #endif //LL_RELEASE_WITH_DEBUG_INFO
+
+using namespace boost::placeholders;
 
 class LLVector3;
 class LLVector3d;
