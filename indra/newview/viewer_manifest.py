@@ -899,7 +899,7 @@ class DarwinManifest(ViewerManifest):
                             "libexpat.1.5.2.dylib",
                             "libexception_handler.dylib",
                             "libGLOD.dylib",
-                            "libhunspell-1.3.0.dylib",
+                            "libhunspell-1.7.0.dylib",
                             "libndofdev.dylib",
                     ):
                         dylibs += self.path_optional(libfile)
