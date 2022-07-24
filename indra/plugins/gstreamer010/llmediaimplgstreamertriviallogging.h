@@ -40,7 +40,7 @@ extern "C" {
 // Debug/Info/Warning macros.
 #define MSGMODULEFOO "(media plugin)"
 #define STDERRMSG(...) do{\
-    fprintf(stderr, " pid:%d: ", (int)LL_GETPID());\
+    fprintf(stderr, " pid:%d: ", (int)getpid());\
     fprintf(stderr, MSGMODULEFOO " %s:%d: ", __FUNCTION__, __LINE__);\
     fprintf(stderr, __VA_ARGS__);\
     fputc('\n',stderr);\
