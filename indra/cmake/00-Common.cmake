@@ -5,7 +5,7 @@
 if(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)
 set(${CMAKE_CURRENT_LIST_FILE}_INCLUDED "YES")
 
-include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 include(Variables)
 
 # Portable compilation flags.
@@ -316,7 +316,6 @@ else (STANDALONE)
       cairo
       glib-2.0
       gdk-pixbuf-2.0
-      gstreamer-0.10
       gtk-2.0
       pango-1.0
       pixman-1

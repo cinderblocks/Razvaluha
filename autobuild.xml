@@ -1085,23 +1085,21 @@
         <string>gstreamer</string>
         <key>platforms</key>
         <map>
-          <key>common</key>
+          <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>df57a59e832f9e3ca8ba31e37e383dfb</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>7c9d7cc88add7831a6afeedc20cad2fe</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/common/lib/gstreamer-0.10.6.201501032013-common-201501032013.tar.bz2</string>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/p64_3p-gstreamer/rev/314267/arch/Linux/installer/gstreamer-0.10.6.314267-linux64-314267.tar.bz2</string>
             </map>
             <key>name</key>
-            <string>common</string>
+            <string>linux64</string>
           </map>
         </map>
         <key>version</key>
-        <string>0.10.6.201501032013</string>
+        <string>0.10.6.314267</string>
       </map>
       <key>gtk-atk-pango-glib</key>
       <map>
