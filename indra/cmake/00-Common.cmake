@@ -5,7 +5,7 @@
 if(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)
 set(${CMAKE_CURRENT_LIST_FILE}_INCLUDED "YES")
 
-include(CheckCXXCompilerFlag)
+include(CheckCCompilerFlag)
 include(Variables)
 
 # Portable compilation flags.
