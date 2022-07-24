@@ -27,8 +27,10 @@
 #ifndef LL_LLCACHENAME_H
 #define LL_LLCACHENAME_H
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/signals2.hpp>
+
+using namespace boost::placeholders;
 
 class LLMessageSystem;
 class LLHost;

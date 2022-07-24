@@ -39,7 +39,7 @@
 #include "llstl.h"
 #include "lltexglobalcolor.h"
 #include "llwearabledata.h"
-#include "boost/bind.hpp"
+#include "boost/bind/bind.hpp"
 #include "boost/tokenizer.hpp"
 
 
@@ -49,6 +49,7 @@
 #endif
 
 using namespace LLAvatarAppearanceDefines;
+using namespace boost::placeholders;
 
 //-----------------------------------------------------------------------------
 // Constants

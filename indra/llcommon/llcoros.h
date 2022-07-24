@@ -29,14 +29,26 @@
 #if ! defined(LL_LLCOROS_H)
 #define LL_LLCOROS_H
 
-#include <boost/dcoroutine/coroutine.hpp>
+#include <boost/fiber/fss.hpp>
+#include <boost/fiber/future/promise.hpp>
+#include <boost/fiber/future/future.hpp>
+#include "llexception.h"
 #include "llsingleton.h"
-#include <boost/ptr_container/ptr_map.hpp>
+#include "llinstancetracker.h"
+#include <boost/function.hpp>
 #include <string>
-#include <boost/preprocessor/repetition/enum_params.hpp>
-#include <boost/preprocessor/repetition/enum_binary_params.hpp>
-#include <boost/preprocessor/iteration/local.hpp>
-#include <stdexcept>
+
+// e.g. #include LLCOROS_MUTEX_HEADER
+#define LLCOROS_MUTEX_HEADER   <boost/fiber/mutex.hpp>
+#define LLCOROS_CONDVAR_HEADER <boost/fiber/condition_variable.hpp>
+
+namespace boost {
+    namespace fibers {
+        class mutex;
+        enum class cv_status;
+        class condition_variable;
+    }
+}
 
 /**
  * Registry of named Boost.Coroutine instances
@@ -68,20 +80,27 @@
  * name prefix; from your prefix it generates a distinct name, registers the
  * new coroutine and returns the actual name.
  *
- * The name can be used to kill off the coroutine prematurely, if needed. It
- * can also provide diagnostic info: we can look up the name of the
+ * The name
+ * can provide diagnostic info: we can look up the name of the
  * currently-running coroutine.
- *
- * Finally, the next frame ("mainloop" event) after the coroutine terminates,
- * LLCoros will notice its demise and destroy it.
  */
-class LL_COMMON_API LLCoros: public LLSingleton<LLCoros>
+class LL_COMMON_API LLCoros final : public LLSingleton<LLCoros>
 {
+    friend class LLSingleton<LLCoros>;
+    ~LLCoros() = default;
+
+    void cleanupSingleton();
 public:
-    /// Canonical boost::dcoroutines::coroutine signature we use
-    typedef boost::dcoroutines::coroutine<void()> coro;
-    /// Canonical 'self' type
-    typedef coro::self self;
+    LLCoros();
+
+    /// The viewer's use of the term "coroutine" became deeply embedded before
+    /// the industry term "fiber" emerged to distinguish userland threads from
+    /// simpler, more transient kinds of coroutines. Semantically they've
+    /// always been fibers. But at this point in history, we're pretty much
+    /// stuck with the term "coroutine."
+    typedef boost::fibers::fiber coro;
+    /// Canonical callable type
+    typedef boost::function<void()> callable_t;
 
     /**
      * Create and start running a new coroutine with specified name. The name
@@ -94,39 +113,33 @@ public:
      * {
      * public:
      *     ...
-     *     // Do NOT NOT NOT accept reference params other than 'self'!
+     *     // Do NOT NOT NOT accept reference params!
      *     // Pass by value only!
-     *     void myCoroutineMethod(LLCoros::self& self, std::string, LLSD);
+     *     void myCoroutineMethod(std::string, LLSD);
      *     ...
      * };
      * ...
      * std::string name = LLCoros::instance().launch(
-     *    "mycoro", boost::bind(&MyClass::myCoroutineMethod, this, _1,
+     *    "mycoro", boost::bind(&MyClass::myCoroutineMethod, this,
      *                          "somestring", LLSD(17));
      * @endcode
      *
-     * Your function/method must accept LLCoros::self& as its first parameter.
-     * It can accept any other parameters you want -- but ONLY BY VALUE!
-     * Other reference parameters are a BAD IDEA! You Have Been Warned. See
+     * Your function/method can accept any parameters you want -- but ONLY BY
+     * VALUE! Reference parameters are a BAD IDEA! You Have Been Warned. See
      * DEV-32777 comments for an explanation.
      *
-     * Pass a callable that accepts the single LLCoros::self& parameter. It
-     * may work to pass a free function whose only parameter is 'self'; for
-     * all other cases use boost::bind(). Of course, for a non-static class
-     * method, the first parameter must be the class instance. Use the
-     * placeholder _1 for the 'self' parameter. Any other parameters should be
-     * passed via the bind() expression.
+     * Pass a nullary callable. It works to directly pass a nullary free
+     * function (or static method); for other cases use a lambda expression,
+     * std::bind() or boost::bind(). Of course, for a non-static class method,
+     * the first parameter must be the class instance. Any other parameters
+     * should be passed via the enclosing expression.
      *
      * launch() tweaks the suggested name so it won't collide with any
      * existing coroutine instance, creates the coroutine instance, registers
      * it with the tweaked name and runs it until its first wait. At that
      * point it returns the tweaked name.
      */
-    template <typename CALLABLE>
-    std::string launch(const std::string& prefix, const CALLABLE& callable)
-    {
-        return launchImpl(prefix, new coro(callable, mStackSize));
-    }
+    std::string launch(const std::string& prefix, const callable_t& callable);
 
     /**
      * Abort a running coroutine by name. Normally, when a coroutine either
@@ -135,36 +148,188 @@ public:
      * one prematurely. Returns @c true if the specified name was found and
      * still running at the time.
      */
-    bool kill(const std::string& name);
+//  bool kill(const std::string& name);
 
     /**
-     * From within a coroutine, pass its @c self object to look up the
-     * (tweaked) name string by which this coroutine is registered. Returns
-     * the empty string if not found (e.g. if the coroutine was launched by
-     * hand rather than using LLCoros::launch()).
+     * From within a coroutine, look up the (tweaked) name string by which
+     * this coroutine is registered. Returns the empty string if not found
+     * (e.g. if the coroutine was launched by hand rather than using
+     * LLCoros::launch()).
      */
-    template <typename COROUTINE_SELF>
-    std::string getName(const COROUTINE_SELF& self) const
-    {
-        return getNameByID(self.get_id());
-    }
+    static std::string getName();
 
-    /// getName() by self.get_id()
-    std::string getNameByID(const void* self_id) const;
+    /**
+     * This variation returns a name suitable for log messages: the explicit
+     * name for an explicitly-launched coroutine, or "mainN" for the default
+     * coroutine on a thread.
+     */
+    static std::string logname();
 
-    /// for delayed initialization
+    /**
+     * For delayed initialization. To be clear, this will only affect
+     * coroutines launched @em after this point. The underlying facility
+     * provides no way to alter the stack size of any running coroutine.
+     */
     void setStackSize(S32 stacksize);
 
+    /// diagnostic
+    void printActiveCoroutines(const std::string& when=std::string());
+
+    /// get the current coro::id for those who really really care
+    static coro::id get_self();
+
+    /**
+     * Most coroutines, most of the time, don't "consume" the events for which
+     * they're suspending. This way, an arbitrary number of listeners (whether
+     * coroutines or simple callbacks) can be registered on a particular
+     * LLEventPump, every listener responding to each of the events on that
+     * LLEventPump. But a particular coroutine can assert that it will consume
+     * each event for which it suspends. (See also llcoro::postAndSuspend(),
+     * llcoro::VoidListener)
+     */
+    static void set_consuming(bool consuming);
+    static bool get_consuming();
+
+    /**
+     * RAII control of the consuming flag
+     */
+    class OverrideConsuming
+    {
+    public:
+        OverrideConsuming(bool consuming):
+            mPrevConsuming(get_consuming())
+        {
+            set_consuming(consuming);
+        }
+        OverrideConsuming(const OverrideConsuming&) = delete;
+        ~OverrideConsuming()
+        {
+            set_consuming(mPrevConsuming);
+        }
+
+    private:
+        bool mPrevConsuming;
+    };
+
+    /// set string coroutine status for diagnostic purposes
+    static void setStatus(const std::string& status);
+    static std::string getStatus();
+
+    /// RAII control of status
+    class TempStatus
+    {
+    public:
+        TempStatus(const std::string& status):
+            mOldStatus(getStatus())
+        {
+            setStatus(status);
+        }
+        TempStatus(const TempStatus&) = delete;
+        ~TempStatus()
+        {
+            setStatus(mOldStatus);
+        }
+
+    private:
+        std::string mOldStatus;
+    };
+
+    /// thrown by checkStop()
+    // It may sound ironic that Stop is derived from LLContinueError, but the
+    // point is that LLContinueError is the category of exception that should
+    // not immediately crash the viewer. Stop and its subclasses are to notify
+    // coroutines that the viewer intends to shut down. The expected response
+    // is to terminate the coroutine, rather than abort the viewer.
+    struct Stop: public LLContinueError
+    {
+        Stop(const std::string& what): LLContinueError(what) {}
+    };
+
+    /// early stages
+    struct Stopping: public Stop
+    {
+        Stopping(const std::string& what): Stop(what) {}
+    };
+
+    /// cleaning up
+    struct Stopped: public Stop
+    {
+        Stopped(const std::string& what): Stop(what) {}
+    };
+
+    /// cleaned up -- not much survives!
+    struct Shutdown: public Stop
+    {
+        Shutdown(const std::string& what): Stop(what) {}
+    };
+
+    /// Call this intermittently if there's a chance your coroutine might
+    /// continue running into application shutdown. Throws Stop if LLCoros has
+    /// been cleaned up.
+    static void checkStop();
+
+    /**
+     * Aliases for promise and future. An older underlying future implementation
+     * required us to wrap future; that's no longer needed. However -- if it's
+     * important to restore kill() functionality, we might need to provide a
+     * proxy, so continue using the aliases.
+     */
+    template <typename T>
+    using Promise = boost::fibers::promise<T>;
+    template <typename T>
+    using Future = boost::fibers::future<T>;
+    template <typename T>
+    static Future<T> getFuture(Promise<T>& promise) { return promise.get_future(); }
+
+    // use mutex, lock, condition_variable suitable for coroutines
+    using Mutex = boost::fibers::mutex;
+    using LockType = std::unique_lock<Mutex>;
+    using cv_status = boost::fibers::cv_status;
+    using ConditionVariable = boost::fibers::condition_variable;
+
+    /// for data local to each running coroutine
+    template <typename T>
+    using local_ptr = boost::fibers::fiber_specific_ptr<T>;
+
 private:
-    friend class LLSingleton<LLCoros>;
-    LLCoros();
-    std::string launchImpl(const std::string& prefix, coro* newCoro);
     std::string generateDistinctName(const std::string& prefix) const;
-    bool cleanup(const LLSD&);
+#if LL_WINDOWS
+    void winlevel(const std::string& name, const callable_t& callable);
+#endif
+    void toplevelTryWrapper(const std::string& name, const callable_t& callable);
+    void toplevel(std::string name, callable_t callable);
+    struct CoroData;
+    static CoroData& get_CoroData(const std::string& caller);
 
     S32 mStackSize;
-    typedef boost::ptr_map<std::string, coro> CoroMap;
-    CoroMap mCoros;
+
+    // coroutine-local storage, as it were: one per coro we track
+    struct CoroData: public LLInstanceTracker<CoroData, std::string>
+    {
+        CoroData(const std::string& name);
+        CoroData(int n);
+
+        // tweaked name of the current coroutine
+        const std::string mName;
+        // set_consuming() state
+        bool mConsuming;
+        // setStatus() state
+        std::string mStatus;
+        F64 mCreationTime; // since epoch
+    };
+
+    // Identify the current coroutine's CoroData. This local_ptr isn't static
+    // because it's a member of an LLSingleton, and we rely on it being
+    // cleaned up in proper dependency order.
+    local_ptr<CoroData> mCurrent;
 };
+
+namespace llcoro
+{
+
+inline
+std::string logname() { return LLCoros::logname(); }
+
+} // llcoro
 
 #endif /* ! defined(LL_LLCOROS_H) */

@@ -207,77 +207,51 @@
         <string>boost</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>5e6a0930ca5c9e3c26970ac8589a538c</string>
+              <string>aab2a196b915ea2e6b7538ccf8fc488d38121e08d7778575a13bf843dfc3852c76a465c4f83392eb0c4fa768f31d4a3094802ab73562ebcb4ed0bd52328aed59</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/boost-1.59.0-darwin-201601091139.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/92/packages/generic/boost/1.79.0.1496/boost-1.79.0-darwin64-1496.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>2f076eae296600a1b810ce375dc4b42d</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-boost-update/rev/290566/arch/Linux/installer/boost-1.55.0-linux-20140602.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>74a88afa7ff50462059c17321f91a359</string>
+              <string>34965aa97045460cda10a949404fa93f7b7bac7f1b526400609058d8b4f19be6aba790c7c5458334aa296569036fb8734020a0ab3f7cc13635bea17df662be78</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/boost-1.60.0-linux64-201603241316.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/92/packages/generic/boost/1.79.0.1496/boost-1.79.0-linux64-1496.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>ae0998e5d108c77c5cea2a68ad928151</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/boost-1.63.0-windows-201703281813.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>6faba32dcfb80c26bafd4a3e06cff268</string>
+              <string>b0f63764f759100191baf2d5010f0beb1db23e7aa3e820cb50d70dfb24c516f87185f6b1632a2404d3c8fc38c1d7a490ccafb9d98889cdc9efa39ee50c4d3bcf</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/boost-1.66.0-windows64-201712260832.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/92/packages/generic/boost/1.79.0.1496/boost-1.79.0-windows64-1496.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.66.0</string>
+        <string>1.79.0</string>
       </map>
       <key>colladadom</key>
       <map>
@@ -291,77 +265,51 @@
         <string>colladadom</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>d6e279fb5ce9093c89819803be5562db</string>
+              <string>750f5e47504c4db8c0a93b652ce525de4d06af0503f0f988f61fb017105c539803dfc1a8b0a35a04815aed03af1cc584960f8689d0d7b7c5af57f54f9f826825</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/colladadom-2.3-darwin-201601091204.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/98/packages/generic/colladadom/2.3.0.1507/colladadom-2.3.0-darwin64-1507.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>bdec5fe5fd008da4328f84115128ee61</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-colladadom-update/rev/290576/arch/Linux/installer/colladadom-2.3-linux-20140602.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>c84d1be467d7198103d905f710fa31d3</string>
+              <string>216b987a2cc049c0aeb362c4e1dea3a545f325cab31780d2825ad58062a19b970e442448b8f8483c4dc2c6114f36322ccea3d76a85b1341e6422602f4c1c2575</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/colladadom-2.3-linux64-201603241731.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/98/packages/generic/colladadom/2.3.0.1507/colladadom-2.3.0-linux64-1507.tar.zst</string>
             </map>
             <key>name</key>
-            <string>linux</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>60bd2dbac5559141e05be6c424cf9cd0</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/colladadom-2.3-windows-201703281922.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
+            <string>linux64</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>65628150b732274f0bdd0fa33d6ca650</string>
+              <string>128d04d529fdaf8c8c3f6e83563a81e76bc72b352bf79da4f774df54b0552d7b1d5f19616207d3b8a6d60c18f0f4c82c37820826321df44100e3272b5f8da43c</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/colladadom-2.3-windows64-201712260938.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/98/packages/generic/colladadom/2.3.0.1507/colladadom-2.3.0-windows64-1507.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>2.3</string>
+        <string>2.3.0</string>
       </map>
       <key>crashpad</key>
       <map>
@@ -1576,84 +1524,58 @@
         <key>description</key>
         <string>Libxml2 is the XML C parser and toolkit developed for the Gnome project.</string>
         <key>license</key>
-        <string>MIT</string>
+        <string>mit</string>
         <key>license_file</key>
         <string>LICENSES/libxml2.txt</string>
         <key>name</key>
         <string>libxml2</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>242ffec9e9f8fca818b750c578eba0dd</string>
+              <string>468616754ae2768fefe7d98d42d54fa9741f8d20b0c322d7e82ab9fd637edeef239c53e46fcfc4efd2fe499a4783ab841186a479df0311bff7b67e67fdb17e89</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/libxml2-2.9.3-darwin-201511222121.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/97/packages/generic/libxml2/2.9.14.1505/libxml2-2.9.14-darwin64-1505.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>7eb90f075730f8d7d176f8fb7bad5ef5</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-libxml-update/rev/290562/arch/Linux/installer/libxml2-2.9.1-linux-20140602.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>61351b10787b06045a70c905a58ca2f6</string>
+              <string>7e2e7a08942ffa8b307a010e1e322fc6e41b9b07389c752d2c286d2e0f3de16ffdd886e394908cdbb8c6f1f11a98c99a5a1fccf4df9470a04ee4dc70436dce79</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/libxml2-2.9.3-linux64-201603241216.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/97/packages/generic/libxml2/2.9.14.1505/libxml2-2.9.14-linux64-1505.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>a3f7c3421e9e4921dda3558c3b36dc59</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libxml2-2.9.4-windows-201703090740.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>f69b1d4ec7ffdeec4429413ea640583d</string>
+              <string>cd8920cab50a73994bf968976d542ebd789e8903478edc5dac5e15cc2cb67c8da1730dd11aef97ff36a4c3abc27baacfb8dad196df48c44abe2ef83355b68727</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libxml2-2.9.7-windows64-201712260755.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/97/packages/generic/libxml2/2.9.14.1505/libxml2-2.9.14-windows64-1505.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>2.9.3</string>
+        <string>2.9.14</string>
       </map>
       <key>llphysicsextensions_stub</key>
       <map>
@@ -2131,77 +2053,51 @@
         <string>uriparser</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>364cbc9a049acb2a0d2cd6719a02adf0</string>
+              <string>6d78c17df58aead808f4e40eec5ad3834cbebbd3545deaadf6c66bf51bf580e3d893011f26f784fa56c70e74870a6a1aca41372f4f80dcc7b56e4fcf72652250</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/darwin/lib/uriparser-0.8.4-darwin-201511221948.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/96/packages/generic/uriparser/0.9.6.1428/uriparser-0.9.6-darwin64-1428.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>34306fb90364b182dc770375140d8557</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3p-uriparser/rev/294298/arch/Linux/installer/uriparser-0.8.0.1-linux-20140918.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>cf21d9f7ed7949d2230413e8a391fb73</string>
+              <string>0279ebc017021b39078d4626ce4cfb0f45e2753a93024b05a5a21c03ad19df738c38c4a8efe962af38c6d439c0c5f494d343c540da8ebf8ef8ba20a5c0e93bb1</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib-xenial/uriparser-0.8.4-linux64-201609241428.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/96/packages/generic/uriparser/0.9.6.1428/uriparser-0.9.6-linux64-1428.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>89f3fc7f3fe396439d306f099d1a12d3</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/uriparser-0.8.4-windows-201703090606.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>ad1a435de73b7ee6d07f6c81a4cb1910</string>
+              <string>e3a07097eec1fa43b420b7fc54a0d38bf0ca800e3bcbc60fa4360322fac3160b92a4b13b34f41c4c0c45ae1eca815abd32cc01eb052a4590f954baf8e51e1a1f</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/uriparser-0.8.4-windows64-201712251116.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/96/packages/generic/uriparser/0.9.6.1428/uriparser-0.9.6-windows64-1428.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>0.8.4</string>
+        <string>0.9.6</string>
       </map>
       <key>vlc-bin</key>
       <map>

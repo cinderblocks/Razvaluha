@@ -8,5 +8,5 @@ set(LLVFS_INCLUDE_DIRS
 
 set(LLVFS_LIBRARIES
     llvfs
-    ${Boost_REGEX_LIBRARY}
+    ${BOOST_REGEX_LIBRARY}
     )

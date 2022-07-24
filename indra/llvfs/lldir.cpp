@@ -48,7 +48,7 @@
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/ref.hpp>
 #include <algorithm>
 
@@ -68,6 +68,8 @@ LLDir_Solaris gDirUtil;
 #include "lldir_linux.h"
 LLDir_Linux gDirUtil;
 #endif
+
+using namespace boost::placeholders;
 
 LLDir *gDirUtilp = (LLDir *)&gDirUtil;
 

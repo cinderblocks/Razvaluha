@@ -29,6 +29,9 @@
 
 #include "llmath.h"
 #include <algorithm>
+#include <boost/bind/bind.hpp>
+
+using namespace boost::placeholders;
 
 #include "llsdserialize.h"
 

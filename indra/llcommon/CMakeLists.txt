@@ -22,7 +22,7 @@ include_directories(
     ${OPENSSL_INCLUDE_DIRS}
     ${JSON_INCLUDE_DIR}
     ${ZLIB_INCLUDE_DIRS}
-    ${BREAKPAD_INCLUDE_DIRECTORIES}
+    ${URIPARSER_INCLUDE_DIRS}
     )
 
 set(llcommon_SOURCE_FILES
@@ -59,6 +59,7 @@ set(llcommon_SOURCE_FILES
     lleventfilter.cpp
     llevents.cpp
     lleventtimer.cpp
+    llexception.cpp
     llfasttimer_class.cpp
     llfile.cpp
     llfindlocale.cpp
@@ -170,6 +171,7 @@ set(llcommon_HEADER_FILES
     lleventfilter.h
     llevents.h
     lleventtimer.h
+    llexception.h
     llextendedstatus.h
     llfasttimer.h
     llfasttimer_class.h
@@ -293,12 +295,13 @@ target_link_libraries(
     ${CRYPTO_LIBRARIES}
     ${ZLIB_LIBRARIES}
     ${WINDOWS_LIBRARIES}
-    ${Boost_CONTEXT_LIBRARY}
-    ${Boost_REGEX_LIBRARY}
-    ${Boost_THREAD_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
+    ${BOOST_CONTEXT_LIBRARY}
+    ${BOOST_FIBER_LIBRARY}
+    ${BOOST_REGEX_LIBRARY}
+    ${BOOST_THREAD_LIBRARY}
+    ${BOOST_SYSTEM_LIBRARY}
+    ${URIPARSER_LIBRARIES}
     ${CORESERVICES_LIBRARY}
-    ${URIPARSER_LIBRARY}
     fmt::fmt
     nlohmann_json::nlohmann_json
     absl::strings

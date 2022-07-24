@@ -105,7 +105,7 @@
 #include "llvolumemgr.h"
 #include "llnotifications.h"
 #include "llnotificationsutil.h"
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 #if LL_WINDOWS
 	#include "llwindebug.h"
@@ -264,6 +264,8 @@ DEFINE_CRASHPAD_ANNOTATION_EXTRA(session_duration, 32);
 DEFINE_CRASHPAD_ANNOTATION_EXTRA(startup_state, 32);
 DEFINE_CRASHPAD_ANNOTATION_EXTRA(memory_sys, 32);
 DEFINE_CRASHPAD_ANNOTATION_EXTRA(memory_alloc, 32);
+
+using namespace boost::placeholders;
 
 ////// Windows-specific includes to the bottom - nasty defines in these pollute the preprocessor
 //

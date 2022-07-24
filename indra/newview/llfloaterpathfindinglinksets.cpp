@@ -32,7 +32,7 @@
 
 #include <string>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 #include "llagent.h"
 #include "llbutton.h"
@@ -51,6 +51,8 @@
 #include "lluictrl.h"
 #include "v3math.h"
 #include "v4color.h"
+
+using namespace boost::placeholders;
 
 #define XUI_LINKSET_USE_NONE             0
 #define XUI_LINKSET_USE_WALKABLE         1

@@ -30,8 +30,10 @@
 #include "llcallbacklist.h"
 
 #include "llmatrix4a.h"
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include "apr_time.h"
+
+using namespace boost::placeholders;
 
 std::list<LLModelLoader*> LLModelLoader::sActiveLoaderList;
 

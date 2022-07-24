@@ -33,7 +33,7 @@
 #include <map>
 #include <vector>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/signals2.hpp>
 
 #include "llagent.h"
@@ -62,6 +62,8 @@
 #include "v3dmath.h"
 #include "v3math.h"
 #include "v4color.h"
+
+using namespace boost::placeholders;
 
 #define DEFAULT_BEACON_WIDTH 6
 

@@ -152,7 +152,7 @@
 #include "lltreeiterators.h"
 #include "llsdserialize.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 
 #if LL_WINDOWS
@@ -168,6 +168,8 @@
 #else 
 #error "architecture not supported"
 #endif
+
+using namespace boost::placeholders;
 
 //////////////////////////////////////////////////////////////////////////////
 // statics

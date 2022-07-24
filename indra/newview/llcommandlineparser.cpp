@@ -44,7 +44,7 @@
 #endif
 
 #include <boost/program_options.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include<boost/tokenizer.hpp>
 
 #if _MSC_VER
@@ -56,6 +56,8 @@
 #include <sstream>
 
 #include "llcontrol.h"
+
+using namespace boost::placeholders;
 
 namespace po = boost::program_options;
 
