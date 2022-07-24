@@ -445,7 +445,7 @@
         <key>version</key>
         <string>7.57.0</string>
       </map>
-      <key>dbus-glib</key>
+      <key>dbus_glib</key>
       <map>
         <key>copyright</key>
         <string>Copyright (C) Red Hat Inc.</string>
@@ -456,31 +456,17 @@
         <key>license_file</key>
         <string>LICENSES/dbus-glib.txt</string>
         <key>name</key>
-        <string>dbus-glib</string>
+        <string>dbus_glib</string>
         <key>platforms</key>
         <map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>94b058b9a81114dc4567bd78e4335425</string>
-              <key>url</key>
-              <string>http://s3.amazonaws.com/viewer-source-downloads/install_pkgs/dbus_glib-0.76-linux-20110310.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
-          </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>84e51f2e14db023be5419e74ab3b51d3</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>7ee7b9aed3c0c8c09e7bf26bba7af8e1</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/linux64/lib/dbus_glib-0.76-linux64-201501030130.tar.bz2</string>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/p64_3p-dbus-glib/rev/314266/arch/Linux/installer/dbus_glib-0.76-linux64-314266.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
