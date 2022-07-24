@@ -3,7 +3,7 @@
 # cmake_minimum_required should appear before any
 # other commands to guarantee full compatibility
 # with the version specified
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 set(ROOT_PROJECT_NAME "Singularity" CACHE STRING "The root project name. Defaults to Singularity.")
 project(${ROOT_PROJECT_NAME})

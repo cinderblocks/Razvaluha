@@ -15,7 +15,6 @@ include(CMakeCopyIfDifferent)
 include(CrashPad)
 include(DBusGlib)
 include(FMODSTUDIO)
-include(GeneratePrecompiledHeader)
 include(GLOD)
 include(Hunspell)
 include(LLAddBuildTest)
@@ -1479,9 +1478,8 @@ add_executable(${VIEWER_BINARY_NAME}
     )
 
 if(USE_PRECOMPILED_HEADERS)
-  target_precompiled_header(${VIEWER_BINARY_NAME}
-      ${CMAKE_CURRENT_SOURCE_DIR}/llviewerprecompiledheaders.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/llviewerprecompiledheaders.cpp)
+  target_precompile_headers(${VIEWER_BINARY_NAME}
+      PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/llviewerprecompiledheaders.h)
 endif(USE_PRECOMPILED_HEADERS)
 
 option(PACKAGE "Add a package target that builds an installer package." ON)
