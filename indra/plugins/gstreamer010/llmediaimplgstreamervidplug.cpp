@@ -36,9 +36,9 @@
 
 #include "llmediaimplgstreamer_syms.h"
 #include "llmediaimplgstreamertriviallogging.h"
-//  #include "llthread.h"
 
 #include "llmediaimplgstreamervidplug.h"
+
 
 GST_DEBUG_CATEGORY_STATIC (gst_slvideo_debug);
 #define GST_CAT_DEFAULT gst_slvideo_debug
