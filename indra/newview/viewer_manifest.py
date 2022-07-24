@@ -1222,7 +1222,6 @@ class LinuxManifest(ViewerManifest):
 
         with self.prefix(src="../plugins", dst="bin/llplugin"):
             self.path2basename("filepicker", "libbasic_plugin_filepicker.so")
-            self.path("gstreamer010/libmedia_plugin_gstreamer010.so", "libmedia_plugin_gstreamer.so")
             self.path("cef/libmedia_plugin_cef.so", "libmedia_plugin_cef.so")
             self.path2basename("libvlc", "libmedia_plugin_libvlc.so")
 

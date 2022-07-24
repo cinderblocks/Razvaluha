@@ -1730,7 +1730,6 @@ if (LINUX)
   set(COPY_INPUT_DEPENDENCIES
     ${VIEWER_BINARY_NAME}
     SLPlugin
-    media_plugin_gstreamer010
     llcommon
     )
 
@@ -1784,7 +1783,7 @@ if (LINUX)
     COMMENT "Performing viewer_manifest copy"
       )
 
-  add_dependencies(${VIEWER_BINARY_NAME} SLPlugin media_plugin_gstreamer010 basic_plugin_filepicker)
+  add_dependencies(${VIEWER_BINARY_NAME} SLPlugin basic_plugin_filepicker)
 
   if (PACKAGE)
     add_custom_target(llpackage ALL DEPENDS ${product}.tar.xz)
