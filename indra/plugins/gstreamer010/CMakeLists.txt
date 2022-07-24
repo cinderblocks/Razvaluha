@@ -12,8 +12,7 @@ include(LLWindow)
 include(Linking)
 include(PluginAPI)
 include(MediaPluginBase)
-include(FindOpenGL)
-include(Boost)
+include(OpenGL)
 
 include(GStreamer010Plugin)
 
@@ -28,23 +27,28 @@ include_directories(
     ${GSTREAMER010_INCLUDE_DIRS}
     ${GSTREAMER010_PLUGINS_BASE_INCLUDE_DIRS}
 )
+include_directories(SYSTEM
+    ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
+    )
 
 ### media_plugin_gstreamer010
 
 set(media_plugin_gstreamer010_SOURCE_FILES
     media_plugin_gstreamer010.cpp
+    llmediaimplgstreamer_syms.cpp
     llmediaimplgstreamervidplug.cpp
     )
 
 set(media_plugin_gstreamer010_HEADER_FILES
     llmediaimplgstreamervidplug.h
+    llmediaimplgstreamer_syms.h
     llmediaimplgstreamertriviallogging.h
     )
 
 add_library(media_plugin_gstreamer010
     SHARED
     ${media_plugin_gstreamer010_SOURCE_FILES}
-)
+    )
 
 set_target_properties(media_plugin_gstreamer010 PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
@@ -55,4 +59,3 @@ target_link_libraries(media_plugin_gstreamer010
   ${PLUGIN_API_WINDOWS_LIBRARIES}
   ${GSTREAMER010_LIBRARIES}
 )
-
