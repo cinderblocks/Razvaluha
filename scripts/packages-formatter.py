@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """\
 This module formats the package version and copyright information for the
 viewer and its dependent packages.
@@ -90,8 +90,6 @@ for line in copyrights:
             copyright[pkg] = pkg_info.group(2).strip()
         else:
             sys.exit("Duplicate copyright for %s" % pkg)
-    else:
-        sys.exit("Unrecognized --copyrights output: %s" % line)
 
 print(viewer_copyright)
 for pkg in sorted(version):

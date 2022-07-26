@@ -1,6 +1,5 @@
 # -*- cmake -*-
 include(Prebuilt)
-include(FindPkgConfig)
 include(Linking)
 
 set(Boost_FIND_QUIETLY ON)

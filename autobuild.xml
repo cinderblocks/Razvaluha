@@ -1600,6 +1600,68 @@
         <key>version</key>
         <string>7.11.1.297294</string>
       </map>
+      <key>nghttp2</key>
+      <map>
+        <key>copyright</key>
+        <string>Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors</string>
+        <key>description</key>
+        <string>Library providing HTTP 2 support for libcurl</string>
+        <key>license</key>
+        <string>MIT</string>
+        <key>license_file</key>
+        <string>LICENSES/nghttp2.txt</string>
+        <key>name</key>
+        <string>nghttp2</string>
+        <key>platforms</key>
+        <map>
+          <key>darwin64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>25cfaea249976cf97e09bb9a5b2c6b809d7e44f4f70ee70d6281479cb971c0eeae8e6372612ded649efbd41d694e63ae0cfa6dc33a23ffd3d232444dc0e2f02e</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/91/packages/generic/nghttp2/1.46.0.1417/nghttp2-1.46.0-darwin64-1417.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>darwin64</string>
+          </map>
+          <key>linux64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>c00f7e6defcd7f03ec9e7c6cbba8b2783a06e6f27855257cdebc31afe3c44bdb34cf729b5b282c0b05158e007785897058e278a1595725e0060a6124ce91f607</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/91/packages/generic/nghttp2/1.46.0.1417/nghttp2-1.46.0-linux64-1417.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>linux64</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>e15435025abf142850eb452bb8b56239facf54eb3b3cc341035efd9b64efc1d8bc1335b7c3705af330905575b4529274ef06d9f371cadeb708ea6ca7abb2170c</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/91/packages/generic/nghttp2/1.46.0.1417/nghttp2-1.46.0-windows64-1417.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>source_type</key>
+        <string>hg</string>
+        <key>version</key>
+        <string>1.46.0</string>
+      </map>
       <key>nvapi</key>
       <map>
         <key>copyright</key>
