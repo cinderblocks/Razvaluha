@@ -291,13 +291,9 @@ if (LINUX OR DARWIN)
 
   set(CMAKE_C_FLAGS "${UNIX_WARNINGS} ${CMAKE_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${UNIX_CXX_WARNINGS} ${CMAKE_CXX_FLAGS}")
-  if (ADDRESS_SIZE EQUAL 32)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
-  elseif (ADDRESS_SIZE EQUAL 64)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
-  endif (ADDRESS_SIZE EQUAL 32)
+
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m${ADDRESS_SIZE}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${ADDRESS_SIZE}")
 endif (LINUX OR DARWIN)
 
 
@@ -306,10 +302,6 @@ if (STANDALONE)
 else (STANDALONE)
   #Enforce compile-time correctness for fmt strings
   add_definitions(-DFMT_STRING_ALIAS=1)
-
-  if(USE_CRASHPAD)
-    add_definitions(-DUSE_CRASHPAD=1 -DCRASHPAD_URL="${CRASHPAD_URL}")
-  endif()
 
   set(${ARCH}_linux_INCLUDES
       atk-1.0
