@@ -15,7 +15,6 @@ set(cmake_SOURCE_FILES
     Boost.cmake
     BuildBranding.cmake
     BuildVersion.cmake
-    CARes.cmake
     CEFPlugin.cmake
     CMakeCopyIfDifferent.cmake
     Colladadom.cmake
@@ -30,7 +29,6 @@ set(cmake_SOURCE_FILES
     ExamplePlugin.cmake
     FindAPR.cmake
     FindAutobuild.cmake
-    FindCARes.cmake
     FindColladadom.cmake
     FindFMODSTUDIO.cmake
     FindGLOD.cmake
@@ -54,6 +52,7 @@ set(cmake_SOURCE_FILES
     LLAddBuildTest.cmake
     LLAppearance.cmake
     LLAudio.cmake
+    LLCA.cmake
     LLCharacter.cmake
     LLCommon.cmake
     LLImage.cmake

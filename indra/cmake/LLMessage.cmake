@@ -1,6 +1,5 @@
 # -*- cmake -*-
 
-include(CARes)
 include(CURL)
 include(OpenSSL)
 include(XmlRpcEpi)

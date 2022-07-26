@@ -3,6 +3,8 @@
 project(llmessage)
 
 include(00-Common)
+include(CURL)
+include(OpenSSL)
 include(LLCommon)
 include(AIStateMachine)
 include(LLMath)
@@ -223,7 +225,6 @@ target_link_libraries(
   PUBLIC
   llcommon
   ${CURL_LIBRARIES}
-  ${CARES_LIBRARIES}
   ${CRYPTO_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CRYPTO_LIBRARIES}

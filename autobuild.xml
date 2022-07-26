@@ -107,92 +107,6 @@
         <key>version</key>
         <string>1.4.5</string>
       </map>
-      <key>ares</key>
-      <map>
-        <key>copyright</key>
-        <string>Copyright 1998 by the Massachusetts Institute of Technology.</string>
-        <key>description</key>
-        <string>C-ares, an asynchronous resolver library.</string>
-        <key>license</key>
-        <string>c-ares</string>
-        <key>license_file</key>
-        <string>LICENSES/c-ares.txt</string>
-        <key>name</key>
-        <string>ares</string>
-        <key>platforms</key>
-        <map>
-          <key>darwin</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>9a42795b21203afe858db16703929436</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/ares-1.10.0-darwin-201511222040.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>92f6a454d90b5740a38fb68e369cc13e</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-ares-update/rev/290399/arch/Linux/installer/ares-1.10.0-linux-20140529.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
-          </map>
-          <key>linux64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>bef927b60affa6b5c0520f45c56b5cb3</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/ares-1.10.0-linux64-201603240702.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>0c01eb6ae9b92365ace8e70cf3999bfc</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows/lib-vc14/ares-1.10.0-windows-201601150954.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
-          </map>
-          <key>windows64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>6da2b095ad9616d8a8eae9a6a5b3f2c4</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib-vc14/ares-1.10.0-windows64-201512122047.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows64</string>
-          </map>
-        </map>
-        <key>version</key>
-        <string>1.10.0</string>
-      </map>
       <key>boost</key>
       <map>
         <key>copyright</key>
@@ -252,6 +166,70 @@
         </map>
         <key>version</key>
         <string>1.79.0</string>
+      </map>
+      <key>c-ares</key>
+      <map>
+        <key>canonical_repo</key>
+        <string>https://git.alchemyviewer.org/alchemy/thirdparty/3p-c-ares</string>
+        <key>copyright</key>
+        <string>Copyright (c) 1996 - 2018, Daniel Stenberg, (daniel@haxx.se), and many contributors</string>
+        <key>description</key>
+        <string>Library for transferring data specified with URL syntax</string>
+        <key>license</key>
+        <string>curl</string>
+        <key>license_file</key>
+        <string>LICENSES/c-ares.txt</string>
+        <key>name</key>
+        <string>c-ares</string>
+        <key>platforms</key>
+        <map>
+          <key>darwin64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>f7f3719a93ad10de577fa1db4aa28a16aecb2ddcbf2266bc878b1716a2dab7a69e80dd28e2d360c6c0a3975ca9cd4a115cb40caf148b8d183e608fb407d1e0f2</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/177/packages/generic/c-ares/1.18.1.1419/c_ares-1.18.1-darwin64-1419.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>darwin64</string>
+          </map>
+          <key>linux64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>8981a0dd7b77ed506b926dc2a556f25926ffb1765e9876e759a62273562101667431d88a4f04d1ab9fd3a6b06c90bc7c6ab4e3bf16774a06bd405f02ebfcc333</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/177/packages/generic/c-ares/1.18.1.1419/c_ares-1.18.1-linux64-1419.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>linux64</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>e4ca0bb268cfc3c5454ff18f2ad4462f69d34ac609a9521491650640a1c911f7669977106d87461c32d464c9a58fb0b983eb62f53f4eec0aba7fdcb2f951aeba</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/177/packages/generic/c-ares/1.18.1.1419/c_ares-1.18.1-windows64-1419.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>source_type</key>
+        <string>git</string>
+        <key>version</key>
+        <string>1.18.1</string>
       </map>
       <key>colladadom</key>
       <map>
@@ -362,7 +340,7 @@
       <key>curl</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 1996 - 2017, Daniel Stenberg,(daniel@haxx.se), and many contributors.</string>
+        <string>Copyright (c) 1996 - 2017, Daniel Stenberg, (daniel@haxx.se), and many contributors</string>
         <key>description</key>
         <string>Library for transferring data specified with URL syntax</string>
         <key>license</key>
@@ -373,77 +351,51 @@
         <string>curl</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>cc59e267a98b1b433574470a07737609</string>
+              <string>52fefbbf9d1822e90778730e210742d40cccb5c56aa2de5a94f8bd7c109ebb128c8688c504af9ab215ff0ce3897bfa3edc8b394d7c02905cb9f205b3bda00f27</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/curl-7.48.0-darwin-201603231616.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/89/packages/generic/curl/7.54.1.1466/curl-7.54.1-darwin64-1466.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>06149da3d7a34adf40853f813ae55328</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-curl-update/rev/295367/arch/Linux/installer/curl-7.38.0-linux-20141010.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>24a88e015ee9c1806e7aeb46887d38f5</string>
+              <string>87afe7644b44639ced2f9bdb50111079fcf54f4e2a2eaa0de3802ccaaf45df715c297178913b1017a6a98b479e3da764ddb5931cee733c77ccef7d06a02fc335</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/curl-7.48.0-linux64-201603240914.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/89/packages/generic/curl/7.54.1.1466/curl-7.54.1-linux64-1466.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>da5be630ca350a7ed4c0e99250451d41</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/curl-7.56.1-windows-201711241310.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>c797cd1538ab1750adbc28b334a50005</string>
+              <string>4df79db4249095d0b5d85f50702707afcbd2399b220b430027f9959e21dce114cffe6825b4b8d7b5a87ebc0b7aaf5e7995fb667bbaa2eef58608924cb2d50ee2</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc1414/curl-7.61.0-windows64-201808061947.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/89/packages/generic/curl/7.54.1.1466/curl-7.54.1-windows64-1466.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>7.57.0</string>
+        <string>7.54.1</string>
       </map>
       <key>dbus_glib</key>
       <map>
@@ -1561,6 +1513,37 @@
         <key>version</key>
         <string>2.9.14</string>
       </map>
+      <key>llca</key>
+      <map>
+        <key>copyright</key>
+        <string>Copyright (c) 2020, Alchemy Development Group; data provided by the Mozilla NSS Project.
+      </string>
+        <key>license</key>
+        <string>mit</string>
+        <key>license_file</key>
+        <string>LICENSES/ca-license.txt</string>
+        <key>name</key>
+        <string>llca</string>
+        <key>platforms</key>
+        <map>
+          <key>common</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>8541029f02e4bc89bb8b9a2f0e4050c72c4850bf32ab7f2ba6236a3a39cbe6a48e1c30aea336507a271b1962d62511eeaa779e7083f4eac46fe60c73c3fde054</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/125/packages/generic/llca/2022.0407.0229.1474/llca-2022.0407.0229-common-1474.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>common</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>2022.0407.0229</string>
+      </map>
       <key>llphysicsextensions_stub</key>
       <map>
         <key>copyright</key>
@@ -1573,73 +1556,23 @@
         <string>llphysicsextensions_stub</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>common</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>1175977a191ffc936fd0ccca433c8278</string>
+              <string>4e1597ec20042c578afb5b0807919beb0865df46f044b83d886bf2c05460113eaac2a46c5acef8eac623a2846b2f334172aa7a801e0dde6744209bc719006bee</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/llphysicsextensions-stub_llphysicsextensions-update/rev/298370/arch/Darwin/installer/llphysicsextensions_stub-1.0.298370-darwin-298370.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/170/packages/generic/llphysicsextensions_stub/1.0.1229/llphysicsextensions_stub-1.0-common-1229.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>d13d7927692eab2d6a63e36166b72a8a</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/llphysicsextensions-stub_llphysicsextensions-update/rev/298370/arch/Linux/installer/llphysicsextensions_stub-1.0.298370-linux-298370.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
-          </map>
-          <key>linux64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>aa8a2f25e8629cf5e6a96cc0eb93de8e</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/llphysicsextensions-stub/rev/263415/arch/Linux/installer/llphysicsextensions_stub-0.3-linux-20120814.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>9594f6fd79ee924fe675a4a23e30516e</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/llphysicsextensions-stub_llphysicsextensions-update/rev/298370/arch/CYGWIN/installer/llphysicsextensions_stub-1.0.298370-windows-298370.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
-          </map>
-          <key>windows64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>50d7ea325063219a86d9439ce7458582</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/windows64/lib/llphysicsextensions_stub-1.0.298370-windows64-298370.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows64</string>
+            <string>common</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.0.298370</string>
+        <string>1.0</string>
       </map>
       <key>mesa</key>
       <map>
@@ -1822,7 +1755,7 @@
       <key>openssl</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 1998-2016 The OpenSSL Project.  All rights reserved; Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)</string>
+        <string>Copyright (c) 1998-2021 The OpenSSL Project.  All rights reserved; Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)</string>
         <key>description</key>
         <string>Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) Library</string>
         <key>license</key>
@@ -1833,77 +1766,51 @@
         <string>openssl</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>d415e218a7f3d0d1e3dd4f99d6129e6c</string>
+              <string>cd5f90019af7aa0e480391113d014aef7ce6bc762e86b878bfbf4684fc446a0a838c904cd8c910012ca43894d1a40d12327527ff803ecbe8800ccc5b4eb0f1e7</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/openssl-1.0.2g-darwin-201603010806.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/90/packages/generic/openssl/1.1.1m.1458/openssl-1.1.1m-darwin64-1458.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>0665c18f8cdbe2f90cb0a2f088cfe1a6</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-openssl-update/rev/290662/arch/Linux/installer/openssl-1.0.1h-linux-20140605.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>2a50dcb704f6af595fff44defc4b65df</string>
+              <string>118469c310d3cf0d33300738ce871793cce5f70ad83207a5bf35ec1383e6536b915c8a5832f0c2f8fd5e21aee64f6637b9f91531f7ab4625f4d43888aec1b331</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/openssl-1.0.2g-linux64-201603240821.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/90/packages/generic/openssl/1.1.1m.1458/openssl-1.1.1m-linux64-1458.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>0d25e1794f5d86b675484bf5eda799e4</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/openssl-1.1.0g-windows-201711200028.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>bd35903f309ccf026a2c448fd8613cc0</string>
+              <string>0c77f95f7fbd1346db5da1f5b1f806786f7296804b247a65d88da29bb125e14e10f38bb4a4aa6207e22ae03f3a5343527e51cc80b51821c68d8fc6dd7430993a</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/openssl-1.1.0g-windows64-201712260729.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/90/packages/generic/openssl/1.1.1m.1458/openssl-1.1.1m-windows64-1458.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.1.0g</string>
+        <string>1.1.1m</string>
       </map>
       <key>quicktime</key>
       <map>

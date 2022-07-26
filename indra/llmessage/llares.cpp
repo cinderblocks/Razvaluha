@@ -29,7 +29,6 @@
 #include "linden_common.h"
 #include "llares.h"
 
-#include <ares_dns.h>
 #include <ares_version.h>
 
 #include "apr_portable.h"
@@ -49,6 +48,49 @@
 #else
 # include <arpa/nameser.h>
 #endif
+
+ /*
+  * Macro DNS__16BIT reads a network short (16 bit) given in network
+  * byte order, and returns its value as an unsigned short.
+  */
+#define DNS__16BIT(p)  ((unsigned short)((unsigned int) 0xffff & \
+                         (((unsigned int)((unsigned char)(p)[0]) << 8U) | \
+                          ((unsigned int)((unsigned char)(p)[1])))))
+
+  /*
+   * Macro DNS__32BIT reads a network long (32 bit) given in network
+   * byte order, and returns its value as an unsigned int.
+   */
+#define DNS__32BIT(p)  ((unsigned int) \
+                         (((unsigned int)((unsigned char)(p)[0]) << 24U) | \
+                          ((unsigned int)((unsigned char)(p)[1]) << 16U) | \
+                          ((unsigned int)((unsigned char)(p)[2]) <<  8U) | \
+                          ((unsigned int)((unsigned char)(p)[3]))))
+
+ /* Macros for parsing a DNS header */
+#define DNS_HEADER_QID(h)               DNS__16BIT(h)
+#define DNS_HEADER_QR(h)                (((h)[2] >> 7) & 0x1)
+#define DNS_HEADER_OPCODE(h)            (((h)[2] >> 3) & 0xf)
+#define DNS_HEADER_AA(h)                (((h)[2] >> 2) & 0x1)
+#define DNS_HEADER_TC(h)                (((h)[2] >> 1) & 0x1)
+#define DNS_HEADER_RD(h)                ((h)[2] & 0x1)
+#define DNS_HEADER_RA(h)                (((h)[3] >> 7) & 0x1)
+#define DNS_HEADER_Z(h)                 (((h)[3] >> 4) & 0x7)
+#define DNS_HEADER_RCODE(h)             ((h)[3] & 0xf)
+#define DNS_HEADER_QDCOUNT(h)           DNS__16BIT((h) + 4)
+#define DNS_HEADER_ANCOUNT(h)           DNS__16BIT((h) + 6)
+#define DNS_HEADER_NSCOUNT(h)           DNS__16BIT((h) + 8)
+#define DNS_HEADER_ARCOUNT(h)           DNS__16BIT((h) + 10)
+
+/* Macros for parsing the fixed part of a DNS question */
+#define DNS_QUESTION_TYPE(q)            DNS__16BIT(q)
+#define DNS_QUESTION_CLASS(q)           DNS__16BIT((q) + 2)
+
+/* Macros for parsing the fixed part of a DNS resource record */
+#define DNS_RR_TYPE(r)                  DNS__16BIT(r)
+#define DNS_RR_CLASS(r)                 DNS__16BIT((r) + 2)
+#define DNS_RR_TTL(r)                   DNS__32BIT((r) + 4)
+#define DNS_RR_LEN(r)                   DNS__16BIT((r) + 8)
 
 LLAres::HostResponder::~HostResponder()
 {
