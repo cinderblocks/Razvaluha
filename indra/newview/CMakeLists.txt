@@ -1238,15 +1238,10 @@ if (DARWIN)
 endif (DARWIN)
 
 if (LINUX)
-    find_package(PkgConfig REQUIRED)
-    pkg_search_module(GLIB REQUIRED glib-2.0)
-
     LIST(APPEND viewer_SOURCE_FILES llappviewerlinux.cpp)
     LIST(APPEND viewer_SOURCE_FILES llappviewerlinux_api_dbus.cpp)
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed")
-    message(WOW ITS ${GLIB_LDFLAGS})
     set(viewer_LIBRARIES
-        ${GLIB_LDFLAGS}
         Xinerama
         )
 endif (LINUX)
