@@ -1,5 +1,6 @@
 # -*- cmake -*-
 include(Prebuilt)
+include(FindPkgConfig)
 include(Linking)
 
 set(Boost_FIND_QUIETLY ON)
@@ -106,7 +107,12 @@ else (USESYSTEMLIBS)
 endif (STANDALONE)
 
 if (LINUX)
-    set(BOOST_SYSTEM_LIBRARY ${BOOST_SYSTEM_LIBRARY} rt)
-    set(BOOST_THREAD_LIBRARY ${BOOST_THREAD_LIBRARY} rt)
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(GLIB REQUIRED glib-2.0)
+    find_library(RT_LIBRARY rt)
+
+    set(BOOST_FILESYSTEM_LIBRARY ${BOOST_FILESYSTEM_LIBRARY} ${GLIB_LIBRARY})
+    set(BOOST_SYSTEM_LIBRARY ${BOOST_SYSTEM_LIBRARY} ${RT_LIBRARY})
+    set(BOOST_THREAD_LIBRARY ${BOOST_THREAD_LIBRARY} ${RT_LIBRARY})
 endif (LINUX)
 
