@@ -520,20 +520,6 @@ class WindowsManifest(ViewerManifest):
             # self.path("libsndfile-1.dll")
             # self.path("vivoxoal.dll")
 
-            # Security
-            if (self.address_size == 64):
-                self.path("libcrypto-1_1-x64.dll")
-                self.path("libssl-1_1-x64.dll")
-                # if not self.is_packaging_viewer():
-                #    self.path("libcrypto-1_1-x64.pdb")
-                #    self.path("libssl-1_1-x64.pdb")
-            else:
-                self.path("libcrypto-1_1.dll")
-                self.path("libssl-1_1.dll")
-                # if not self.is_packaging_viewer():
-                #    self.path("libcrypto-1_1.pdb")
-                #    self.path("libssl-1_1.pdb")
-
             # Hunspell
             self.path("libhunspell.dll")
 
