@@ -1370,7 +1370,7 @@
       <key>libpng</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 1995-2019 The PNG Reference Library Authors</string>
+        <string>Copyright (c) 2000-2002, 2004, 2006-2017 Glenn Randers-Pehrson</string>
         <key>description</key>
         <string>PNG Reference library</string>
         <key>license</key>
@@ -1381,51 +1381,77 @@
         <string>libpng</string>
         <key>platforms</key>
         <map>
-          <key>darwin64</key>
+          <key>darwin</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>5a45397e6de95393bbf747496e1bf60e5059fe8fcaba66d5f9396aacba823b8d653502f63a58ef85abe3e02362b8085dcd7dbf0615349808d6c1fa7a3d08bd2a</string>
+              <string>7c315d3fee9f9bf7e36c4251c41fa378</string>
               <key>hash_algorithm</key>
-              <string>blake2b</string>
+              <string>md5</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/93/packages/generic/libpng/1.6.37.1416/libpng-1.6.37-darwin64-1416.tar.zst</string>
+              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/libpng-1.6.19-darwin-201511222146.tar.bz2</string>
             </map>
             <key>name</key>
-            <string>darwin64</string>
+            <string>darwin</string>
+          </map>
+          <key>linux</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>3368a25b361c22a03f7ec7e0f8d5ff9d</string>
+              <key>url</key>
+              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-libpng-update/rev/290558/arch/Linux/installer/libpng-1.6.8-linux-20140602.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>linux</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>04cb66dd797fd057e5bcc67af29c9c4191c3bd73be4f8d40680728fb288c2d59fff67c0e9146db6a253ff4503c43de5725f471b67286b6c177f8c0f449cbe867</string>
+              <string>cd64cda7107b967279d5af03b0d46a8f</string>
               <key>hash_algorithm</key>
-              <string>blake2b</string>
+              <string>md5</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/93/packages/generic/libpng/1.6.37.1416/libpng-1.6.37-linux64-1416.tar.zst</string>
+              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/libpng-1.6.21-linux64-201603240933.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
+          </map>
+          <key>windows</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>9aad0afaf2c1895224454c1dc433f481</string>
+              <key>hash_algorithm</key>
+              <string>md5</string>
+              <key>url</key>
+              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libpng-1.6.34-windows-201710172201.tar.bz2</string>
+            </map>
+            <key>name</key>
+            <string>windows</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>1e2db5995d67f31319e4e309a81c4a75f075706196683b9185c3f2069171d2a3bb37fe9aacd638c8cfaeb4635920e9b4de50b118c3677443b19f0299e7b018b2</string>
+              <string>528889464c0766d762bd528cf82558db</string>
               <key>hash_algorithm</key>
-              <string>blake2b</string>
+              <string>md5</string>
               <key>url</key>
-              <string>https://git.alchemyviewer.org/api/v4/projects/93/packages/generic/libpng/1.6.37.1416/libpng-1.6.37-windows64-1416.tar.zst</string>
+              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libpng-1.6.34-windows64-201712260746.tar.bz2</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.6.37</string>
+        <string>1.6.34</string>
       </map>
       <key>libxml2</key>
       <map>
