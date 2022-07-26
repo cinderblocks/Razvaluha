@@ -39,16 +39,11 @@
 # pragma warning(pop)
 #endif
 
-#ifdef LL_STANDALONE
-# include <ares.h>
-#else
-# include <ares/ares.h>
-#endif
-
 #include "llpointer.h"
 #include "llrefcount.h"
 #include "lluri.h"
 
+#include <ares.h>
 #include <boost/shared_ptr.hpp>
 
 class LLQueryResponder;

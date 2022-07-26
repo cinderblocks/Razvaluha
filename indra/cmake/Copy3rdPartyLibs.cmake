@@ -6,16 +6,52 @@
 
 include(CMakeCopyIfDifferent)
 include(Linking)
-include(Variables)
-include(LLCommon)
+
+# When we copy our dependent libraries, we almost always want to copy them to
+# both the Release and the RelWithDebInfo staging directories. This has
+# resulted in duplicate (or worse, erroneous attempted duplicate)
+# copy_if_different commands. Encapsulate that usage.
+# Pass FROM_DIR, TARGETS and the files to copy. TO_DIR is implicit.
+# to_staging_dirs diverges from copy_if_different in that it appends to TARGETS.
+MACRO(to_debug_staging_dirs from_dir targets)
+  foreach(staging_dir
+          "${SHARED_LIB_STAGING_DIR_DEBUG}")
+    copy_if_different("${from_dir}" "${staging_dir}" out_targets ${ARGN})
+    list(APPEND "${targets}" "${out_targets}")
+  endforeach()
+ENDMACRO(to_debug_staging_dirs from_dir to_dir targets)
+
+MACRO(to_relwithdeb_staging_dirs from_dir targets)
+  foreach(staging_dir
+          "${SHARED_LIB_STAGING_DIR_RELWITHDEBINFO}")
+    copy_if_different("${from_dir}" "${staging_dir}" out_targets ${ARGN})
+    list(APPEND "${targets}" "${out_targets}")
+  endforeach()
+ENDMACRO(to_relwithdeb_staging_dirs from_dir to_dir targets)
+
+MACRO(to_release_staging_dirs from_dir targets)
+  foreach(staging_dir
+          "${SHARED_LIB_STAGING_DIR_RELEASE}")
+    copy_if_different("${from_dir}" "${staging_dir}" out_targets ${ARGN})
+    list(APPEND "${targets}" "${out_targets}")
+  endforeach()
+ENDMACRO(to_release_staging_dirs from_dir to_dir targets)
 
 ###################################################################
 # set up platform specific lists of files that need to be copied
 ###################################################################
 if(WINDOWS)
-    set(SHARED_LIB_STAGING_DIR_DEBUG            "${SHARED_LIB_STAGING_DIR}/Debug")
-    set(SHARED_LIB_STAGING_DIR_RELWITHDEBINFO   "${SHARED_LIB_STAGING_DIR}/RelWithDebInfo")
-    set(SHARED_LIB_STAGING_DIR_RELEASE          "${SHARED_LIB_STAGING_DIR}/Release")
+    if(GEN_IS_MULTI_CONFIG)
+        set(SHARED_LIB_STAGING_DIR_DEBUG            "${SHARED_LIB_STAGING_DIR}/Debug")
+        set(SHARED_LIB_STAGING_DIR_RELWITHDEBINFO   "${SHARED_LIB_STAGING_DIR}/RelWithDebInfo")
+        set(SHARED_LIB_STAGING_DIR_RELEASE          "${SHARED_LIB_STAGING_DIR}/Release")
+    elseif (UPPERCASE_CMAKE_BUILD_TYPE MATCHES DEBUG)
+        set(SHARED_LIB_STAGING_DIR_DEBUG            "${SHARED_LIB_STAGING_DIR}")
+    elseif (UPPERCASE_CMAKE_BUILD_TYPE MATCHES RELWITHDEBINFO)
+        set(SHARED_LIB_STAGING_DIR_RELWITHDEBINFO   "${SHARED_LIB_STAGING_DIR}")
+    elseif (UPPERCASE_CMAKE_BUILD_TYPE MATCHES RELEASE)
+        set(SHARED_LIB_STAGING_DIR_RELEASE          "${SHARED_LIB_STAGING_DIR}")
+    endif()
 
     #*******************************
     # VIVOX - *NOTE: no debug version
@@ -38,6 +74,8 @@ if(WINDOWS)
 
     #*******************************
     # Misc shared libs 
+
+    set(addrsfx "-x${ADDRESS_SIZE}")
 
     set(debug_src_dir "${ARCH_PREBUILT_DIRS_DEBUG}")
     set(debug_files
@@ -67,26 +105,6 @@ if(WINDOWS)
         xmlrpc-epi.dll
         )
 
-    if(ADDRESS_SIZE EQUAL 64)
-      list(APPEND debug_files
-           libcrypto-1_1-x64.dll
-           libssl-1_1-x64.dll
-           )
-      list(APPEND release_files
-           libcrypto-1_1-x64.dll
-           libssl-1_1-x64.dll
-           )
-    else(ADDRESS_SIZE EQUAL 64)
-      list(APPEND debug_files
-           libcrypto-1_1.dll
-           libssl-1_1.dll
-           )
-      list(APPEND release_files
-           libcrypto-1_1.dll
-           libssl-1_1.dll
-           )
-    endif(ADDRESS_SIZE EQUAL 64)
-		
     if(NOT DISABLE_TCMALLOC)
       list(APPEND debug_files libtcmalloc_minimal-debug.dll)
       list(APPEND release_files libtcmalloc_minimal.dll)
