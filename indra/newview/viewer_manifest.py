@@ -1314,7 +1314,8 @@ class Linux_i686_Manifest(LinuxManifest):
             self.path("libaprutil-1.so*")
             self.path("libexpat.so.*")
             self.path("libGLOD.so")
-            self.path("libSDL-1.2.so.*")
+            self.path("libSDL2*.so*")
+            self.path("libjpeg.so*")
             self.path("libalut.so")
             self.path("libopenal.so.1")
 
@@ -1324,6 +1325,14 @@ class Linux_i686_Manifest(LinuxManifest):
                 pass
             except:
                 print("tcmalloc files not found, skipping")
+                pass
+
+            try:
+                self.path("libalut.so*")
+                self.path("libopenal.so*")
+                pass
+            except:
+                print("Skipping libalut.so - not found")
                 pass
 
             try:
@@ -1367,16 +1376,23 @@ class Linux_x86_64_Manifest(LinuxManifest):
             self.path("libaprutil-1.so*")
             self.path("libexpat.so*")
             self.path("libGLOD.so")
-            self.path("libSDL-1.2.so*")
+            self.path("libSDL2*.so*")
             self.path("libhunspell*.so*")
-            self.path("libalut.so*")
-            self.path("libopenal.so*")
+            self.path("libjpeg.so*")
 
             try:
                 self.path("libtcmalloc.so*")  # formerly called google perf tools
                 pass
             except:
                 print("tcmalloc files not found, skipping")
+                pass
+
+            try:
+                self.path("libalut.so*")
+                self.path("libopenal.so*")
+                pass
+            except:
+                print("Skipping libalut.so - not found")
                 pass
 
             try:
