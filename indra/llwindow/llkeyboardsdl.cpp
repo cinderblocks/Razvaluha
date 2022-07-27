@@ -223,7 +223,7 @@ static U32 adjustNativekeyFromUnhandledMask(const U32 key, const U32 mask)
 }
 
 
-BOOL LLKeyboardSDL::handleKeyDown(const U32 key, MASK mask)
+BOOL LLKeyboardSDL::handleKeyDown(const U16 key, MASK mask)
 {
 	U32     adjusted_nativekey;
 	KEY	translated_key = 0;
@@ -243,7 +243,7 @@ BOOL LLKeyboardSDL::handleKeyDown(const U32 key, MASK mask)
 }
 
 
-BOOL LLKeyboardSDL::handleKeyUp(const U32 key, MASK mask)
+BOOL LLKeyboardSDL::handleKeyUp(const U16 key, MASK mask)
 {
 	U32     adjusted_nativekey;
 	KEY	translated_key = 0;
@@ -307,12 +307,12 @@ void LLKeyboardSDL::scanKeyboard()
 }
 
  
-BOOL LLKeyboardSDL::translateNumpadKey( const U32 os_key, KEY *translated_key)
+BOOL LLKeyboardSDL::translateNumpadKey( const U16 os_key, KEY *translated_key)
 {
 	return translateKey(os_key, translated_key);	
 }
 
-U32 LLKeyboardSDL::inverseTranslateNumpadKey(const KEY translated_key)
+U16 LLKeyboardSDL::inverseTranslateNumpadKey(const KEY translated_key)
 {
 	return inverseTranslateKey(translated_key);
 }

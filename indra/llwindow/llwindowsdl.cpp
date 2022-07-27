@@ -230,7 +230,7 @@ void sdlLogOutputFunc(void *userdata, int category, SDL_LogPriority priority, co
         break;
     }
 
-    LL_VLOGS(level, "LLWindowSDL") << "SDL [" << level_str << "] <" << category_str << "> : " << message << LL_ENDL;
+    LL_DEBUGS("LLWindowSDL") << "SDL [" << level_str << "] <" << category_str << "> : " << message << LL_ENDL;
 }
 
 LLWindowSDL::LLWindowSDL(LLWindowCallbacks* callbacks,
@@ -731,7 +731,7 @@ BOOL LLWindowSDL::createContext(int x, int y, int width, int height, int bits, B
 				(LLRender::sGLCoreProfile ? " core" : " compatibility") << " context." << LL_ENDL;
 	
 	int vsync_enable = 1;
-	if(disable_vsync)
+	if(vsync_mode)
 		vsync_enable = 0;
 		
 	if(SDL_GL_SetSwapInterval(vsync_enable) == -1)
@@ -834,7 +834,7 @@ BOOL LLWindowSDL::switchContext(BOOL fullscreen, const LLCoordScreen &size, cons
 	{
 		if (stopFn) stopFn();
 		destroyContext();
-		result = createContext(0, 0, size.mX, size.mY, 32, fullscreen, disable_vsync);
+		result = createContext(0, 0, size.mX, size.mY, 32, fullscreen, vsync_mode);
 		if (result)
 		{
 			gGLManager.initGL();
@@ -1872,7 +1872,7 @@ void LLWindowSDL::gatherInput()
             }
             if (event.wheel.x != 0)
             {
-                mCallbacks->handleScrollHWheel(this, -event.wheel.x);
+                mCallbacks->handleScrollWheel(this, -event.wheel.x);
             }
             break;
         }
