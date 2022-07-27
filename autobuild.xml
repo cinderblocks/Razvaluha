@@ -1592,6 +1592,68 @@
         <key>version</key>
         <string>7.11.1.297294</string>
       </map>
+      <key>minizip-ng</key>
+      <map>
+        <key>canonical_repo</key>
+        <string>https://git.alchemyviewer.org/alchemy/thirdparty/3p-minizip-ng</string>
+        <key>copyright</key>
+        <string>Copyright (C) 2010-2021 Nathan Moinvaziri</string>
+        <key>description</key>
+        <string>Fork of the popular zip manipulation library found in the zlib distribution.</string>
+        <key>license</key>
+        <string>zlib</string>
+        <key>license_file</key>
+        <string>LICENSES/minizip-ng.txt</string>
+        <key>name</key>
+        <string>minizip-ng</string>
+        <key>platforms</key>
+        <map>
+          <key>darwin64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>c1ab520ab00797df689e2469e1c8c1850ae72cf8f5c1967d45b59e301620143054f96c078aa73d1fbc78bcd9588969bec083fa403bad7eda43defa50b48c1990</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/149/packages/generic/minizip-ng/3.0.4.1421/minizip_ng-3.0.4-darwin64-1421.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>darwin64</string>
+          </map>
+          <key>linux64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>4f95ec73f25810c7cb81abb0a8d9490137385c4675baf5c763b607ea312e4393152fc46b768790b3d9fd7b7254eeb75d4a83453a6dfe134184811914b8ea10f6</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/149/packages/generic/minizip-ng/3.0.4.1421/minizip_ng-3.0.4-linux64-1421.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>linux64</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>0404b08ba413ed10640327d5f27f9dabd2ec7cc8ac9578180dce7ed26845641e919dcdb046f11f93b6fd780a29913d4e25c42cf971739de648ffd8b8737de415</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/149/packages/generic/minizip-ng/3.0.4.1421/minizip_ng-3.0.4-windows64-1421.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>3.0.4</string>
+      </map>
       <key>nghttp2</key>
       <map>
         <key>copyright</key>
