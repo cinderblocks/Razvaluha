@@ -45,7 +45,6 @@ set(cmake_SOURCE_FILES
     GLEXT.cmake
     GLOD.cmake
     GStreamer010Plugin.cmake
-    Glui.cmake
     Glut.cmake
     GooglePerfTools.cmake
     Hunspell.cmake
@@ -85,6 +84,7 @@ set(cmake_SOURCE_FILES
     Prebuilt.cmake
     PulseAudio.cmake
     Python.cmake
+    SDL2.cmake
     StateMachine.cmake
     TemplateCheck.cmake
     Tut.cmake

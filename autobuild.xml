@@ -3,49 +3,51 @@
 <map>
     <key>installables</key>
     <map>
-      <key>SDL</key>
+      <key>SDL2</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 2004, 2006-2013 Sam Lantinga</string>
+        <string>Copyright (C) 1997-2022 Sam Lantinga (slouken@libsdl.org)</string>
         <key>description</key>
         <string>Simple DirectMedia Layer is a cross-platform multimedia library designed to provide low level access to audio, keyboard, mouse, joystick, 3D hardware via OpenGL, and 2D video framebuffer.</string>
         <key>license</key>
         <string>lgpl</string>
         <key>license_file</key>
-        <string>LICENSES/SDL.txt</string>
+        <string>LICENSES/SDL2.txt</string>
         <key>name</key>
-        <string>SDL</string>
+        <string>SDL2</string>
         <key>platforms</key>
         <map>
-          <key>linux</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>8da309d24fb0bad8eaaa667fb04c6dc7</string>
+              <string>e78c6a101b654747099e9e54602c8cdaf43713e41702c3ad6eb1f7a4913e1f858fbf6202d82addb485f7122403483f766aa27194f12be729897d5d17868e0b67</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-sdl-update/rev/290561/arch/Linux/installer/SDL-1.2.15-linux-20140602.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/100/packages/generic/SDL2/2.0.20.1370/SDL2-2.0.20-darwin64-1370.tar.zst</string>
             </map>
             <key>name</key>
-            <string>linux</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>5c8df43ff04799f3f675b8a0f328f184</string>
+              <string>b1b7823acb295abb4328543836cce698776a5c6f24d9e8768a492e0e93a8972203c11f62dc0d9de65272bd464b151b74de0384d93e9e3c6adc474f5deb540b5d</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/SDL-1.2.15-linux64-201603241005.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/100/packages/generic/SDL2/2.0.22.1514/SDL2-2.0.22-linux64-1514.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.2.15</string>
+        <string>2.0.22</string>
       </map>
       <key>apr_suite</key>
       <map>
@@ -1275,6 +1277,68 @@
         <key>version</key>
         <string>1.32</string>
       </map>
+      <key>libjpeg-turbo</key>
+      <map>
+        <key>canonical_repo</key>
+        <string>https://git.alchemyviewer.org/alchemy/thirdparty/3p-libjpeg-turbo</string>
+        <key>copyright</key>
+        <string>Copyright (C)2009-2020 D. R. Commander. All Rights Reserved. Copyright (C)2015 Viktor Szathmáry. All Rights Reserved.</string>
+        <key>description</key>
+        <string>JPEG encoding, decoding library</string>
+        <key>license</key>
+        <string>libjpeg-turbo</string>
+        <key>license_file</key>
+        <string>LICENSES/libjpeg-turbo.txt</string>
+        <key>name</key>
+        <string>libjpeg-turbo</string>
+        <key>platforms</key>
+        <map>
+          <key>darwin64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>deb31dea9b8def3c1eb38ef3c63321f8f4af712a3c75edaa5576ad1dcea7dc4f14cb95e42b82ddd7d3515f575b9e720c0e0f80164b0909da146390283bfc43b1</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/115/packages/generic/libjpeg-turbo/2.1.3.1499/libjpeg_turbo-2.1.3-darwin64-1499.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>darwin64</string>
+          </map>
+          <key>linux64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>bc9f05787ad23063f07c7a8d043e1822ca84f0040a5cc9666ccfaff239c98eaa0c1e30de8d3df6efb907bfd2f1a8a35ea4efeb692731dab2d54adef096759a76</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/115/packages/generic/libjpeg-turbo/2.1.3.1499/libjpeg_turbo-2.1.3-linux64-1499.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>linux64</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>fcad3a9866888ff4a7a124d0d98ab23d8e2cd6e8a70a9139c4b2626ac40ab47d988ce58b73a8ae9ad70231b36bfeefabc7716a2ff8d6868a69076474215fc7a1</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/115/packages/generic/libjpeg-turbo/2.1.3.1499/libjpeg_turbo-2.1.3-windows64-1499.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>2.1.3</string>
+      </map>
       <key>libndofdev</key>
       <map>
         <key>copyright</key>
@@ -1289,88 +1353,42 @@
         <string>libndofdev</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>1d542606b146462cdfdc47a94f14eaf5</string>
+              <string>a06121c19aca38f6ff5200af7d60c4ad69ad936b42dbc5e1091bf41a7fdc7d09c7d076a557fd42bad4f2a52ca94b1a3216d18b1161fbb3f4e28ed798520807d3</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/libndofdev-0.1-darwin-201504232110.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/117/packages/generic/libndofdev/0.1.0.1314/libndofdev-0.1.0-darwin64-1314.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>e2927116641e2c74ada092bfb6b49a8d</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libndofdev-0.1-windows-201703090613.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
+            <string>darwin64</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>3ac8047b38b617ad686591e00100d6af</string>
+              <string>18f4395deb21541e40039be4a2f056c833a2e2b2d2b42fe7baee007d40f33a983f33a03f02e841226e6c2e4fe235c39c74e307745860dd68234fe13294865b1f</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libndofdev-0.1-windows64-201712251124.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/117/packages/generic/libndofdev/0.1.0.1314/libndofdev-0.1.0-windows64-1314.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>0.1</string>
-      </map>
-      <key>libndofdev-open</key>
-      <map>
-        <key>copyright</key>
-        <string>Copyright (c) 2008, Jan Ciger (jan.ciger (at) gmail.com)</string>
-        <key>description</key>
-        <string>3DConnection SDK</string>
-        <key>license</key>
-        <string>BSD</string>
-        <key>license_file</key>
-        <string>LICENSES/libndofdev.txt</string>
-        <key>name</key>
-        <string>libndofdev-open</string>
-        <key>platforms</key>
-        <map>
-          <key>linux64</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>d3fd1dab78123c39391b0afb372e5cf1</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/libndofdev_open-0.8-linux64-201603241018.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux64</string>
-          </map>
-        </map>
-        <key>version</key>
-        <string>0.8</string>
+        <string>0.1.0</string>
       </map>
       <key>libpng</key>
       <map>
         <key>copyright</key>
-        <string>Copyright (c) 2000-2002, 2004, 2006-2017 Glenn Randers-Pehrson</string>
+        <string>Copyright (c) 1995-2019 The PNG Reference Library Authors</string>
         <key>description</key>
         <string>PNG Reference library</string>
         <key>license</key>
@@ -1381,77 +1399,51 @@
         <string>libpng</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>7c315d3fee9f9bf7e36c4251c41fa378</string>
+              <string>5a45397e6de95393bbf747496e1bf60e5059fe8fcaba66d5f9396aacba823b8d653502f63a58ef85abe3e02362b8085dcd7dbf0615349808d6c1fa7a3d08bd2a</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/libpng-1.6.19-darwin-201511222146.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/93/packages/generic/libpng/1.6.37.1416/libpng-1.6.37-darwin64-1416.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>3368a25b361c22a03f7ec7e0f8d5ff9d</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-libpng-update/rev/290558/arch/Linux/installer/libpng-1.6.8-linux-20140602.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>cd64cda7107b967279d5af03b0d46a8f</string>
+              <string>04cb66dd797fd057e5bcc67af29c9c4191c3bd73be4f8d40680728fb288c2d59fff67c0e9146db6a253ff4503c43de5725f471b67286b6c177f8c0f449cbe867</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/libpng-1.6.21-linux64-201603240933.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/93/packages/generic/libpng/1.6.37.1416/libpng-1.6.37-linux64-1416.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>9aad0afaf2c1895224454c1dc433f481</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/libpng-1.6.34-windows-201710172201.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>528889464c0766d762bd528cf82558db</string>
+              <string>1e2db5995d67f31319e4e309a81c4a75f075706196683b9185c3f2069171d2a3bb37fe9aacd638c8cfaeb4635920e9b4de50b118c3677443b19f0299e7b018b2</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/libpng-1.6.34-windows64-201712260746.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/93/packages/generic/libpng/1.6.37.1416/libpng-1.6.37-windows64-1416.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.6.34</string>
+        <string>1.6.37</string>
       </map>
       <key>libxml2</key>
       <map>
@@ -1753,6 +1745,38 @@
         </map>
         <key>version</key>
         <string>1.3.5</string>
+      </map>
+      <key>open-libndofdev</key>
+      <map>
+        <key>copyright</key>
+        <string>Copyright (c) 2008, Jan Ciger (jan.ciger (at) gmail.com)</string>
+        <key>description</key>
+        <string>Open Source replacement for 3DConnection SDK</string>
+        <key>license</key>
+        <string>BSD</string>
+        <key>license_file</key>
+        <string>LICENSES/libndofdev.txt</string>
+        <key>name</key>
+        <string>open-libndofdev</string>
+        <key>platforms</key>
+        <map>
+          <key>linux64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>78d857650a7f986b9e37e3ef8a0a2b879966712d6a5ff9444ea5c0b1e6cc8595123bab520fca63f19c2a13c4e06746239a7d8fd999d6deaab1d535cfde19c974</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/99/packages/generic/open-libndofdev/0.13.0.1518/open_libndofdev-0.13.0-linux64-1518.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>linux64</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>0.13.0</string>
       </map>
       <key>openal</key>
       <map>

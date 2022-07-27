@@ -10,20 +10,18 @@ else (STANDALONE)
   if (WINDOWS OR DARWIN)
     use_prebuilt_binary(libndofdev)
   elseif (LINUX)
-    use_prebuilt_binary(libndofdev-open)
+    use_prebuilt_binary(open-libndofdev)
   endif (WINDOWS OR DARWIN)
 
   if (WINDOWS)
-    set(NDOF_LIBRARY libndofdev)
+    set(NDOF_LIBRARY
+      debug ${ARCH_PREBUILT_DIRS_DEBUG}/libndofdev.lib
+      optimized ${ARCH_PREBUILT_DIRS_RELEASE}/libndofdev.lib)
   elseif (DARWIN OR LINUX)
     set(NDOF_LIBRARY ndofdev)
   endif (WINDOWS)
 
-	if (WINDOWS)
-      set(NDOF_INCLUDE_DIR ${LIBS_PREBUILT_DIR}/include)
-	else (WINDOWS)
-      set(NDOF_INCLUDE_DIR ${LIBS_PREBUILT_DIR}/include/ndofdev)
-	endif (WINDOWS)
+  set(NDOF_INCLUDE_DIR ${ARCH_PREBUILT_DIRS}/include/ndofdev)
   set(NDOF_FOUND 1)
 endif (STANDALONE)
 
