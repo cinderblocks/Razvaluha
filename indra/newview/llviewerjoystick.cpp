@@ -187,11 +187,11 @@ NDOF_HotPlugResult LLViewerJoystick::HotPlugAddCallback(NDOF_Device *dev)
 	LLViewerJoystick* joystick(LLViewerJoystick::getInstance());
 	if (joystick->mDriverState == JDS_UNINITIALIZED)
 	{
-        LL_INFOS() << "HotPlugAddCallback: will use device:" << LL_ENDL;
-		ndof_dump(dev);
+		LL_INFOS("Joystick") << "HotPlugAddCallback: will use device:" << LL_ENDL;
+		ndof_dump(stderr, dev);
 		joystick->mNdofDev = dev;
-        joystick->mDriverState = JDS_INITIALIZED;
-        res = NDOF_KEEP_HOTPLUGGED;
+		joystick->mDriverState = JDS_INITIALIZED;
+		res = NDOF_KEEP_HOTPLUGGED;
 	}
 	joystick->updateEnabled(true);
     return res;
@@ -205,9 +205,9 @@ void LLViewerJoystick::HotPlugRemovalCallback(NDOF_Device *dev)
 	LLViewerJoystick* joystick(LLViewerJoystick::getInstance());
 	if (joystick->mNdofDev == dev)
 	{
-        LL_INFOS() << "HotPlugRemovalCallback: joystick->mNdofDev=" 
+        LL_INFOS("Joystick") << "HotPlugRemovalCallback: joystick->mNdofDev="
 				<< joystick->mNdofDev << "; removed device:" << LL_ENDL;
-		ndof_dump(dev);
+		ndof_dump(stderr, dev);
 		joystick->mDriverState = JDS_UNINITIALIZED;
 	}
 	joystick->updateEnabled(true);
