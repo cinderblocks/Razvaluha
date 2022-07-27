@@ -16,6 +16,7 @@ include(CrashPad)
 include(DBusGlib)
 include(FMODSTUDIO)
 include(GLOD)
+include(Glut)
 include(Hunspell)
 include(LLAddBuildTest)
 include(LLAppearance)
@@ -1701,9 +1702,10 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${OPENGL_LIBRARIES}
     ${FMODSTUDIO_LIBRARY} # must come after LLAudio
     ${GLOD_LIBRARIES}
+    ${GLUT_LIBRARY}
     ${APRUTIL_LIBRARIES}
     ${OPENGL_LIBRARIES}
-    ${SDL_LIBRARY}
+    ${SDL_LIBRARIES}
     ${SMARTHEAP_LIBRARY}
     ${UI_LIBRARIES}
     ${WINDOWS_LIBRARIES}

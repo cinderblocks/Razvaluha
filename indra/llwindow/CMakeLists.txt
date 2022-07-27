@@ -19,6 +19,7 @@ include(LLVFS)
 include(LLWindow)
 include(LLXML)
 include(UI)
+include(SDL2)
 
 include_directories(
     ${LLCOMMON_INCLUDE_DIRS}
@@ -69,8 +70,8 @@ if (LINUX)
       ${LLVFS_LIBRARIES}
       ${LLXML_LIBRARIES}
       ${UI_LIBRARIES}     # for GTK
-      ${SDL_LIBRARY}
-      fontconfig          # For FCInit and other FC* functions.
+      ${SDL_LIBRARIES}
+      ${FONTCONFIG_LIBRARIES}          # For FCInit and other FC* functions.
       )
 
   list(APPEND viewer_SOURCE_FILES 
@@ -147,5 +148,11 @@ endif (llwindow_HEADER_FILES)
     ${llwindow_SOURCE_FILES}
     ${viewer_SOURCE_FILES}
     )
+
+if (SDL_FOUND)
+  set_property(TARGET llwindow
+    PROPERTY COMPILE_DEFINITIONS LL_SDL=1
+    )
+endif (SDL_FOUND)
 
 target_link_libraries (llwindow PUBLIC llcommon ${llwindow_LINK_LIBRARIES})

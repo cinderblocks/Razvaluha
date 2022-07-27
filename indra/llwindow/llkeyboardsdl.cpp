@@ -29,7 +29,7 @@
 #include "linden_common.h"
 #include "llkeyboardsdl.h"
 #include "llwindowcallbacks.h"
-#include "SDL/SDL.h"
+#include <SDL.h>
 
 LLKeyboardSDL::LLKeyboardSDL()
 {
@@ -40,7 +40,7 @@ LLKeyboardSDL::LLKeyboardSDL()
 	// Virtual key mappings from SDL_keysym.h ...
 
 	// SDL maps the letter keys to the ASCII you'd expect, but it's lowercase...
-	U16 cur_char;
+	U32 cur_char;
 	for (cur_char = 'A'; cur_char <= 'Z'; cur_char++)
 	{
 		mTranslateKeyMap[cur_char] = cur_char;
@@ -124,37 +124,34 @@ LLKeyboardSDL::LLKeyboardSDL()
 	mTranslateKeyMap[SDLK_QUOTE] = '\'';
 
 	// Build inverse map
-	std::map<U16, KEY>::iterator iter;
-	for (iter = mTranslateKeyMap.begin(); iter != mTranslateKeyMap.end(); iter++)
+	for (const auto& keymap_pair : mTranslateKeyMap)
 	{
-		mInvTranslateKeyMap[iter->second] = iter->first;
+		mInvTranslateKeyMap[keymap_pair.second] = keymap_pair.first;
 	}
 
 	// numpad map
-	mTranslateNumpadMap[SDLK_KP0] = KEY_PAD_INS;
-	mTranslateNumpadMap[SDLK_KP1] = KEY_PAD_END;
-	mTranslateNumpadMap[SDLK_KP2] = KEY_PAD_DOWN;
-	mTranslateNumpadMap[SDLK_KP3] = KEY_PAD_PGDN;
-	mTranslateNumpadMap[SDLK_KP4] = KEY_PAD_LEFT;
-	mTranslateNumpadMap[SDLK_KP5] = KEY_PAD_CENTER;
-	mTranslateNumpadMap[SDLK_KP6] = KEY_PAD_RIGHT;
-	mTranslateNumpadMap[SDLK_KP7] = KEY_PAD_HOME;
-	mTranslateNumpadMap[SDLK_KP8] = KEY_PAD_UP;
-	mTranslateNumpadMap[SDLK_KP9] = KEY_PAD_PGUP;
+	mTranslateNumpadMap[SDLK_KP_0] = KEY_PAD_INS;
+	mTranslateNumpadMap[SDLK_KP_1] = KEY_PAD_END;
+	mTranslateNumpadMap[SDLK_KP_2] = KEY_PAD_DOWN;
+	mTranslateNumpadMap[SDLK_KP_3] = KEY_PAD_PGDN;
+	mTranslateNumpadMap[SDLK_KP_4] = KEY_PAD_LEFT;
+	mTranslateNumpadMap[SDLK_KP_5] = KEY_PAD_CENTER;
+	mTranslateNumpadMap[SDLK_KP_6] = KEY_PAD_RIGHT;
+	mTranslateNumpadMap[SDLK_KP_7] = KEY_PAD_HOME;
+	mTranslateNumpadMap[SDLK_KP_8] = KEY_PAD_UP;
+	mTranslateNumpadMap[SDLK_KP_9] = KEY_PAD_PGUP;
 	mTranslateNumpadMap[SDLK_KP_PERIOD] = KEY_PAD_DEL;
 
 	// build inverse numpad map
-	for (iter = mTranslateNumpadMap.begin();
-	     iter != mTranslateNumpadMap.end();
-	     iter++)
+	for (const auto& numpad_pair : mTranslateNumpadMap)
 	{
-		mInvTranslateNumpadMap[iter->second] = iter->first;
+		mInvTranslateNumpadMap[numpad_pair.second] = numpad_pair.first;
 	}
 }
 
 void LLKeyboardSDL::resetMaskKeys()
 {
-	SDLMod mask = SDL_GetModState();
+	SDL_Keymod mask = SDL_GetModState();
 
 	// MBW -- XXX -- This mirrors the operation of the Windows version of resetMaskKeys().
 	//    It looks a bit suspicious, as it won't correct for keys that have been released.
@@ -201,36 +198,36 @@ MASK LLKeyboardSDL::updateModifiers(const U32 mask)
 }
 
 
-static U16 adjustNativekeyFromUnhandledMask(const U16 key, const U32 mask)
+static U32 adjustNativekeyFromUnhandledMask(const U32 key, const U32 mask)
 {
 	// SDL doesn't automatically adjust the keysym according to
 	// whether NUMLOCK is engaged, so we massage the keysym manually.
-	U16 rtn = key;
+	U32 rtn = key;
 	if (!(mask & KMOD_NUM))
 	{
 		switch (key)
 		{
 		case SDLK_KP_PERIOD: rtn = SDLK_DELETE; break;
-		case SDLK_KP0: rtn = SDLK_INSERT; break;
-		case SDLK_KP1: rtn = SDLK_END; break;
-		case SDLK_KP2: rtn = SDLK_DOWN; break;
-		case SDLK_KP3: rtn = SDLK_PAGEDOWN; break;
-		case SDLK_KP4: rtn = SDLK_LEFT; break;
-		case SDLK_KP6: rtn = SDLK_RIGHT; break;
-		case SDLK_KP7: rtn = SDLK_HOME; break;
-		case SDLK_KP8: rtn = SDLK_UP; break;
-		case SDLK_KP9: rtn = SDLK_PAGEUP; break;
+			case SDLK_KP_0: rtn = SDLK_INSERT; break;
+			case SDLK_KP_1: rtn = SDLK_END; break;
+			case SDLK_KP_2: rtn = SDLK_DOWN; break;
+			case SDLK_KP_3: rtn = SDLK_PAGEDOWN; break;
+			case SDLK_KP_4: rtn = SDLK_LEFT; break;
+			case SDLK_KP_6: rtn = SDLK_RIGHT; break;
+			case SDLK_KP_7: rtn = SDLK_HOME; break;
+			case SDLK_KP_8: rtn = SDLK_UP; break;
+			case SDLK_KP_9: rtn = SDLK_PAGEUP; break;
 		}
 	}
 	return rtn;
 }
 
 
-BOOL LLKeyboardSDL::handleKeyDown(const U16 key, const U32 mask)
+BOOL LLKeyboardSDL::handleKeyDown(const U32 key, MASK mask)
 {
-	U16     adjusted_nativekey;
+	U32     adjusted_nativekey;
 	KEY	translated_key = 0;
-	U32	translated_mask = MASK_NONE;
+	MASK translated_mask = MASK_NONE;
 	BOOL	handled = FALSE;
 
 	adjusted_nativekey = adjustNativekeyFromUnhandledMask(key, mask);
@@ -246,11 +243,11 @@ BOOL LLKeyboardSDL::handleKeyDown(const U16 key, const U32 mask)
 }
 
 
-BOOL LLKeyboardSDL::handleKeyUp(const U16 key, const U32 mask)
+BOOL LLKeyboardSDL::handleKeyUp(const U32 key, MASK mask)
 {
-	U16     adjusted_nativekey;
+	U32     adjusted_nativekey;
 	KEY	translated_key = 0;
-	U32	translated_mask = MASK_NONE;
+	MASK translated_mask = MASK_NONE;
 	BOOL	handled = FALSE;
 
 	adjusted_nativekey = adjustNativekeyFromUnhandledMask(key, mask);
@@ -268,7 +265,7 @@ BOOL LLKeyboardSDL::handleKeyUp(const U16 key, const U32 mask)
 MASK LLKeyboardSDL::currentMask(BOOL for_mouse_event)
 {
 	MASK result = MASK_NONE;
-	SDLMod mask = SDL_GetModState();
+	SDL_Keymod mask = SDL_GetModState();
 
 	if (mask & KMOD_SHIFT)			result |= MASK_SHIFT;
 	if (mask & KMOD_CTRL)			result |= MASK_CONTROL;
@@ -277,7 +274,7 @@ MASK LLKeyboardSDL::currentMask(BOOL for_mouse_event)
 	// For keyboard events, consider Meta keys equivalent to Control
 	if (!for_mouse_event)
 	{
-		if (mask & KMOD_META) result |= MASK_CONTROL;
+		if (mask & KMOD_GUI) result |= MASK_CONTROL;
 	}
 
 	return result;
@@ -310,31 +307,13 @@ void LLKeyboardSDL::scanKeyboard()
 }
 
  
-BOOL LLKeyboardSDL::translateNumpadKey( const U16 os_key, KEY *translated_key)
+BOOL LLKeyboardSDL::translateNumpadKey( const U32 os_key, KEY *translated_key)
 {
-	if(mNumpadDistinct == ND_NUMLOCK_ON)
-	{
-		std::map<U16, KEY>::iterator iter= mTranslateNumpadMap.find(os_key);
-		if(iter != mTranslateNumpadMap.end())
-		{
-			*translated_key = iter->second;
-			return TRUE;
-		}
-	}
-	BOOL success = translateKey(os_key, translated_key);
-	return success;	
+	return translateKey(os_key, translated_key);	
 }
 
-U16 LLKeyboardSDL::inverseTranslateNumpadKey(const KEY translated_key)
+U32 LLKeyboardSDL::inverseTranslateNumpadKey(const KEY translated_key)
 {
-	if(mNumpadDistinct == ND_NUMLOCK_ON)
-	{
-		std::map<KEY, U16>::iterator iter= mInvTranslateNumpadMap.find(translated_key);
-		if(iter != mInvTranslateNumpadMap.end())
-		{
-			return iter->second;
-		}
-	}
 	return inverseTranslateKey(translated_key);
 }
 
