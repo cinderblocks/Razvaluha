@@ -46,7 +46,9 @@
 #if LL_GTK
 extern "C" {
 // mostly for Linux, possible on others
-# include <gtk/gtk.h>
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
+#include <gdk/gdkx.h>
 }
 #endif // LL_GTK
 
