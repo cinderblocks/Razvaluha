@@ -208,10 +208,8 @@ protected:
 	friend class LLWindowManager;
 
 private:
-#if LL_X11
 	BOOL mFlashing;
 	LLTimer mFlashTimer;
-#endif //LL_X11
 	
 	U32 mKeyScanCode;
 	U32 mKeyVirtualKey;
