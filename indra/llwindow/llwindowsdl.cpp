@@ -2557,8 +2557,6 @@ void LLWindowSDL::bringToFront()
 	}
 }
 
-}
-
 //static
 std::vector<std::string> LLWindowSDL::getDynamicFallbackFontList()
 {
