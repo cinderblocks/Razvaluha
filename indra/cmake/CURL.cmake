@@ -10,7 +10,6 @@ if (STANDALONE)
 else (STANDALONE)
   use_prebuilt_binary(c-ares)
   use_prebuilt_binary(curl)
-  use_prebuilt_binary(nghttp2)
   add_definitions("-DCARES_STATICLIB")
   if (WINDOWS)
     set(CURL_LIBRARIES 
