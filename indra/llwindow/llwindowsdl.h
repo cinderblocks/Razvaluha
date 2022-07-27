@@ -31,18 +31,23 @@
 
 #include "llwindow.h"
 #include "lltimer.h"
+#include "llpreeditor.h"
 
-#include "SDL/SDL.h"
-#include "SDL/SDL_endian.h"
+#ifndef SDL_MAIN_HANDLED
+#define SDL_MAIN_HANDLED 1
+#endif
+#include <SDL.h>
+#include <SDL_endian.h>
+#include <SDL_video.h>
 
 #if LL_X11
 // get X11-specific headers for use in low-level stuff like copy-and-paste support
-#include "SDL/SDL_syswm.h"
+#include <SDL_syswm.h>
 #endif
 
 // AssertMacros.h does bad things.
+#include "fix_macros.h"
 #undef verify
-#undef check
 #undef require
 
 
@@ -158,7 +163,6 @@ protected:
 
 	void	initCursors();
 	void	quitCursors();
-	void	moveWindow(const LLCoordScreen& position,const LLCoordScreen& size);
 
 	// Changes display resolution. Returns true if successful
 	BOOL	setDisplayResolution(S32 width, S32 height, S32 bits, S32 refresh);
@@ -177,19 +181,20 @@ protected:
 	BOOL createContext(int x, int y, int width, int height, int bits, BOOL fullscreen, const S32 vsync_mode);
 	void destroyContext();
 	void setupFailure(const std::string& text, const std::string& caption, U32 type);
-	void fixWindowSize(void);
-	U32 SDLCheckGrabbyKeys(SDLKey keysym, BOOL gain);
+	U32 SDLCheckGrabbyKeys(SDL_Keycode keysym, BOOL gain);
 	BOOL SDLReallyCaptureInput(BOOL capture);
 
 	//
 	// Platform specific variables
 	//
 	U32             mGrabbyKeyFlags;
-	int			mReallyCapturedCount;
-	SDL_Surface *	mWindow;
-	std::string mWindowTitle;
-	double		mOriginalAspectRatio;
-	BOOL		mNeedsResize;		// Constructor figured out the window is too big, it needs a resize.
+	int				mReallyCapturedCount;
+	SDL_Window*		mWindow;
+	SDL_GLContext   mGLContext;
+	std::string		mWindowName;
+	std::string 	mWindowTitle;
+	double			mOriginalAspectRatio;
+	BOOL			mNeedsResize;		// Constructor figured out the window is too big, it needs a resize.
 	LLCoordScreen   mNeedsResizeSize;
 	F32			mOverrideAspectRatio;
 	F32		mGamma;
@@ -198,23 +203,22 @@ protected:
 
 	int		mSDLFlags;
 
-	SDL_Cursor*	mSDLCursors[UI_CURSOR_COUNT];
-	int             mHaveInputFocus; /* 0=no, 1=yes, else unknown */
-	int             mIsMinimized; /* 0=no, 1=yes, else unknown */
+	SDL_Cursor*		mSDLCursors[UI_CURSOR_COUNT];
 
 	friend class LLWindowManager;
 
 private:
 #if LL_X11
-	void x11_set_urgent(BOOL urgent);
 	BOOL mFlashing;
 	LLTimer mFlashTimer;
 #endif //LL_X11
 	
 	U32 mKeyScanCode;
-        U32 mKeyVirtualKey;
-	SDLMod mKeyModifiers;
-	U32 mKeySym;
+	U32 mKeyVirtualKey;
+	SDL_Keymod mKeyModifiers;
+
+	bool			mLanguageTextInputAllowed;
+	LLPreeditor*	mPreeditor;
 };
 
 
