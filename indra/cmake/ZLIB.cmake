@@ -4,17 +4,17 @@ set(ZLIB_FIND_QUIETLY ON)
 set(ZLIB_FIND_REQUIRED ON)
 
 include(Prebuilt)
+include(Linking)
 
 if (STANDALONE)
   include(FindZLIB)
 else (STANDALONE)
-  use_prebuilt_binary(zlib)
+  use_prebuilt_binary(zlib-ng)
   if (WINDOWS)
     set(ZLIB_LIBRARIES 
-      debug zlibd
-      optimized zlib)
+      debug ${ARCH_PREBUILT_DIRS_DEBUG}/zlibd.lib
+      optimized ${ARCH_PREBUILT_DIRS_RELEASE}/zlib.lib)
   elseif (LINUX)
-    #
     # When we have updated static libraries in competition with older
     # shared libraries and we want the former to win, we need to do some
     # extra work.  The *_PRELOAD_ARCHIVES settings are invoked early
@@ -28,10 +28,8 @@ else (STANDALONE)
     #
     set(ZLIB_PRELOAD_ARCHIVES -Wl,--whole-archive z -Wl,--no-whole-archive)
     set(ZLIB_LIBRARIES z)
-  else (WINDOWS)
-    set(ZLIB_LIBRARIES z)
+  elseif (DARWIN)
+    set(ZLIB_LIBRARIES -Wl,-force_load,${ARCH_PREBUILT_DIRS_RELEASE}/libz.a)
   endif (WINDOWS)
-  if (WINDOWS OR LINUX)
-    set(ZLIB_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include/zlib)
-  endif (WINDOWS OR LINUX)
+  set(ZLIB_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include/zlib)
 endif (STANDALONE)

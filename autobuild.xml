@@ -2180,91 +2180,67 @@
         <key>version</key>
         <string>0.54.1</string>
       </map>
-      <key>zlib</key>
+      <key>zlib-ng</key>
       <map>
+        <key>canonical_repo</key>
+        <string>https://git.alchemyviewer.org/alchemy/thirdparty/3p-zlib-ng</string>
         <key>copyright</key>
         <string>Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler</string>
         <key>description</key>
-        <string>Zlib Data Compression Library</string>
+        <string>zlib replacement with optimizations for next generation systems.</string>
         <key>license</key>
         <string>zlib</string>
         <key>license_file</key>
-        <string>LICENSES/zlib.txt</string>
+        <string>LICENSES/zlib-ng.txt</string>
         <key>name</key>
-        <string>zlib</string>
+        <string>zlib-ng</string>
         <key>platforms</key>
         <map>
-          <key>darwin</key>
+          <key>darwin64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>635ee875ba478b17b6c64d9698cdf0dd</string>
+              <string>8cbde360a9841ad5890381fcee2d9a670d39a6658027ae29e483af9554620ac5c51865d6454c8b48b16c976f7d1fc316a5223a7d03faddb6d153136e04d3a572</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://bitbucket.org/alchemyviewer/publiclibs-darwin/downloads/zlib-1.2.8-darwin-201511221937.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng/2.0.6.1415/zlib_ng-2.0.6-darwin64-1415.tar.zst</string>
             </map>
             <key>name</key>
-            <string>darwin</string>
-          </map>
-          <key>linux</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>63a62bb3cbef2aad3cca49cb6f2d0aeb</string>
-              <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/hg/repo/3pl_3p-zlib-update/rev/290556/arch/Linux/installer/zlib-1.2.8-linux-20140602.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>linux</string>
+            <string>darwin64</string>
           </map>
           <key>linux64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>1eaee9888043648d5f09716b771dcb4b</string>
+              <string>46667a03449a5478a2ca06434d3fd116c740420aae1b9dcf6f2d82a53d26e77993fc4b16ccb37def5ea221d719bf3e4c7402f76414ff51f7ff65177bd399b91d</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://depot.alchemyviewer.org/pub/linux64/lib-trusty/zlib-1.2.8-linux64-201603240746.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng/2.0.6.1415/zlib_ng-2.0.6-linux64-1415.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>75651f8b2fa45545461f73ba583180bb</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows/lib-vc141/zlib-1.2.11-windows-201703090604.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
           </map>
           <key>windows64</key>
           <map>
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>ed6da4296e2fdfc132b4f12d35890ada</string>
+              <string>4e3e11bf48b6a45de2d50e8466b3ee81c7c9299a2cc6036e0ce4fe1160d295e30fa3a04142953f4e6f26fb280aa0ce1c77da7ffc5c9f2e0083a4f9890aa6d3b8</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://depot.alchemyviewer.org/pub/windows64/lib-vc142/zlib-1.2.11-windows64-201712260711.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/148/packages/generic/zlib-ng/2.0.6.1415/zlib_ng-2.0.6-windows64-1415.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.2.11</string>
+        <string>2.0.6</string>
       </map>
     </map>
     <key>package_description</key>
