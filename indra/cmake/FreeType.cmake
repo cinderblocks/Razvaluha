@@ -2,11 +2,9 @@
 include(Prebuilt)
 
 if (LINUX OR STANDALONE)
-  include(FindPkgConfig)
-
-  pkg_check_modules(FREETYPE REQUIRED freetype2)
-  pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
+  include(FindFreetype)
 else (LINUX OR STANDALONE)
+  use_prebuilt_binary(freetype)
   if(DARWIN)
     set(FREETYPE_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include/freetype2)
   else()
