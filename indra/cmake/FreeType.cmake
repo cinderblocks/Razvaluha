@@ -2,7 +2,10 @@
 include(Prebuilt)
 
 if (LINUX OR STANDALONE)
+  set(FREETYPE_FIND_QUIETLY ON)
+  set(Fontconfig_FIND_QUIETLY ON)
   include(FindFreetype)
+  include(FindFontconfig)
 else (LINUX OR STANDALONE)
   use_prebuilt_binary(freetype)
   if(DARWIN)
