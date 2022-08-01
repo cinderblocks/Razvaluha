@@ -1294,7 +1294,7 @@ class LinuxManifest(ViewerManifest):
                      ('bin', 'bin/llplugin', 'lib', 'lib32', 'lib64')] +
                     ['-executable', '-type', 'f', '!', '-name', 'update_install', '-exec', 'strip', '-S', '{}', ';'])
             except ManifestError as err:
-                print(err.message)
+                print(err.msg)
                 pass
 
 
@@ -1349,8 +1349,9 @@ class Linux_i686_Manifest(LinuxManifest):
             self.path("libortp.so")
             self.path("libsndfile.so.1")
             self.path("libvivoxoal.so.1")
-            self.path("libvivoxsdk.so")
             self.path("libvivoxplatform.so")
+            self.path("libvivoxsdk.so")
+
 
         # CEF renderers
         with self.prefix(src=os.path.join(relpkgdir, 'swiftshader'), dst=os.path.join("lib", "swiftshader")):
@@ -1410,8 +1411,8 @@ class Linux_x86_64_Manifest(LinuxManifest):
             self.path("libortp.so")
             self.path("libsndfile.so.1")
             self.path("libvivoxoal.so.1")
-            self.path("libvivoxsdk.so")
             self.path("libvivoxplatform.so")
+            self.path("libvivoxsdk.so")
 
         # CEF renderers
         with self.prefix(src=os.path.join(relpkgdir, 'swiftshader'), dst=os.path.join("lib64", "swiftshader")):
