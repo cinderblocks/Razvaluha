@@ -88,8 +88,7 @@ def proper_windows_path(path, current_platform = sys.platform):
 
 
 def get_default_platform(dummy):
-    return {'linux2': 'linux',
-            'linux1': 'linux',
+    return {'linux': 'linux',
             'cygwin': 'windows',
             'win32': 'windows',
             'darwin': 'darwin'
@@ -764,11 +763,11 @@ class LLManifest(object, metaclass=LLManifestRegistry):
 
     def wildcard_regex(self, src_glob, dst_glob):
         src_re = re.escape(src_glob)
-        src_re = src_re.replace('\*', '([-a-zA-Z0-9._ ]*)')
+        src_re = src_re.replace(r'\*', r'([-a-zA-Z0-9._ ]*)')
         dst_temp = dst_glob
         i = 1
         while dst_temp.count("*") > 0:
-            dst_temp = dst_temp.replace('*', '\g<' + str(i) + '>', 1)
+            dst_temp = dst_temp.replace(r'*', r'\g<' + str(i) + '>', 1)
             i = i + 1
         return re.compile(src_re), dst_temp
 
