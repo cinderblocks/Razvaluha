@@ -1292,7 +1292,7 @@ class LinuxManifest(ViewerManifest):
                 self.run_command(
                     ["find"] +
                     [os.path.join(self.get_dst_prefix(), dir) for dir in
-                     ('bin', 'bin/llplugin', 'lib', 'lib32', 'lib64')] +
+                     ('bin', 'bin/llplugin', 'lib32', 'lib64')] +
                     ['-executable', '-type', 'f', '!', '-name', 'update_install', '-exec', 'strip', '-S', '{}', ';'])
             except ManifestError as err:
                 print(err.msg)
