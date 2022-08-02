@@ -2369,31 +2369,6 @@
               <key>name</key>
               <string>Release</string>
             </map>
-			<key>AvatarLife</key>
-            <map>
-              <key>configure</key>
-              <map>
-                <key>arguments</key>
-                <array>
-                  <string>../indra</string>
-                </array>
-                <key>command</key>
-                <string>cmake</string>
-                <key>options</key>
-                <array>
-                  <string>-DCMAKE_BUILD_TYPE:STRING=Release</string>
-                  <string>-DADDRESS_SIZE:STRING=$AUTOBUILD_ADDRSIZE</string>
-                  <string>-DROOT_PROJECT_NAME:STRING=AvatarLife</string>
-				  <string>-DVIEWER_CHANNEL_TYPE:STRING=Release</string>
-				  <string>-DICON_PATH:STRING=avatarlife</string>
-                  <string>-DINSTALL_PROPRIETARY:BOOL=OFF</string>
-				  <string>-DUSE_FMODSTUDIO:BOOL=ON</string>
-				  <string>-DUSE_LTO:BOOL=ON</string>
-                </array>
-              </map>
-              <key>name</key>
-              <string>AvatarLife</string>
-            </map>
           </map>
           <key>name</key>
           <string>common</string>
