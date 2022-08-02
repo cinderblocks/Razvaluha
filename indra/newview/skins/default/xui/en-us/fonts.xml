@@ -32,8 +32,8 @@
   <font name="SansSerifBold" 
 	comment="Name of bold sans-serif font" 
 	font_style="Bold">
-	<file>DroidSans-Bold.ttf</file>
     <file>DejaVuSansCondensed-Bold.ttf</file>
+	<file>DroidSans-Bold.ttf</file>
     <file>NotoSansDisplay-Bold.ttf</file>
     <file>SourceHanSansJP-Bold.otf</file>
     <file>SourceHanSansKR-Bold.otf</file>
@@ -43,14 +43,15 @@
   </font>
   
   <font name="SansSerif" comment="Name of san-serif font (Truetype file name)">
+	<file>DejaVuSansCondensed.ttf</file>
     <file>DroidSans.ttf</file>
   </font>
 
   <font name="SansSerif"
 	comment="Name of bold sans-serif font" 
 	font_style="BOLD">
+	<file>DejaVuSansCondensed-Bold.ttf</file>
 	<file>DroidSans-Bold.ttf</file>
-    <file>DejaVuSansCondensed-Bold.ttf</file>
     <file>NotoSansDisplay-Bold.ttf</file>
     <file>SourceHanSansJP-Bold.otf</file>
     <file>SourceHanSansKR-Bold.otf</file>

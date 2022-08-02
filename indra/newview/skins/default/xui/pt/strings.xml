@@ -878,7 +878,7 @@ Pessoas com contas gratuitas não poderão acessar o Second Life no momento para
 		Se você permitir acesso à sua conta, o objeto também poderá:
 	</string>
 	<string name="ScriptTakeMoney">
-		Tomar linden dólares ([CURRENCY]) de você
+		Tomar dólares ([CURRENCY]) de você
 	</string>
 	<string name="ActOnControlInputs">
 		Atue nas suas entradas de controle
@@ -1657,7 +1657,7 @@ en [GROUP]
 		Lista de membros
 	</string>
 	<string name="AcctTypeEmployee">
-		Empregado da Linden Lab
+		Empregado da [GRID_OWNER]
 	</string>
 	<string name="PaymentInfoUsed">
 		Dados de pagamento usados
@@ -2001,7 +2001,7 @@ en [GROUP]
 		Não foi definido um contrato para essa região.
 	</string>
 	<string name="RegionNoCovenantOtherOwner">
-		Não foi definido um contrato para essa Região. O terreno nesta região está sendo vendido pelo Proprietário, não pela Linden Lab. Favor contatar o Proprietário da região para detalhes de venda.
+		Não foi definido um contrato para essa Região. O terreno nesta região está sendo vendido pelo Proprietário, não pela [GRID_OWNER]. Favor contatar o Proprietário da região para detalhes de venda.
 	</string>
 	<string name="covenant_last_modified" value="Última modificação: "/>
 	<string name="none_text" value="(nenhum)"/>
@@ -2221,7 +2221,7 @@ Expected .wav, .tga, .bmp, .jpg, .jpeg, or .bvh
 		Nenhum
 	</string>
 	<string name="Linden Location">
-		Locação Linden
+		Locação [GRID_OWNER]
 	</string>
 	<string name="Adult">
 		Adulto

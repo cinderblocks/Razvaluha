@@ -138,7 +138,7 @@
 	</string>
 	<string name="TooltipPrice" value="L$ [AMOUNT]:"/>
 	<string name="TooltipSLIcon">
-		Questo link porta a una pagina nel dominio ufficiale SecondLife.com o LindenLab.com.
+		Questo link porta a una pagina nel dominio ufficiale [APP_SITE].
 	</string>
 	<string name="TooltipOutboxDragToWorld">
 		Non puoi rezzare articoli dalla cartella degli annunci di Marketplace
@@ -661,7 +661,7 @@
 	A &apos;[OBJECTNAME]&apos;, un oggetto di proprietà di &apos;[OWNERNAME]&apos;, situato in [REGIONNAME] [REGIONPOS], è stato negato il permesso di: [PERMISSIONS].
   </string>
   <string name="ScriptTakeMoney">
-	Prendere dollari Linden ([CURRENCY]) da te
+	Prendere dollari ([CURRENCY]) da te
   </string>
   <string name="ActOnControlInputs">
 	Agire sul tuo controllo degli input

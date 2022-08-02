@@ -21,11 +21,11 @@
   </font>
 
   <font name="SansSerif">
-    <file>DroidSans.ttf</file>
+    <file>DejaVuSansCondensed.ttf</file>
   </font>
 
   <font name="SansSerifBold">
-	<file>DroidSans-Bold.ttf</file>
+	<file>DejaVuSansCondensed-Bold.ttf</file>
   </font>
 
   <font name="Monospace" comment="Name of monospace font">

@@ -19,8 +19,8 @@ Asegurate que has ingresado el URI de inicio de sesión correcto. Un ejemplo de 
 	<string name="GridInfoParseError">Error de análisis XML: [XML_ERROR]</string>
 
 	<!-- Default Args - these arguments will be replaced in all strings -->
-	<string name="SECOND_LIFE_GRID">Grid Second Life</string>
-	<string name="SUPPORT_SITE">Portal de Soporte de Second Life</string>
+	<string name="SECOND_LIFE_GRID">Grid AvatarLife</string>
+	<string name="SUPPORT_SITE">Portal de Soporte de AvatarLife</string>
 	
 	<!-- starting up -->
 	<string name="StartupDetectingHardware">Detectando hardware...</string>
@@ -2145,7 +2145,7 @@ Requests that a nonphysical object be keyframed according to keyframe list.
 	</string>
 	<string name="LSLTipText_llTransferLindenDollars">
 key llTransferLindenDollars(key destination, integer amount)
-Transfer amount of linden dollars ([CURRENCY]) from script owner to destination. Returns a key to a corresponding transaction_result event for the success of the transfer.
+Transfer amount of currency ([CURRENCY]) from script owner to destination. Returns a key to a corresponding transaction_result event for the success of the transfer.
 	</string>
 	<string name="LSLTipText_llGetParcelMusicURL">
 string llGetParcelMusicURL()
@@ -3681,7 +3681,7 @@ Si sigues recibiendo el mismo mensaje, solicita ayuda al personal de asistencia 
 
 	<!-- Region/Estate Covenant -->
 	<string name="RegionNoCovenant">No hay un Convenio provisto para este Estado.</string>
-	<string name="RegionNoCovenantOtherOwner">No hay un Convenio provisto para este Estado. El terreno de este Estado está siendo vendido por el propietario del Estado, no por Linden Lab. Por favor, contacta al propietario del Estado para más detalles.</string>
+	<string name="RegionNoCovenantOtherOwner">No hay un Convenio provisto para este Estado. El terreno de este Estado está siendo vendido por el propietario del Estado, no por [GRID_OWNER]. Por favor, contacta al propietario del Estado para más detalles.</string>
 	<string name="none_text"  value=" (ninguno) "/>
 
 	<!-- Environment settings -->

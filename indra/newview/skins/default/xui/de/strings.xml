@@ -12,12 +12,12 @@
 	<string name="GridInfoError">Grid Info kann nicht vom Server abgerufen werden:</string>
 
 	<!-- Default Args - these arguments will be replaced in all strings -->
-	<string name="SECOND_LIFE">Second Life</string>
-	<string name="SECOND_LIFE_GRID">Second Life-Grid:</string>
-	<string name="SUPPORT_SITE">Second Life Support-Portal</string>
+	<string name="SECOND_LIFE">AvatarLife</string>
+	<string name="SECOND_LIFE_GRID">AvatarLife-Grid:</string>
+	<string name="SUPPORT_SITE">AvatarLife Support-Portal</string>
 
-	<string name="CURRENCY">L$</string>
-	<string name="GRID_OWNER">Linden Lab:</string>
+	<string name="CURRENCY">$</string>
+	<string name="GRID_OWNER">AvatarLife:</string>
 
 	<!-- starting up -->
 	<string name="StartupDetectingHardware">Hardware wird erfasst...</string>
@@ -2096,7 +2096,7 @@ im [GROUP]
 
 	<!-- Region/Estate Covenant -->
 	<string name="RegionNoCovenant">Für diesen Grundbesitz fehlt der Vertrag.</string>
-	<string name="RegionNoCovenantOtherOwner">Für diesen Grundbesitz liegt kein Vertrag vor. Das Land auf diesem Grundbesitz wird vom Grundbesitzer und nicht von Linden Lab verkauft.  Für Informationen zum Verkauf setzen Sie sich bitte mit dem Grundbesitzer in Verbindung.</string>
+	<string name="RegionNoCovenantOtherOwner">Für diesen Grundbesitz liegt kein Vertrag vor. Das Land auf diesem Grundbesitz wird vom Grundbesitzer und nicht von [GRID_OWNER] verkauft.  Für Informationen zum Verkauf setzen Sie sich bitte mit dem Grundbesitzer in Verbindung.</string>
 	<string name="none_text" value=" (none) "/>
 
 	<!-- Environment settings -->
