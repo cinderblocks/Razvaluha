@@ -1,18 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-<panel bottom="0" follows="left|top|right|bottom" height="600" left="0"
-     mouse_opaque="true" name="panel_login" width="800">
-	<web_browser border_visible="false" bottom="0" follows="top|left|bottom|right" left="0"
+<panel bottom="0" follows="left|top|right|bottom" height="600" left="0" mouse_opaque="true" name="panel_login" width="800">
+	<web_browser border_visible="false" follows="top|left|bottom|right" left="0" right="-1" top="0" bottom="0"
 	     tab_stop="false"
 	     trusted_content="true"
-	     name="login_html" right="-1"
-	     start_url="data:text/html,%3Chtml%3E%3Chead%3E%3C/head%3E%3Cbody bgcolor=%22#000000%22 text=%22ffffff%22%3E%3Ch1%3E%3Ctt%3Eloading...%3C/tt%3E%3C/h1%3E %3C/body%3E %3C/html%3E"
-	     top="-1" />
-	<string name="real_url">
-		http://secondlife.com/app/login/
-	</string>
-	<string name="forgot_password_url">
-		http://secondlife.com/account/request.php
-	</string>
+	     name="login_html"
+	     start_url="data:text/html,%3Chtml%3E%3Chead%3E%3C/head%3E%3Cbody bgcolor=%22#000000%22 text=%22ffffff%22%3E%3Ch1%3E%3Ctt%3Eloading...%3C/tt%3E%3C/h1%3E %3C/body%3E %3C/html%3E" />
   <layout_stack name="element_stack" border_size="0" left="15" right="800" top="67" bottom="7" follows="left|bottom" orientation="horizontal">
     <layout_panel name="name_panel" left="0" user_resize="false" auto_resize="false" width="158" min_width="0">
       <text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
