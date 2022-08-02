@@ -1049,11 +1049,11 @@ class DarwinManifest(ViewerManifest):
                     signed = True
                 except:
                     if sign_attempts:
-                        print("codesign failed, waiting %d seconds before retrying" % sign_retry_wait, file=sys.stderr)
+                        print("codesign failed, waiting %d seconds before retrying" % sign_retry_wait)
                         time.sleep(sign_retry_wait)
                         sign_retry_wait *= 2
                     else:
-                        print("Maximum codesign attempts exceeded; giving up", file=sys.stderr)
+                        print("Maximum codesign attempts exceeded; giving up")
                         raise
 
         imagename = self.installer_prefix() + '_'.join(self.args['version'])
