@@ -188,7 +188,6 @@ elseif(LINUX)
         libexpat.so
         libexpat.so.1
         libGLOD.so
-        libopenal.so
        )
 
     if (USE_TCMALLOC)
@@ -199,6 +198,10 @@ elseif(LINUX)
       list(APPEND debug_files "libfmodL.so")
       list(APPEND release_files "libfmod.so")
     endif (USE_FMODSTUDIO)
+
+    if(OPENAL)
+      list(APPEND release_files libopenal.so)
+    endif(OPENAL)
 
 else(WINDOWS)
     message(STATUS "WARNING: unrecognized platform for staging 3rd party libs, skipping...")
