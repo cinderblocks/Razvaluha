@@ -355,18 +355,18 @@ BOOL gLogoutInProgress = FALSE;
 // Internal globals... that should be removed.
 static std::string gArgs;
 const int MAX_MARKER_LENGTH = 1024;
-const std::string MARKER_FILE_NAME("Singularity.exec_marker");
-const std::string START_MARKER_FILE_NAME("Singularity.start_marker");;
-const std::string ERROR_MARKER_FILE_NAME("Singularity.error_marker");
-const std::string LLERROR_MARKER_FILE_NAME("Singularity.llerror_marker");
-const std::string LOGOUT_MARKER_FILE_NAME("Singularity.logout_marker");
-const std::string LOG_FILE("Singularity.log");
-extern const std::string OLD_LOG_FILE("Singularity.old");
+const std::string MARKER_FILE_NAME("AvatarLife.exec_marker");
+const std::string START_MARKER_FILE_NAME("AvatarLife.start_marker");;
+const std::string ERROR_MARKER_FILE_NAME("AvatarLife.error_marker");
+const std::string LLERROR_MARKER_FILE_NAME("AvatarLife.llerror_marker");
+const std::string LOGOUT_MARKER_FILE_NAME("AvatarLife.logout_marker");
+const std::string LOG_FILE("AvatarLife.log");
+extern const std::string OLD_LOG_FILE("AvatarLife.old");
 static BOOL gDoDisconnect = FALSE;
 static std::string gLaunchFileOnQuit;
 
 // Used on Win32 for other apps to identify our window (eg, win_setup)
-const char* const VIEWER_WINDOW_CLASSNAME = "Second Life"; // Don't change
+const char* const VIEWER_WINDOW_CLASSNAME = "AvatarLife"; // Don't change
 
 //-- LLDeferredTaskList ------------------------------------------------------
 
