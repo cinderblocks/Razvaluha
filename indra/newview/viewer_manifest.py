@@ -1317,8 +1317,7 @@ class Linux_i686_Manifest(LinuxManifest):
             self.path("libSDL2*.so*")
             self.path("libjpeg.so*")
             self.path("libalut.so")
-            self.path("libopenal.so.1")
-
+            
             try:
                 self.path("libtcmalloc_minimal.so.0")
                 self.path("libtcmalloc_minimal.so.0.2.2")
@@ -1333,6 +1332,13 @@ class Linux_i686_Manifest(LinuxManifest):
                 pass
             except:
                 print("Skipping libalut.so - not found")
+                pass
+
+            try:
+                self.path("libopenal.so.1")
+                pass
+            except:
+                print("Skipping libopenal.so.1 - not found")
                 pass
 
             try:
