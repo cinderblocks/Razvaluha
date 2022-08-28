@@ -8,5 +8,5 @@ name = "pypi"
 [packages]
 llbase = "*"
 certifi = "*"
-autobuild = {git = "https://git.alchemyviewer.org/cinderblocks/autobuild-hatecrew.git", ref = "v2.1.3"}
+autobuild = {git = "https://github.com/cinderblocks/autobuild-hatecrew.git", ref = "v2.1.3"}
 
