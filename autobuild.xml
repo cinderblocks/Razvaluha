@@ -49,6 +49,68 @@
         <key>version</key>
         <string>2.0.22</string>
       </map>
+      <key>abseil-cpp</key>
+      <map>
+        <key>canonical_repo</key>
+        <string>https://git.alchemyviewer.org/alchemy/thirdparty/3p-abseil-cpp</string>
+        <key>copyright</key>
+        <string>Copyright 2018 The Abseil Authors.</string>
+        <key>description</key>
+        <string>Abseil is an open-source collection of C++ code designed to augment the C++ standard library.</string>
+        <key>license</key>
+        <string>Apache 2.0</string>
+        <key>license_file</key>
+        <string>LICENSES/abseil-cpp.txt</string>
+        <key>name</key>
+        <string>abseil-cpp</string>
+        <key>platforms</key>
+        <map>
+          <key>darwin64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>3cbc9f79842d53a82b8a3c6ff44ea6138be82d4c65d4b7b5f04499df610cd7501cf365a7d8bd9eefb9334e2a39ebd3f37f15c44df0c0b7ce63011f9fa0bac97b</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/163/packages/generic/abseil-cpp/70dfa84.1478/abseil_cpp-70dfa84-darwin64-1478.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>darwin64</string>
+          </map>
+          <key>linux64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>294bc0bccbdf65732a81bbd54f3010717829ecc2067d1a4de636336d34df63ae70cb67059a84dfac11dddcb45046da68c61145234601a06a2fa5e2ff88b6edea</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/163/packages/generic/abseil-cpp/70dfa84.1478/abseil_cpp-70dfa84-linux64-1478.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>linux64</string>
+          </map>
+          <key>windows64</key>
+          <map>
+            <key>archive</key>
+            <map>
+              <key>hash</key>
+              <string>57da399cc1cd38b525eefebcf3c3a796b892e9b3ce288299280fe6fbbbc19979ad9a1ee63dcc682906ecc236d27aaedd4af03bc43537fa85e0112724a19cfb38</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
+              <key>url</key>
+              <string>https://git.alchemyviewer.org/api/v4/projects/163/packages/generic/abseil-cpp/70dfa84.1478/abseil_cpp-70dfa84-windows64-1478.tar.zst</string>
+            </map>
+            <key>name</key>
+            <string>windows64</string>
+          </map>
+        </map>
+        <key>version</key>
+        <string>70dfa84</string>
+      </map>
       <key>apr_suite</key>
       <map>
         <key>copyright</key>
@@ -534,20 +596,6 @@
             </map>
             <key>name</key>
             <string>linux64</string>
-          </map>
-          <key>windows</key>
-          <map>
-            <key>archive</key>
-            <map>
-              <key>hash</key>
-              <string>1b278ff2535f428ea6536683d096fdd0</string>
-              <key>hash_algorithm</key>
-              <string>md5</string>
-              <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/dullahan/windows/dullahan-1.3.201911222116_78.3.7_gea7ef34_chromium-78.0.3904.108-windows-2.tar.bz2</string>
-            </map>
-            <key>name</key>
-            <string>windows</string>
           </map>
           <key>windows64</key>
           <map>

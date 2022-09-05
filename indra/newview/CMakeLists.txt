@@ -7,6 +7,7 @@ include(00-Common)
 # sets variables on which the 3p .cmake files depend.
 include(Linking)
 
+include(Abseil)
 include(Boost)
 include(BuildPackagesInfo)
 include(BuildVersion)
