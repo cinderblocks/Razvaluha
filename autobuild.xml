@@ -576,9 +576,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>118987b1a5b56214cfdbd0c763e180da</string>
+              <string>b335f8d0b189801f70497dfbae615961d54df73d7dea1294bf2c3b8eff12baff609df1e138b535f8840d1113d9aa1222c0361e8543e39ee26f49c8101e098a82</string>
+              <key>hash_algorithm</key>
+              <string>blake2b</string>
               <key>url</key>
-              <string>http://automated-builds-secondlife-com.s3.amazonaws.com/ct2/15127/97748/dullahan-1.1.1080_3.3325.1750.gaabe4c4-darwin64-513449.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/103/packages/generic/dullahan/1.12.3_101.0.15_gca159c5_chromium-101.0.4951.54.1523/dullahan-1.12.3_101.0.15_gca159c5_chromium-101.0.4951.54-darwin64-1523.tar.zst</string>
             </map>
             <key>name</key>
             <string>darwin64</string>
@@ -588,11 +590,11 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>695efb6fc548a56dc4ff34e8d9a37bfb</string>
+              <string>ccda70482a1daa285465ce999acac76d44da2cd54fc848d66a46726a48b4c76ff9b50f18bc1b644f9b380a44d108417f093de5780bfe4692101de3f265451162</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://bitbucket.org/router_gray/3p-dullahan/downloads/dullahan-1.3.202002250830_79.1.38_gecefb59_chromium-79.0.3945.130-linux64-200580406.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/103/packages/generic/dullahan/1.12.3_97.1.5_g2b00258_chromium-97.0.4692.71.1523/dullahan-1.12.3_97.1.5_g2b00258_chromium-97.0.4692.71-linux64-1523.tar.zst</string>
             </map>
             <key>name</key>
             <string>linux64</string>
@@ -602,18 +604,18 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>b9346fea7643b10308c7bd9a769ef5f7</string>
+              <string>75b13e4f30eae31d5df27c28181e52bca58a9624ce9b6424a4e254270d41d2aecb42ab3b72f53e67a32bd45a9cf7be79d730ba427bf3e1f64da131761b1126b5</string>
               <key>hash_algorithm</key>
-              <string>md5</string>
+              <string>blake2b</string>
               <key>url</key>
-              <string>https://pkg.alchemyviewer.org/repository/autobuild-external/dullahan/windows64/dullahan-1.3.201911222103_78.3.7_gea7ef34_chromium-78.0.3904.108-windows64-2.tar.bz2</string>
+              <string>https://git.alchemyviewer.org/api/v4/projects/103/packages/generic/dullahan/1.12.3_101.0.15_gca159c5_chromium-101.0.4951.54.1523/dullahan-1.12.3_101.0.15_gca159c5_chromium-101.0.4951.54-windows64-1523.tar.zst</string>
             </map>
             <key>name</key>
             <string>windows64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.3.201911222103_78.3.7_gea7ef34_chromium-78.0.3904.108</string>
+        <string>1.12.3_101.0.15_gca159c5_chromium-101.0.4951.54</string>
       </map>
       <key>elfio</key>
       <map>
