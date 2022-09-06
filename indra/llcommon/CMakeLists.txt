@@ -9,6 +9,7 @@ include(LLCommon)
 include(EXPAT)
 include(APR)
 include(Linking)
+include(Abseil)
 include(Boost)
 include(OpenSSL)
 include(LLSharedLibs)
@@ -302,9 +303,14 @@ target_link_libraries(
     ${BOOST_SYSTEM_LIBRARY}
     ${URIPARSER_LIBRARIES}
     ${CORESERVICES_LIBRARY}
-    fmt::fmt
-    nlohmann_json::nlohmann_json
+    absl::synchronization
+    absl::flat_hash_map
+    absl::node_hash_map
+    absl::random_random
+    absl::random_bit_gen_ref
     absl::strings
+    nlohmann_json::nlohmann_json
+    fmt::fmt
     ${RT_LIBRARY}
     )
 

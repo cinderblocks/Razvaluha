@@ -8,6 +8,7 @@ set(cmake_SOURCE_FILES
     CMakeLists.txt
 
     00-Common.cmake
+    Abseil.cmake
     AIStateMachine.cmake
     APR.cmake
     Audio.cmake
