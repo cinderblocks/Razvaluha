@@ -21,17 +21,6 @@
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution.
  *
- * CHANGELOG
- *   and additional copyright holders.
- *
- *   04/04/2010
- *   - Initial version, written by Aleric Inglewood @ SL
- *
- *   10/11/2010
- *   - Changed filename, class names and license to a more
- *     company-neutral format.
- *   - Added APR_HAS_THREADS #if's to allow creation and destruction
- *     of subpools by threads other than the parent pool owner.
  */
 
 #ifndef LL_LLAPRPOOL_H
@@ -50,9 +39,7 @@
 #include "llatomic.h"
 #include "llerror.h"
 #include "aithreadid.h"
-
-
-extern void ll_init_apr();
+#include <boost/noncopyable.hpp>
 
 /**
  * @brief A wrapper around the APR memory pool API.
@@ -60,7 +47,7 @@ extern void ll_init_apr();
  * Usage of this class should be restricted to passing it to libapr-1 function calls that need it.
  *
  */
-class LL_COMMON_API LLAPRPool
+class LL_COMMON_API LLAPRPool : private boost::noncopyable
 {
 protected:
 	apr_pool_t* mPool;			//!< Pointer to the underlaying pool. NULL if not initialized.
@@ -68,19 +55,24 @@ protected:
 	AIThreadID mOwner;			//!< The thread that owns this memory pool. Only valid when mPool is non-zero.
 
 public:
-	//! Construct an uninitialized (destructed) pool.
-	LLAPRPool(void) : mPool(NULL), mOwner(AIThreadID::none) { }
+	/**
+	 * Construct an uninitialized (destructed) pool.
+	 */
+	LLAPRPool(void) : mPool(nullptr), mParent(nullptr), mOwner(AIThreadID::none) { }
 
-    //! Construct a subpool from an existing pool.
-	// This is not a copy-constructor, this class doesn't have one!
-	LLAPRPool(LLAPRPool& parent) : mPool(NULL), mOwner(AIThreadID::none) { create(parent); }
+    /**
+	 * Construct a subpool from an existing pool.
+	 */
+	LLAPRPool(LLAPRPool* parent) : mPool(nullptr), mOwner(AIThreadID::none) { create(parent); }
 
-	//! Destruct the memory pool (free all of it's subpools and allocated memory).
+	/**
+	 * Destruct the memory pool(free all of it's subpools and allocated memory).
+	 */
 	~LLAPRPool() { destroy(); }
 
 protected:
 	// Create a pool that is allocated from the Operating System. Only used by LLAPRRootPool.
-	LLAPRPool(int) : mPool(NULL), mParent(NULL)
+	LLAPRPool(int) : mPool(nullptr), mParent(nullptr)
 	{
 		apr_status_t const apr_pool_create_status = apr_pool_create(&mPool, NULL);
 		llassert_always(apr_pool_create_status == APR_SUCCESS);
@@ -89,11 +81,7 @@ protected:
 	}
 
 public:
-	//! Create a subpool from parent. May only be called for an uninitialized/destroyed pool.
-	// The default parameter causes the root pool of the current thread to be used.
-	void create(LLAPRPool& parent = *static_cast<LLAPRPool*>(NULL));
-
-	//! Destroy the (sub)pool, if any.
+	void create(LLAPRPool* parent = nullptr);
 	void destroy(void);
 
 	// Use some safebool idiom (http://www.artima.com/cppsource/safebool.html) rather than operator bool.
@@ -158,7 +146,7 @@ private:
 	}
 };
 
-class LLAPRInitialization
+class LLAPRInitialization : private boost::noncopyable
 {
 public:
 	LLAPRInitialization(void);
@@ -235,7 +223,7 @@ private:
 	friend class LLAPRFile;
 	apr_pool_t* getVolatileAPRPool(void)	// The use of apr_pool_t is OK here.
 	{
-		if (!mPool) create();
+		if (!mPool) { create(); }
 		++mNumActiveRef;
 		++mNumTotalRef;
 		return LLAPRPool::operator()();

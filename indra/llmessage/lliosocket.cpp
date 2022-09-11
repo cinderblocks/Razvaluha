@@ -222,7 +222,7 @@ bool LLSocket::blockingConnect(const LLHost& host)
 
 LLSocket::LLSocket() :
 	mSocket(NULL),
-	mPool(LLThread::tldata().mRootPool),
+	mPool(&LLThread::tldata().mRootPool),
 	mPort(PORT_INVALID)
 {
 }

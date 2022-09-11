@@ -871,7 +871,7 @@ void LLPumpIO::rebuildPollset()
 		}
 		if(!mCurrentPool)
 		{
-			mCurrentPool.create(mPool);
+			mCurrentPool.create(&mPool);
 		}
 
 		// add all of the file descriptors
@@ -1159,7 +1159,7 @@ LLPumpIO::LLChainInfo::LLChainInfo() :
 	mLock(0),
 	mEOS(false),
 	mHasExpiration(false),
-	mDescriptorsPool(new LLAPRPool(LLThread::tldata().mRootPool))
+	mDescriptorsPool(new LLAPRPool(&LLThread::tldata().mRootPool))
 {
 	mTimer.setTimerExpirySec(DEFAULT_CHAIN_EXPIRY_SECS);
 }

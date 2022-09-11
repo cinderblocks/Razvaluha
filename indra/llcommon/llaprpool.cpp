@@ -19,18 +19,6 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution.
- *
- * CHANGELOG
- *   and additional copyright holders.
- *
- *   04/04/2010
- *   - Initial version, written by Aleric Inglewood @ SL
- *
- *   10/11/2010
- *   - Changed filename, class names and license to a more
- *     company-neutral format.
- *   - Added APR_HAS_THREADS #if's to allow creation and destruction
- *     of subpools by threads other than the parent pool owner.
  */
 
 #include "linden_common.h"
@@ -40,16 +28,15 @@
 #include "llatomic.h"
 #include "llthread.h"
 
-// Create a subpool from parent.
-void LLAPRPool::create(LLAPRPool& parent)
+/**
+ * Create a subpool from parent. May only be called for an uninitialized/destroyed pool.
+ * If parent is null, creates a subpool from the root pool of the current thread.
+ */
+void LLAPRPool::create(LLAPRPool* parent)
 {
 	llassert(!mPool);			// Must be non-initialized.
-	mParent = &parent;
-	if (!mParent)				// Using the default parameter?
-	{
-		// By default use the root pool of the current thread.
-		mParent = &LLThreadLocalData::tldata().mRootPool;
-	}
+	mParent = (parent != nullptr) ? parent : &LLThreadLocalData::tldata().mRootPool
+
 	llassert(mParent->mPool);	// Parent must be initialized.
 #if APR_HAS_THREADS
 	// As per the documentation of APR (ie http://apr.apache.org/docs/apr/1.4/apr__pools_8h.html):
@@ -72,7 +59,9 @@ void LLAPRPool::create(LLAPRPool& parent)
 	apr_pool_cleanup_register(mPool, this, &s_plain_cleanup, &apr_pool_cleanup_null);
 }
 
-// Destroy the (sub)pool, if any.
+/**
+ * Destroy any (sub)pool, if it exists.
+ */
 void LLAPRPool::destroy(void)
 {
 	// Only do anything if we are not already (being) destroyed.
@@ -113,7 +102,7 @@ LLAPRInitialization::LLAPRInitialization(void)
 bool LLAPRRootPool::sCountInitialized = false;
 LLAtomicS32 LLAPRRootPool::sCount;
 
-LLAPRRootPool::LLAPRRootPool(void) : LLAPRInitialization(), LLAPRPool(0)
+LLAPRRootPool::LLAPRRootPool(void) : LLAPRInitialization(), LLAPRPool(nullptr)
 {
 	// sCountInitialized don't need locking because when we get here there is still only a single thread.
 	if (!sCountInitialized)
