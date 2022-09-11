@@ -37,7 +37,7 @@
 
 #include "lltimer.h"
 
-#if LL_LINUX || LL_SOLARIS
+#if LL_LINUX
 #include <sched.h>
 #endif
 
@@ -297,9 +297,11 @@ void LLThread::wakeLocked()
 // The thread private handle to access the LLThreadLocalData instance.
 apr_threadkey_t* LLThreadLocalData::sThreadLocalDataKey;
 
-LLThreadLocalData::LLThreadLocalData(char const* name) : mCurlMultiHandle(NULL), mCurlErrorBuffer(NULL), mName(name)
-{
-}
+LLThreadLocalData::LLThreadLocalData(char const* name) 
+:	mCurlMultiHandle(NULL)
+,	mCurlErrorBuffer(NULL)
+,	mName(name)
+{ }
 
 LLThreadLocalData::~LLThreadLocalData()
 {
@@ -363,109 +365,6 @@ LLThreadLocalData& LLThreadLocalData::tldata(void)
 }
 
 //============================================================================
-
-#if defined(NEEDS_MUTEX_IMPL)
-#if defined(USE_WIN32_THREAD)
-LLMutexImpl::LLMutexImpl()
-{
-	InitializeCriticalSection(&mMutexImpl);	//can throw STATUS_NO_MEMORY
-}
-LLMutexImpl::~LLMutexImpl() 
-{
-	DeleteCriticalSection(&mMutexImpl);	//nothrow
-}
-void LLMutexImpl::lock()
-{
-	EnterCriticalSection(&mMutexImpl);	//can throw EXCEPTION_POSSIBLE_DEADLOCK
-}
-void LLMutexImpl::unlock()
-{
-	LeaveCriticalSection(&mMutexImpl);	//nothrow
-}
-bool LLMutexImpl::try_lock()
-{
-	return !!TryEnterCriticalSection(&mMutexImpl);	//nothrow
-}
-LLConditionVariableImpl::LLConditionVariableImpl()
-{
-	InitializeConditionVariable(&mConditionVariableImpl);
-}
-LLConditionVariableImpl::~LLConditionVariableImpl()
-{
-	//There is no DeleteConditionVariable
-}
-void LLConditionVariableImpl::notify_one()
-{
-	WakeConditionVariable(&mConditionVariableImpl);
-}
-void LLConditionVariableImpl::notify_all()
-{
-	WakeAllConditionVariable(&mConditionVariableImpl);
-}
-void LLConditionVariableImpl::wait(LLMutex& lock)
-{
-	LLMutex::ImplAdoptMutex impl_adopted_mutex(lock);
-	SleepConditionVariableCS(&mConditionVariableImpl, &lock.native_handle(), INFINITE);
-}
-#else
-
-void APRExceptionThrower(apr_status_t status)
-{
-	if(status != APR_SUCCESS)
-	{
-		static char buf[256];
-		throw std::logic_error(apr_strerror(status,buf,sizeof(buf)));
-	}
-}
-
-LLMutexImpl::LLMutexImpl(native_pool_type& pool) : mPool(pool), mMutexImpl(NULL)
-{
-	APRExceptionThrower(apr_thread_mutex_create(&mMutexImpl, APR_THREAD_MUTEX_UNNESTED, mPool()));
-}
-LLMutexImpl::~LLMutexImpl() 
-{
-	APRExceptionThrower(apr_thread_mutex_destroy(mMutexImpl));
-	mMutexImpl = NULL;
-}
-void LLMutexImpl::lock()
-{
-	APRExceptionThrower(apr_thread_mutex_lock(mMutexImpl));
-}
-void LLMutexImpl::unlock()
-{
-	APRExceptionThrower(apr_thread_mutex_unlock(mMutexImpl));
-}
-bool LLMutexImpl::try_lock()
-{
-	apr_status_t status = apr_thread_mutex_trylock(mMutexImpl);
-	if(APR_STATUS_IS_EBUSY(status))
-		return false;
-	APRExceptionThrower(status);
-	return true;
-}
-LLConditionVariableImpl::LLConditionVariableImpl(native_pool_type& pool) : mPool(pool), mConditionVariableImpl(NULL)
-{
-	APRExceptionThrower(apr_thread_cond_create(&mConditionVariableImpl, mPool()));
-}
-LLConditionVariableImpl::~LLConditionVariableImpl()
-{
-	APRExceptionThrower(apr_thread_cond_destroy(mConditionVariableImpl));
-}
-void LLConditionVariableImpl::notify_one()
-{
-	APRExceptionThrower(apr_thread_cond_signal(mConditionVariableImpl));
-}
-void LLConditionVariableImpl::notify_all()
-{
-	APRExceptionThrower(apr_thread_cond_broadcast(mConditionVariableImpl));
-}
-void LLConditionVariableImpl::wait(LLMutex& lock)
-{
-	LLMutex::ImplAdoptMutex impl_adopted_mutex(lock);
-	APRExceptionThrower(apr_thread_cond_wait(mConditionVariableImpl, lock.native_handle()));
-}
-#endif
-#endif
 
 LLTrace::BlockTimerStatHandle FT_WAIT_FOR_MUTEX("LLMutex::lock()");
 void LLMutex::lock_main(LLTrace::BlockTimerStatHandle* timer)
