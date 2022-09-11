@@ -35,7 +35,7 @@
 void LLAPRPool::create(LLAPRPool* parent)
 {
 	llassert(!mPool);			// Must be non-initialized.
-	mParent = (parent != nullptr) ? parent : &LLThreadLocalData::tldata().mRootPool
+	mParent = (parent != nullptr) ? parent : &LLThreadLocalData::tldata().mRootPool;
 
 	llassert(mParent->mPool);	// Parent must be initialized.
 #if APR_HAS_THREADS
