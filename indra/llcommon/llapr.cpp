@@ -113,7 +113,7 @@ apr_status_t LLAPRFile::open(std::string const& filename, apr_int32_t flags, acc
 		}
 		else
 		{
-			mRegularFilePoolp = new LLAPRPool(LLThreadLocalData::tldata().mRootPool);
+			mRegularFilePoolp = new LLAPRPool(&LLThreadLocalData::tldata().mRootPool);
 			apr_file_open_pool = (*mRegularFilePoolp)();
 		}
 		status = apr_file_open(&mFile, filename.c_str(), flags, APR_OS_DEFAULT, apr_file_open_pool);
