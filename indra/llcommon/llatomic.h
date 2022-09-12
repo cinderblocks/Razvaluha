@@ -34,49 +34,11 @@
 #ifndef LL_LLATOMIC_H
 #define LL_LLATOMIC_H
 
-#define USE_BOOST_ATOMIC
-
-//Internal definitions
-#define NEEDS_APR_ATOMICS do_not_define_manually_thanks
-#undef NEEDS_APR_ATOMICS
-
-#if defined(USE_BOOST_ATOMIC)
-#include "boost/version.hpp"
-#endif
-
-//Prefer boost over stl over apr.
-
-#if defined(USE_BOOST_ATOMIC) && (BOOST_VERSION >= 105300)
-#include "boost/atomic.hpp"
-template<typename T>
-struct impl_atomic_type { typedef boost::atomic<T> type; };
-#elif defined(USE_STD_ATOMIC)
 #include <atomic>
+
 template<typename T>
 struct impl_atomic_type { typedef std::atomic<T> type; };
-#else
-#include "apr_atomic.h"
-#define NEEDS_APR_ATOMICS
-template <typename Type> class LLAtomic32
-{
-public:
-	LLAtomic32(void) { }
-	LLAtomic32(LLAtomic32 const& atom) { apr_uint32_t data = apr_atomic_read32(const_cast<apr_uint32_t*>(&atom.mData)); apr_atomic_set32(&mData, data); }
-	LLAtomic32(Type x) { apr_atomic_set32(&mData, static_cast<apr_uint32_t>(x)); }
-	LLAtomic32& operator=(LLAtomic32 const& atom) { apr_uint32_t data = apr_atomic_read32(const_cast<apr_uint32_t*>(&atom.mData)); apr_atomic_set32(&mData, data); return *this; }
 
-	operator Type() const { apr_uint32_t data = apr_atomic_read32(const_cast<apr_uint32_t*>(&mData)); return static_cast<Type>(data); }
-	void operator=(Type x) { apr_atomic_set32(&mData, static_cast<apr_uint32_t>(x)); }
-	void operator-=(Type x) { apr_atomic_sub32(&mData, static_cast<apr_uint32_t>(x)); }
-	void operator+=(Type x) { apr_atomic_add32(&mData, static_cast<apr_uint32_t>(x)); }
-	Type operator++(int) { return apr_atomic_inc32(&mData); } // Type++
-	bool operator--() { return apr_atomic_dec32(&mData); } // Returns (--Type != 0)
-	
-private:
-	apr_uint32_t mData;
-};
-#endif
-#if !defined(NEEDS_APR_ATOMICS)
 template <typename Type> class LLAtomic32
 {
 public:
@@ -95,9 +57,9 @@ public:
 private:
 	typename impl_atomic_type<Type>::type mData;
 };
-#endif
 
 typedef LLAtomic32<U32> LLAtomicU32;
 typedef LLAtomic32<S32> LLAtomicS32;
+typedef std::atomic<bool> LLAtomicBool;
 
 #endif

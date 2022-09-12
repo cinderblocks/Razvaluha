@@ -35,7 +35,14 @@
 void LLAPRPool::create(LLAPRPool* parent)
 {
 	llassert(!mPool);			// Must be non-initialized.
-	mParent = (parent != nullptr) ? parent : &LLThreadLocalData::tldata().mRootPool;
+	mParent = parent;
+	if (mParent == nullptr) {
+		mParent = &LLThreadLocalData::tldata().mRootPool;
+	}
+	// HACK:
+	if (mParent == nullptr) {
+		mParent = &LLAPRRootPool::get();
+	}
 
 	llassert(mParent->mPool);	// Parent must be initialized.
 #if APR_HAS_THREADS
@@ -99,20 +106,15 @@ LLAPRInitialization::LLAPRInitialization(void)
 	apr_initialized = true;
 }
 
-bool LLAPRRootPool::sCountInitialized = false;
+LLAtomicBool LLAPRRootPool::sCountInitialized = false;
 LLAtomicS32 LLAPRRootPool::sCount;
 
 LLAPRRootPool::LLAPRRootPool(void) : LLAPRInitialization(), LLAPRPool(nullptr)
 {
-	// sCountInitialized don't need locking because when we get here there is still only a single thread.
-	if (!sCountInitialized)
+	if (!sCountInitialized.load())
 	{
-#ifdef NEEDS_APR_ATOMICS
-		apr_status_t status = apr_atomic_init(mPool);
-		llassert_always(status == APR_SUCCESS);
-#endif
 		sCount = 1;	// Set to 1 to account for the global root pool.
-		sCountInitialized = true;
+		sCountInitialized.store(true);
 
 		// Initialize thread-local APR pool support.
 		// Because this recursively calls LLAPRRootPool::LLAPRRootPool(void)

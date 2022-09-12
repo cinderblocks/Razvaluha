@@ -229,7 +229,6 @@ protected:
 
 	// For use by AIThreadSafeDC
 	AIThreadSafe(void) { }
-	MUTEX_POOL(AIThreadSafe(LLAPRPool& parent) : mRWLock(parent){ })
 
 public:
 	// Only for use by AITHREADSAFE, see below.
@@ -448,7 +447,6 @@ protected:
 	friend struct AIRegisteredStateMachinesList;
 	// For use by AIThreadSafeSimpleDC and AIRegisteredStateMachinesList.
 	AIThreadSafeSimple(void) { }
-	MUTEX_POOL(AIThreadSafeSimple(LLAPRPool& parent) : mMutex(parent) { })
 
 public:
 	// Only for use by AITHREADSAFESIMPLE, see below.
@@ -526,7 +524,7 @@ public:
 
 protected:
 	// For use by AIThreadSafeSimpleDCRootPool
-	AIThreadSafeSimpleDC(LLAPRRootPool& parent) : AIThreadSafeSimple<T, MUTEX>(MUTEX_POOL(parent)) { new (AIThreadSafeSimple<T, MUTEX>::ptr()) T; }
+	AIThreadSafeSimpleDC(LLAPRRootPool& parent) : AIThreadSafeSimple<T, MUTEX>() { new (AIThreadSafeSimple<T, MUTEX>::ptr()) T; }
 };
 
 // Helper class for AIThreadSafeSimpleDCRootPool to assure initialization of
@@ -560,7 +558,7 @@ public:
 	// as opposed to allocated from the current threads root pool.
 	AIThreadSafeSimpleDCRootPool(void) :
 		AIThreadSafeSimpleDCRootPool_pbase(),
-		AIThreadSafeSimpleDC<T>(MUTEX_POOL(mRootPool)) { }
+		AIThreadSafeSimpleDC<T>() { }
 };
 
 /**
