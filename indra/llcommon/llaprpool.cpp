@@ -106,7 +106,7 @@ LLAPRInitialization::LLAPRInitialization(void)
 	apr_initialized = true;
 }
 
-LLAtomicBool LLAPRRootPool::sCountInitialized = false;
+LLAtomicBool LLAPRRootPool::sCountInitialized(false);
 LLAtomicS32 LLAPRRootPool::sCount;
 
 LLAPRRootPool::LLAPRRootPool(void) : LLAPRInitialization(), LLAPRPool(nullptr)
