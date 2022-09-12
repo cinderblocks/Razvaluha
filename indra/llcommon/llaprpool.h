@@ -173,7 +173,7 @@ private:
 
 private:
 	// Keep track of how many root pools exist and when the last one is destructed.
-	static bool sCountInitialized;
+	static LLAtomicBool sCountInitialized;
 	static LLAtomicS32 sCount;
 
 public:
