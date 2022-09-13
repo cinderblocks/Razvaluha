@@ -27,14 +27,9 @@
 */
 
 #include "linden_common.h"
-
-#if LL_WINDOWS
-#pragma warning (disable : 4265)
-#endif
-
 #include "indra_constants.h" // for indra keyboard codes
 
-#include "llgl.h"
+#include "llglheaders.h" // for GL_* constants
 #include "llsdutil.h"
 #include "llplugininstance.h"
 #include "llpluginmessage.h"
@@ -140,7 +135,7 @@ MediaPluginCEF::MediaPluginCEF(LLPluginInstance::sendMessageFunction send_messag
 	mHeight = 0;
 	mDepth = 4;
 	mPixels = 0;
-	mEnableMediaPluginDebugging = false;
+	mEnableMediaPluginDebugging = true;
 	mHostLanguage = "en";
 	mCookiesEnabled = true;
 	mPluginsEnabled = false;
@@ -582,7 +577,7 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
                 mCEFLib->setOnLoadErrorCallback(std::bind(&MediaPluginCEF::onLoadError, this, std::placeholders::_1, std::placeholders::_2));
                 mCEFLib->setOnAddressChangeCallback(std::bind(&MediaPluginCEF::onAddressChangeCallback, this, std::placeholders::_1));
                 mCEFLib->setOnOpenPopupCallback(std::bind(&MediaPluginCEF::onOpenPopupCallback, this, std::placeholders::_1, std::placeholders::_2));
-		mCEFLib->setOnHTTPAuthCallback(std::bind(&MediaPluginCEF::onHTTPAuthCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+				mCEFLib->setOnHTTPAuthCallback(std::bind(&MediaPluginCEF::onHTTPAuthCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
                 mCEFLib->setOnFileDialogCallback(std::bind(&MediaPluginCEF::onFileDialog, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
                 mCEFLib->setOnCursorChangedCallback(std::bind(&MediaPluginCEF::onCursorChangedCallback, this, std::placeholders::_1));
                 mCEFLib->setOnRequestExitCallback(std::bind(&MediaPluginCEF::onRequestExitCallback, this));
@@ -664,7 +659,7 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 #endif
                 settings.locales_dir_path = mLocalesPath;
 
-				std::vector<std::string> custom_schemes(1, "secondlife");
+				const std::vector<std::string> custom_schemes = { "secondlife", "x-grid-info", "x-grid-location-info" };
 				mCEFLib->setCustomSchemes(custom_schemes);
 
 				bool result = mCEFLib->init(settings);

@@ -5,7 +5,6 @@ project(media_plugin_cef)
 include(Boost)
 include(00-Common)
 include(LLCommon)
-include(LLImage)
 include(LLPlugin)
 include(LLMath)
 include(LLRender)
@@ -13,9 +12,6 @@ include(LLWindow)
 include(Linking)
 include(PluginAPI)
 include(MediaPluginBase)
-include(OpenGL)
-include(PulseAudio)
-include(UI)
 
 include(CEFPlugin)
 
@@ -24,14 +20,12 @@ include_directories(
     ${MEDIA_PLUGIN_BASE_INCLUDE_DIRS}
     ${LLCOMMON_INCLUDE_DIRS}
     ${LLMATH_INCLUDE_DIRS}
-    ${LLIMAGE_INCLUDE_DIRS}
     ${LLRENDER_INCLUDE_DIRS}
     ${LLWINDOW_INCLUDE_DIRS}
     ${CEF_INCLUDE_DIR}
 )
 include_directories(SYSTEM
     ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
-    ${PULSEAUDIO_INCLUDE_DIRS}
     )
 
 
@@ -63,7 +57,7 @@ if (LINUX)
        ${UI_LIBRARIES}     # for glib/GTK
        )
 elseif (DARWIN)
-  list(APPEND media_plugin_cef_SOURCE_FILES mac_volume_catcher.cpp)
+  list(APPEND media_plugin_cef_SOURCE_FILES mac_volume_catcher_null.cpp)
   find_library(CORESERVICES_LIBRARY CoreServices)
   find_library(AUDIOUNIT_LIBRARY AudioUnit)
   list(APPEND media_plugin_cef_LINK_LIBRARIES

@@ -21,8 +21,12 @@ include_directories(
     ${LLIMAGE_INCLUDE_DIRS}
     ${LLRENDER_INCLUDE_DIRS}
     ${LLWINDOW_INCLUDE_DIRS}
-	${BASIC_PLUGIN_BASE_INCLUDE_DIRS}
-)
+    ${BASIC_PLUGIN_BASE_INCLUDE_DIRS}
+    )
+
+include_directories(SYSTEM
+    ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
+    )
 
 ### media_plugin_base
 
