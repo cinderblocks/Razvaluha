@@ -557,9 +557,6 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 				message.setValue("name", name);
 				sendMessage(message);
 			}
-			else
-			{
-			}
 		}
 		else if (message_class == LLPLUGIN_MESSAGE_CLASS_MEDIA)
 		{
@@ -666,6 +663,7 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
                 if (!result)
                 {
                     // if this fails, the media system in viewer will put up a message
+					std::cerr << "Failed to init CEF" << std::endl;
                 }
 
 				// now we can set page zoom factor
@@ -1053,9 +1051,6 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
                 setVolume();
             }
         }
-        else
-		{
-		};
 	}
 }
 

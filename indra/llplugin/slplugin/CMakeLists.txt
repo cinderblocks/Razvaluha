@@ -48,6 +48,7 @@ set_target_properties(SLPlugin
 )
 
 if(WINDOWS)
+  target_link_libraries(SLPlugin wer)
   set_target_properties(SLPlugin
     PROPERTIES
     LINK_FLAGS_DEBUG "/NODEFAULTLIB:\"LIBCMTD\""
