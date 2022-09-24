@@ -773,16 +773,11 @@ class WindowsManifest(ViewerManifest):
         # We use the Unicode version of NSIS, available from
         # http://www.scratchpaper.com/
         try:
-            import _winreg as reg
-            NSIS_path = reg.QueryValue(reg.HKEY_LOCAL_MACHINE, r"SOFTWARE\NSIS") + '\\makensis.exe'
+            NSIS_path = os.environ['ProgramFiles'] + '\\NSIS\\makensis.exe'
             self.run_command([proper_windows_path(NSIS_path), self.dst_path_of(tempfile)])
         except:
-            try:
-                NSIS_path = os.environ['ProgramFiles'] + '\\NSIS\\makensis.exe'
-                self.run_command([proper_windows_path(NSIS_path), self.dst_path_of(tempfile)])
-            except:
-                NSIS_path = os.environ['ProgramFiles(X86)'] + '\\NSIS\\makensis.exe'
-                self.run_command([proper_windows_path(NSIS_path), self.dst_path_of(tempfile)])
+            NSIS_path = os.environ['ProgramFiles(X86)'] + '\\NSIS\\makensis.exe'
+            self.run_command([proper_windows_path(NSIS_path), self.dst_path_of(tempfile)])
         self.remove(self.dst_path_of(tempfile))
         if 'signature' in self.args and 'VIEWER_SIGNING_PWD' in os.environ:
             try:
