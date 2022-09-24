@@ -39,6 +39,7 @@
 
 #include "volume_catcher.h"
 
+#include <set>
 
 extern "C" {
 #include <glib.h>
@@ -155,40 +156,55 @@ extern "C" {
 }
 
 
-class VolumeCatcherImpl : public LLSingleton<VolumeCatcherImpl>
+class VolumeCatcherImpl
 {
-	friend LLSingleton<VolumeCatcherImpl>;
+public:
 	VolumeCatcherImpl();
-	// This is a singleton class -- both callers and the component implementation should use getInstance() to find the instance.
 	~VolumeCatcherImpl();
 
-public:
-
 	void setVolume(F32 volume);
-	void setPan(F32 pan) {};
+	void pump(void);
 
 	// for internal use - can't be private because used from our C callbacks
 
+	bool loadsyms(std::string pulse_dso_name);
+	void init();
+	void cleanup();
+
+	void update_all_volumes(F32 volume);
 	void update_index_volume(U32 index, F32 volume);
 	void connected_okay();
 
 	std::set<U32> mSinkInputIndices;
 	std::map<U32,U32> mSinkInputNumChannels;
-	F32 mVolume;
+	F32 mDesiredVolume;
 	pa_glib_mainloop *mMainloop;
 	pa_context *mPAContext;
 	bool mConnected;
 	bool mGotSyms;
-	F32 	mPan;
 };
 
 VolumeCatcherImpl::VolumeCatcherImpl()
-	: mVolume(0.0f),
-	  mMainloop(nullptr),
-	  mPAContext(nullptr),
+	: mDesiredVolume(0.0f),
+	  mMainloop(NULL),
+	  mPAContext(NULL),
 	  mConnected(false),
-	  mGotSyms(false),
-	mPan(0.f)				// default pan is centered
+	  mGotSyms(false)
+{
+	init();
+}
+
+VolumeCatcherImpl::~VolumeCatcherImpl()
+{
+	cleanup();
+}
+
+bool VolumeCatcherImpl::loadsyms(std::string pulse_dso_name)
+{
+	return grab_pa_syms(pulse_dso_name);
+}
+
+void VolumeCatcherImpl::init()
 {
 	// try to be as defensive as possible because PA's interface is a
 	// bit fragile and (for our purposes) we'd rather simply not function
@@ -198,12 +214,16 @@ VolumeCatcherImpl::VolumeCatcherImpl()
 	// libpulse.so.0 - this isn't a great assumption, and the two DSOs should
 	// probably be loaded separately.  Our Linux DSO framework needs refactoring,
 	// we do this sort of thing a lot with practically identical logic...
-	mGotSyms = grab_pa_syms("libpulse-mainloop-glib.so.0");
+	mGotSyms = loadsyms("libpulse-mainloop-glib.so.0");
 	if (!mGotSyms) return;
 
 	// better make double-sure glib itself is initialized properly.
-	if (!g_thread_supported ()) g_thread_init (NULL);
+#if !GLIB_CHECK_VERSION(2, 32, 0)
+	if (!g_thread_supported()) g_thread_init (NULL);
+#endif
+#if !GLIB_CHECK_VERSION(2, 36, 0)
 	g_type_init();
+#endif
 
 	mMainloop = llpa_glib_mainloop_new(g_main_context_default());
 	if (mMainloop)
@@ -230,7 +250,7 @@ VolumeCatcherImpl::VolumeCatcherImpl()
 	// PA context to a PA daemon.
 	if (mPAContext)
 	{
-		llpa_context_set_state_callback(mPAContext, callback_context_state, nullptr);
+		llpa_context_set_state_callback(mPAContext, callback_context_state, this);
 		pa_context_flags_t cflags = (pa_context_flags)0; // maybe add PA_CONTEXT_NOAUTOSPAWN?
 		if (llpa_context_connect(mPAContext, NULL, cflags, NULL) >= 0)
 		{
@@ -245,7 +265,7 @@ VolumeCatcherImpl::VolumeCatcherImpl()
 	}
 }
 
-VolumeCatcherImpl::~VolumeCatcherImpl()
+void VolumeCatcherImpl::cleanup()
 {
 	mConnected = false;
 
@@ -254,30 +274,33 @@ VolumeCatcherImpl::~VolumeCatcherImpl()
 		llpa_context_disconnect(mPAContext);
 		llpa_context_unref(mPAContext);
 	}
-	mPAContext = nullptr;
+	mPAContext = NULL;
 
 	if (mGotSyms && mMainloop)
 	{
 		llpa_glib_mainloop_free(mMainloop);
 	}
-	mMainloop = nullptr;
+	mMainloop = NULL;
 }
 
 void VolumeCatcherImpl::setVolume(F32 volume)
 {
-	mVolume = volume;
+	mDesiredVolume = volume;
 	
 	if (!mGotSyms) return;
 
 	if (mConnected && mPAContext)
 	{
-		for (auto& input : mSinkInputIndices)
-		{
-			update_index_volume(input, mVolume);
-		}
+		update_all_volumes(mDesiredVolume);
 	}
 
-	g_main_context_iteration(g_main_context_default(), /*may_block = */false);
+	pump();
+}
+
+void VolumeCatcherImpl::pump()
+{
+	gboolean may_block = FALSE;
+	g_main_context_iteration(g_main_context_default(), may_block);
 }
 
 void VolumeCatcherImpl::connected_okay()
@@ -287,7 +310,7 @@ void VolumeCatcherImpl::connected_okay()
 	// fetch global list of existing sinkinputs
 	if ((op = llpa_context_get_sink_input_info_list(mPAContext,
 							callback_discovered_sinkinput,
-							nullptr)))
+							this)))
 	{
 		llpa_operation_unref(op);
 	}
@@ -295,12 +318,21 @@ void VolumeCatcherImpl::connected_okay()
 	// subscribe to future global sinkinput changes
 	llpa_context_set_subscribe_callback(mPAContext,
 					    callback_subscription_alert,
-					    nullptr);
+					    this);
 	if ((op = llpa_context_subscribe(mPAContext, (pa_subscription_mask_t)
 					 (PA_SUBSCRIPTION_MASK_SINK_INPUT),
 					 NULL, NULL)))
 	{
 		llpa_operation_unref(op);
+	}
+}
+
+void VolumeCatcherImpl::update_all_volumes(F32 volume)
+{
+	for (std::set<U32>::iterator it = mSinkInputIndices.begin();
+	     it != mSinkInputIndices.end(); ++it)
+	{
+		update_index_volume(*it, volume);
 	}
 }
 
@@ -313,10 +345,10 @@ void VolumeCatcherImpl::update_index_volume(U32 index, F32 volume)
 	pa_context *c = mPAContext;
 	uint32_t idx = index;
 	const pa_cvolume *cvolumep = &cvol;
-	pa_context_success_cb_t cb = nullptr; // okay as null
-	void* userdata = nullptr; // okay as null
+	pa_context_success_cb_t cb = NULL; // okay as null
+	void *userdata = NULL; // okay as null
 
-	pa_operation* op;
+	pa_operation *op;
 	if ((op = llpa_context_set_sink_input_volume(c, idx, cvolumep, cb, userdata)))
 	{
 		llpa_operation_unref(op);
@@ -326,6 +358,9 @@ void VolumeCatcherImpl::update_index_volume(U32 index, F32 volume)
 
 void callback_discovered_sinkinput(pa_context *context, const pa_sink_input_info *sii, int eol, void *userdata)
 {
+	VolumeCatcherImpl *impl = dynamic_cast<VolumeCatcherImpl*>((VolumeCatcherImpl*)userdata);
+	llassert(impl);
+
 	if (0 == eol)
 	{
 		pa_proplist *proplist = sii->proplist;
@@ -333,7 +368,6 @@ void callback_discovered_sinkinput(pa_context *context, const pa_sink_input_info
 		
 		if (sinkpid == getpid()) // does the discovered sinkinput belong to this process?
 		{
-			auto impl = VolumeCatcherImpl::getInstance();
 			bool is_new = (impl->mSinkInputIndices.find(sii->index) ==
 				       impl->mSinkInputIndices.end());
 			
@@ -342,7 +376,12 @@ void callback_discovered_sinkinput(pa_context *context, const pa_sink_input_info
 			
 			if (is_new)
 			{
-				impl->update_index_volume(sii->index, impl->mVolume);
+				// new!
+				impl->update_index_volume(sii->index, impl->mDesiredVolume);
+			}
+			else
+			{
+				// seen it already, do nothing.
 			}
 		}
 	}
@@ -350,7 +389,8 @@ void callback_discovered_sinkinput(pa_context *context, const pa_sink_input_info
 
 void callback_subscription_alert(pa_context *context, pa_subscription_event_type_t t, uint32_t index, void *userdata)
 {
-	VolumeCatcherImpl *impl = VolumeCatcherImpl::getInstance();
+	VolumeCatcherImpl *impl = dynamic_cast<VolumeCatcherImpl*>((VolumeCatcherImpl*)userdata);
+	llassert(impl);
 
 	switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
         case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
@@ -366,10 +406,14 @@ void callback_subscription_alert(pa_context *context, pa_subscription_event_type
 		{
 			// ask for more info about this new sinkinput
 			pa_operation *op;
-			if ((op = llpa_context_get_sink_input_info(impl->mPAContext, index, callback_discovered_sinkinput, nullptr)))
+			if ((op = llpa_context_get_sink_input_info(impl->mPAContext, index, callback_discovered_sinkinput, impl)))
 			{
 				llpa_operation_unref(op);
 			}
+		}
+		else
+		{
+			// property change on this sinkinput - we don't care.
 		}
 		break;
 		
@@ -379,7 +423,8 @@ void callback_subscription_alert(pa_context *context, pa_subscription_event_type
 
 void callback_context_state(pa_context *context, void *userdata)
 {
-	VolumeCatcherImpl *impl = VolumeCatcherImpl::getInstance();
+	VolumeCatcherImpl *impl = dynamic_cast<VolumeCatcherImpl*>((VolumeCatcherImpl*)userdata);
+	llassert(impl);
 	
 	switch (llpa_context_get_state(context))
 	{
@@ -401,25 +446,28 @@ void callback_context_state(pa_context *context, void *userdata)
 
 VolumeCatcher::VolumeCatcher()
 {
-	pimpl = VolumeCatcherImpl::getInstance();
+	pimpl = new VolumeCatcherImpl();
 }
 
 VolumeCatcher::~VolumeCatcher()
 {
-	// Let the instance persist until exit.
+	delete pimpl;
+	pimpl = NULL;
 }
 
 void VolumeCatcher::setVolume(F32 volume)
 {
+	llassert(pimpl);
 	pimpl->setVolume(volume);
 }
 
 void VolumeCatcher::setPan(F32 pan)
 {
-	pimpl->setPan(pan);
+	// TODO: implement this (if possible)
 }
 
 void VolumeCatcher::pump()
 {
-	g_main_context_iteration(g_main_context_default(), /*may_block = */false);
+	llassert(pimpl);
+	pimpl->pump();
 }

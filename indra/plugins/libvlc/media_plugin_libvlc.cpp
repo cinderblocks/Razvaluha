@@ -700,17 +700,7 @@ bool MediaPluginLibVLC::init()
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-/*int init_media_plugin(LLPluginInstance::sendMessageFunction host_send_func,
-	LLPluginInstance* host_user_data,
-	LLPluginInstance::receiveMessageFunction *plugin_send_func,
-	void **plugin_user_data)
-{
-	MediaPluginLibVLC* self = new MediaPluginLibVLC(host_send_func, host_user_data);
-	*plugin_send_func = MediaPluginLibVLC::staticReceiveMessage;
-	*plugin_user_data = (void*)self;
 
-	return 0;
-}*/
 int create_plugin(LLPluginInstance::sendMessageFunction send_message_function,
 	LLPluginInstance* plugin_instance,
 	BasicPluginBase** plugin_object)

@@ -1,9 +1,6 @@
 # -*- cmake -*-
 
-project(media_plugin_base)
-
-# Fail at configure, not link time.
-set(OpenGL_FIND_REQUIRED ON)
+project(media_plugin_base LANGUAGES CXX)
 
 include(00-Common)
 include(LLCommon)
@@ -14,7 +11,7 @@ include(LLRender)
 include(LLWindow)
 include(Linking)
 include(PluginAPI)
-include(FindOpenGL)
+include(OpenGL)
 include(BasicPluginBase)
 
 include_directories(
@@ -24,8 +21,12 @@ include_directories(
     ${LLIMAGE_INCLUDE_DIRS}
     ${LLRENDER_INCLUDE_DIRS}
     ${LLWINDOW_INCLUDE_DIRS}
-	${BASIC_PLUGIN_BASE_INCLUDE_DIRS}
-)
+    ${BASIC_PLUGIN_BASE_INCLUDE_DIRS}
+    )
+
+include_directories(SYSTEM
+    ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
+    )
 
 ### media_plugin_base
 

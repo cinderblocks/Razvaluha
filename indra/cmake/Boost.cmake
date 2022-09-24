@@ -16,7 +16,7 @@ if (STANDALONE)
   set(BOOST_SIGNALS_LIBRARY boost_signals-mt)
   set(BOOST_SYSTEM_LIBRARY boost_system-mt)
   set(BOOST_THREAD_LIBRARY boost_thread-mt)
-else (USESYSTEMLIBS)
+else (STANDALONE)
   use_prebuilt_binary(boost)
   set(Boost_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include)
 

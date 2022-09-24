@@ -5,7 +5,6 @@ project(media_plugin_cef)
 include(Boost)
 include(00-Common)
 include(LLCommon)
-include(LLImage)
 include(LLPlugin)
 include(LLMath)
 include(LLRender)
@@ -13,9 +12,6 @@ include(LLWindow)
 include(Linking)
 include(PluginAPI)
 include(MediaPluginBase)
-include(OpenGL)
-include(PulseAudio)
-include(UI)
 
 include(CEFPlugin)
 
@@ -24,14 +20,12 @@ include_directories(
     ${MEDIA_PLUGIN_BASE_INCLUDE_DIRS}
     ${LLCOMMON_INCLUDE_DIRS}
     ${LLMATH_INCLUDE_DIRS}
-    ${LLIMAGE_INCLUDE_DIRS}
     ${LLRENDER_INCLUDE_DIRS}
     ${LLWINDOW_INCLUDE_DIRS}
     ${CEF_INCLUDE_DIR}
 )
 include_directories(SYSTEM
     ${LLCOMMON_SYSTEM_INCLUDE_DIRS}
-    ${PULSEAUDIO_INCLUDE_DIRS}
     )
 
 
@@ -63,7 +57,7 @@ if (LINUX)
        ${UI_LIBRARIES}     # for glib/GTK
        )
 elseif (DARWIN)
-  list(APPEND media_plugin_cef_SOURCE_FILES mac_volume_catcher.cpp)
+  list(APPEND media_plugin_cef_SOURCE_FILES mac_volume_catcher_null.cpp)
   find_library(CORESERVICES_LIBRARY CoreServices)
   find_library(AUDIOUNIT_LIBRARY AudioUnit)
   list(APPEND media_plugin_cef_LINK_LIBRARIES
@@ -105,17 +99,9 @@ if (DARWIN)
     media_plugin_cef
     PROPERTIES
     PREFIX ""
-    BUILD_WITH_INSTALL_RPATH 1
-    INSTALL_NAME_DIR "@executable_path"
     LINK_FLAGS "-exported_symbols_list ${CMAKE_CURRENT_SOURCE_DIR}/../base/media_plugin_base.exp"
   )
 
-  add_custom_command(TARGET media_plugin_cef
-    POST_BUILD COMMAND ${CMAKE_INSTALL_NAME_TOOL} -change "@executable_path/Chromium Embedded Framework"
-        "@executable_path/../../../../Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework"
-        "$<TARGET_FILE:media_plugin_cef>"
-    VERBATIM
-    COMMENT "Fixing path to CEF Framework"
-  )
-
+  ## turns on C++11 using Cmake
+  target_compile_features(media_plugin_cef PRIVATE cxx_range_for)
 endif (DARWIN)

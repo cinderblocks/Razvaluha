@@ -68,11 +68,6 @@
 
 #if LL_WINDOWS
 #include "lldxhardware.h"
-#endif
-
-#include "cef/dullahan.h"
-#if VLCPLUGIN
-#include "vlc/libvlc_version.h"
 #endif // LL_WINDOWS
 
 extern LLMemoryInfo gSysMemory;
@@ -288,30 +283,6 @@ LLFloaterAbout::LLFloaterAbout()
 	bool want_fullname = true;
 	support.append( gAudiop ? gAudiop->getDriverName(want_fullname) : "(none)" );
 	support += '\n';
-
-	std::stringstream supportstrm;
-	supportstrm << "Dullahan: "
-			<< DULLAHAN_VERSION_MAJOR
-			<< '.'
-			<< DULLAHAN_VERSION_MINOR
-			<< '.'
-			<< DULLAHAN_VERSION_BUILD
-
-			<< " / CEF: " << CEF_VERSION
-			<< " / Chrome: " << CHROME_VERSION_MAJOR
-			<< '\n';
-
-#if VLCPLUGIN
-	supportstrm << "LibVLC: ";
-	supportstrm << LIBVLC_VERSION_MAJOR;
-	supportstrm << '.';
-	supportstrm << LIBVLC_VERSION_MINOR;
-	supportstrm << '.';
-	supportstrm << LIBVLC_VERSION_REVISION;
-	supportstrm << '\n';
-#endif
-
-	support += supportstrm.str();
 
 	if (gPacketsIn > 0)
 	{

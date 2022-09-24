@@ -39,13 +39,7 @@ option(BUILD_TESTING "Build test suite" OFF)
 option(UNATTENDED "Disable use of uneeded tooling for automated builds" OFF)
 
 # Compiler and toolchain options
-option(USESYSTEMLIBS "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
 option(STANDALONE "Use libraries from your system rather than Linden-supplied prebuilt libraries." OFF)
-if (USESYSTEMLIBS)
-  set(STANDALONE ON)
-elseif (STANDALONE)
-  set(USESYSTEMLIBS ON)
-endif (USESYSTEMLIBS)
 option(INCREMENTAL_LINK "Use incremental linking on win32 builds (enable for faster links on some machines)" OFF)
 option(USE_PRECOMPILED_HEADERS "Enable use of precompiled header directives where supported." ON)
 option(USE_LTO "Enable global and interprocedural optimizations" OFF)

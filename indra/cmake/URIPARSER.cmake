@@ -5,16 +5,16 @@ set(URIPARSER_FIND_REQUIRED ON)
 
 include(Prebuilt)
 
-if (USESYSTEMLIBS)
+if(STANDALONE)
   include(FindURIPARSER)
-else (USESYSTEMLIBS)
+else(STANDALONE)
   use_prebuilt_binary(uriparser)
   if (WINDOWS)
     add_definitions("-DURI_STATIC_BUILD")
     set(URIPARSER_LIBRARIES
         debug ${ARCH_PREBUILT_DIRS_DEBUG}/uriparser.lib
         optimized ${ARCH_PREBUILT_DIRS_RELEASE}/uriparser.lib)
-  elseif (LINUX)
+  elseif(LINUX)
     #
     # When we have updated static libraries in competition with older
     # shared libraries and we want the former to win, we need to do some
@@ -29,8 +29,8 @@ else (USESYSTEMLIBS)
     #
     set(URIPARSER_PRELOAD_ARCHIVES -Wl,--whole-archive uriparser -Wl,--no-whole-archive)
     set(URIPARSER_LIBRARIES uriparser)
-  elseif (DARWIN)
+  elseif(DARWIN)
     set(URIPARSER_LIBRARIES uriparser)
-  endif (WINDOWS)
+  endif(WINDOWS)
   set(URIPARSER_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include/uriparser)
-endif (USESYSTEMLIBS)
+endif(STANDALONE)
