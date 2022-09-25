@@ -57,6 +57,7 @@ bool LLPluginClassMedia::init_impl(void)
 	// Queue up the media init message -- it will be sent after all the currently queued messages.
 	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "init");
 	message.setValue("target", mTarget);
+	message.setValueReal("factor", mZoomFactor);
 	sendMessage(message);
 
 	return true;
@@ -244,6 +245,17 @@ void LLPluginClassMedia::idle_impl(void)
 			mPlugin->sendMessage(message);	// DO NOT just use sendMessage() here -- we want this to jump ahead of the queue.
 
 			LL_DEBUGS("Plugin") << "Sending size_change" << LL_ENDL;
+		}
+	}
+
+	if(mPlugin && mPlugin->isRunning())
+	{
+		// Send queued messages
+		while(!mSendQueue.empty())
+		{
+			LLPluginMessage message = mSendQueue.front();
+			mSendQueue.pop();
+			mPlugin->sendMessage(message);
 		}
 	}
 }
@@ -784,15 +796,29 @@ void LLPluginClassMedia::showPageSource()
 	sendMessage(message);
 }
 
+void LLPluginClassMedia::setCEFProgramDirs(const std::string& helper_path,
+										   const std::string& resources_path,
+										   const std::string& locales_path)
+{
+	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "set_cef_data_path");
+	message.setValue("helper_path", helper_path);
+	message.setValue("resources_path", resources_path);
+	message.setValue("locales_path", locales_path);
+
+	sendMessage(message);
+}
+
 void LLPluginClassMedia::setUserDataPath(const std::string &user_data_path_cache,
-										const std::string &user_data_path_cookies,
-										 const std::string &user_data_path_cef_log)
+										 const std::string &user_data_path_cookies,
+										 const std::string &user_data_path_cef_log,
+										 bool verbose_log)
 {
 	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA, "set_user_data_path");
 	message.setValue("cache_path", user_data_path_cache);
 	message.setValue("cookies_path", user_data_path_cookies);
 	message.setValue("cef_log_file", user_data_path_cef_log);
 
+	message.setValueBoolean("cef_verbose_log", verbose_log);
 	sendMessage(message);
 }
 
@@ -817,6 +843,19 @@ void LLPluginClassMedia::setJavascriptEnabled(const bool enabled)
 	sendMessage(message);
 }
 
+void LLPluginClassMedia::setWebSecurityDisabled(const bool disabled)
+{
+	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER, "web_security_disabled");
+	message.setValueBoolean("disabled", disabled);
+	sendMessage(message);
+}
+
+void LLPluginClassMedia::setFileAccessFromFileUrlsEnabled(const bool enabled)
+{
+	LLPluginMessage message(LLPLUGIN_MESSAGE_CLASS_MEDIA_BROWSER, "file_access_from_file_urls");
+	message.setValueBoolean("enabled", enabled);
+	sendMessage(message);
+}
 
 void LLPluginClassMedia::enableMediaPluginDebugging( bool enable )
 {
@@ -1080,6 +1119,10 @@ void LLPluginClassMedia::receivePluginMessage(const LLPluginMessage &message)
 			mDebugMessageLevel = message.getValue("message_level");
 			mediaEvent(LLPluginClassMediaOwner::MEDIA_EVENT_DEBUG_MESSAGE);
 		}
+		else if (message_name == "tooltip_text")
+		{
+			mHoverText = message.getValue("tooltip");
+		}
 		else
 		{
 			LL_WARNS("Plugin") << "Unknown " << message_name << " class message: " << message_name << LL_ENDL;
@@ -1203,6 +1246,19 @@ void LLPluginClassMedia::mediaEvent(LLPluginClassMediaOwner::EMediaEvent event)
 	if(mOwner)
 	{
 		mOwner->handleMediaEvent(this, event);
+	}
+}
+
+void LLPluginClassMedia::sendMessage(const LLPluginMessage &message)
+{
+	if(mPlugin && mPlugin->isRunning())
+	{
+		mPlugin->sendMessage(message);
+	}
+	else
+	{
+		// The plugin isn't set up yet -- queue this message to be sent after initialization.
+		mSendQueue.push(message);
 	}
 }
 

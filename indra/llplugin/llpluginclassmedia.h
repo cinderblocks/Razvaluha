@@ -172,10 +172,13 @@ public:
 	void	showPageSource();
 
 	// These can be called before init(), and they will be queued and sent before the media init message.
-	void	setUserDataPath(const std::string &user_data_path_cache, const std::string &user_data_path_cookies, const std::string &user_data_path_cef_log);
+	void	setCEFProgramDirs(const std::string& helper_path, const std::string& resources_path = std::string(), const std::string& locales_path = std::string());
+	void	setUserDataPath(const std::string &user_data_path_cache, const std::string &username, const std::string &user_data_path_cef_log, bool verbose_log);
 	void	setLanguageCode(const std::string &language_code);
 	void	setPluginsEnabled(const bool enabled);
 	void	setJavascriptEnabled(const bool enabled);
+	void	setWebSecurityDisabled(const bool disabled);
+	void	setFileAccessFromFileUrlsEnabled(const bool enabled);
 	void	setTarget(const std::string &target);
 	
 	///////////////////////////////////
@@ -301,6 +304,9 @@ protected:
 	// Notify this object's owner that an event has occurred.
 	void mediaEvent(LLPluginClassMediaOwner::EMediaEvent event);
 		
+	void sendMessage(const LLPluginMessage &message);  // Send message internally, either queueing or sending directly.
+	std::queue<LLPluginMessage> mSendQueue;		// Used to queue messages while the plugin initializes.
+	
 	void setSizeInternal(void);
 
 protected:

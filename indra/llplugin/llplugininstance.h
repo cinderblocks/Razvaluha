@@ -38,7 +38,7 @@ struct apr_dso_handle_t; //Cannot include llapr, as it defines NOUSER for window
 class LLPluginInstanceMessageListener
 {
 public:
-	virtual ~LLPluginInstanceMessageListener();
+	virtual ~LLPluginInstanceMessageListener() = default;
    /** Plugin receives message from plugin loader shell. */
 	virtual void receivePluginMessage(const std::string &message) = 0;
 };

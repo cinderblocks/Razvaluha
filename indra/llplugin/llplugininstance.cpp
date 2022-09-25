@@ -40,10 +40,6 @@
 #include "direct.h"	// needed for _chdir()
 #endif
 
-/** Virtual destructor. */
-LLPluginInstanceMessageListener::~LLPluginInstanceMessageListener()
-{
-}
 
 /** 
  * TODO:DOC describe how it's used
@@ -99,40 +95,16 @@ int LLPluginInstance::load(const std::string& plugin_dir, std::string &plugin_fi
 #endif
 	};
 
-#if LL_LINUX && defined(LL_STANDALONE)
-    void *dso_handle = dlopen(plugin_file.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    int result = (!dso_handle)?APR_EDSOOPEN:apr_os_dso_handle_put(&mDSOHandle,
-            dso_handle, LLAPRRootPool::get()());
-#else
 	int result = apr_dso_load(&mDSOHandle,
 					  plugin_file.c_str(),
 					  LLAPRRootPool::get()());
-#endif
 	if(result != APR_SUCCESS)
 	{
 		char buf[1024];
-#if LL_LINUX && defined(LL_STANDALONE)
-		if (!dso_handle)
-		{
-			char* error = dlerror();
-			buf[0] = 0;
-			if (error)
-			{
-				strncpy(buf, error, sizeof(buf));
-			}
-			buf[sizeof(buf) - 1] = 0;
-		}
-		else
-#endif
-		{
-			apr_dso_error(mDSOHandle, buf, sizeof(buf));
-		}
+		apr_dso_error(mDSOHandle, buf, sizeof(buf));
 
-#if LL_LINUX && defined(LL_STANDALONE)
-		LL_WARNS("Plugin") << "plugin load " << plugin_file << " failed with error " << result << " , additional info string: " << buf << LL_ENDL;
-#else
 		LL_WARNS("Plugin") << "apr_dso_load of " << plugin_file << " failed with error " << result << " , additional info string: " << buf << LL_ENDL;
-#endif
+		
 	}
 	
 	if(result == APR_SUCCESS)
@@ -151,7 +123,7 @@ int LLPluginInstance::load(const std::string& plugin_dir, std::string &plugin_fi
 	{
 		result = init_function(&LLPluginInstance::staticReceiveMessage, this, &mReceiveMessageFunction, &mPluginObject);
 
-		if(result != 0)
+		if(result != APR_SUCCESS)
 		{
 			LL_WARNS("Plugin") << "call to init function failed with error " << result << LL_ENDL;
 		}
