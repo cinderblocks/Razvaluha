@@ -39,12 +39,6 @@
 #include "llsdserialize.h"
 #include "u64.h"
 
-/**
- * Constructor.
- */
-LLPluginMessage::LLPluginMessage()
-{
-}
 
 /**
  * Constructor.
@@ -65,14 +59,6 @@ LLPluginMessage::LLPluginMessage(const LLPluginMessage &p)
 LLPluginMessage::LLPluginMessage(const std::string &message_class, const std::string &message_name)
 {
 	setMessage(message_class, message_name);
-}
-
-
-/**
- * Destructor.
- */
-LLPluginMessage::~LLPluginMessage()
-{
 }
 
 /**
@@ -397,15 +383,6 @@ LLPluginMessageListener::~LLPluginMessageListener()
 	// TODO: should listeners have a way to ensure they're removed from dispatcher lists when deleted?
 }
 
-
-/**
- * Destructor
- */
-LLPluginMessageDispatcher::~LLPluginMessageDispatcher()
-{
-	
-}
-	
 /**
  * Add a message listener. TODO:DOC need more info on what uses this. when are multiple listeners needed?
  *

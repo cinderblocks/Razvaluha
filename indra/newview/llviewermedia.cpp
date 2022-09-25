@@ -423,7 +423,6 @@ viewer_media_t LLViewerMedia::newMediaImpl(
 		media_impl->mMediaAutoScale = media_auto_scale;
 		media_impl->mMediaLoop = media_loop;
 	}
-	media_impl->setPageZoomFactor(media_impl->mZoomFactor);
 
 	return media_impl;
 }
@@ -982,6 +981,13 @@ void LLViewerMedia::updateMedia(void *dummy_arg)
 				if(LLViewerMedia::isParcelAudioPlaying() && gAudiop && LLViewerMedia::hasParcelAudio())
 				{
 					gAudiop->stopInternetStream();
+				}
+			}
+			else
+			{
+				if(gAudiop && LLViewerMedia::hasParcelAudio() && gSavedSettings.getBOOL("MediaTentativeAutoPlay"))
+				{
+					gAudiop->startInternetStream(LLViewerMedia::getParcelAudioURL());
 				}
 			}
 			pimpl->setPriority(new_priority);
@@ -1763,7 +1769,7 @@ LLPluginClassMedia* LLViewerMediaImpl::newSourceFromMediaType(std::string media_
 				gSavedSettings.getString("BrowserProxyAddress"), gSavedSettings.getS32("BrowserProxyPort"),
 				gSavedSettings.getString("BrowserProxyUsername"), gSavedSettings.getString("BrowserProxyPassword"));
 			media_source->setSize(default_width, default_height);
-			media_source->setUserDataPath(user_data_path_cache, user_data_path_cookies, user_data_path_cef_log);
+			media_source->setUserDataPath(user_data_path_cache, user_data_path_cookies, user_data_path_cef_log, false);
 			media_source->setLanguageCode(LLUI::getLanguage());
 			media_source->setZoomFactor(zoom_factor);
 

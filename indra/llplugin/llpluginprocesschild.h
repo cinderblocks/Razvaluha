@@ -36,8 +36,7 @@
 #ifndef LL_LLPLUGINPROCESSCHILD_H
 #define LL_LLPLUGINPROCESSCHILD_H
 
-#include <queue> //imprudence
-
+#include <queue>
 #include "llpluginmessage.h"
 #include "llpluginmessagepipe.h"
 #include "llplugininstance.h"
@@ -88,7 +87,8 @@ private:
 		STATE_PLUGIN_LOADED,		// plugin library has been loaded
 		STATE_PLUGIN_INITIALIZING,	// plugin is processing init message
 		STATE_RUNNING,				// steady state (processing messages)
-		STATE_UNLOADING,			// plugin has sent shutdown and needs to be unloaded
+		STATE_SHUTDOWNREQ,          // Parent has requested a shutdown.
+		STATE_UNLOADING,			// plugin has sent shutdown_response and needs to be unloaded
 		STATE_UNLOADED,				// plugin has been unloaded
 		STATE_ERROR,				// generic bailout state
 		STATE_DONE					// state machine will sit in this state after either error or normal termination.
