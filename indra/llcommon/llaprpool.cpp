@@ -35,7 +35,15 @@
 void LLAPRPool::create(LLAPRPool* parent)
 {
 	llassert(!mPool);			// Must be non-initialized.
-	mParent = (parent != nullptr) ? parent : &LLThreadLocalData::tldata().mRootPool;
+
+	mParent = parent;
+	if (mParent == nullptr) {
+		mParent = &LLThreadLocalData::tldata().mRootPool;
+	}
+	// HACK: lol global, but wtf ever. TLS is completely FOOKED, FUBARED, and DOA.
+	if (mParent == nullptr) {
+		mParent = &LLAPRRootPool::get();
+	}
 
 	llassert(mParent->mPool);	// Parent must be initialized.
 #if APR_HAS_THREADS
