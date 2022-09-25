@@ -1110,6 +1110,18 @@ class DarwinManifest(ViewerManifest):
 class LinuxManifest(ViewerManifest):
     build_data_json_platform = 'lnx'
 
+    def is_packaging_viewer(self):
+        super(LinuxManifest, self).is_packaging_viewer()
+        return 'package' in self.args['actions']
+
+    def do(self, *actions):
+        super(LinuxManifest, self).do(*actions)
+        self.package_finish()  # Always finish the package.
+        if 'package' in self.actions:
+            # package_finish() was called by super.do() so just create the TAR.
+            self.create_archive()
+        return self.file_list
+
     def construct(self):
         import shutil
         shutil.rmtree("./packaged/app_settings/shaders", ignore_errors=True);
@@ -1151,9 +1163,10 @@ class LinuxManifest(ViewerManifest):
                 self.path("viewer_256.BMP", "viewer_icon.BMP")
 
         # plugins
-        with self.prefix(src=os.path.join(self.args['build'], os.pardir, "media_plugins"), dst="bin/llplugin"):
-        #    self.path("gstreamer010/libmedia_plugin_gstreamer010.so",
-        #              "libmedia_plugin_gstreamer.so")
+        with self.prefix(src="../llplugin/slplugin", dst="bin/llplugin"):
+            self.path("SLPlugin")
+        #    self.path("gstreamer010/libmedia_plugin_gstreamer010.so", "libmedia_plugin_gstreamer.so")
+            self.path2basename("filepicker", "libbasic_plugin_filepicker.so")
             self.path2basename("example", "libmedia_plugin_example.so")
             self.path2basename("libvlc", "libmedia_plugin_libvlc.so")
             self.path2basename("cef", "libmedia_plugin_cef.so")
