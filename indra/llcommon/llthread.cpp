@@ -313,7 +313,10 @@ LLThreadLocalData::~LLThreadLocalData()
 void LLThreadLocalData::init(void)
 {
 	// Only do this once.
-	if (sThreadLocalDataKey) { return; }
+	if (sThreadLocalDataKey)
+	{
+		return;
+	}
 
 	// This function is called by the main thread (these values are also needed in the next line).
 	AIThreadID::set_main_thread_id();
@@ -325,7 +328,7 @@ void LLThreadLocalData::init(void)
 									// has been exceeded.
 
 	// Create the thread-local data for the main thread (this function is called by the main thread).
-	LLThreadLocalData::create(nullptr);
+	LLThreadLocalData::create(NULL);
 }
 
 // This is called once for every thread when the thread is destructed.

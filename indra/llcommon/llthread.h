@@ -178,6 +178,8 @@ protected:
 
 //============================================================================
 
+#define MUTEX_POOL(arg)
+
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/locks.hpp> 
@@ -190,8 +192,8 @@ typedef boost::condition_variable_any LLConditionVariableImpl;
 class LL_COMMON_API LLMutex : public LLMutexImpl
 {
 public:
-	LLMutex() 
-	:	LLMutexImpl(), mLockingThread(AIThreadID::sNone) { }
+	LLMutex(MUTEX_POOL(native_pool_type& pool = LLThread::tldata().mRootPool)) 
+	:	LLMutexImpl(MUTEX_POOL(pool)), mLockingThread(AIThreadID::sNone) { }
 	~LLMutex() { }
 
 	void lock(LLTrace::BlockTimerStatHandle* timer = NULL)	// blocks
@@ -276,7 +278,7 @@ private:
 class LLGlobalMutex : public LLMutex
 {
 public:
-	LLGlobalMutex() : LLMutex(), mbInitalized(true)
+	LLGlobalMutex() : LLMutex(MUTEX_POOL(LLAPRRootPool::get())), mbInitalized(true)
 	{}
 	bool isInitalized() const
 	{
@@ -292,9 +294,9 @@ typedef LLMutex LLMutexRootPool;
 class LLCondition : public LLConditionVariableImpl, public LLMutex
 {
 public:
-	LLCondition() 
-	:	LLMutex() 
-	,	LLConditionVariableImpl()
+	LLCondition(MUTEX_POOL(native_pool_type& pool = LLThread::tldata().mRootPool)) : 
+		LLMutex(MUTEX_POOL(pool)), 
+		LLConditionVariableImpl(MUTEX_POOL(pool))
 	{}
 	~LLCondition()
 	{}
@@ -339,12 +341,8 @@ private:
 class AIRWLock
 {
 public:
-	AIRWLock()
-	:	mWriterWaitingMutex()
-	,	mNoHoldersCondition()
-	,	mHoldersCount(0)
-	,	mWriterIsWaiting(false) 
-	{ }
+	AIRWLock(LLAPRPool& parent = LLThread::tldata().mRootPool) :
+		mWriterWaitingMutex(MUTEX_POOL(parent)), mNoHoldersCondition(MUTEX_POOL(parent)), mHoldersCount(0), mWriterIsWaiting(false) { }
 
 private:
 	LLMutex mWriterWaitingMutex;		//!< This mutex is locked while some writer is waiting for access.
