@@ -169,11 +169,11 @@ public:
 	void handleMediaEvent(LLPluginClassMedia* self, EMediaEvent event) override;
 
 	void onCopyURL() const;
-		// right click debugging item
-		void onOpenWebInspector();
-		void onShowSource();
+	// right click debugging item
+	void onOpenWebInspector();
+	void onShowSource();
 
-		LLUUID getTextureID() {return mMediaTextureID;}
+	LLUUID getTextureID() {return mMediaTextureID;}
 
         // The Browser windows want keyup and keydown events. Overridden from LLFocusableElement to return true.
 	bool    wantsKeyUpKeyDown() const override;

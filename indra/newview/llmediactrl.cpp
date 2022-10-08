@@ -71,14 +71,14 @@ LLMediaCtrl::Params::Params()
 :	start_url("start_url"),
 	border_visible("border_visible", false),
 	decouple_texture_size("decouple_texture_size", false),
-	trusted_content("trusted_content", false),
-	focus_on_click("focus_on_click", true),
 	texture_width("texture_width", 1024),
 	texture_height("texture_height", 1024),
 	caret_color("caret_color"),
 	initial_mime_type("initial_mime_type"),
+	error_page_url("error_page_url"),
 	media_id("media_id"),
-	error_page_url("error_page_url")
+	trusted_content("trusted_content", false),
+	focus_on_click("focus_on_click", true)
 {
 }
 
@@ -98,18 +98,18 @@ LLMediaCtrl::LLMediaCtrl( const Params& p) :
 	mHoverTextChanged(false),
 	mDecoupleTextureSize ( false ),
 	mUpdateScrolls( false ),
-	mHomePageUrl( "" ),
 	mHomePageMimeType(p.initial_mime_type),
 	mCurrentNavUrl( "about:blank" ),
 	mErrorPageURL(p.error_page_url),
 	mMediaSource( nullptr ),
 	mTextureWidth ( 1024 ),
-	mTextureHeight ( 1024 ),
-	mContextMenu()
+	mTextureHeight ( 1024 )
 {
 	{
 		LLColor4 color = p.caret_color().get();
-		setCaretColor( (unsigned int)color.mV[0], (unsigned int)color.mV[1], (unsigned int)color.mV[2] );
+		setCaretColor( static_cast<unsigned int>(color.mV[0]),
+			static_cast<unsigned int>(color.mV[1]), 
+			static_cast<unsigned int>(color.mV[2]) );
 	}
 
 	setHomePageUrl(p.start_url, p.initial_mime_type);
@@ -122,8 +122,8 @@ LLMediaCtrl::LLMediaCtrl( const Params& p) :
 
 	if(!getDecoupleTextureSize())
 	{
-		S32 screen_width = ll_round((F32)getRect().getWidth() * LLUI::getScaleFactor().mV[VX]);
-		S32 screen_height = ll_round((F32)getRect().getHeight() * LLUI::getScaleFactor().mV[VY]);
+		S32 screen_width = ll_round(static_cast<F32>(getRect().getWidth()) * LLUI::getScaleFactor().mV[VX]);
+		S32 screen_height = ll_round(static_cast<F32>(getRect().getHeight()) * LLUI::getScaleFactor().mV[VY]);
 			
 		setTextureSize(screen_width, screen_height);
 	}
@@ -605,8 +605,12 @@ void LLMediaCtrl::navigateTo( std::string url_in, std::string mime_type, bool cl
 	// don't browse to anything that starts with secondlife:// or sl://
 	const std::string protocol1 = "secondlife://";
 	const std::string protocol2 = "sl://";
+	const std::string xgrid_scheme = "x-grid-info://";
+	const std::string xgrid_loc_scheme = "x-grid-location-info://";
 	if ((LLStringUtil::compareInsensitive(url_in.substr(0, protocol1.length()), protocol1) == 0) ||
-	    (LLStringUtil::compareInsensitive(url_in.substr(0, protocol2.length()), protocol2) == 0))
+	    (LLStringUtil::compareInsensitive(url_in.substr(0, protocol2.length()), protocol2) == 0) ||
+		(LLStringUtil::compareInsensitive(url_in.substr(0, xgrid_scheme.length()), xgrid_scheme) == 0) ||
+		(LLStringUtil::compareInsensitive(url_in.substr(0, xgrid_loc_scheme.length()), xgrid_loc_scheme) == 0))
 	{
 		// TODO: Print out/log this attempt?
 		// LL_INFOS() << "Rejecting attempt to load restricted website :" << urlIn << LL_ENDL;
@@ -946,6 +950,12 @@ void LLMediaCtrl::calcOffsetsAndSize(S32 *x_offset, S32 *y_offset, S32 *width, S
 //
 void LLMediaCtrl::convertInputCoords(S32& x, S32& y)
 {
+	S32 x_offset, y_offset, width, height;
+	calcOffsetsAndSize(&x_offset, &y_offset, &width, &height);
+
+	x -= x_offset;
+	y -= y_offset;
+
 	bool coords_opengl = false;
 	
 	if(mMediaSource && mMediaSource->hasMedia())

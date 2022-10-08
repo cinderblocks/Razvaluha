@@ -565,7 +565,7 @@ std::string LLViewerMedia::getCurrentUserAgent()
 	// http://www.mozilla.org/build/revised-user-agent-strings.html
 	std::ostringstream codec;
 	codec << "SecondLife/";
-	codec << "C64 Basic V2";
+	codec << "Meowth";
 	//codec << ViewerVersion::getImpMajorVersion() << "." << ViewerVersion::getImpMinorVersion() << "." << ViewerVersion::getImpPatchVersion() << " " << ViewerVersion::getImpTestVersion();
  	//codec << " (" << channel << "; " << skin_name << " skin)";
 // 	LL_INFOS() << codec.str() << LL_ENDL;
@@ -802,8 +802,6 @@ void LLViewerMedia::updateMedia(void *dummy_arg)
 	static LLCachedControl<bool> pluginUseReadThread(gSavedSettings, "PluginUseReadThread");
 	LLPluginProcessParent::setUseReadThread(pluginUseReadThread);
 	
-	// HACK: we always try to keep a spare running webkit plugin around to improve launch times.
-	createSpareBrowserMediaSource();
 	
 	sAnyMediaShowing = false;
 	
