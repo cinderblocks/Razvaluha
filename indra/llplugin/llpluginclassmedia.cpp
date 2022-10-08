@@ -275,7 +275,7 @@ unsigned char* LLPluginClassMedia::getBitsData()
 	unsigned char *result = nullptr;
 	if((mPlugin != nullptr) && !mTextureSharedMemoryName.empty())
 	{
-		result = (unsigned char*)mPlugin->getSharedMemoryAddress(mTextureSharedMemoryName);
+		result = static_cast<unsigned char*>(mPlugin->getSharedMemoryAddress(mTextureSharedMemoryName));
 	}
 	return result;
 }
@@ -344,11 +344,11 @@ void LLPluginClassMedia::setSizeInternal(void)
 		mRequestedMediaHeight = nextPowerOf2(mRequestedMediaHeight);
 	}
 
-	if(mRequestedMediaWidth > 6000)
-		mRequestedMediaWidth = 6000;
+	if(mRequestedMediaWidth > 8192)
+		mRequestedMediaWidth = 8192;
 
-	if(mRequestedMediaHeight > 6000)
-		mRequestedMediaHeight = 6000;
+	if(mRequestedMediaHeight > 8192)
+		mRequestedMediaHeight = 8192;
 }
 
 void LLPluginClassMedia::setAutoScale(bool auto_scale)

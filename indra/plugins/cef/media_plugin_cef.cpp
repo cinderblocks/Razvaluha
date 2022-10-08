@@ -745,7 +745,7 @@ void MediaPluginCEF::receiveMessage(const char* message_string)
 					SharedSegmentMap::iterator iter = mSharedSegments.find(name);
 					if (iter != mSharedSegments.end())
 					{
-						mPixels = (unsigned char*)iter->second.mAddress;
+						mPixels = static_cast<unsigned char*>(iter->second.mAddress);
 						mWidth = width;
 						mHeight = height;
 
